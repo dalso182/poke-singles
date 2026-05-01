@@ -1,0 +1,47 @@
+# Supabase CLI config. See https://supabase.com/docs/guides/cli/config
+#
+# Once a Supabase project exists, link this directory to it once with:
+#   npx supabase link --project-ref <ref>
+# Then `npm run db:push:dev` / `:prod` to apply migrations, or
+# `npx supabase db reset` to rebuild a local shadow DB during development.
+
+project_id = "poke-singles"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[db.pooler]
+enabled = false
+port = 54329
+pool_mode = "transaction"
+default_pool_size = 20
+max_client_conn = 100
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://127.0.0.1"
+
+[inbucket]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[auth]
+enabled = true
+site_url = "http://localhost:4242"
+additional_redirect_urls = ["https://poke-singles.com", "https://dev.poke-singles.com"]
+jwt_expiry = 3600
+enable_signup = true

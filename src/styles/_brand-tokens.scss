@@ -1,0 +1,41 @@
+// Brand tokens that live OUTSIDE Material's color system.
+// Material's --mat-sys-* tokens cover the interactive surface.
+// Anything here is brand-only and intentionally not part of the Material palette.
+
+:root {
+  // Tico Red — RESTRICTED to three uses ONLY:
+  //   1. Brand bar gradient
+  //   2. Sale prices (.price--sale)
+  //   3. AGOTADA / sold-out badges
+  // NEVER use as a button background, link color, focus ring, or generic accent.
+  --brand-red: #ce1126;
+  --brand-red-dark: #a50e1f;
+  --brand-red-soft: #fdeef0;
+
+  // Amber Glow — featured / rare indicator only.
+  // Mirrored from Material tertiary palette so non-Material contexts can use it.
+  --accent-amber: #d4941c;
+  --accent-amber-soft: #fef3d7;
+
+  // Warm cream surfaces (also written into --mat-sys-surface* via theme-overrides).
+  --surface-page: #fbfaf7;
+  --surface-card: #ffffff;
+  --surface-tonal: #f4f2ed;
+  --surface-tonal-2: #eae7df;
+  --border-subtle: #e5e2da;
+  --border-strong: #cfcbc0;
+
+  // Text
+  --text-primary: #15151a;
+  --text-secondary: #5a5a65;
+  --text-tertiary: #8b8b96;
+
+  // Semantic states (Danger is intentionally a different red than --brand-red).
+  --success: #15803d;
+  --warning: #a16207;
+  --danger: #b91c1c;
+
+  // Font families
+  --font-brand: 'Manrope', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}

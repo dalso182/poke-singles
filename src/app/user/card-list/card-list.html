@@ -1,0 +1,33 @@
+<header class="cards-header">
+  <h1>Cartas</h1>
+  <p class="lead">
+    Singles auténticas, condición verificada, envío seguro a todo Costa Rica.
+  </p>
+</header>
+
+<div class="cards-grid">
+  @for (card of cards; track card.id) {
+    <div
+      class="product-card"
+      [class.product-card--featured]="card.featured"
+      [class.product-card--sold-out]="card.stock === 0"
+    >
+      <a [routerLink]="['/products', card.id]" class="card-image">
+        <img [src]="card.image" [alt]="card.name" loading="lazy" />
+      </a>
+      <div class="card-info">
+        <a [routerLink]="['/products', card.id]" class="card-name">{{ card.name }}</a>
+        <div class="card-meta">{{ card.set }}, {{ card.rarity }}, #{{ card.number }}</div>
+        @if (card.stock === 0) {
+          <div class="card-stock-out">Agotada</div>
+        } @else {
+          <div class="card-stock">{{ card.stock }} disponible{{ card.stock > 1 ? 's' : '' }}</div>
+        }
+        <div class="card-price">₡{{ card.priceCRC | number: '1.0-0' }}</div>
+        <button mat-flat-button class="add-btn" [disabled]="card.stock === 0">
+          {{ card.stock === 0 ? 'Agotada' : 'Añadir' }}
+        </button>
+      </div>
+    </div>
+  }
+</div>

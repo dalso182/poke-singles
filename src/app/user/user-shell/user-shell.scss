@@ -1,0 +1,14 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.user-shell-container {
+  flex: 1 1 auto;
+  height: calc(100vh - 80px);
+}
+
+.user-shell-content {
+  padding: 24px;
+}

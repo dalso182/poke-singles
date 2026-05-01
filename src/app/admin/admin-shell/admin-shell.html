@@ -1,0 +1,42 @@
+<mat-toolbar class="admin-toolbar">
+  <button mat-icon-button (click)="toggleSidenav()" aria-label="Toggle navigation">
+    <mat-icon>menu</mat-icon>
+  </button>
+  <span class="admin-title">
+    <mat-icon class="admin-icon">admin_panel_settings</mat-icon>
+    Poke-Singles · Admin
+  </span>
+  <span class="spacer"></span>
+  <a mat-button routerLink="/">
+    <mat-icon>storefront</mat-icon>
+    Ir a la tienda
+  </a>
+</mat-toolbar>
+
+<mat-sidenav-container class="admin-container">
+  <mat-sidenav mode="side" [opened]="sidenavOpen()">
+    <mat-nav-list>
+      @for (item of items; track item.path) {
+        <a
+          mat-list-item
+          [routerLink]="item.path"
+          routerLinkActive="active-link"
+          [routerLinkActiveOptions]="{ exact: item.path === '/admin' }"
+        >
+          <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+          <span matListItemTitle>{{ item.label }}</span>
+        </a>
+      }
+    </mat-nav-list>
+  </mat-sidenav>
+  <mat-sidenav-content class="admin-content">
+    <div class="admin-placeholder">
+      <h1>Panel de administración</h1>
+      <p class="muted">
+        Placeholder shell — falta conectar Supabase auth y crear las páginas
+        (Productos, Pedidos, Clientes).
+      </p>
+    </div>
+    <router-outlet />
+  </mat-sidenav-content>
+</mat-sidenav-container>

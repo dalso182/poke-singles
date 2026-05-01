@@ -1,0 +1,36 @@
+<div class="brand-bar"></div>
+
+<mat-toolbar class="app-header">
+  <button mat-icon-button (click)="toggleNav.emit()" aria-label="Toggle navigation">
+    <mat-icon>menu</mat-icon>
+  </button>
+  <a routerLink="/" class="brand" aria-label="Poke-Singles">
+    <img src="assets/images/poke-singles-logo.png" alt="" class="brand-logo" />
+    <span class="brand-eyebrow brand-eyebrow--inline">Poke-Singles</span>
+  </a>
+  <div class="search-field">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput placeholder="Buscar cartas…" />
+    </mat-form-field>
+  </div>
+  <div class="header-actions">
+    <button mat-icon-button routerLink="/cart" aria-label="Cart">
+      <mat-icon>shopping_cart</mat-icon>
+    </button>
+    <button mat-icon-button routerLink="/account" aria-label="Account">
+      <mat-icon>person</mat-icon>
+    </button>
+    <div class="social-icons">
+      <a mat-icon-button href="https://instagram.com" target="_blank" rel="noopener" aria-label="Instagram">
+        <mat-icon svgIcon="instagram" />
+      </a>
+      <a mat-icon-button href="https://facebook.com" target="_blank" rel="noopener" aria-label="Facebook">
+        <mat-icon svgIcon="facebook" />
+      </a>
+      <a mat-icon-button href="https://wa.me/" target="_blank" rel="noopener" aria-label="WhatsApp">
+        <mat-icon svgIcon="whatsapp" />
+      </a>
+    </div>
+  </div>
+</mat-toolbar>

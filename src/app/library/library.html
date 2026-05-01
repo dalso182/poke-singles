@@ -1,0 +1,617 @@
+<div class="brand-bar"></div>
+
+<div class="library-shell">
+  <header class="library-header">
+    <a routerLink="/" class="back-link">
+      <mat-icon>arrow_back</mat-icon>
+      <span>Back to store</span>
+    </a>
+    <h1 class="display">Library</h1>
+    <p class="lead">
+      Reference page for designers — every Material component the project uses, rendered with
+      the Vault Light theme. Not linked from app navigation; reach it via <code>/library</code>.
+    </p>
+  </header>
+
+  <div class="library-layout">
+    <aside class="library-toc">
+      <div class="brand-eyebrow">Index</div>
+      <nav>
+        @for (item of toc; track item.id) {
+          <a routerLink="/library" [fragment]="item.id">{{ item.label }}</a>
+        }
+      </nav>
+    </aside>
+
+    <main class="library-content">
+      <!-- TYPOGRAPHY -->
+      <section id="typography" class="lib-section">
+        <div class="brand-eyebrow">01 — Typography</div>
+        <h2>Manrope · IBM Plex Mono</h2>
+        <div class="type-spec">
+          <div class="type-meta brand-mono">Display H1 · 800 · -2.5px · 0.95 LH</div>
+          <div class="sample-display">La caza<br />continúa<span class="accent">.</span></div>
+        </div>
+        <div class="type-spec">
+          <div class="type-meta brand-mono">Heading H2 · 700 · -0.7px</div>
+          <div class="sample-h2">Por Rareza · Special Illustration</div>
+        </div>
+        <div class="type-spec">
+          <div class="type-meta brand-mono">Eyebrow · 600 · 1.5px · UPPER</div>
+          <div class="brand-eyebrow">★ Pieza destacada · Verificada</div>
+        </div>
+        <div class="type-spec">
+          <div class="type-meta brand-mono">Product name · 600 · -0.1px</div>
+          <div class="sample-product">Lillie's Clefairy ex — Special Illustration Rare</div>
+        </div>
+        <div class="type-spec">
+          <div class="type-meta brand-mono">Body · 500 · 1.65 LH</div>
+          <p class="sample-body">
+            Verificación manual de cada carta. Toploader incluido en piezas sobre ₡8,000.
+            Envíos a todo Costa Rica vía Correos o courier.
+          </p>
+        </div>
+        <div class="type-spec">
+          <div class="type-meta brand-mono">Mono · IBM Plex Mono 400</div>
+          <div class="brand-mono">SCARLET & VIOLET · 270/264 · NM · ENGLISH</div>
+        </div>
+        <div class="type-spec">
+          <div class="type-meta brand-mono">Price · regular</div>
+          <div class="sample-price">₡88,200.00</div>
+        </div>
+        <div class="type-spec">
+          <div class="type-meta brand-mono">Price · sale</div>
+          <div class="sample-sale">
+            <span class="price--original">₡88,200.00</span>
+            <span class="price--sale">₡66,500.00</span>
+          </div>
+        </div>
+      </section>
+
+      <mat-divider />
+
+      <!-- COLOR PALETTE -->
+      <section id="palette" class="lib-section">
+        <div class="brand-eyebrow">02 — Palette</div>
+        <h2>Material system tokens</h2>
+        <div class="swatches">
+          @for (s of materialSwatches; track s.cssVar) {
+            <div class="swatch" [class.swatch--dark]="s.textOn === 'dark'" [style.background]="s.hex">
+              <div class="swatch-name">{{ s.name }}</div>
+              <div class="swatch-hex">{{ s.hex }}</div>
+              <code class="swatch-var">{{ s.cssVar }}</code>
+            </div>
+          }
+        </div>
+
+        <h2 style="margin-top: 48px">Brand-only tokens</h2>
+        <p class="lead-sm">
+          These live <strong>outside</strong> Material's color system. Brand red is restricted to
+          three uses: <code>.brand-bar</code>, <code>.price--sale</code>, and the
+          <code>AGOTADA</code> badge. Danger (the form-error red) is intentionally a different hue.
+        </p>
+        <div class="swatches">
+          @for (s of brandSwatches; track s.cssVar) {
+            <div class="swatch" [class.swatch--dark]="s.textOn === 'dark'" [style.background]="s.hex">
+              <div class="swatch-name">{{ s.name }}</div>
+              <div class="swatch-hex">{{ s.hex }}</div>
+              <code class="swatch-var">{{ s.cssVar }}</code>
+            </div>
+          }
+        </div>
+      </section>
+
+      <mat-divider />
+
+      <!-- BUTTONS -->
+      <section id="buttons" class="lib-section">
+        <div class="brand-eyebrow">03 — Buttons</div>
+        <h2>Variants</h2>
+        <div class="row">
+          <button mat-button>Text</button>
+          <button mat-flat-button>Filled</button>
+          <button mat-stroked-button>Outlined</button>
+          <button mat-raised-button>Raised</button>
+        </div>
+        <div class="row">
+          <button mat-flat-button>
+            <mat-icon>add_shopping_cart</mat-icon>
+            With icon
+          </button>
+          <button mat-stroked-button>
+            <mat-icon>favorite_border</mat-icon>
+            Wishlist
+          </button>
+          <button mat-flat-button disabled>Disabled</button>
+        </div>
+        <div class="row">
+          <button mat-fab aria-label="Add">
+            <mat-icon>add</mat-icon>
+          </button>
+          <button mat-mini-fab aria-label="Edit">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button aria-label="Search">
+            <mat-icon>search</mat-icon>
+          </button>
+          <button mat-icon-button aria-label="More">
+            <mat-icon>more_vert</mat-icon>
+          </button>
+        </div>
+      </section>
+
+      <mat-divider />
+
+      <!-- FORMS -->
+      <section id="forms" class="lib-section">
+        <div class="brand-eyebrow">04 — Form controls</div>
+        <h2>Inputs & selection</h2>
+
+        <div class="form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre</mat-label>
+            <input matInput placeholder="Charizard" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Email (required, validated)</mat-label>
+            <input matInput type="email" [formControl]="requiredEmail" required />
+            @if (requiredEmail.hasError('required') && requiredEmail.touched) {
+              <mat-error>Email is required — error color should be Danger #B91C1C, not brand red.</mat-error>
+            }
+            @if (requiredEmail.hasError('email')) {
+              <mat-error>Email format invalid.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="fill">
+            <mat-label>Fill appearance</mat-label>
+            <input matInput placeholder="Demo input" />
+            <mat-icon matSuffix>info</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Set</mat-label>
+            <mat-select>
+              @for (s of autocompleteSets; track s) {
+                <mat-option [value]="s">{{ s }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="span-2">
+            <mat-label>Notas</mat-label>
+            <textarea matInput rows="3" placeholder="Detalles del envío…"></textarea>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Set (autocomplete)</mat-label>
+            <input
+              matInput
+              [matAutocomplete]="auto"
+              (input)="onAutocompleteInput($event)"
+              placeholder="Buscar set…"
+            />
+            <mat-autocomplete #auto="matAutocomplete">
+              @for (s of filteredSets; track s) {
+                <mat-option [value]="s">{{ s }}</mat-option>
+              }
+            </mat-autocomplete>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha de pedido</mat-label>
+            <input matInput [matDatepicker]="picker" />
+            <mat-datepicker-toggle matSuffix [for]="picker" />
+            <mat-datepicker #picker />
+          </mat-form-field>
+        </div>
+
+        <h3 class="sub-heading">Checkboxes & radios</h3>
+        <div class="row vertical">
+          <mat-checkbox checked>Carta verificada</mat-checkbox>
+          <mat-checkbox>Toploader incluido</mat-checkbox>
+          <mat-checkbox indeterminate>Aplica a algunos items</mat-checkbox>
+          <mat-checkbox disabled>Disabled</mat-checkbox>
+        </div>
+        <mat-radio-group class="row vertical" [value]="'NM'">
+          <mat-radio-button value="NM">Near Mint</mat-radio-button>
+          <mat-radio-button value="LP">Lightly Played</mat-radio-button>
+          <mat-radio-button value="MP">Moderately Played</mat-radio-button>
+          <mat-radio-button value="HP" disabled>Heavily Played (disabled)</mat-radio-button>
+        </mat-radio-group>
+
+        <h3 class="sub-heading">Toggles & sliders</h3>
+        <div class="row vertical">
+          <mat-slide-toggle checked>Mostrar agotadas</mat-slide-toggle>
+          <mat-slide-toggle>Sólo destacadas</mat-slide-toggle>
+        </div>
+        <mat-slider min="0" max="100" step="5" discrete class="full-slider">
+          <input matSliderThumb [value]="40" />
+        </mat-slider>
+        <mat-slider min="0" max="200000" step="5000" discrete class="full-slider">
+          <input matSliderStartThumb [value]="20000" />
+          <input matSliderEndThumb [value]="80000" />
+        </mat-slider>
+      </section>
+
+      <mat-divider />
+
+      <!-- CHIPS -->
+      <section id="chips" class="lib-section">
+        <div class="brand-eyebrow">05 — Chips</div>
+        <h2>Tags & filters</h2>
+        <mat-chip-set>
+          <mat-chip>Holo</mat-chip>
+          <mat-chip>Near Mint</mat-chip>
+          <mat-chip>1ra Edición</mat-chip>
+          <mat-chip highlighted>Destacada</mat-chip>
+          <mat-chip disabled>Disabled</mat-chip>
+        </mat-chip-set>
+
+        <h3 class="sub-heading">Removable</h3>
+        <mat-chip-set>
+          @for (chip of chips(); track chip) {
+            <mat-chip (removed)="removeChip(chip)">
+              {{ chip }}
+              <button matChipRemove [attr.aria-label]="'Remove ' + chip">
+                <mat-icon>cancel</mat-icon>
+              </button>
+            </mat-chip>
+          }
+        </mat-chip-set>
+      </section>
+
+      <mat-divider />
+
+      <!-- CARDS -->
+      <section id="cards" class="lib-section">
+        <div class="brand-eyebrow">06 — Cards</div>
+        <h2>Surfaces</h2>
+        <div class="card-grid">
+          <mat-card appearance="outlined">
+            <mat-card-header>
+              <mat-card-title>Outlined</mat-card-title>
+              <mat-card-subtitle>Default surface</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <p>Outlined cards sit on a tonal surface with a subtle outline.</p>
+            </mat-card-content>
+            <mat-card-actions align="end">
+              <button mat-button>Action</button>
+            </mat-card-actions>
+          </mat-card>
+
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title>Elevated</mat-card-title>
+              <mat-card-subtitle>Default elevation</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <p>Elevated cards lift off the surface with a soft shadow.</p>
+            </mat-card-content>
+            <mat-card-actions align="end">
+              <button mat-flat-button>Primary</button>
+            </mat-card-actions>
+          </mat-card>
+
+          <mat-card appearance="outlined" class="card-with-media product-card product-card--featured">
+            <img mat-card-image src="assets/images/card2.jpg" alt="Featured card" />
+            <mat-card-content>
+              <div class="brand-mono meta-line">CRE · 201/214 · MP</div>
+              <div class="card-name">Greninja &amp; Zoroark GX</div>
+              <div class="price">₡97,500</div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card appearance="outlined" class="card-with-media product-card product-card--sold-out">
+            <img mat-card-image src="assets/images/card3.jpg" alt="Sold-out card" />
+            <mat-card-content>
+              <div class="brand-mono meta-line">SHF · 042/072 · LP</div>
+              <div class="card-name">Blastoise VMAX</div>
+              <div class="price--original">₡28,500</div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </section>
+
+      <mat-divider />
+
+      <!-- LISTS -->
+      <section id="lists" class="lib-section">
+        <div class="brand-eyebrow">07 — Lists</div>
+        <h2>Density & roles</h2>
+        <div class="card-grid">
+          <mat-card appearance="outlined">
+            <mat-card-header><mat-card-title>Basic list</mat-card-title></mat-card-header>
+            <mat-list>
+              <mat-list-item>Charizard ex</mat-list-item>
+              <mat-list-item>Greninja &amp; Zoroark GX</mat-list-item>
+              <mat-list-item>Blastoise VMAX</mat-list-item>
+            </mat-list>
+          </mat-card>
+
+          <mat-card appearance="outlined">
+            <mat-card-header><mat-card-title>Two-line list</mat-card-title></mat-card-header>
+            <mat-list>
+              <mat-list-item>
+                <mat-icon matListItemIcon>style</mat-icon>
+                <span matListItemTitle>Charizard ex</span>
+                <span matListItemLine>Scarlet &amp; Violet · NM</span>
+              </mat-list-item>
+              <mat-list-item>
+                <mat-icon matListItemIcon>style</mat-icon>
+                <span matListItemTitle>Mewtwo</span>
+                <span matListItemLine>Jungle · NM</span>
+              </mat-list-item>
+            </mat-list>
+          </mat-card>
+
+          <mat-card appearance="outlined">
+            <mat-card-header><mat-card-title>Nav list</mat-card-title></mat-card-header>
+            <mat-nav-list>
+              <a mat-list-item routerLink="/library">
+                <mat-icon matListItemIcon>home</mat-icon>
+                <span matListItemTitle>Home</span>
+              </a>
+              <a mat-list-item routerLink="/library">
+                <mat-icon matListItemIcon>style</mat-icon>
+                <span matListItemTitle>Cartas</span>
+              </a>
+              <a mat-list-item routerLink="/library">
+                <mat-icon matListItemIcon>shopping_cart</mat-icon>
+                <span matListItemTitle>Carrito</span>
+              </a>
+            </mat-nav-list>
+          </mat-card>
+        </div>
+      </section>
+
+      <mat-divider />
+
+      <!-- TABS -->
+      <section id="tabs" class="lib-section">
+        <div class="brand-eyebrow">08 — Tabs</div>
+        <h2>Section navigation</h2>
+        <mat-tab-group>
+          <mat-tab label="Detalles">
+            <p class="tab-pane">
+              Información de la carta: nombre, expansión, número, condición, idioma.
+            </p>
+          </mat-tab>
+          <mat-tab label="Envío">
+            <p class="tab-pane">
+              Costo de envío, opciones de courier, política de toploader.
+            </p>
+          </mat-tab>
+          <mat-tab label="Reseñas">
+            <p class="tab-pane">Comentarios verificados de compradores anteriores.</p>
+          </mat-tab>
+        </mat-tab-group>
+      </section>
+
+      <mat-divider />
+
+      <!-- EXPANSION -->
+      <section id="expansion" class="lib-section">
+        <div class="brand-eyebrow">09 — Expansion panel</div>
+        <h2>Accordion</h2>
+        <mat-accordion>
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>Verificación</mat-panel-title>
+              <mat-panel-description>Cómo autenticamos cada carta</mat-panel-description>
+            </mat-expansion-panel-header>
+            <p>
+              Inspección visual + comparación contra base de datos PSA. Para cartas sobre ₡30,000
+              incluimos un toploader y bolsa anti-estática.
+            </p>
+          </mat-expansion-panel>
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>Envíos</mat-panel-title>
+              <mat-panel-description>Cobertura nacional</mat-panel-description>
+            </mat-expansion-panel-header>
+            <p>Correos de Costa Rica los martes; courier todos los días excepto domingo.</p>
+          </mat-expansion-panel>
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>Pagos</mat-panel-title>
+              <mat-panel-description>SINPE Móvil, transferencia</mat-panel-description>
+            </mat-expansion-panel-header>
+            <p>Aceptamos SINPE Móvil al 63452039 y transferencias bancarias.</p>
+          </mat-expansion-panel>
+        </mat-accordion>
+      </section>
+
+      <mat-divider />
+
+      <!-- STEPPER -->
+      <section id="stepper" class="lib-section">
+        <div class="brand-eyebrow">10 — Stepper</div>
+        <h2>Multi-step flow</h2>
+        <mat-stepper #stepper>
+          <mat-step label="Carrito">
+            <p>Revisa las cartas seleccionadas.</p>
+            <button mat-flat-button matStepperNext>Continuar</button>
+          </mat-step>
+          <mat-step label="Envío">
+            <p>Datos de contacto y dirección.</p>
+            <button mat-button matStepperPrevious>Atrás</button>
+            <button mat-flat-button matStepperNext>Continuar</button>
+          </mat-step>
+          <mat-step label="Pago">
+            <p>SINPE Móvil o transferencia.</p>
+            <button mat-button matStepperPrevious>Atrás</button>
+            <button mat-flat-button>Confirmar</button>
+          </mat-step>
+        </mat-stepper>
+      </section>
+
+      <mat-divider />
+
+      <!-- MENU -->
+      <section id="menu" class="lib-section">
+        <div class="brand-eyebrow">11 — Menu</div>
+        <h2>Dropdown</h2>
+        <button mat-stroked-button [matMenuTriggerFor]="cardMenu">
+          Acciones
+          <mat-icon iconPositionEnd>expand_more</mat-icon>
+        </button>
+        <mat-menu #cardMenu="matMenu">
+          <button mat-menu-item>
+            <mat-icon>add_shopping_cart</mat-icon>
+            <span>Añadir al carrito</span>
+          </button>
+          <button mat-menu-item>
+            <mat-icon>favorite_border</mat-icon>
+            <span>Guardar en wishlist</span>
+          </button>
+          <mat-divider />
+          <button mat-menu-item>
+            <mat-icon>share</mat-icon>
+            <span>Compartir</span>
+          </button>
+        </mat-menu>
+      </section>
+
+      <mat-divider />
+
+      <!-- TOOLTIP -->
+      <section id="tooltip" class="lib-section">
+        <div class="brand-eyebrow">12 — Tooltip</div>
+        <h2>Hints</h2>
+        <div class="row">
+          <button mat-stroked-button matTooltip="Tooltip arriba" matTooltipPosition="above">
+            Above
+          </button>
+          <button mat-stroked-button matTooltip="Tooltip abajo" matTooltipPosition="below">
+            Below
+          </button>
+          <button mat-icon-button matTooltip="Información" matTooltipPosition="right">
+            <mat-icon>info</mat-icon>
+          </button>
+        </div>
+      </section>
+
+      <mat-divider />
+
+      <!-- PROGRESS -->
+      <section id="progress" class="lib-section">
+        <div class="brand-eyebrow">13 — Progress</div>
+        <h2>Loading states</h2>
+        <div class="progress-row">
+          <span class="brand-mono">Determinate · 60%</span>
+          <mat-progress-bar mode="determinate" [value]="progressValue()" />
+        </div>
+        <div class="progress-row">
+          <span class="brand-mono">Indeterminate</span>
+          <mat-progress-bar mode="indeterminate" />
+        </div>
+        <div class="row">
+          <mat-progress-spinner mode="determinate" [value]="progressValue()" diameter="48" />
+          <mat-progress-spinner mode="indeterminate" diameter="48" />
+        </div>
+      </section>
+
+      <mat-divider />
+
+      <!-- BADGE -->
+      <section id="badge" class="lib-section">
+        <div class="brand-eyebrow">14 — Badge</div>
+        <h2>Counters</h2>
+        <div class="row">
+          <button mat-icon-button matBadge="3" matBadgeColor="primary" aria-label="Cart">
+            <mat-icon>shopping_cart</mat-icon>
+          </button>
+          <button mat-icon-button matBadge="12" matBadgeColor="accent" aria-label="Notifications">
+            <mat-icon>notifications</mat-icon>
+          </button>
+          <button mat-icon-button matBadge="!" matBadgeColor="warn" aria-label="Errors">
+            <mat-icon>error_outline</mat-icon>
+          </button>
+        </div>
+      </section>
+
+      <mat-divider />
+
+      <!-- FEEDBACK -->
+      <section id="feedback" class="lib-section">
+        <div class="brand-eyebrow">15 — Snackbar &amp; Dialog</div>
+        <h2>Transient feedback</h2>
+        <div class="row">
+          <button mat-flat-button (click)="openSnackBar()">Open snackbar</button>
+          <button mat-stroked-button (click)="openDialog()">Open dialog</button>
+        </div>
+      </section>
+
+      <mat-divider />
+
+      <!-- TABLE -->
+      <section id="table" class="lib-section">
+        <div class="brand-eyebrow">16 — Table</div>
+        <h2>Sortable inventory</h2>
+        <div class="table-wrap">
+          <table mat-table [dataSource]="tableData" matSort>
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Nombre</th>
+              <td mat-cell *matCellDef="let row">{{ row.name }}</td>
+            </ng-container>
+            <ng-container matColumnDef="set">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Set</th>
+              <td mat-cell *matCellDef="let row">{{ row.set }}</td>
+            </ng-container>
+            <ng-container matColumnDef="condition">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Cond.</th>
+              <td mat-cell *matCellDef="let row">{{ row.condition }}</td>
+            </ng-container>
+            <ng-container matColumnDef="price">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Precio</th>
+              <td mat-cell *matCellDef="let row">₡{{ row.priceCRC | number: '1.0-0' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="stock">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Stock</th>
+              <td mat-cell *matCellDef="let row">
+                @if (row.stock === 0) {
+                  <span style="color: var(--brand-red); font-weight: 600">Agotada</span>
+                } @else {
+                  {{ row.stock }}
+                }
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="tableColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: tableColumns"></tr>
+          </table>
+          <mat-paginator [pageSizeOptions]="[5, 10, 25]" pageSize="5" showFirstLastButtons />
+        </div>
+      </section>
+
+      <mat-divider />
+
+      <!-- BRAND UTILITIES -->
+      <section id="brand" class="lib-section">
+        <div class="brand-eyebrow">17 — Brand utilities</div>
+        <h2>Patterns outside Material</h2>
+        <div class="util-block">
+          <div class="brand-mono">.brand-bar</div>
+          <div class="brand-bar"></div>
+        </div>
+        <div class="util-block">
+          <div class="brand-mono">.brand-eyebrow</div>
+          <div class="brand-eyebrow">★ Pieza destacada · Verificada</div>
+        </div>
+        <div class="util-block">
+          <div class="brand-mono">.brand-mono</div>
+          <div class="brand-mono">SCARLET & VIOLET · 270/264 · NM</div>
+        </div>
+        <div class="util-block">
+          <div class="brand-mono">.price--sale + .price--original</div>
+          <div class="sample-sale">
+            <span class="price--original">₡88,200</span>
+            <span class="price--sale">₡66,500</span>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>

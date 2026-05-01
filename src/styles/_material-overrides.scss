@@ -1,0 +1,28 @@
+@use '@angular/material' as mat;
+
+// Component-level shape overrides. Material 3 token-based, no ::ng-deep needed.
+html {
+  @include mat.button-overrides((
+    filled-container-shape: 4px,
+    outlined-container-shape: 4px,
+    text-container-shape: 4px,
+    protected-container-shape: 4px,
+  ));
+
+  @include mat.card-overrides((
+    elevated-container-shape: 8px,
+    outlined-container-shape: 8px,
+  ));
+}
+
+// Brand button typography: uppercase, tracked, 12px / 700.
+// Applies to text/filled/outlined/raised variants. Icon-buttons are excluded.
+.mat-mdc-button,
+.mat-mdc-unelevated-button,
+.mat-mdc-outlined-button,
+.mat-mdc-raised-button {
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  font-weight: 700;
+  font-size: 12px;
+}

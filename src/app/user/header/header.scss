@@ -1,0 +1,67 @@
+:host {
+  display: block;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.app-header {
+  background: var(--surface-card);
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-subtle);
+  height: 80px;
+  // Material's icon-button color follows currentColor; navy comes from explicit override.
+  .mat-mdc-icon-button {
+    color: var(--mat-sys-primary);
+  }
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: 8px;
+  text-decoration: none;
+  color: inherit;
+  height: 100%;
+}
+
+.brand-logo {
+  display: block;
+  height: 75px;
+  width: 75px;
+  object-fit: contain;
+}
+
+.brand-eyebrow--inline {
+  font-size: 10px;
+  letter-spacing: 1.8px;
+  color: var(--text-tertiary);
+}
+
+.search-field {
+  flex: 1 1 auto;
+  margin: 0 16px;
+
+  mat-form-field {
+    width: 100%;
+  }
+}
+
+.header-actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+}
+
+.social-icons {
+  display: flex;
+  align-items: center;
+  border-left: 1px solid var(--border-subtle);
+  margin-left: 4px;
+  padding-left: 4px;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}

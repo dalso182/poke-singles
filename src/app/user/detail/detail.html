@@ -1,0 +1,38 @@
+<a mat-button routerLink="/products" class="back-link">
+  <mat-icon>arrow_back</mat-icon>
+  Volver a cartas
+</a>
+
+<article class="card-detail">
+  <div class="card-image-placeholder">
+    <mat-icon>style</mat-icon>
+    <span class="placeholder-id">{{ id() }}</span>
+  </div>
+
+  <section class="card-info">
+    <h1>Placeholder Card</h1>
+    <p class="set">Mock data — id: <code>{{ id() }}</code></p>
+
+    <mat-chip-set>
+      <mat-chip>Holo</mat-chip>
+      <mat-chip>Near Mint</mat-chip>
+      <mat-chip>1ra Edición</mat-chip>
+    </mat-chip-set>
+
+    <div class="price">₡—</div>
+    <p class="muted">
+      Stock y precio se cargarán desde Supabase cuando el endpoint esté conectado.
+    </p>
+
+    <div class="actions">
+      <button mat-flat-button>
+        <mat-icon>add_shopping_cart</mat-icon>
+        Añadir al carrito
+      </button>
+      <button mat-stroked-button>
+        <mat-icon>favorite_border</mat-icon>
+        Wishlist
+      </button>
+    </div>
+  </section>
+</article>

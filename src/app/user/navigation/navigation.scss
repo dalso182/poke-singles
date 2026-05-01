@@ -1,0 +1,9 @@
+:host {
+  display: block;
+  width: 240px;
+}
+
+.active-link {
+  background-color: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}

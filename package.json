@@ -1,0 +1,49 @@
+{
+  "name": "poke-singles",
+  "version": "0.0.0",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve --port 4242",
+    "build": "ng build",
+    "build:dev": "ng build --configuration=dev",
+    "build:prod": "ng build --configuration=production",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test",
+    "deploy": "node scripts/deploy.mjs",
+    "deploy:dev": "node scripts/deploy.mjs --env=dev",
+    "deploy:prod": "node scripts/deploy.mjs --env=prod",
+    "db:types": "npx --yes supabase gen types typescript --linked > src/app/core/supabase/database.types.ts",
+    "db:types:dev": "npx --yes supabase gen types typescript --project-id <dev-ref> > src/app/core/supabase/database.types.ts",
+    "db:types:prod": "npx --yes supabase gen types typescript --project-id <prod-ref> > src/app/core/supabase/database.types.ts",
+    "db:push:dev": "npx --yes supabase db push --project-ref <dev-ref>",
+    "db:push:prod": "npx --yes supabase db push --project-ref <prod-ref>",
+    "functions:dev": "npx --yes supabase functions deploy --project-ref <dev-ref>",
+    "functions:prod": "npx --yes supabase functions deploy --project-ref <prod-ref>"
+  },
+  "private": true,
+  "packageManager": "npm@10.8.2",
+  "dependencies": {
+    "@angular/animations": "^21.2.11",
+    "@angular/cdk": "^21.2.9",
+    "@angular/common": "^21.2.0",
+    "@angular/compiler": "^21.2.0",
+    "@angular/core": "^21.2.0",
+    "@angular/forms": "^21.2.0",
+    "@angular/material": "^21.2.9",
+    "@angular/platform-browser": "^21.2.0",
+    "@angular/router": "^21.2.0",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "@angular/build": "^21.2.9",
+    "@angular/cli": "^21.2.9",
+    "@angular/compiler-cli": "^21.2.0",
+    "dotenv": "^17.4.2",
+    "jsdom": "^28.0.0",
+    "prettier": "^3.8.1",
+    "ssh2-sftp-client": "^12.1.1",
+    "typescript": "~5.9.2",
+    "vitest": "^4.0.8"
+  }
+}

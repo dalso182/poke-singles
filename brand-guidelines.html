@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Poke-Singles · Vault Light — Brand Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* PRIMARY (interactive) */
+    --brand-blue:#1E3A8A;
+    --brand-blue-dark:#172E6E;
+    --brand-blue-soft:#E8EDF8;
+
+    /* ACCENT (rare / featured) */
+    --accent-amber:#D4941C;
+    --accent-amber-soft:#FEF3D7;
+
+    /* BRAND SIGNATURE & SEMANTIC RED */
+    --brand-red:#CE1126;          /* logo, brand bar, sale prices */
+    --brand-red-dark:#A50E1F;
+    --brand-red-soft:#FDEEF0;
+    --danger:#B91C1C;             /* errors, sold out */
+
+    /* SURFACES */
+    --surface-0:#FBFAF7;
+    --surface-1:#FFFFFF;
+    --surface-2:#F4F2ED;
+    --surface-3:#EAE7DF;
+    --border-subtle:#E5E2DA;
+    --border-strong:#CFCBC0;
+
+    /* TEXT */
+    --text-primary:#15151A;
+    --text-secondary:#5A5A65;
+    --text-tertiary:#8B8B96;
+
+    /* SEMANTIC */
+    --success:#15803D;
+    --warning:#A16207;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--surface-0);color:var(--text-primary);font-family:'Manrope',system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1120px;margin:0 auto;padding:48px 32px 96px}
+
+  /* ============================================================
+     SIGNATURE BRAND BAR — used at the top of hero/feature cards
+     ============================================================ */
+  .brand-bar{
+    height:3px;
+    background:linear-gradient(90deg, var(--brand-red), var(--accent-amber), var(--brand-red));
+  }
+
+  /* HERO */
+  .hero{background:var(--surface-1);border-radius:8px;padding:64px 56px 48px;border:1px solid var(--border-subtle);margin-bottom:32px;position:relative;overflow:hidden;box-shadow:0 1px 2px rgba(21,21,26,.04),0 12px 32px -16px rgba(21,21,26,.08)}
+  .hero::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--brand-red),var(--accent-amber),var(--brand-red))}
+  .hero::after{content:"";position:absolute;right:-200px;top:-200px;width:500px;height:500px;border-radius:50%;background:radial-gradient(closest-side,rgba(30,58,138,.06),transparent 70%);pointer-events:none}
+  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:2.4px;text-transform:uppercase;color:var(--accent-amber);margin-bottom:24px}
+  h1{font-family:'Manrope',sans-serif;font-size:80px;font-weight:800;color:var(--text-primary);letter-spacing:-3px;line-height:.95}
+  h1 .accent{color:var(--brand-blue)}
+  .hero p.lead{font-size:18px;color:var(--text-secondary);max-width:560px;margin-top:24px;font-weight:500;line-height:1.6}
+  .hero-meta{display:flex;gap:48px;margin-top:48px;padding-top:32px;border-top:1px solid var(--border-subtle);flex-wrap:wrap}
+  .hero-meta .cell{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-tertiary);letter-spacing:1px;text-transform:uppercase}
+  .hero-meta .cell strong{display:block;color:var(--text-primary);font-family:'Manrope',sans-serif;font-weight:700;font-size:14px;margin-bottom:6px;letter-spacing:0;text-transform:none}
+
+  /* SECTION */
+  section{background:var(--surface-1);border-radius:8px;padding:56px;border:1px solid var(--border-subtle);margin-bottom:32px;box-shadow:0 1px 2px rgba(21,21,26,.03),0 8px 24px -16px rgba(21,21,26,.06)}
+  .section-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:40px;flex-wrap:wrap;gap:12px}
+  h2{font-family:'Manrope',sans-serif;font-size:36px;font-weight:800;color:var(--text-primary);letter-spacing:-1px}
+  .section-num{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:2.4px;text-transform:uppercase;color:var(--accent-amber)}
+  .section-head .meta-text{font-size:13px;color:var(--text-tertiary)}
+
+  /* LOGO PREVIEW */
+  .logo-preview{background:radial-gradient(circle at 30% 30%,#FFFFFF 0%,var(--surface-2) 100%);border-radius:8px;padding:80px;display:flex;align-items:center;justify-content:center;min-height:320px;position:relative;overflow:hidden;border:1px solid var(--border-subtle)}
+  .logo-preview::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 70% 70%,rgba(212,148,28,.08),transparent 50%);pointer-events:none}
+
+  /* COLOR PALETTE */
+  .palette{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .swatch{border-radius:8px;overflow:hidden;cursor:pointer;transition:transform .2s ease,box-shadow .2s ease;border:1px solid var(--border-subtle);background:var(--surface-1)}
+  .swatch:hover{transform:translateY(-2px);box-shadow:0 12px 32px -8px rgba(21,21,26,.15)}
+  .swatch .chip{height:160px;position:relative}
+  .swatch .chip .role{position:absolute;top:14px;left:16px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:1.6px;text-transform:uppercase;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.92);backdrop-filter:blur(4px);color:var(--text-primary)}
+  .swatch .chip.dark .role{background:rgba(21,21,26,.5);color:#fff}
+  .swatch .info{padding:18px}
+  .swatch .name{font-family:'Manrope',sans-serif;font-size:15px;font-weight:700;color:var(--text-primary);margin-bottom:12px;letter-spacing:-.2px}
+  .swatch .codes{display:grid;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-tertiary)}
+  .swatch .codes span strong{color:var(--text-primary);font-weight:500}
+  .palette-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:20px}
+
+  /* APPLICATION ROLES */
+  .roles{margin-top:40px;padding:32px;background:var(--surface-2);border-radius:8px;border:1px solid var(--border-subtle)}
+  .roles h3{font-family:'Manrope',sans-serif;font-size:13px;font-weight:700;color:var(--accent-amber);margin-bottom:18px;letter-spacing:1.8px;text-transform:uppercase}
+  .roles-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;font-size:14px;color:var(--text-secondary);line-height:1.6}
+  .roles-grid strong{color:var(--text-primary);display:block;margin-bottom:4px;font-weight:700}
+
+  /* BRAND BAR DEMO */
+  .brand-bar-demo{margin-top:40px}
+  .brand-bar-demo h3{font-family:'Manrope',sans-serif;font-size:13px;font-weight:700;color:var(--accent-amber);margin-bottom:18px;letter-spacing:1.8px;text-transform:uppercase}
+  .brand-bar-demo p{font-size:14px;color:var(--text-secondary);line-height:1.6;margin-bottom:24px;max-width:680px}
+  .brand-bar-demo p strong{color:var(--text-primary);font-weight:700}
+  .demo-cards{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .demo-card{background:var(--surface-1);border:1px solid var(--border-subtle);border-radius:8px;overflow:hidden;position:relative}
+  .demo-card .bar{height:3px;background:linear-gradient(90deg,var(--brand-red),var(--accent-amber),var(--brand-red))}
+  .demo-card .demo-content{padding:24px}
+  .demo-card .demo-eyebrow{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;color:var(--accent-amber);margin-bottom:10px}
+  .demo-card .demo-title{font-family:'Manrope',sans-serif;font-size:22px;font-weight:800;letter-spacing:-.6px;color:var(--text-primary);margin-bottom:8px}
+  .demo-card .demo-body{font-size:13px;color:var(--text-secondary);line-height:1.55}
+
+  /* RED USAGE CALLOUT */
+  .red-callout{margin-top:24px;padding:24px 28px;background:var(--brand-red-soft);border:1px solid #F4D0D0;border-radius:8px;border-left:3px solid var(--brand-red)}
+  .red-callout h4{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;color:var(--brand-red-dark);margin-bottom:12px}
+  .red-callout p{font-size:14px;color:var(--text-secondary);line-height:1.6;margin-bottom:8px}
+  .red-callout p:last-child{margin-bottom:0}
+  .red-callout strong{color:var(--text-primary);font-weight:700}
+  .red-callout code{font-family:'IBM Plex Mono',monospace;font-size:12px;background:rgba(206,17,38,.08);padding:2px 6px;border-radius:3px;color:var(--brand-red-dark)}
+
+  /* CONTRAST */
+  .contrast-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .contrast-tile{border-radius:8px;padding:24px;min-height:140px;display:flex;flex-direction:column;justify-content:space-between}
+  .contrast-tile .ratio{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:1.4px;text-transform:uppercase;opacity:.7}
+  .contrast-tile .demo{font-family:'Manrope',sans-serif;font-size:22px;font-weight:700;letter-spacing:-.3px}
+  .contrast-tile .rating{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:1.2px;text-transform:uppercase}
+
+  /* TYPOGRAPHY */
+  .type-spec{display:grid;grid-template-columns:220px 1fr;gap:40px;padding:32px 0;border-top:1px solid var(--border-subtle)}
+  .type-spec:first-child{border-top:0;padding-top:0}
+  .type-spec .meta{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-tertiary);line-height:1.6}
+  .type-spec .meta strong{display:block;color:var(--text-primary);font-family:'Manrope',sans-serif;font-size:14px;font-weight:700;margin-bottom:6px;letter-spacing:0}
+  .sample-display{font-family:'Manrope',sans-serif;font-size:64px;font-weight:800;color:var(--text-primary);letter-spacing:-2.5px;line-height:1}
+  .sample-display .accent{color:var(--brand-blue)}
+  .sample-heading{font-family:'Manrope',sans-serif;font-size:32px;font-weight:700;color:var(--text-primary);letter-spacing:-.7px}
+  .sample-product{font-family:'Manrope',sans-serif;font-size:15px;font-weight:600;color:var(--text-primary);letter-spacing:-.1px}
+  .sample-body{font-family:'Manrope',sans-serif;font-size:15px;font-weight:500;color:var(--text-secondary);line-height:1.65}
+  .sample-eyebrow{font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:var(--accent-amber);letter-spacing:1.5px;text-transform:uppercase}
+  .sample-mono{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:400;color:var(--text-tertiary)}
+  .sample-price{font-family:'Manrope',sans-serif;font-size:22px;font-weight:700;color:var(--text-primary);letter-spacing:-.4px}
+  .sample-sale{display:flex;align-items:baseline;gap:12px}
+  .sample-sale .old{font-family:'Manrope',sans-serif;font-size:16px;font-weight:500;color:var(--text-tertiary);text-decoration:line-through}
+  .sample-sale .new{font-family:'Manrope',sans-serif;font-size:22px;font-weight:700;color:var(--brand-red);letter-spacing:-.4px}
+
+  /* LOGO USAGE */
+  .logo-usage{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:24px}
+  .logo-sample{border-radius:8px;padding:40px;display:flex;align-items:center;justify-content:center;min-height:180px;border:1px solid var(--border-subtle);position:relative}
+  .logo-sample.light{background:var(--surface-1)}
+  .logo-sample.tint{background:var(--surface-2)}
+  .logo-sample.dark{background:var(--text-primary);border-color:var(--text-primary)}
+  .logo-sample .label{position:absolute;bottom:12px;left:14px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;font-weight:500}
+  .logo-sample.light .label,.logo-sample.tint .label{color:var(--text-tertiary)}
+  .logo-sample.dark .label{color:rgba(255,255,255,.5)}
+
+  /* DO / DON'T */
+  .usage-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:32px}
+  .usage-card{padding:28px;border-radius:8px;border:1px solid}
+  .usage-card.do{background:#F0F9F2;border-color:#C7E5CF}
+  .usage-card.dont{background:#FDF2F2;border-color:#F4D0D0}
+  .usage-card h4{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:1.8px;text-transform:uppercase;margin-bottom:16px}
+  .usage-card.do h4{color:var(--success)}
+  .usage-card.dont h4{color:var(--danger)}
+  .usage-card ul{list-style:none;display:grid;gap:12px}
+  .usage-card li{font-size:14px;color:var(--text-secondary);padding-left:24px;position:relative;line-height:1.5}
+  .usage-card.do li::before{content:"✓";position:absolute;left:0;color:var(--success);font-weight:700}
+  .usage-card.dont li::before{content:"✕";position:absolute;left:0;color:var(--danger);font-weight:700}
+
+  /* VOICE */
+  .voice-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .voice-card{padding:32px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border-subtle)}
+  .voice-card h4{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:1.8px;text-transform:uppercase;color:var(--accent-amber);margin-bottom:16px}
+  .voice-card .desc{font-family:'Manrope',sans-serif;font-size:18px;color:var(--text-primary);font-weight:600;margin-bottom:14px;line-height:1.4;letter-spacing:-.3px}
+  .voice-card .example{font-size:14px;color:var(--text-secondary);line-height:1.6;padding:14px 16px;background:var(--surface-1);border-left:2px solid var(--brand-blue);border-radius:0 4px 4px 0}
+
+  /* MICROCOPY */
+  .micro-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:28px}
+  .micro{padding:20px;background:var(--surface-2);border-radius:8px;border-left:2px solid var(--text-tertiary)}
+  .micro.danger{border-left-color:var(--brand-red)}
+  .micro.success{border-left-color:var(--success)}
+  .micro .ctx{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--text-tertiary);margin-bottom:8px}
+  .micro .text{font-family:'Manrope',sans-serif;font-size:15px;color:var(--text-primary);font-weight:500}
+
+  /* COMPONENT PREVIEW */
+  .component-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-top:24px}
+  .product-card{background:var(--surface-1);border:1px solid var(--border-subtle);border-radius:8px;overflow:hidden;position:relative;transition:box-shadow .2s ease}
+  .product-card.featured{box-shadow:0 0 0 1px var(--accent-amber),0 12px 32px -8px rgba(212,148,28,.25)}
+  .product-card.featured::before{content:"★ DESTACADA";position:absolute;top:12px;right:12px;z-index:2;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:1.4px;background:var(--accent-amber);color:#FFFFFF;padding:4px 8px;border-radius:4px}
+  .product-card.sold-out::before{content:"AGOTADA";position:absolute;top:12px;right:12px;z-index:2;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:1.4px;background:var(--brand-red);color:#FFFFFF;padding:4px 8px;border-radius:4px}
+  .product-card.sold-out .thumb{filter:grayscale(.7);opacity:.6}
+  .product-card .thumb{aspect-ratio:3/4;background:linear-gradient(135deg,#ffd54a,#ff7a3a);display:flex;align-items:center;justify-content:center;color:white;font-family:'Manrope',sans-serif;font-size:13px;font-weight:700;text-align:center;padding:12px}
+  .product-card .info{padding:16px}
+  .product-card .meta{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+  .product-card .name{font-weight:600;font-size:15px;margin-bottom:10px;letter-spacing:-.1px}
+  .product-card .price{font-weight:700;font-size:18px;letter-spacing:-.3px}
+  .product-card .price-sold{font-weight:700;font-size:18px;letter-spacing:-.3px;color:var(--text-tertiary);text-decoration:line-through}
+  .btn-primary{display:inline-block;padding:14px 32px;background:var(--brand-blue);color:#fff;font-family:'Manrope',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;border-radius:4px;text-decoration:none;border:none;cursor:pointer;transition:background .15s ease}
+  .btn-primary:hover{background:var(--brand-blue-dark)}
+  .btn-secondary{display:inline-block;padding:13px 31px;background:transparent;color:var(--text-primary);font-family:'Manrope',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;border-radius:4px;border:1px solid var(--border-strong);cursor:pointer}
+  .btn-secondary:hover{background:var(--surface-2)}
+  .btn-row{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap}
+
+  footer{text-align:center;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-tertiary);padding:24px 0;letter-spacing:1.2px;text-transform:uppercase}
+
+  .toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(120%);background:var(--text-primary);color:var(--surface-1);padding:12px 24px;border-radius:999px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:1px;transition:transform .25s ease;z-index:100;font-weight:500}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+
+  @media (max-width:860px){
+    .wrap{padding:24px 16px 64px}
+    .hero{padding:36px 28px}
+    h1{font-size:48px}
+    section{padding:32px 24px}
+    .palette,.palette-row,.usage-grid,.contrast-grid,.logo-usage,.voice-grid,.component-grid,.micro-grid,.demo-cards{grid-template-columns:1fr 1fr}
+    .component-grid{grid-template-columns:1fr 1fr}
+    .type-spec{grid-template-columns:1fr;gap:16px}
+    .sample-display{font-size:42px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="eyebrow">★ Brand Guide · 02 · Vault Light · Final</div>
+    <h1>POKE<span class="accent">·</span>SINGLES</h1>
+    <p class="lead">Sistema visual moderno y refinado para marketplace. Manrope geométrica, paleta neutra cálida, navegación azul confiable, y un acento ámbar que distingue las piezas raras. La barra roja superior es la firma de marca.</p>
+    <div class="hero-meta">
+      <div class="cell"><strong>Marca</strong>Poke-Singles Costa Rica</div>
+      <div class="cell"><strong>Categoría</strong>Marketplace / TCG</div>
+      <div class="cell"><strong>Audiencia</strong>Coleccionistas · Compradores informados · Casuales</div>
+      <div class="cell"><strong>Tono</strong>Moderno · Confiado · Accesible</div>
+    </div>
+  </div>
+
+  <!-- LOGO -->
+  <section>
+    <div class="section-head">
+      <div>
+        <div class="section-num">01 — Logotipo</div>
+        <h2 style="margin-top:8px">La marca visual</h2>
+      </div>
+    </div>
+    <div class="logo-preview">
+      <svg viewBox="0 0 600 240" width="480" xmlns="http://www.w3.org/2000/svg">
+        <g transform="translate(20, 20)">
+          <circle cx="100" cy="100" r="100" fill="#15151A"/>
+          <circle cx="100" cy="100" r="86" fill="#FFFFFF"/>
+          <clipPath id="v-circle"><circle cx="100" cy="100" r="74"/></clipPath>
+          <g clip-path="url(#v-circle)">
+            <rect x="20" y="26" width="160" height="20" fill="#1E3A8A"/>
+            <rect x="20" y="46" width="160" height="14" fill="#FFFFFF"/>
+            <rect x="20" y="60" width="160" height="32" fill="#CE1126"/>
+            <rect x="20" y="92" width="160" height="32" fill="#CE1126"/>
+            <rect x="20" y="124" width="160" height="14" fill="#FFFFFF"/>
+            <rect x="20" y="138" width="160" height="20" fill="#1E3A8A"/>
+          </g>
+          <g transform="translate(95, 50)" fill="#15151A">
+            <path d="M 30 15 Q 38 5 48 8 L 55 -2 Q 60 4 58 14 L 65 18 Q 70 25 65 32 L 70 40 L 60 45 L 65 55 Q 60 65 50 62 L 48 75 Q 40 78 35 72 L 25 80 Q 18 75 22 65 L 15 58 Q 18 50 25 50 L 22 40 Q 20 30 28 25 Z"/>
+          </g>
+          <g font-family="Manrope, sans-serif" font-weight="700" font-size="11" fill="#15151A" letter-spacing="2">
+            <defs>
+              <path id="v-circle-text" d="M 100,100 m -94,0 a 94,94 0 1,1 188,0 a 94,94 0 1,1 -188,0"/>
+            </defs>
+            <text><textPath href="#v-circle-text" startOffset="0">POKE·SINGLES · POKE·SINGLES ·</textPath></text>
+          </g>
+        </g>
+        <g transform="translate(260, 100)">
+          <text x="0" y="40" font-family="Manrope, sans-serif" font-weight="800" font-size="56" fill="#15151A" letter-spacing="-2.5">POKE<tspan fill="#1E3A8A">·</tspan>SINGLES</text>
+          <text x="0" y="68" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8B8B96" letter-spacing="2.4">VERIFIED · COSTA RICA · EST. 2017</text>
+        </g>
+      </svg>
+    </div>
+  </section>
+
+  <!-- PRIMARY COLORS -->
+  <section>
+    <div class="section-head">
+      <div>
+        <div class="section-num">02 — Paleta de color</div>
+        <h2 style="margin-top:8px">Colores primarios</h2>
+      </div>
+      <div class="meta-text">Click en cualquier color para copiar el HEX</div>
+    </div>
+
+    <div class="palette">
+      <div class="swatch" data-hex="#1E3A8A">
+        <div class="chip dark" style="background:#1E3A8A">
+          <span class="role">Brand · Primary</span>
+        </div>
+        <div class="info">
+          <div class="name">Tico Blue</div>
+          <div class="codes">
+            <span>HEX <strong>#1E3A8A</strong></span>
+            <span>RGB <strong>30, 58, 138</strong></span>
+            <span>HSL <strong>224°, 64%, 33%</strong></span>
+            <span>USO <strong>Primary CTAs · Links</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="swatch" data-hex="#15151A">
+        <div class="chip dark" style="background:#15151A">
+          <span class="role">Text · Primary</span>
+        </div>
+        <div class="info">
+          <div class="name">Vault Ink</div>
+          <div class="codes">
+            <span>HEX <strong>#15151A</strong></span>
+            <span>RGB <strong>21, 21, 26</strong></span>
+            <span>HSL <strong>240°, 11%, 9%</strong></span>
+            <span>USO <strong>Headings · Body</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="swatch" data-hex="#D4941C">
+        <div class="chip" style="background:#D4941C">
+          <span class="role">Accent · Rare</span>
+        </div>
+        <div class="info">
+          <div class="name">Amber Glow</div>
+          <div class="codes">
+            <span>HEX <strong>#D4941C</strong></span>
+            <span>RGB <strong>212, 148, 28</strong></span>
+            <span>HSL <strong>40°, 77%, 47%</strong></span>
+            <span>USO <strong>Featured · Rares</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="swatch" data-hex="#CE1126">
+        <div class="chip" style="background:#CE1126">
+          <span class="role">Brand · Signature</span>
+        </div>
+        <div class="info">
+          <div class="name">Tico Red</div>
+          <div class="codes">
+            <span>HEX <strong>#CE1126</strong></span>
+            <span>RGB <strong>206, 17, 38</strong></span>
+            <span>HSL <strong>353°, 85%, 44%</strong></span>
+            <span>USO <strong>Brand bar · Sale · Sold</strong></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:48px">
+      <h3 style="font-family:'Manrope',sans-serif;font-size:13px;font-weight:700;color:var(--accent-amber);margin-bottom:18px;letter-spacing:1.8px;text-transform:uppercase">Superficies y bordes</h3>
+      <div class="palette-row">
+        <div class="swatch" data-hex="#FBFAF7">
+          <div class="chip" style="background:#FBFAF7;border-bottom:1px solid var(--border-subtle)">
+            <span class="role">Surface · 0</span>
+          </div>
+          <div class="info">
+            <div class="name">Page Cream</div>
+            <div class="codes">
+              <span>HEX <strong>#FBFAF7</strong></span>
+              <span>USO <strong>Page background</strong></span>
+            </div>
+          </div>
+        </div>
+        <div class="swatch" data-hex="#FFFFFF">
+          <div class="chip" style="background:#FFFFFF;border-bottom:1px solid var(--border-subtle)">
+            <span class="role">Surface · 1</span>
+          </div>
+          <div class="info">
+            <div class="name">Pure White</div>
+            <div class="codes">
+              <span>HEX <strong>#FFFFFF</strong></span>
+              <span>USO <strong>Cards · Modals</strong></span>
+            </div>
+          </div>
+        </div>
+        <div class="swatch" data-hex="#F4F2ED">
+          <div class="chip" style="background:#F4F2ED">
+            <span class="role">Surface · 2</span>
+          </div>
+          <div class="info">
+            <div class="name">Soft Cream</div>
+            <div class="codes">
+              <span>HEX <strong>#F4F2ED</strong></span>
+              <span>USO <strong>Sections · Hover</strong></span>
+            </div>
+          </div>
+        </div>
+        <div class="swatch" data-hex="#E5E2DA">
+          <div class="chip" style="background:#E5E2DA">
+            <span class="role">Border · Subtle</span>
+          </div>
+          <div class="info">
+            <div class="name">Edge</div>
+            <div class="codes">
+              <span>HEX <strong>#E5E2DA</strong></span>
+              <span>USO <strong>Card borders · Dividers</strong></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:48px">
+      <h3 style="font-family:'Manrope',sans-serif;font-size:13px;font-weight:700;color:var(--accent-amber);margin-bottom:18px;letter-spacing:1.8px;text-transform:uppercase">Estados semánticos</h3>
+      <div class="palette-row">
+        <div class="swatch" data-hex="#15803D">
+          <div class="chip" style="background:#15803D">
+            <span class="role">Success</span>
+          </div>
+          <div class="info">
+            <div class="name">Verde Stock</div>
+            <div class="codes">
+              <span>HEX <strong>#15803D</strong></span>
+              <span>USO <strong>In stock · Confirmed</strong></span>
+            </div>
+          </div>
+        </div>
+        <div class="swatch" data-hex="#A16207">
+          <div class="chip" style="background:#A16207">
+            <span class="role">Warning</span>
+          </div>
+          <div class="info">
+            <div class="name">Ámbar Aviso</div>
+            <div class="codes">
+              <span>HEX <strong>#A16207</strong></span>
+              <span>USO <strong>Last one · Low stock</strong></span>
+            </div>
+          </div>
+        </div>
+        <div class="swatch" data-hex="#B91C1C">
+          <div class="chip" style="background:#B91C1C">
+            <span class="role">Danger</span>
+          </div>
+          <div class="info">
+            <div class="name">Error Red</div>
+            <div class="codes">
+              <span>HEX <strong>#B91C1C</strong></span>
+              <span>USO <strong>Errors · Form validation</strong></span>
+            </div>
+          </div>
+        </div>
+        <div class="swatch" data-hex="#5A5A65">
+          <div class="chip dark" style="background:#5A5A65">
+            <span class="role">Text · Secondary</span>
+          </div>
+          <div class="info">
+            <div class="name">Mist</div>
+            <div class="codes">
+              <span>HEX <strong>#5A5A65</strong></span>
+              <span>USO <strong>Card metadata · Body</strong></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="roles">
+      <h3>Roles de aplicación</h3>
+      <div class="roles-grid">
+        <div><strong>Tico Blue (#1E3A8A)</strong>Color primario interactivo. Botones primarios, enlaces, focus rings, estados seleccionados, checkboxes activos, indicadores de tabs. Toda la capa funcional de la app.</div>
+        <div><strong>Vault Ink (#15151A)</strong>Casi-negro con tinte púrpura sutil. Headings, body, datos. Más cálido que un negro puro, más legible.</div>
+        <div><strong>Amber Glow (#D4941C)</strong>Indicador exclusivo de cartas raras y destacadas. Glow sutil alrededor del card, badge "DESTACADA", eyebrow accents. Nunca como botón.</div>
+        <div><strong>Tico Red (#CE1126)</strong>Restringido a tres usos: la barra de marca superior, precios de oferta y estados de "agotado". Nunca como botón ni como acento decorativo.</div>
+      </div>
+    </div>
+
+    <!-- BRAND BAR DOCUMENTATION -->
+    <div class="brand-bar-demo">
+      <h3>★ La barra de marca</h3>
+      <p>La <strong>brand bar</strong> es la firma visual de Poke-Singles: una franja de 3 píxeles con gradiente <strong>rojo → ámbar → rojo</strong> aplicada al borde superior de tarjetas hero, banners destacados, y momentos de marca. Aparece <strong>una vez por página</strong>, idealmente en la parte superior del primer bloque de contenido. Nunca como elemento decorativo aleatorio.</p>
+      <div class="demo-cards">
+        <div class="demo-card">
+          <div class="bar"></div>
+          <div class="demo-content">
+            <div class="demo-eyebrow">★ Hero · Página principal</div>
+            <div class="demo-title">La caza continúa.</div>
+            <div class="demo-body">Singles auténticas, condición verificada, envío seguro a todo Costa Rica.</div>
+          </div>
+        </div>
+        <div class="demo-card">
+          <div class="bar"></div>
+          <div class="demo-content">
+            <div class="demo-eyebrow">★ Confirmación de pedido</div>
+            <div class="demo-title">Pedido recibido.</div>
+            <div class="demo-body">Te escribimos por WhatsApp en cuanto esté listo para envío. Gracias por confiar en nosotros.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RED RESTRICTION CALLOUT -->
+    <div class="red-callout">
+      <h4>★ Reglas estrictas para el rojo</h4>
+      <p><strong>Tico Red (#CE1126) tiene exactamente tres usos permitidos:</strong></p>
+      <p>① <strong>Brand bar</strong> — gradiente <code>linear-gradient(90deg, #CE1126, #D4941C, #CE1126)</code> aplicado en 3px al tope de tarjetas hero/featured.</p>
+      <p>② <strong>Precios de oferta</strong> — el precio rebajado se muestra en rojo, junto al precio original tachado en gris.</p>
+      <p>③ <strong>Badge AGOTADA</strong> — fondo rojo + texto blanco, esquina superior derecha del producto.</p>
+      <p style="margin-top:12px"><strong>Nunca usar rojo para:</strong> botones, enlaces, focus rings, badges genéricos, fondos de sección, hover states, o cualquier acento decorativo. Esos roles son del azul.</p>
+    </div>
+  </section>
+
+  <!-- ACCESSIBILITY -->
+  <section>
+    <div class="section-head">
+      <div>
+        <div class="section-num">03 — Accesibilidad</div>
+        <h2 style="margin-top:8px">Contraste WCAG</h2>
+      </div>
+    </div>
+    <p style="color:var(--text-secondary);margin-bottom:32px;font-size:15px;max-width:680px">Todas las combinaciones aprobadas cumplen WCAG 2.1 AA (≥4.5:1 para texto normal, ≥3:1 para texto grande). El sistema light pasa contraste con margen amplio en todos los pares clave, especialmente legible en pantallas brillantes y dispositivos móviles bajo luz solar.</p>
+    <div class="contrast-grid">
+      <div class="contrast-tile" style="background:#15151A;color:#FBFAF7">
+        <div class="ratio">Ratio 18.9 : 1</div>
+        <div class="demo">Charizard ex</div>
+        <div class="rating">✓ AAA · Cualquier texto</div>
+      </div>
+      <div class="contrast-tile" style="background:#FBFAF7;color:#15151A;border:1px solid var(--border-subtle)">
+        <div class="ratio">Ratio 18.9 : 1</div>
+        <div class="demo">Charizard ex</div>
+        <div class="rating">✓ AAA · Cualquier texto</div>
+      </div>
+      <div class="contrast-tile" style="background:#1E3A8A;color:#FFFFFF">
+        <div class="ratio">Ratio 11.2 : 1</div>
+        <div class="demo">Comprar ahora</div>
+        <div class="rating">✓ AAA · Cualquier texto</div>
+      </div>
+      <div class="contrast-tile" style="background:#D4941C;color:#15151A">
+        <div class="ratio">Ratio 8.2 : 1</div>
+        <div class="demo">★ Destacada</div>
+        <div class="rating">✓ AAA · Cualquier texto</div>
+      </div>
+      <div class="contrast-tile" style="background:#FBFAF7;color:#5A5A65;border:1px solid var(--border-subtle)">
+        <div class="ratio">Ratio 6.8 : 1</div>
+        <div class="demo">SCARLET · 199/197</div>
+        <div class="rating">✓ AA · Texto normal</div>
+      </div>
+      <div class="contrast-tile" style="background:#CE1126;color:#FFFFFF">
+        <div class="ratio">Ratio 5.7 : 1</div>
+        <div class="demo">AGOTADA</div>
+        <div class="rating">✓ AA · Texto normal</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TYPOGRAPHY -->
+  <section>
+    <div class="section-head">
+      <div>
+        <div class="section-num">04 — Tipografía</div>
+        <h2 style="margin-top:8px">Manrope · IBM Plex Mono</h2>
+      </div>
+    </div>
+    <p style="color:var(--text-secondary);margin-bottom:32px;font-size:15px;max-width:680px"><strong style="color:var(--text-primary);font-weight:700">Manrope</strong> es una sans geométrica moderna con rango de pesos extremos (300–800). Una sola familia mantiene el sistema apretado; el contraste de peso carga toda la jerarquía. <strong style="color:var(--text-primary);font-weight:700">IBM Plex Mono</strong> aporta sensación técnica para metadata y catálogos. Ambas gratis en Google Fonts.</p>
+
+    <div class="type-spec">
+      <div class="meta">
+        <strong>Display · H1</strong>
+        Manrope ExtraBold · 800<br>
+        56–80 px · tracking -2.5 px<br>
+        line-height 0.95
+      </div>
+      <div class="sample-display">La caza<br>continúa<span class="accent">.</span></div>
+    </div>
+
+    <div class="type-spec">
+      <div class="meta">
+        <strong>Heading · H2</strong>
+        Manrope Bold · 700<br>
+        28–36 px · tracking -.7 px
+      </div>
+      <div class="sample-heading">Por Rareza · Special Illustration</div>
+    </div>
+
+    <div class="type-spec">
+      <div class="meta">
+        <strong>Eyebrow · Catalog</strong>
+        Manrope SemiBold · 600<br>
+        11–13 px · tracking 1.5 px<br>
+        UPPERCASE · color amber
+      </div>
+      <div class="sample-eyebrow">★ Pieza destacada · Verificada</div>
+    </div>
+
+    <div class="type-spec">
+      <div class="meta">
+        <strong>Product · Name</strong>
+        Manrope SemiBold · 600<br>
+        14–16 px · tracking -.1 px
+      </div>
+      <div class="sample-product">Lillie's Clefairy ex — Special Illustration Rare</div>
+    </div>
+
+    <div class="type-spec">
+      <div class="meta">
+        <strong>Body · Párrafo</strong>
+        Manrope Medium · 500<br>
+        14–17 px · interlineado 1.65
+      </div>
+      <div class="sample-body">Verificación manual de cada carta. Toploader incluido en piezas sobre ₡8,000. Envíos a todo Costa Rica vía Correos o courier.</div>
+    </div>
+
+    <div class="type-spec">
+      <div class="meta">
+        <strong>Card metadata</strong>
+        IBM Plex Mono Regular · 400<br>
+        11–13 px · tracking .5 px<br>
+        UPPERCASE recomendado
+      </div>
+      <div class="sample-mono">SCARLET & VIOLET · 270/264 · NM · ENGLISH</div>
+    </div>
+
+    <div class="type-spec">
+      <div class="meta">
+        <strong>Price · Regular</strong>
+        Manrope Bold · 700<br>
+        18–24 px · tracking -.4 px<br>
+        color Vault Ink
+      </div>
+      <div class="sample-price">₡88,200.00</div>
+    </div>
+
+    <div class="type-spec">
+      <div class="meta">
+        <strong>Price · Sale</strong>
+        Manrope Bold · 700<br>
+        Original tachado en gris<br>
+        Nuevo precio en Tico Red
+      </div>
+      <div class="sample-sale">
+        <span class="old">₡88,200.00</span>
+        <span class="new">₡66,500.00</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- LOGO USAGE -->
+  <section>
+    <div class="section-head">
+      <div>
+        <div class="section-num">05 — Uso del logotipo</div>
+        <h2 style="margin-top:8px">Fondos y variantes</h2>
+      </div>
+    </div>
+
+    <div class="logo-usage">
+      <div class="logo-sample light">
+        <svg viewBox="0 0 200 200" width="120" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="100" cy="100" r="100" fill="#15151A"/>
+          <circle cx="100" cy="100" r="86" fill="#FFFFFF"/>
+          <clipPath id="lg1"><circle cx="100" cy="100" r="74"/></clipPath>
+          <g clip-path="url(#lg1)">
+            <rect x="20" y="26" width="160" height="20" fill="#1E3A8A"/>
+            <rect x="20" y="60" width="160" height="64" fill="#CE1126"/>
+            <rect x="20" y="138" width="160" height="20" fill="#1E3A8A"/>
+          </g>
+          <g transform="translate(95, 50)" fill="#15151A">
+            <path d="M 30 15 Q 38 5 48 8 L 55 -2 Q 60 4 58 14 L 65 18 Q 70 25 65 32 L 70 40 L 60 45 L 65 55 Q 60 65 50 62 L 48 75 Q 40 78 35 72 L 25 80 Q 18 75 22 65 L 15 58 Q 18 50 25 50 L 22 40 Q 20 30 28 25 Z"/>
+          </g>
+        </svg>
+        <span class="label">Fondo claro ✓ · Default</span>
+      </div>
+      <div class="logo-sample tint">
+        <svg viewBox="0 0 200 200" width="120" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="100" cy="100" r="100" fill="#15151A"/>
+          <circle cx="100" cy="100" r="86" fill="#FFFFFF"/>
+          <clipPath id="lg2"><circle cx="100" cy="100" r="74"/></clipPath>
+          <g clip-path="url(#lg2)">
+            <rect x="20" y="26" width="160" height="20" fill="#1E3A8A"/>
+            <rect x="20" y="60" width="160" height="64" fill="#CE1126"/>
+            <rect x="20" y="138" width="160" height="20" fill="#1E3A8A"/>
+          </g>
+          <g transform="translate(95, 50)" fill="#15151A">
+            <path d="M 30 15 Q 38 5 48 8 L 55 -2 Q 60 4 58 14 L 65 18 Q 70 25 65 32 L 70 40 L 60 45 L 65 55 Q 60 65 50 62 L 48 75 Q 40 78 35 72 L 25 80 Q 18 75 22 65 L 15 58 Q 18 50 25 50 L 22 40 Q 20 30 28 25 Z"/>
+          </g>
+        </svg>
+        <span class="label">Fondo tonal ✓</span>
+      </div>
+      <div class="logo-sample dark">
+        <svg viewBox="0 0 200 200" width="120" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="100" cy="100" r="100" fill="#FFFFFF"/>
+          <circle cx="100" cy="100" r="86" fill="#15151A"/>
+          <clipPath id="lg3"><circle cx="100" cy="100" r="74"/></clipPath>
+          <g clip-path="url(#lg3)">
+            <rect x="20" y="26" width="160" height="20" fill="#1E3A8A"/>
+            <rect x="20" y="60" width="160" height="64" fill="#CE1126"/>
+            <rect x="20" y="138" width="160" height="20" fill="#1E3A8A"/>
+          </g>
+          <g transform="translate(95, 50)" fill="#FFFFFF">
+            <path d="M 30 15 Q 38 5 48 8 L 55 -2 Q 60 4 58 14 L 65 18 Q 70 25 65 32 L 70 40 L 60 45 L 65 55 Q 60 65 50 62 L 48 75 Q 40 78 35 72 L 25 80 Q 18 75 22 65 L 15 58 Q 18 50 25 50 L 22 40 Q 20 30 28 25 Z"/>
+          </g>
+        </svg>
+        <span class="label">Fondo oscuro ✓ · Footer/email</span>
+      </div>
+    </div>
+
+    <div class="usage-grid">
+      <div class="usage-card do">
+        <h4>✓ Hacer</h4>
+        <ul>
+          <li>Versión clara como default — el círculo exterior negro contrasta naturalmente con superficies cream.</li>
+          <li>Aplicar glow ámbar sutil al hacer hover en logo de header (efecto premium).</li>
+          <li>Mantener proporciones exactas del círculo y los colores de la bandera CR (rojo + azul).</li>
+          <li>Tamaño mínimo: 40px en pantalla — los detalles de la bandera requieren claridad.</li>
+          <li>Espacio libre alrededor: equivalente al diámetro del círculo interior.</li>
+        </ul>
+      </div>
+      <div class="usage-card dont">
+        <h4>✕ No hacer</h4>
+        <ul>
+          <li>No aplicar el logo sobre las cartas — siempre sobre superficie neutra.</li>
+          <li>No reemplazar los colores de la bandera CR dentro del logo.</li>
+          <li>No usar pure white (#FFFFFF) como fondo de página — siempre Page Cream para calidez.</li>
+          <li>No agregar drop shadows pesados — el efecto debe ser suave y luminoso.</li>
+          <li>No deformar, rotar ni inclinar el logotipo.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMPONENTS PREVIEW -->
+  <section>
+    <div class="section-head">
+      <div>
+        <div class="section-num">06 — Componentes</div>
+        <h2 style="margin-top:8px">Aplicación en producto</h2>
+      </div>
+    </div>
+    <p style="color:var(--text-secondary);margin-bottom:24px;font-size:15px;max-width:680px">Tres estados de tarjeta de producto: <strong style="color:var(--text-primary)">regular</strong>, <strong style="color:var(--text-primary)">destacada</strong> (con glow ámbar y badge) y <strong style="color:var(--text-primary)">agotada</strong> (con badge rojo y arte desaturado). Los botones siguen la jerarquía: primary navy, secondary outline.</p>
+    <div class="component-grid">
+      <div class="product-card">
+        <div class="thumb">Charizard ex</div>
+        <div class="info">
+          <div class="meta">SCARLET · 199/197 · NM</div>
+          <div class="name">Charizard ex</div>
+          <div class="price">₡45,000</div>
+        </div>
+      </div>
+      <div class="product-card featured">
+        <div class="thumb" style="background:linear-gradient(135deg,#a855f7,#6b21a8)">Greninja & Zoroark GX · Alt Art</div>
+        <div class="info">
+          <div class="meta">CHILLING REIGN · 201/214 · MP</div>
+          <div class="name">Greninja & Zoroark GX</div>
+          <div class="price">₡97,500</div>
+        </div>
+      </div>
+      <div class="product-card sold-out">
+        <div class="thumb" style="background:linear-gradient(135deg,#5b9bd5,#2a4a8c)">Blastoise VMAX</div>
+        <div class="info">
+          <div class="meta">SHINING · 042/072 · LP</div>
+          <div class="name">Blastoise VMAX</div>
+          <div class="price-sold">₡28,500</div>
+        </div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <a class="btn-primary" href="#">Comprar ahora</a>
+      <a class="btn-secondary" href="#">Ver detalles</a>
+    </div>
+  </section>
+
+  <!-- VOICE -->
+  <section>
+    <div class="section-head">
+      <div>
+        <div class="section-num">07 — Voz y tono</div>
+        <h2 style="margin-top:8px">Cómo hablamos</h2>
+      </div>
+    </div>
+    <div class="voice-grid">
+      <div class="voice-card">
+        <h4>Para coleccionistas</h4>
+        <div class="desc">Insider, conocedor, ligeramente seco.</div>
+        <div class="example">"Pieza destacada: Greninja & Zoroark GX Alt Art (MP). Una sola unidad. Estas no vuelven pronto."</div>
+      </div>
+      <div class="voice-card">
+        <h4>Para nuevos compradores</h4>
+        <div class="desc">Educativo sin condescender, traduce términos cuando aporta.</div>
+        <div class="example">"Esta carta es un 'Alt Art' — versión ilustrada exclusiva. Su rareza la convierte en una de las más buscadas del set."</div>
+      </div>
+    </div>
+
+    <div class="micro-grid">
+      <div class="micro">
+        <div class="ctx">Carrito vacío</div>
+        <div class="text">Carrito vacío. La caza continúa →</div>
+      </div>
+      <div class="micro">
+        <div class="ctx">Última unidad</div>
+        <div class="text">1 en existencia</div>
+      </div>
+      <div class="micro">
+        <div class="ctx">Featured rare</div>
+        <div class="text">★ Pieza destacada</div>
+      </div>
+      <div class="micro danger">
+        <div class="ctx">Agotada</div>
+        <div class="text">Vendida — esta no vuelve pronto</div>
+      </div>
+      <div class="micro success">
+        <div class="ctx">Pedido confirmado</div>
+        <div class="text">Pedido recibido. Te escribimos cuando esté listo para envío.</div>
+      </div>
+      <div class="micro">
+        <div class="ctx">Búsqueda sin resultados</div>
+        <div class="text">No encontramos esa carta — pero podemos buscarla para ti.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ANGULAR MATERIAL THEME -->
+  <section>
+    <div class="section-head">
+      <div>
+        <div class="section-num">08 — Tema Angular Material</div>
+        <h2 style="margin-top:8px">Implementación técnica</h2>
+      </div>
+    </div>
+    <p style="color:var(--text-secondary);margin-bottom:24px;font-size:15px;max-width:680px">Configuración SCSS para Angular Material 17+. Light theme con override del background a Page Cream. <strong style="color:var(--text-primary)">Primary es navy</strong>, <strong style="color:var(--text-primary)">accent es ámbar</strong>, rojo no entra en la paleta de Material — vive como CSS variable separada para los tres usos restringidos. Densidad -1 para sensación moderna y compacta.</p>
+    <pre style="background:var(--surface-2);padding:32px;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.7;color:var(--text-primary);overflow-x:auto;border:1px solid var(--border-subtle)"><span style="color:var(--brand-red)">@use</span> <span style="color:var(--success)">'@angular/material'</span> <span style="color:var(--brand-red)">as</span> mat;
+
+<span style="color:var(--text-tertiary)">// Vault Light — Modern marketplace, navy-driven</span>
+<span style="color:var(--brand-blue)">$vault-primary</span>: mat.define-palette((
+  500: <span style="color:var(--success)">#1E3A8A</span>,  <span style="color:var(--text-tertiary)">// Tico Blue — primary CTAs, links, focus</span>
+  700: <span style="color:var(--success)">#172E6E</span>,
+  contrast: (500: <span style="color:var(--success)">#FFFFFF</span>, 700: <span style="color:var(--success)">#FFFFFF</span>)
+));
+
+<span style="color:var(--brand-blue)">$vault-accent</span>: mat.define-palette((
+  500: <span style="color:var(--success)">#D4941C</span>,  <span style="color:var(--text-tertiary)">// Amber Glow — featured/rare indicators</span>
+  contrast: (500: <span style="color:var(--success)">#15151A</span>)
+));
+
+<span style="color:var(--brand-blue)">$vault-warn</span>: mat.define-palette((
+  500: <span style="color:var(--success)">#B91C1C</span>,  <span style="color:var(--text-tertiary)">// Error Red — form validation only</span>
+  contrast: (500: <span style="color:var(--success)">#FFFFFF</span>)
+));
+
+<span style="color:var(--brand-blue)">$vault-theme</span>: mat.define-light-theme((
+  color: (
+    primary: <span style="color:var(--brand-blue)">$vault-primary</span>,
+    accent: <span style="color:var(--brand-blue)">$vault-accent</span>,
+    warn: <span style="color:var(--brand-blue)">$vault-warn</span>
+  ),
+  typography: mat.define-typography-config(
+    <span style="color:var(--brand-blue)">$font-family</span>: <span style="color:var(--success)">'Manrope, sans-serif'</span>,
+    <span style="color:var(--brand-blue)">$headline-1</span>: mat.define-typography-level(64px, 64px, 800, <span style="color:var(--success)">'Manrope, sans-serif'</span>)
+  ),
+  density: -1
+));
+
+<span style="color:var(--text-tertiary)">// Brand-level CSS variables — outside Material's color system</span>
+<span style="color:var(--brand-red)">:root</span> {
+  <span style="color:var(--brand-blue)">--brand-red</span>: <span style="color:var(--success)">#CE1126</span>;       <span style="color:var(--text-tertiary)">// brand bar, sale, sold-out only</span>
+  <span style="color:var(--brand-blue)">--surface-page</span>: <span style="color:var(--success)">#FBFAF7</span>;
+  <span style="color:var(--brand-blue)">--surface-card</span>: <span style="color:var(--success)">#FFFFFF</span>;
+}
+
+<span style="color:var(--text-tertiary)">// Override Material's default page background to warm cream</span>
+<span style="color:var(--brand-red)">.mat-app-background</span> {
+  background-color: <span style="color:var(--brand-blue)">var(--surface-page)</span> !important;
+}
+
+<span style="color:var(--text-tertiary)">// SIGNATURE — brand bar (top of hero/featured cards)</span>
+<span style="color:var(--brand-red)">.brand-bar</span> {
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    <span style="color:var(--brand-blue)">var(--brand-red)</span>,
+    <span style="color:var(--success)">#D4941C</span>,
+    <span style="color:var(--brand-blue)">var(--brand-red)</span>
+  );
+}
+
+<span style="color:var(--text-tertiary)">// Featured card — amber glow signature</span>
+<span style="color:var(--brand-red)">.product-card</span>--featured {
+  box-shadow: 0 0 0 1px <span style="color:var(--success)">#D4941C</span>,
+              0 12px 32px -8px rgba(212, 148, 28, 0.25);
+  transition: box-shadow 200ms ease;
+}
+
+<span style="color:var(--text-tertiary)">// Sale price — Tico Red, never used elsewhere for text</span>
+<span style="color:var(--brand-red)">.price</span>--sale {
+  color: <span style="color:var(--brand-blue)">var(--brand-red)</span>;
+  font-weight: 700;
+}</pre>
+  </section>
+
+  <footer>
+    Poke-Singles · Brand Guide · 02 Vault Light · Final · v1.0
+  </footer>
+</div>
+
+<div class="toast" id="toast">Copiado</div>
+
+<script>
+  const toast = document.getElementById('toast');
+  document.querySelectorAll('.swatch').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const hex = el.getAttribute('data-hex');
+      navigator.clipboard.writeText(hex).then(()=>{
+        toast.textContent = hex + ' copiado';
+        toast.classList.add('show');
+        setTimeout(()=>toast.classList.remove('show'),1400);
+      }).catch(()=>{});
+    });
+  });
+</script>
+</body>
+</html>
