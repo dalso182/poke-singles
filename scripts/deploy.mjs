@@ -97,6 +97,28 @@ function getRequiredEnv(name) {
   return value.trim();
 }
 
+// Hard guard: refuse to deploy into the legacy OpenCart site, no matter what
+// .env.local says. The current live store at poke-singles.com must NOT be
+// overwritten by this Angular bundle until the cutover is explicitly planned.
+// To deploy to the production poke-singles.com root, edit this list deliberately.
+const BLOCKED_REMOTE_PATHS = [
+  /(^|\/)poke-singles\.com\/public_html\/?$/i,
+];
+
+function assertRemoteAllowed(remoteDir) {
+  for (const pattern of BLOCKED_REMOTE_PATHS) {
+    if (pattern.test(remoteDir)) {
+      fail(
+        `Refusing to deploy to "${remoteDir}" — that path is on the blocklist ` +
+          `(scripts/deploy.mjs BLOCKED_REMOTE_PATHS). The live OpenCart site at ` +
+          `poke-singles.com is protected until cutover. Use a subdomain like ` +
+          `new.poke-singles.com instead, or remove the entry from the blocklist if ` +
+          `you really mean to overwrite the live site.`
+      );
+    }
+  }
+}
+
 async function* walk(dir) {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
@@ -228,6 +250,7 @@ async function deploy() {
   await ensureLocalDir();
 
   const remoteBase = getRequiredEnv(`${KEY_PREFIX}DEPLOY_REMOTE_DIR`).replace(/\/+$/, '');
+  assertRemoteAllowed(remoteBase);
   const targets = resolveDeployTargets(remoteBase);
 
   if (targets.writeHtaccess) {

@@ -10,13 +10,16 @@
   </a>
   <div class="search-field">
     <mat-form-field appearance="outline" subscriptSizing="dynamic">
-      <mat-icon matPrefix>search</mat-icon>
-      <input matInput placeholder="Buscar cartas…" />
+      <input matInput placeholder="Buscar cartas…" #searchInput (keyup.enter)="onSearch(searchInput.value)" />
+      <button matSuffix mat-icon-button aria-label="Buscar" (click)="onSearch(searchInput.value)">
+        <mat-icon>search</mat-icon>
+      </button>
     </mat-form-field>
   </div>
   <div class="header-actions">
-    <button mat-icon-button routerLink="/cart" aria-label="Cart">
+    <button mat-button routerLink="/cart" aria-label="Cart" class="cart-btn">
       <mat-icon>shopping_cart</mat-icon>
+      <span>0 artículo(s) - ₡0.00</span>
     </button>
     <button mat-icon-button routerLink="/account" aria-label="Account">
       <mat-icon>person</mat-icon>
@@ -28,7 +31,7 @@
       <a mat-icon-button href="https://facebook.com" target="_blank" rel="noopener" aria-label="Facebook">
         <mat-icon svgIcon="facebook" />
       </a>
-      <a mat-icon-button href="https://wa.me/" target="_blank" rel="noopener" aria-label="WhatsApp">
+      <a mat-icon-button href="https://wa.me/50663452039" target="_blank" rel="noopener" aria-label="WhatsApp">
         <mat-icon svgIcon="whatsapp" />
       </a>
     </div>

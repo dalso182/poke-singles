@@ -1,5 +1,6 @@
 import { Component, inject, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { DomSanitizer } from '@angular/platform-browser';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule, MatIconRegistry } from '@angular/material/icon';
@@ -28,11 +29,20 @@ const WHATSAPP_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 2
 export class Header {
   readonly toggleNav = output<void>();
 
+  private readonly router = inject(Router);
+
   constructor() {
     const registry = inject(MatIconRegistry);
     const sanitizer = inject(DomSanitizer);
     registry.addSvgIconLiteral('instagram', sanitizer.bypassSecurityTrustHtml(INSTAGRAM_ICON));
     registry.addSvgIconLiteral('facebook', sanitizer.bypassSecurityTrustHtml(FACEBOOK_ICON));
     registry.addSvgIconLiteral('whatsapp', sanitizer.bypassSecurityTrustHtml(WHATSAPP_ICON));
+  }
+
+  protected onSearch(query: string): void {
+    const q = query.trim();
+    if (q) {
+      this.router.navigate(['/products'], { queryParams: { q } });
+    }
   }
 }

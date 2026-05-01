@@ -1,3 +1,13 @@
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a routerLink="/" class="breadcrumb-home" aria-label="Inicio">
+    <mat-icon>home</mat-icon>
+  </a>
+  <span class="breadcrumb-sep">›</span>
+  <a routerLink="/products" class="breadcrumb-link">Sword &amp; Shield</a>
+  <span class="breadcrumb-sep">›</span>
+  <span class="breadcrumb-current">Crown Zenith</span>
+</nav>
+
 <header class="cards-header">
   <h1>Cartas</h1>
   <p class="lead">
@@ -18,11 +28,9 @@
       <div class="card-info">
         <a [routerLink]="['/products', card.id]" class="card-name">{{ card.name }}</a>
         <div class="card-meta">{{ card.set }}, {{ card.rarity }}, #{{ card.number }}</div>
-        @if (card.stock === 0) {
-          <div class="card-stock-out">Agotada</div>
-        } @else {
+
           <div class="card-stock">{{ card.stock }} disponible{{ card.stock > 1 ? 's' : '' }}</div>
-        }
+        
         <div class="card-price">₡{{ card.priceCRC | number: '1.0-0' }}</div>
         <button mat-flat-button class="add-btn" [disabled]="card.stock === 0">
           {{ card.stock === 0 ? 'Agotada' : 'Añadir' }}

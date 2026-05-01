@@ -1,18 +1,16 @@
 // Dev environment — used by `npm start` (local) and `ng build --configuration=dev`
-// (the future dev.poke-singles.com deploy target). Should point at the dev/staging
-// Supabase project once one exists.
+// (the future new.poke-singles.com deploy target). Points at the dev Supabase project
+// (currently the only one — used for both local and dev tier).
 //
 // `npm run build:prod` (production config) replaces this file with environment.prod.ts
 // at build time via angular.json's fileReplacements, so the prod bundle never
 // carries dev URLs.
-//
-// TODO: fill in Supabase URL + anon key when the dev project is created.
 
 export const environment = {
   production: false,
   envName: 'dev',
   supabase: {
-    url: '',
-    anonKey: '',
+    url: 'https://dhslfridsjdmhwzrgebv.supabase.co',
+    anonKey: 'sb_publishable_jsLP6YsmsjjVvEZ2JuCkwQ_DP_rWRHA',
   },
 };

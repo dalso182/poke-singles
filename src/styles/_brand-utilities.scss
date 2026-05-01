@@ -41,18 +41,13 @@
 }
 
 .product-card--featured::after {
-  content: '★ DESTACADA';
+  content: '★';
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 8px;
+  right: 8px;
   z-index: 2;
-  font-family: var(--font-mono);
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 1.4px;
+  font-size: 14px;
   color: var(--accent-amber);
-  padding: 4px 8px;
-  border-radius: 4px;
 }
 
 // Sold-out card: red AGOTADA badge + grayscaled / faded thumb.
@@ -61,7 +56,6 @@
 }
 
 .product-card--sold-out::after {
-  content: 'AGOTADA';
   position: absolute;
   top: 12px;
   right: 12px;

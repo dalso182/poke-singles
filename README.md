@@ -1,59 +1,202 @@
-# PokeSingles
+# Poke-Singles
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.9.
+Online store for Pokémon trading-card singles in Costa Rica. ~5,000 SKUs.
 
-## Development server
+This repo is the **rebuild** of [poke-singles.com](https://poke-singles.com), migrating
+from the existing OpenCart 3.0 storefront to a modern **Angular 21 + Supabase** stack
+hosted on SiteGround. The OpenCart site stays live until the new one ships.
 
-To start a local development server, run:
+> 📐 Design source of truth: open [`brand-guidelines.html`](./brand-guidelines.html) in
+> a browser — palette, typography, components, voice. The implementation in `src/styles/`
+> mirrors that spec.
 
-```bash
-ng serve
-```
+## Status
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+- ✅ Angular 21 + Material 21 scaffold
+- ✅ Vault Light brand theme applied (Tico Blue / Amber Glow / warm cream / Manrope)
+- ✅ User shell (header + sidenav + footer), home, product list, product detail
+- ✅ Admin shell stub at `/admin`
+- ✅ Designer reference at `/library`
+- ✅ SiteGround SFTP deploy script (`npm run deploy:dev` / `:prod`)
+- ✅ Two-tier env model (local / dev tier / prod) wired in `angular.json`
+- ✅ Supabase dev project linked (`dhslfridsjdmhwzrgebv`); SDK + `SupabaseService` wired
+- ✅ Deploy guard refuses uploads to the live OpenCart root
+- ⬜ Schema design + migrations (products, categories, sets, conditions, stock)
+- ⬜ Auth + RLS policies
+- ⬜ Prod Supabase project
+- ⬜ Cart, checkout, payments (SINPE Móvil + bank transfer)
+- ⬜ OpenCart → Supabase data import
+- ⬜ 301 redirect map for old OpenCart URLs
 
-## Code scaffolding
+## Stack
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+| | |
+|---|---|
+| Frontend | Angular 21, standalone components, signals, vitest |
+| UI kit | Angular Material 21 (Material 3) themed Vault Light |
+| Backend | Supabase (linked, schema TBD) — Postgres 17, RLS, REST/Realtime, Auth, Edge Functions |
+| Hosting | SiteGround Shared (Apache + PHP, **no Node** — SPA-only) |
+| Deploy | SFTP via `scripts/deploy.mjs` |
 
-```bash
-ng generate component component-name
-```
+## Quick start
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
+Requires Node 20+ and npm.
 
 ```bash
-ng e2e
+git clone <repo>
+cd new-poke-singles
+npm install
+npm start                 # http://localhost:4242
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+Open [`/library`](http://localhost:4242/library) in the browser to see the full Material
+component reference rendered with the brand theme.
 
-## Additional Resources
+## Common commands
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+```bash
+npm start                 # ng serve on port 4242
+npm run build             # production build → dist/poke-singles/browser/
+npm run build:dev         # dev configuration build
+npm run build:prod        # explicit production configuration
+npm run watch             # rebuild on change
+npm test                  # vitest
+
+npm run deploy:dev        # build:dev  + SFTP upload to dev subdomain
+npm run deploy:prod       # build:prod + SFTP upload to poke-singles.com
+```
+
+Deploy details: `scripts/deploy.mjs` reads `.env.local` (gitignored — copy from
+`.env.local.example`). Flags: `--dry-run`, `--skip-build`, `--only=code|assets|all`.
+
+## Routes
+
+| Path | Component | Notes |
+|---|---|---|
+| `/` | Home | Landing page (inside UserShell) |
+| `/products` | CardList | Product grid with mock data |
+| `/products/:id` | Detail | Product detail; `:id` bound via `input()` |
+| `/admin` | AdminShell | Placeholder — auth + pages TBD |
+| `/library` | Library | Designer reference (no app chrome) |
+
+## Deploying
+
+1. **One-time setup**
+
+   ```bash
+   cp .env.local.example .env.local
+   ```
+
+   Fill in SiteGround SSH host, port, user, remote dir, and either an SSH private-key
+   path + passphrase (preferred) or a password. Both prod and dev targets use the same
+   SiteGround account; dev keys are `DEV_`-prefixed in `.env.local`.
+
+2. **Dry-run first**
+
+   ```bash
+   npm run deploy:dev -- --dry-run
+   ```
+
+   Confirms the connection details and shows the file count without uploading.
+
+3. **Ship**
+
+   ```bash
+   npm run deploy:dev      # → new.poke-singles.com (or your dev subdomain)
+   npm run deploy:prod     # → poke-singles.com
+   ```
+
+   The script auto-writes a SPA-fallback `.htaccess` at the upload root so deep links
+   (`/products/<slug>`) reload to `index.html` and the Angular router takes over.
+
+> 🛡 **Deploy guard.** `scripts/deploy.mjs` refuses to upload to any path matching
+> `/poke-singles.com/public_html` (the live OpenCart root). Subdomains like
+> `new.poke-singles.com` are allowed. To deploy to the live site at cutover, edit
+> `BLOCKED_REMOTE_PATHS` in the script deliberately.
+
+## Brand theme
+
+The Vault Light system is implemented across these files:
+
+| File | Role |
+|---|---|
+| `src/styles.scss` | Theme entry — `mat.theme()` + `mat.theme-overrides()` |
+| `src/styles/_theme-colors.scss` | Material 3 tonal palettes (generated) |
+| `src/styles/_brand-tokens.scss` | `:root` CSS vars (brand red, surfaces, fonts) |
+| `src/styles/_material-overrides.scss` | Button/card shape + button typography |
+| `src/styles/_brand-utilities.scss` | `.brand-bar`, `.brand-eyebrow`, `.product-card--featured`, etc. |
+
+**Hard rule on red.** Brand red (`#CE1126`) is allowed only on:
+
+1. The brand-bar gradient (`.brand-bar`)
+2. Sale prices (`.price--sale`)
+3. The AGOTADA badge (`.product-card--sold-out::after`)
+
+Material's error slot uses Danger (`#B91C1C`) — a different red — so form-field errors
+and snackbars never use brand red. See `CLAUDE.md` → *Brand theme* for the rationale.
+
+## Environments
+
+| Tier | URL | Supabase | Build |
+|---|---|---|---|
+| Local | `http://localhost:4242` | dev project (TBD) | `npm start` |
+| Dev | `dev.poke-singles.com` (TBD) | dev project (TBD) | `ng build --configuration=dev` |
+| Prod | `poke-singles.com` | prod project (TBD) | `ng build --configuration=production` |
+
+Env files: `src/environments/environment.ts` (local + dev tier — same Supabase project)
+and `src/environments/environment.prod.ts` (prod). The production build swaps the file
+in via `fileReplacements` in `angular.json`.
+
+## Supabase
+
+**Dev project linked** (`dhslfridsjdmhwzrgebv`). The pipeline is operational:
+
+```bash
+npm run db:types:dev      # regenerate src/app/core/supabase/database.types.ts
+npm run db:push:dev       # apply migrations from supabase/migrations/
+npm run functions:dev     # deploy edge functions from supabase/functions/
+```
+
+Inject `SupabaseService` from `src/app/core/supabase/` to make queries:
+
+```ts
+import { inject } from '@angular/core';
+import { SupabaseService } from './core/supabase/supabase.service';
+
+const supabase = inject(SupabaseService).client;
+const { data, error } = await supabase.from('<table>').select('*');
+```
+
+Re-run `npm run db:types:dev` after every migration so generated types stay in sync.
+
+**Still pending:**
+
+- Schema design (products, categories, sets, conditions, prices, stock, OpenCart slugs)
+- Auth + RLS policies
+- Prod Supabase project — when ready, fill in `environment.prod.ts` and replace
+  the `<prod-ref>` placeholders in `package.json` (4 of them: `db:types:prod`,
+  `db:push:prod`, `functions:prod` — note `db:types` already uses the linked project)
+
+## Repo layout
+
+```
+src/                      Angular app (see CLAUDE.md → Project layout)
+scripts/deploy.mjs        SiteGround SFTP deploy
+supabase/                 Scaffolded; migrations + functions empty
+brand-guidelines.html     Design system spec — open in browser
+.env.local.example        Template for SFTP creds (copy to .env.local)
+CLAUDE.md                 Deeper notes for working in this repo with Claude Code
+```
+
+## Conventions
+
+- **Standalone components only.** No NgModules.
+- **Signals** for component state (`signal`, `computed`, `effect`).
+- **Material modules imported per-component** via the `imports:` array — no shared
+  Material module barrel.
+- **Don't access `window` / `document` directly** without `isPlatformBrowser()` —
+  keeps the door open for adding SSR later without a refactor.
+
+## License
+
+Private — internal use only.

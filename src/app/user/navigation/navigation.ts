@@ -22,5 +22,6 @@ export class Navigation {
     { label: 'Cartas', icon: 'style', path: '/products' },
     { label: 'Carrito', icon: 'shopping_cart', path: '/cart' },
     { label: 'Mi cuenta', icon: 'person', path: '/account' },
+    { label: 'Library', icon: 'palette', path: '/library' },
   ];
 }
