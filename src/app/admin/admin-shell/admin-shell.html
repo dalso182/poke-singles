@@ -2,15 +2,43 @@
   <button mat-icon-button (click)="toggleSidenav()" aria-label="Toggle navigation">
     <mat-icon>menu</mat-icon>
   </button>
-  <span class="admin-title">
-    <mat-icon class="admin-icon">admin_panel_settings</mat-icon>
-    Poke-Singles · Admin
-  </span>
+  <a routerLink="/admin" class="brand" aria-label="Poke-Singles Admin">
+    <img src="assets/images/poke-singles-logo.png" alt="" class="brand-logo" />
+    <span class="brand-eyebrow brand-eyebrow--inline">Poke-Singles · Admin</span>
+  </a>
   <span class="spacer"></span>
   <a mat-button routerLink="/">
     <mat-icon>storefront</mat-icon>
     Ir a la tienda
   </a>
+  <button
+    mat-icon-button
+    [matMenuTriggerFor]="adminProfileMenu"
+    [attr.aria-label]="isSignedIn() ? 'Cuenta' : 'Iniciar sesión'"
+  >
+    <mat-icon>{{ isSignedIn() ? 'account_circle' : 'person' }}</mat-icon>
+  </button>
+  <mat-menu #adminProfileMenu="matMenu" xPosition="before">
+    @if (!isSignedIn()) {
+      <button mat-menu-item (click)="openLogin()">
+        <mat-icon>login</mat-icon>
+        <span>Ingresar</span>
+      </button>
+    } @else {
+      <div mat-menu-item disabled>
+        <span>{{ userDisplayName() }}</span>
+      </div>
+      @if (!isAdmin()) {
+        <div mat-menu-item disabled>
+          <span class="brand-eyebrow">Sin permisos admin</span>
+        </div>
+      }
+      <button mat-menu-item (click)="signOut()">
+        <mat-icon>logout</mat-icon>
+        <span>Cerrar sesión</span>
+      </button>
+    }
+  </mat-menu>
 </mat-toolbar>
 
 <mat-sidenav-container class="admin-container">
@@ -21,7 +49,7 @@
           mat-list-item
           [routerLink]="item.path"
           routerLinkActive="active-link"
-          [routerLinkActiveOptions]="{ exact: item.path === '/admin' }"
+          [routerLinkActiveOptions]="{ exact: !!item.exact }"
         >
           <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
           <span matListItemTitle>{{ item.label }}</span>
@@ -30,13 +58,6 @@
     </mat-nav-list>
   </mat-sidenav>
   <mat-sidenav-content class="admin-content">
-    <div class="admin-placeholder">
-      <h1>Panel de administración</h1>
-      <p class="muted">
-        Placeholder shell — falta conectar Supabase auth y crear las páginas
-        (Productos, Pedidos, Clientes).
-      </p>
-    </div>
     <router-outlet />
   </mat-sidenav-content>
 </mat-sidenav-container>

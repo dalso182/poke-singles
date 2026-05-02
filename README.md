@@ -15,16 +15,17 @@ hosted on SiteGround. The OpenCart site stays live until the new one ships.
 - ✅ Angular 21 + Material 21 scaffold
 - ✅ Vault Light brand theme applied (Tico Blue / Amber Glow / warm cream / Manrope)
 - ✅ User shell (header + sidenav + footer), home, product list, product detail
-- ✅ Admin shell stub at `/admin`
+- ✅ Admin panel: shell, profile menu (Google OAuth), dashboard, CRUD for products/categories/sets
 - ✅ Designer reference at `/library`
 - ✅ SiteGround SFTP deploy script (`npm run deploy:dev` / `:prod`)
 - ✅ Two-tier env model (local / dev tier / prod) wired in `angular.json`
 - ✅ Supabase dev project linked (`dhslfridsjdmhwzrgebv`); SDK + `SupabaseService` wired
 - ✅ Deploy guard refuses uploads to the live OpenCart root
-- ⬜ Schema design + migrations (products, categories, sets, conditions, stock)
-- ⬜ Auth + RLS policies
+- ✅ Schema design + migrations (products, categories, sets, conditions, prices, stock, audit trails)
+- ✅ Admin auth (Google OAuth) + RLS policies (admin role check)
+- ✅ TCGdex endpoint configurable per environment (dev / prod)
 - ⬜ Prod Supabase project
-- ⬜ Cart, checkout, payments (SINPE Móvil + bank transfer)
+- ⬜ Customer auth + cart, checkout, payments (SINPE Móvil + bank transfer)
 - ⬜ OpenCart → Supabase data import
 - ⬜ 301 redirect map for old OpenCart URLs
 
@@ -35,6 +36,7 @@ hosted on SiteGround. The OpenCart site stays live until the new one ships.
 | Frontend | Angular 21, standalone components, signals, vitest |
 | UI kit | Angular Material 21 (Material 3) themed Vault Light |
 | Backend | Supabase (linked, schema TBD) — Postgres 17, RLS, REST/Realtime, Auth, Edge Functions |
+| Card data | `@tcgdex/sdk` installed — usage TBD (likely for hydrating card metadata) |
 | Hosting | SiteGround Shared (Apache + PHP, **no Node** — SPA-only) |
 | Deploy | SFTP via `scripts/deploy.mjs` |
 
@@ -74,9 +76,17 @@ Deploy details: `scripts/deploy.mjs` reads `.env.local` (gitignored — copy fro
 | Path | Component | Notes |
 |---|---|---|
 | `/` | Home | Landing page (inside UserShell) |
-| `/products` | CardList | Product grid with mock data |
-| `/products/:id` | Detail | Product detail; `:id` bound via `input()` |
-| `/admin` | AdminShell | Placeholder — auth + pages TBD |
+| `/products` | CardList | Product grid |
+| `/products/:slug` | Detail | Product detail; `:slug` bound via `input()` |
+| `/admin` | AdminShell | Requires admin role; uses Google OAuth |
+| `/admin/` | Dashboard | Admin home (default after `/admin`) |
+| `/admin/products` | ProductsList | Paginated table with search + filters |
+| `/admin/products/new` | AddProduct | TCGdex typeahead autofill + manual mode |
+| `/admin/products/:id/edit` | ProductEdit | Full form (metadata + commerce) |
+| `/admin/categories` | Categories | CRUD with inline edit, soft-delete with undo |
+| `/admin/sets` | Sets | Expandable rows, find-or-create from TCGdex |
+| `/admin/orders` | Placeholder | TBD |
+| `/admin/customers` | Placeholder | TBD |
 | `/library` | Library | Designer reference (no app chrome) |
 
 ## Deploying
@@ -139,13 +149,15 @@ and snackbars never use brand red. See `CLAUDE.md` → *Brand theme* for the rat
 
 | Tier | URL | Supabase | Build |
 |---|---|---|---|
-| Local | `http://localhost:4242` | dev project (TBD) | `npm start` |
-| Dev | `dev.poke-singles.com` (TBD) | dev project (TBD) | `ng build --configuration=dev` |
-| Prod | `poke-singles.com` | prod project (TBD) | `ng build --configuration=production` |
+| Local | `http://localhost:4242` | `dhslfridsjdmhwzrgebv` (dev) | `npm start` |
+| Dev | `new.poke-singles.com` | `dhslfridsjdmhwzrgebv` (dev) | `ng build --configuration=dev` |
+| Prod | `poke-singles.com` (cutover deferred) | prod project (TBD) | `ng build --configuration=production` |
 
-Env files: `src/environments/environment.ts` (local + dev tier — same Supabase project)
-and `src/environments/environment.prod.ts` (prod). The production build swaps the file
-in via `fileReplacements` in `angular.json`.
+Env files: `src/environments/environment.ts` (local + dev tier — both hit the same
+Supabase project for now) is wired. `src/environments/environment.prod.ts` is an empty
+stub until the prod project exists; the production build swaps it in via
+`fileReplacements` in `angular.json`. The deploy guard in `scripts/deploy.mjs` blocks
+any upload to the live OpenCart root regardless of env state.
 
 ## Supabase
 
@@ -169,13 +181,17 @@ const { data, error } = await supabase.from('<table>').select('*');
 
 Re-run `npm run db:types:dev` after every migration so generated types stay in sync.
 
+**Schema:** Catalog tables (categories, sets, products) with triggers for audit
+(updated_at, first_listed_at), restock notifications, and Pokemon name normalization.
+Admin role detected via `is_admin()` helper (checks `auth.jwt claims → 'app_metadata'.'role'`).
+
 **Still pending:**
 
-- Schema design (products, categories, sets, conditions, prices, stock, OpenCart slugs)
-- Auth + RLS policies
-- Prod Supabase project — when ready, fill in `environment.prod.ts` and replace
-  the `<prod-ref>` placeholders in `package.json` (4 of them: `db:types:prod`,
+- Prod Supabase project — when ready, fill in `environment.prod.ts` with prod creds
+  and replace the `<prod-ref>` placeholders in `package.json` (4 of them: `db:types:prod`,
   `db:push:prod`, `functions:prod` — note `db:types` already uses the linked project)
+- Customer auth (email/password + magic link signup) and customer-side RLS policies
+  (for orders, cart, wishlist when those tables exist)
 
 ## Repo layout
 

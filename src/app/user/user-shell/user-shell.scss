@@ -12,3 +12,7 @@
 .user-shell-content {
   padding: 24px;
 }
+
+::ng-deep .user-shell-container mat-sidenav {
+  width: 260px;
+}

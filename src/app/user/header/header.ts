@@ -1,12 +1,15 @@
 import { Component, inject, output } from '@angular/core';
-import { RouterLink } from '@angular/router';
-import { Router } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { DomSanitizer } from '@angular/platform-browser';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule, MatIconRegistry } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { AuthService } from '../../core/auth/auth.service';
 
 const INSTAGRAM_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
   <path d="M12 2.163c3.204 0 3.584.012 4.85.07 1.366.062 2.633.334 3.608 1.31.975.975 1.248 2.242 1.31 3.608.058 1.266.07 1.646.07 4.85s-.012 3.584-.07 4.85c-.062 1.366-.334 2.633-1.31 3.608-.975.975-2.242 1.248-3.608 1.31-1.266.058-1.646.07-4.85.07s-3.584-.012-4.85-.07c-1.366-.062-2.633-.334-3.608-1.31-.975-.975-1.248-2.242-1.31-3.608C2.175 15.584 2.163 15.204 2.163 12s.012-3.584.07-4.85c.062-1.366.334-2.633 1.31-3.608.975-.975 2.242-1.248 3.608-1.31 1.266-.058 1.646-.07 4.85-.07zm0-2.163c-3.259 0-3.667.014-4.947.072-1.635.074-3.197.56-4.31 1.673C1.63 2.858 1.144 4.42 1.07 6.055 1.014 7.335 1 7.741 1 12c0 4.259.014 4.667.072 5.947.074 1.635.56 3.197 1.673 4.31 1.113 1.113 2.675 1.599 4.31 1.673C8.333 23.986 8.741 24 12 24c3.259 0 3.667-.014 4.947-.072 1.635-.074 3.197-.56 4.31-1.673 1.113-1.113 1.599-2.675 1.673-4.31.058-1.28.072-1.688.072-5.947 0-4.259-.014-4.667-.072-5.947-.074-1.635-.56-3.197-1.673-4.31C19.144 1.63 17.582 1.144 15.947 1.07 14.667 1.014 14.259 1 12 1zm0 5.838a5.162 5.162 0 1 0 0 10.324 5.162 5.162 0 0 0 0-10.324zm0 8.162a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm5.406-9.845a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4z"/>
@@ -22,7 +25,15 @@ const WHATSAPP_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 2
 
 @Component({
   selector: 'app-header',
-  imports: [RouterLink, MatToolbarModule, MatIconModule, MatButtonModule, MatInputModule, MatFormFieldModule],
+  imports: [
+    RouterLink,
+    MatToolbarModule,
+    MatIconModule,
+    MatButtonModule,
+    MatInputModule,
+    MatFormFieldModule,
+    MatMenuModule,
+  ],
   templateUrl: './header.html',
   styleUrl: './header.scss',
 })
@@ -30,6 +41,13 @@ export class Header {
   readonly toggleNav = output<void>();
 
   private readonly router = inject(Router);
+  private readonly auth = inject(AuthService);
+  private readonly dialog = inject(MatDialog);
+  private readonly snack = inject(MatSnackBar);
+
+  protected readonly currentUser = this.auth.currentUser;
+  protected readonly isSignedIn = this.auth.isSignedIn;
+  protected readonly isAdmin = this.auth.isAdmin;
 
   constructor() {
     const registry = inject(MatIconRegistry);
@@ -44,5 +62,55 @@ export class Header {
     if (q) {
       this.router.navigate(['/products'], { queryParams: { q } });
     }
+  }
+
+  protected async openLogin(): Promise<void> {
+    const { LoginDialog } = await import('../../auth/login-dialog/login-dialog');
+    this.dialog.open(LoginDialog, {
+      panelClass: 'login-dialog-panel',
+      autoFocus: 'first-tabbable',
+      restoreFocus: true,
+    });
+  }
+
+  protected async signOut(): Promise<void> {
+    const { error } = await this.auth.signOut();
+    if (error) {
+      this.snack.open(error, 'OK', { duration: 4000 });
+    } else {
+      this.snack.open('Sesión cerrada', 'OK', { duration: 2500 });
+    }
+  }
+
+  protected userInitials(): string {
+    const user = this.currentUser();
+    if (!user) return '';
+    const name =
+      (user.user_metadata?.['full_name'] as string | undefined) ||
+      user.email ||
+      '';
+    return name
+      .split(/\s+|@/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0]?.toUpperCase() ?? '')
+      .join('');
+  }
+
+  protected userDisplayName(): string {
+    const user = this.currentUser();
+    if (!user) return '';
+    return (
+      (user.user_metadata?.['full_name'] as string | undefined) ||
+      user.email ||
+      'Usuario'
+    );
+  }
+
+  protected userAvatarUrl(): string | null {
+    const meta = this.currentUser()?.user_metadata as
+      | { avatar_url?: string; picture?: string }
+      | undefined;
+    return meta?.avatar_url || meta?.picture || null;
   }
 }

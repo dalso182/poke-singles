@@ -1,0 +1,187 @@
+:host {
+  display: block;
+  position: relative;
+  padding: 24px 32px 28px;
+  width: min(440px, 92vw);
+}
+
+.login-dialog__close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+.login-dialog__hero {
+  display: grid;
+  gap: 6px;
+  text-align: center;
+  margin-bottom: 8px;
+
+  h1 {
+    margin: 8px 0 0;
+    font-size: 28px;
+    font-weight: 600;
+  }
+}
+
+.login-dialog__logo {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  justify-self: center;
+}
+
+.login-dialog__subtitle {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 14px;
+}
+
+.login-dialog__alert {
+  margin-top: 12px;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+
+  &--error {
+    background: var(--mat-sys-error-container);
+    color: var(--mat-sys-on-error-container);
+  }
+
+  &--info {
+    background: var(--mat-sys-tertiary-container);
+    color: var(--mat-sys-on-tertiary-container);
+  }
+}
+
+.login-dialog__form {
+  display: grid;
+  gap: 8px;
+  padding-top: 16px;
+}
+
+.login-dialog__primary {
+  margin-top: 4px;
+  height: 44px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.login-dialog__forgot {
+  justify-self: center;
+  font-size: 13px;
+}
+
+.login-dialog__divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 0;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 12px;
+  letter-spacing: 1px;
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-subtle, var(--mat-sys-outline-variant));
+  }
+}
+
+// Google Identity button — official styling.
+.gsi-material-button {
+  user-select: none;
+  appearance: none;
+  background-color: #ffffff;
+  border: 1px solid #747775;
+  border-radius: 999px;
+  box-sizing: border-box;
+  color: #1f1f1f;
+  cursor: pointer;
+  font-family: 'Roboto', arial, sans-serif;
+  font-size: 14px;
+  height: 44px;
+  letter-spacing: 0.25px;
+  outline: none;
+  overflow: hidden;
+  padding: 0 16px;
+  position: relative;
+  text-align: center;
+  transition: background-color 0.218s, border-color 0.218s, box-shadow 0.218s;
+  vertical-align: middle;
+  white-space: nowrap;
+  width: 100%;
+  display: block;
+
+  &:disabled {
+    cursor: default;
+    background-color: #ffffff61;
+    border-color: #1f1f1f1f;
+
+    .gsi-material-button-state {
+      display: none;
+    }
+
+    .gsi-material-button-contents,
+    .gsi-material-button-icon {
+      opacity: 0.38;
+    }
+  }
+
+  &:not(:disabled):active .gsi-material-button-state,
+  &:not(:disabled):focus .gsi-material-button-state {
+    background-color: #303030;
+    opacity: 0.12;
+  }
+
+  &:not(:disabled):hover {
+    box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+
+    .gsi-material-button-state {
+      background-color: #303030;
+      opacity: 0.08;
+    }
+  }
+}
+
+.gsi-material-button-icon {
+  height: 20px;
+  margin-right: 12px;
+  min-width: 20px;
+  width: 20px;
+}
+
+.gsi-material-button-content-wrapper {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  height: 100%;
+  justify-content: center;
+  position: relative;
+  width: 100%;
+}
+
+.gsi-material-button-contents {
+  font-family: 'Roboto', arial, sans-serif;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: top;
+}
+
+.gsi-material-button-state {
+  transition: opacity 0.218s;
+  bottom: 0;
+  left: 0;
+  opacity: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+:host ::ng-deep .mat-mdc-tab-body-content {
+  overflow: hidden;
+}

@@ -15,8 +15,8 @@
     "db:types": "npx --yes supabase gen types typescript --linked > src/app/core/supabase/database.types.ts",
     "db:types:dev": "npx --yes supabase gen types typescript --project-id dhslfridsjdmhwzrgebv > src/app/core/supabase/database.types.ts",
     "db:types:prod": "npx --yes supabase gen types typescript --project-id <prod-ref> > src/app/core/supabase/database.types.ts",
-    "db:push:dev": "npx --yes supabase db push --project-ref dhslfridsjdmhwzrgebv",
-    "db:push:prod": "npx --yes supabase db push --project-ref <prod-ref>",
+    "db:push:dev": "npx --yes supabase db push --linked",
+    "db:push:prod": "npx --yes supabase db push --linked",
     "functions:dev": "npx --yes supabase functions deploy --project-ref dhslfridsjdmhwzrgebv",
     "functions:prod": "npx --yes supabase functions deploy --project-ref <prod-ref>"
   },

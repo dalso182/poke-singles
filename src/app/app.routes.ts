@@ -1,10 +1,46 @@
 import { Routes } from '@angular/router';
+import { adminGuard } from './core/auth/admin.guard';
 
 export const routes: Routes = [
   {
     path: 'admin',
+    canActivate: [adminGuard],
+    canActivateChild: [adminGuard],
     loadComponent: () =>
       import('./admin/admin-shell/admin-shell').then((m) => m.AdminShell),
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        loadComponent: () =>
+          import('./admin/admin-dashboard/admin-dashboard').then((m) => m.AdminDashboard),
+      },
+      {
+        path: 'products',
+        pathMatch: 'full',
+        loadComponent: () =>
+          import('./admin/products-list/products-list').then((m) => m.ProductsList),
+      },
+      {
+        path: 'products/new',
+        loadComponent: () =>
+          import('./admin/add-product/add-product').then((m) => m.AddProduct),
+      },
+      {
+        path: 'products/:id/edit',
+        loadComponent: () =>
+          import('./admin/product-edit/product-edit').then((m) => m.ProductEdit),
+      },
+      {
+        path: 'categories',
+        loadComponent: () =>
+          import('./admin/categories/categories').then((m) => m.Categories),
+      },
+      {
+        path: 'sets',
+        loadComponent: () => import('./admin/sets/sets').then((m) => m.Sets),
+      },
+    ],
   },
   {
     path: 'library',

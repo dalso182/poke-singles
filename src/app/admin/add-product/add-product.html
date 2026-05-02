@@ -1,0 +1,157 @@
+<section class="add-product">
+  <header class="add-product__header">
+    <span class="brand-eyebrow">Inventario</span>
+    <h1>Agregar producto</h1>
+    <p class="muted">
+      Busca la carta en TCGdex para autollenar metadata, o agrégala manualmente.
+    </p>
+  </header>
+
+  @if (!hasCategories()) {
+    <mat-card class="add-product__warning">
+      <mat-card-content>
+        <p>
+          <strong>Crea una categoría primero.</strong> Necesitas al menos una
+          categoría activa antes de poder guardar un producto.
+        </p>
+        <a mat-stroked-button routerLink="/admin/categories">Ir a categorías</a>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  @if (!manualMode() && !selectedCard()) {
+    <mat-card class="add-product__panel">
+      <mat-card-content>
+        <app-card-typeahead
+          placeholder="Buscar carta en TCGdex…"
+          (cardSelected)="onCardSelected($event)"
+        />
+        <button
+          mat-button
+          type="button"
+          class="add-product__manual-link"
+          (click)="enableManualMode()"
+        >
+          Agregar sin TCGdex (accesorios u otro)
+        </button>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  @if (manualMode() || selectedCard()) {
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="add-product__form">
+      @if (selectedCard(); as card) {
+        <mat-card class="add-product__card-preview">
+          <mat-card-content class="add-product__preview-row">
+            @if (form.get('image_url')?.value) {
+              <img [src]="form.get('image_url')?.value" alt="" class="add-product__thumb" />
+            }
+            <div>
+              <span class="brand-eyebrow">Seleccionada</span>
+              <h2>{{ card.name }}</h2>
+              <p class="brand-mono">
+                {{ card.id }} · {{ card.set.name }} · {{ card.rarity || '—' }}
+              </p>
+              <button
+                mat-button
+                type="button"
+                (click)="selectedCard.set(null); manualMode.set(false)"
+              >
+                Cambiar carta
+              </button>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      }
+
+      <mat-card class="add-product__panel">
+        <mat-card-header>
+          <mat-card-title>Información de la carta</mat-card-title>
+        </mat-card-header>
+        <mat-card-content class="add-product__grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre</mat-label>
+            <input matInput formControlName="name" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Pokémon</mat-label>
+            <input matInput formControlName="pokemon_name" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Rareza</mat-label>
+            <input matInput formControlName="rarity" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Número en set</mat-label>
+            <input matInput formControlName="card_number" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="add-product__full">
+            <mat-label>Slug</mat-label>
+            <input matInput formControlName="slug" />
+            <mat-hint>Sólo minúsculas, números y guiones. URL pública.</mat-hint>
+            @if (form.get('slug')?.hasError('duplicate')) {
+              <mat-error>Slug ya en uso.</mat-error>
+            }
+            @if (form.get('slug')?.hasError('pattern')) {
+              <mat-error>Sólo minúsculas, números y guiones.</mat-error>
+            }
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="add-product__full">
+            <mat-label>URL de la imagen</mat-label>
+            <input matInput formControlName="image_url" />
+          </mat-form-field>
+
+          <mat-divider class="add-product__full add-product__divider" />
+
+          <mat-form-field appearance="outline">
+            <mat-label>Categoría</mat-label>
+            <mat-select formControlName="category_id">
+              @for (c of categoriesList(); track c.id) {
+                <mat-option [value]="c.id">{{ c.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Condición</mat-label>
+            <mat-select formControlName="condition">
+              <mat-option value="">—</mat-option>
+              @for (c of conditions; track c.value) {
+                <mat-option [value]="c.value">{{ c.label }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Idioma</mat-label>
+            <mat-select formControlName="language">
+              @for (l of languages; track l.value) {
+                <mat-option [value]="l.value">{{ l.label }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Precio (CRC)</mat-label>
+            <input matInput type="number" formControlName="price" min="0" step="0.01" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Cantidad inicial</mat-label>
+            <input matInput type="number" formControlName="quantity" min="0" />
+          </mat-form-field>
+        </mat-card-content>
+      </mat-card>
+
+      <div class="add-product__actions">
+        <button mat-stroked-button type="button" (click)="selectedCard.set(null); manualMode.set(false)">
+          Cancelar
+        </button>
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          [disabled]="form.invalid || saving() || !hasCategories()"
+        >
+          Crear producto
+        </button>
+      </div>
+    </form>
+  }
+</section>

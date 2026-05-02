@@ -8,7 +8,11 @@ export const environment = {
   production: true,
   envName: 'prod',
   supabase: {
-    url: '',
-    anonKey: '',
+    url: 'https://dhslfridsjdmhwzrgebv.supabase.co',
+    anonKey: 'sb_publishable_jsLP6YsmsjjVvEZ2JuCkwQ_DP_rWRHA',
+  },
+  tcgdex: {
+    // Empty string = use the SDK default (https://api.tcgdex.net/v2).
+    endpoint: 'https://api.tcgdex.net/v2',
   },
 };

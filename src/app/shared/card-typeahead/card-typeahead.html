@@ -1,0 +1,26 @@
+<mat-form-field appearance="outline" subscriptSizing="dynamic" class="card-typeahead-field">
+  <input
+    matInput
+    [placeholder]="placeholder()"
+    [formControl]="searchControl"
+    [matAutocomplete]="auto"
+  />
+  @if (searching()) {
+    <mat-progress-spinner matSuffix mode="indeterminate" diameter="20" />
+  } @else {
+    <mat-icon matSuffix>search</mat-icon>
+  }
+  <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayCardName" (optionSelected)="onSelect($event)">
+    @for (card of suggestions(); track card.id) {
+      <mat-option [value]="card">
+        <span style="display: inline-flex; align-items: center; gap: 8px; width: 100%;">
+          @if (thumbUrl(card); as thumb) {
+            <img [src]="thumb" alt="" style="width: 28px; height: 39px; object-fit: contain;" />
+          }
+          <span>{{ card.name }}</span>
+          <span class="brand-mono" style="margin-left: auto; opacity: 0.6; font-size: 11px;">{{ card.id }}</span>
+        </span>
+      </mat-option>
+    }
+  </mat-autocomplete>
+</mat-form-field>

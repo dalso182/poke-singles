@@ -23,5 +23,6 @@ export class Navigation {
     { label: 'Carrito', icon: 'shopping_cart', path: '/cart' },
     { label: 'Mi cuenta', icon: 'person', path: '/account' },
     { label: 'Library', icon: 'palette', path: '/library' },
+    { label: 'Admin', icon: 'admin_panel_settings', path: '/admin' },
   ];
 }

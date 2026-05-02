@@ -1,0 +1,107 @@
+<section class="categories">
+  <header class="categories__header">
+    <div>
+      <span class="brand-eyebrow">Catálogo</span>
+      <h1>Categorías</h1>
+      <p class="muted">Taxonomía superior — singles, sealed, accesorios.</p>
+    </div>
+    <button mat-flat-button color="primary" (click)="addOpen.set(!addOpen())">
+      <mat-icon>{{ addOpen() ? 'close' : 'add' }}</mat-icon>
+      {{ addOpen() ? 'Cancelar' : 'Agregar categoría' }}
+    </button>
+  </header>
+
+  @if (addOpen()) {
+    <mat-card class="categories__add">
+      <mat-card-content>
+        <form [formGroup]="addForm" (ngSubmit)="onAdd()" class="categories__add-form">
+          <mat-form-field appearance="outline">
+            <mat-label>Slug</mat-label>
+            <input matInput formControlName="slug" placeholder="singles" />
+            <mat-hint>Sólo minúsculas, números y guiones.</mat-hint>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre</mat-label>
+            <input matInput formControlName="name" placeholder="Singles" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="categories__sort-field">
+            <mat-label>Orden</mat-label>
+            <input matInput type="number" formControlName="sort_order" min="0" />
+          </mat-form-field>
+          <button
+            mat-flat-button
+            color="primary"
+            type="submit"
+            [disabled]="addForm.invalid || saving() === '__new__'"
+          >
+            Crear
+          </button>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <mat-card class="categories__table-card">
+    <table mat-table [dataSource]="rows()" class="categories__table">
+      <ng-container matColumnDef="slug">
+        <th mat-header-cell *matHeaderCellDef>Slug</th>
+        <td mat-cell *matCellDef="let row" class="brand-mono">{{ row.slug }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>Nombre</th>
+        <td mat-cell *matCellDef="let row">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <input matInput [formControl]="$any(formFor(row.id).get('name'))" />
+          </mat-form-field>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="sort_order">
+        <th mat-header-cell *matHeaderCellDef>Orden</th>
+        <td mat-cell *matCellDef="let row">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="categories__sort-field">
+            <input matInput type="number" [formControl]="$any(formFor(row.id).get('sort_order'))" min="0" />
+          </mat-form-field>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="active">
+        <th mat-header-cell *matHeaderCellDef>Activa</th>
+        <td mat-cell *matCellDef="let row">
+          <mat-slide-toggle
+            [checked]="row.active"
+            [disabled]="saving() === row.id"
+            (change)="onToggleActive(row, $event.checked)"
+          />
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let row">
+          <button
+            mat-stroked-button
+            (click)="onSave(row)"
+            [disabled]="formFor(row.id).invalid || formFor(row.id).pristine || saving() === row.id"
+          >
+            Guardar
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+
+    @if (!loading() && rows().length === 0) {
+      <p class="categories__empty muted">
+        Aún no hay categorías. Crea la primera con el botón de arriba.
+      </p>
+    }
+  </mat-card>
+</section>

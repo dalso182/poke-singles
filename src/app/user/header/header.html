@@ -1,13 +1,15 @@
 <div class="brand-bar"></div>
 
 <mat-toolbar class="app-header">
-  <button mat-icon-button (click)="toggleNav.emit()" aria-label="Toggle navigation">
-    <mat-icon>menu</mat-icon>
-  </button>
-  <a routerLink="/" class="brand" aria-label="Poke-Singles">
-    <img src="assets/images/poke-singles-logo.png" alt="" class="brand-logo" />
-    <span class="brand-eyebrow brand-eyebrow--inline">Poke-Singles</span>
-  </a>
+  <div class="header-left">
+    <button mat-icon-button (click)="toggleNav.emit()" aria-label="Toggle navigation">
+      <mat-icon>menu</mat-icon>
+    </button>
+    <a routerLink="/" class="brand" aria-label="Poke-Singles">
+      <img src="assets/images/poke-singles-logo.png" alt="" class="brand-logo" />
+      <span class="brand-eyebrow brand-eyebrow--inline">Poke-Singles</span>
+    </a>
+  </div>
   <div class="search-field">
     <mat-form-field appearance="outline" subscriptSizing="dynamic">
       <input matInput placeholder="Buscar cartas…" #searchInput (keyup.enter)="onSearch(searchInput.value)" />
@@ -17,13 +19,58 @@
     </mat-form-field>
   </div>
   <div class="header-actions">
-    <button mat-button routerLink="/cart" aria-label="Cart" class="cart-btn">
+    <button mat-icon-button routerLink="/cart" aria-label="Cart" class="cart-btn">
       <mat-icon>shopping_cart</mat-icon>
-      <span>0 artículo(s) - ₡0.00</span>
+      <span class="cart-count">0</span>
     </button>
-    <button mat-icon-button routerLink="/account" aria-label="Account">
-      <mat-icon>person</mat-icon>
+
+    <button
+      mat-icon-button
+      [matMenuTriggerFor]="profileMenu"
+      [attr.aria-label]="isSignedIn() ? 'Cuenta' : 'Iniciar sesión'"
+      class="header-profile-btn"
+    >
+      @if (isSignedIn()) {
+        @if (userAvatarUrl(); as url) {
+          <img [src]="url" alt="" class="header-avatar" referrerpolicy="no-referrer" />
+        } @else {
+          <span class="header-initials">{{ userInitials() }}</span>
+        }
+      } @else {
+        <mat-icon>person</mat-icon>
+      }
     </button>
+
+    <mat-menu #profileMenu="matMenu" xPosition="before">
+      @if (!isSignedIn()) {
+        <button mat-menu-item (click)="openLogin()">
+          <mat-icon>login</mat-icon>
+          <span>Ingresar</span>
+        </button>
+      } @else {
+        <div class="header-menu-user" mat-menu-item disabled>
+          <span class="header-menu-name">{{ userDisplayName() }}</span>
+          @if (isAdmin()) {
+            <span class="header-menu-role brand-eyebrow">Admin</span>
+          }
+        </div>
+        <a mat-menu-item routerLink="/account">
+          <mat-icon>account_circle</mat-icon>
+          <span>Mi cuenta</span>
+        </a>
+        @if (isAdmin()) {
+          <a mat-menu-item routerLink="/admin">
+            <mat-icon>shield_person</mat-icon>
+            <span>Panel admin</span>
+          </a>
+        }
+        <button mat-menu-item (click)="signOut()">
+          <mat-icon>logout</mat-icon>
+          <span>Cerrar sesión</span>
+        </button>
+      }
+    </mat-menu>
+
     <div class="social-icons">
       <a mat-icon-button href="https://instagram.com" target="_blank" rel="noopener" aria-label="Instagram">
         <mat-icon svgIcon="instagram" />

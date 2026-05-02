@@ -15,8 +15,49 @@ html {
   ));
 }
 
-// Brand button typography: uppercase, tracked, 12px / 700.
-// Applies to text/filled/outlined/raised variants. Icon-buttons are excluded.
+// Global form field: reduce height.
+.mat-mdc-form-field {
+  @include mat.form-field-overrides((
+    container-height: 40px,
+    outlined-label-text-size: 13px,
+    filled-label-text-size: 13px,
+  ));
+}
+
+.mat-mdc-text-field-wrapper {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.mat-mdc-form-field-infix {
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+  min-height: 40px !important;
+}
+
+// Global menu/context menu: white background, compact items.
+.mat-mdc-menu-panel {
+  background: white !important;
+
+  .mat-mdc-menu-item {
+    min-height: 36px;
+    font-size: 13px;
+
+    .mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      margin-right: 8px;
+    }
+  }
+}
+// Global divider: 8px vertical breathing room.
+// !important is required — the component's own encapsulated style sets margin: 0.
+.mat-divider {
+  margin-top: 8px !important;
+  margin-bottom: 8px !important;
+}
+
 .mat-mdc-button,
 .mat-mdc-unelevated-button,
 .mat-mdc-outlined-button,

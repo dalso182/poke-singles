@@ -11,9 +11,13 @@ Migration of **poke-singles.com**, a Pokémon singles e-commerce store in Costa 
   density `-1`. See *Brand theme* below.
 - **Supabase** — DB, REST/Realtime API, auth. **Linked** to dev project
   `dhslfridsjdmhwzrgebv`; SDK + `SupabaseService` wired in `src/app/core/supabase/`.
-  Schema empty so far. See *Two-tier environment model* + *Supabase wiring*.
+  Schema with catalog (categories, sets, products) + RLS policies live. See *Two-tier environment model* + *Supabase wiring*.
 - **SiteGround** hosting (Apache + PHP; **no Node.js** on Shared/Cloud plans).
   Deploy via `npm run deploy:dev` / `:prod` — see *Deploy to SiteGround*.
+- **`@tcgdex/sdk`** — TCG card-data SDK (`^2.9.0`). Wired via `TcgdexService` at
+  `src/app/core/tcgdex/tcgdex.service.ts`; intended for hydrating Pokémon card
+  metadata (rarity, set, illustrator, etc.) without hand-curating each row. See
+  *TCGdex wiring*.
 
 ## Brand theme — Vault Light
 
@@ -104,14 +108,16 @@ RewriteRule ^ index.html [L]
 
 | Tier | Frontend | Supabase | Selected by |
 |---|---|---|---|
-| Local | `npm start` (localhost:4242) | dev project (TBD) | `src/environments/environment.ts` |
-| Dev | `dev.poke-singles.com` (TBD) | dev project (TBD) | `ng build --configuration=dev` (no replacement) |
-| Prod | `poke-singles.com` | prod project (TBD) | `ng build --configuration=production` (`fileReplacements` → `environment.prod.ts`) |
+| Local | `npm start` (localhost:4242) | `dhslfridsjdmhwzrgebv` (dev) | `src/environments/environment.ts` |
+| Dev | `new.poke-singles.com` | `dhslfridsjdmhwzrgebv` (dev) | `ng build --configuration=dev` (no file replacement) |
+| Prod | `poke-singles.com` (cutover deferred) | prod project (TBD) | `ng build --configuration=production` (`fileReplacements` → `environment.prod.ts`) |
 
-`src/environments/environment.ts` (dev/local) and `environment.prod.ts` are currently
-stubs with empty Supabase URL + anon key. Fill them in once the Supabase projects
-are created. `npm run db:types` / `db:push` / `functions:*` scripts in `package.json`
-have placeholder `<dev-ref>` / `<prod-ref>` values to swap when the projects exist.
+`src/environments/environment.ts` is filled in (URL + publishable anon key for the
+dev project). `environment.prod.ts` is still an empty stub — and the deploy guard
+in `scripts/deploy.mjs` refuses prod deploys to the live OpenCart root anyway, so a
+prod build with empty env values can't accidentally ship. `<dev-ref>` placeholders in
+`package.json` are replaced; `<prod-ref>` placeholders remain (for `db:types:prod`,
+`db:push:prod`, `functions:prod`).
 
 ## Supabase wiring
 
@@ -132,10 +138,20 @@ have placeholder `<dev-ref>` / `<prod-ref>` values to swap when the projects exi
 
 - Prod Supabase project + filled-in `environment.prod.ts` + replacing the four
   `<prod-ref>` placeholders in `package.json`.
-- Schema (products, categories, sets, conditions, prices, stock, OpenCart slugs).
-  Migrations live at `supabase/migrations/<UTC>_<tag>.sql`. Empty for now.
+- Customer auth (email signup / magic link) — admin auth (Google OAuth) is live.
 - Edge functions if/when needed; folder is empty.
-- Auth flow + RLS policies — defer until schema is decided.
+- Additional RLS policies for customer orders/cart once checkout flow is designed.
+
+## TCGdex wiring
+
+`TcgdexService` at `src/app/core/tcgdex/tcgdex.service.ts` exposes a `TCGdex`
+client (`new TCGdex('en')`, `providedIn: 'root'`). Inject and use
+`client.fetch('cards', id)`, `client.set.list()`, `client.random.card()`, etc.
+Types come from `@tcgdex/sdk` directly (`import type { Card, Set } from
+'@tcgdex/sdk'`). The SDK uses global `fetch`, caches in localStorage in the
+browser. **Endpoint is per-environment** via `environment.tcgdex.endpoint`: empty
+string uses SDK default (`api.tcgdex.net`); a URL string points to a custom
+endpoint (useful for localhost proxies during dev). Smoke test: `node scripts/tcgdex-smoke.mjs`.
 
 ## Deploy safety guard
 
@@ -170,8 +186,13 @@ src/
 │   │                                out + sale-price variants demoed)
 │   │   └── detail/                  Product detail (route param via input())
 │   ├── admin/
-│   │   └── admin-shell/             /admin entry — distinct toolbar, sidenav,
-│   │                                placeholder dashboard. Auth + pages TBD.
+│   │   ├── admin-shell/             /admin entry — toolbar (profile menu), sidenav
+│   │   ├── admin-dashboard/         Dashboard (lazy)
+│   │   ├── products-list/           Paginated product table with search + filters
+│   │   ├── product-edit/            Product form (metadata + commerce fields)
+│   │   ├── categories/              Category CRUD with inline edit
+│   │   ├── sets/                    Set management (create from TCGdex or manual)
+│   │   └── add-product/             New product form with TCGdex typeahead
 │   ├── library/                     /library — designer reference page
 │   │   ├── library.ts               Standalone, imports ~30 Material modules
 │   │   ├── library-dialog.ts        Sibling component for the dialog demo
@@ -197,6 +218,7 @@ src/
 
 scripts/deploy.mjs                   SiteGround SFTP deploy (see Deploy section)
 src/app/core/supabase/               SupabaseService + generated database.types
+src/app/core/tcgdex/                 TcgdexService (TCG card-data SDK wrapper)
 supabase/                            Linked to dhslfridsjdmhwzrgebv; empty schema
 brand-guidelines.html                Design system spec (open in browser)
 ```
@@ -208,16 +230,25 @@ UserShell wrapper** — Angular's router needs that ordering or it tries to matc
 `/admin` and `/library` against UserShell's children first.
 
 ```
-/admin                  → AdminShell (lazy)
+/admin                  → AdminShell (lazy, canActivate: [adminGuard])
+  /                     → Dashboard
+  /products             → ProductsList (paginated, searchable, filterable)
+  /products/new         → AddProduct (TCGdex typeahead)
+  /products/:id/edit    → ProductEdit (metadata + commerce fields)
+  /categories           → Categories (CRUD with inline edit)
+  /sets                 → Sets (manual add, lazy expand)
+  /orders               → Placeholder
+  /customers            → Placeholder
 /library                → Library (lazy, no shell wrapper)
 /                       → UserShell (lazy, wraps the children below)
   /                     → Home
   /products             → CardList
-  /products/:id         → Detail (id bound via input.required<string>())
+  /products/:slug       → Detail (slug bound via input.required<string>())
 ```
 
 `/library` and `/admin` deliberately bypass UserShell: library is a designer
-reference (no app chrome), admin will get its own shell + auth gate.
+reference (no app chrome), admin requires `canActivate: [adminGuard]` (redirects
+unsigned users to /, shows LoginDialog; redirects non-admins to / with snackbar).
 
 ## URL strategy when product pages are built
 
@@ -231,11 +262,11 @@ reference (no app chrome), admin will get its own shell + auth gate.
 
 These are deliberately deferred and will each get their own plan when picked up:
 
-- Auth flow (Supabase Auth — likely email/password + magic link) and RLS policies
-- Prod Supabase project + cutover wiring
-- Product / category / set data models, services, pages
+- Prod Supabase project + cutover wiring (environment.prod.ts, `<prod-ref>` npm script placeholders)
+- Customer auth (email/password + magic link signup; separate from admin OAuth)
 - Cart state, persistence, checkout
 - Payments: **SINPE Móvil** + bank transfer (matching the existing OpenCart flow)
+- Customer order history + invoice download
 - OpenCart 3.0 data export → Supabase import (products, categories, customers,
   orders, URL aliases)
 - 301 redirect map from old OpenCart URLs

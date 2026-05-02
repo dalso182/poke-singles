@@ -12,7 +12,7 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  public: {
+  graphql_public: {
     Tables: {
       [_ in never]: never
     }
@@ -20,7 +20,249 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
       [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+  public: {
+    Tables: {
+      categories: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          slug: string
+          sort_order: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+          sort_order?: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          active: boolean
+          card_number: string | null
+          category_id: string
+          condition: string | null
+          created_at: string
+          description: string | null
+          first_listed_at: string
+          id: string
+          image_url: string | null
+          language: string
+          last_restocked_at: string | null
+          name: string
+          pokemon_name: string | null
+          price: number
+          quantity: number
+          rarity: string | null
+          set_id: string | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          card_number?: string | null
+          category_id: string
+          condition?: string | null
+          created_at?: string
+          description?: string | null
+          first_listed_at?: string
+          id?: string
+          image_url?: string | null
+          language?: string
+          last_restocked_at?: string | null
+          name: string
+          pokemon_name?: string | null
+          price: number
+          quantity?: number
+          rarity?: string | null
+          set_id?: string | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          card_number?: string | null
+          category_id?: string
+          condition?: string | null
+          created_at?: string
+          description?: string | null
+          first_listed_at?: string
+          id?: string
+          image_url?: string | null
+          language?: string
+          last_restocked_at?: string | null
+          name?: string
+          pokemon_name?: string | null
+          price?: number
+          quantity?: number
+          rarity?: string | null
+          set_id?: string | null
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_set_id_fkey"
+            columns: ["set_id"]
+            isOneToOne: false
+            referencedRelation: "sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sets: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          name: string
+          release_date: string | null
+          series: string | null
+          symbol_image_url: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+          release_date?: string | null
+          series?: string | null
+          symbol_image_url?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+          release_date?: string | null
+          series?: string | null
+          symbol_image_url?: string | null
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      available_products: {
+        Row: {
+          active: boolean | null
+          card_number: string | null
+          category_id: string | null
+          condition: string | null
+          created_at: string | null
+          description: string | null
+          first_listed_at: string | null
+          id: string | null
+          image_url: string | null
+          language: string | null
+          last_restocked_at: string | null
+          name: string | null
+          pokemon_name: string | null
+          price: number | null
+          quantity: number | null
+          rarity: string | null
+          set_id: string | null
+          slug: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          card_number?: string | null
+          category_id?: string | null
+          condition?: string | null
+          created_at?: string | null
+          description?: string | null
+          first_listed_at?: string | null
+          id?: string | null
+          image_url?: string | null
+          language?: string | null
+          last_restocked_at?: string | null
+          name?: string | null
+          pokemon_name?: string | null
+          price?: number | null
+          quantity?: number | null
+          rarity?: string | null
+          set_id?: string | null
+          slug?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          card_number?: string | null
+          category_id?: string | null
+          condition?: string | null
+          created_at?: string | null
+          description?: string | null
+          first_listed_at?: string | null
+          id?: string | null
+          image_url?: string | null
+          language?: string | null
+          last_restocked_at?: string | null
+          name?: string | null
+          pokemon_name?: string | null
+          price?: number | null
+          quantity?: number | null
+          rarity?: string | null
+          set_id?: string | null
+          slug?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_set_id_fkey"
+            columns: ["set_id"]
+            isOneToOne: false
+            referencedRelation: "sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
+    Functions: {
+      is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
@@ -149,6 +391,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },
