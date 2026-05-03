@@ -7,6 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../core/auth/auth.service';
@@ -33,6 +34,7 @@ const WHATSAPP_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 2
     MatInputModule,
     MatFormFieldModule,
     MatMenuModule,
+    MatTooltipModule,
   ],
   templateUrl: './header.html',
   styleUrl: './header.scss',
@@ -48,6 +50,13 @@ export class Header {
   protected readonly currentUser = this.auth.currentUser;
   protected readonly isSignedIn = this.auth.isSignedIn;
   protected readonly isAdmin = this.auth.isAdmin;
+
+  // Tooltip content shown on hover of the search-help icon. Lists every
+  // field the search-text bucket covers so customers know what to type.
+  protected readonly searchHelpText =
+    'Busca por: nombre de la carta, Pokémon, set (nombre o código), número, ' +
+    'tipo (Fire, Water…), ilustrador, marca de regulación o tipo de carta ' +
+    '(Full Art, VMAX…).';
 
   constructor() {
     const registry = inject(MatIconRegistry);

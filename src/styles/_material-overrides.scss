@@ -77,3 +77,12 @@ html {
   font-weight: 700;
   font-size: 12px;
 }
+
+// Wider tooltip for the multi-line search help text. Material tooltips are
+// rendered in the CDK overlay at body level, so this rule lives globally.
+.mat-mdc-tooltip.search-help-tooltip .mdc-tooltip__surface {
+  max-width: 320px;
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 10px 12px;
+}

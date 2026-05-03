@@ -48,10 +48,18 @@
 .search-field {
   flex: 0 0 auto;
   width: min(800px, 40vw);
+  display: flex;
+  align-items: center;
+  gap: 4px;
 
   mat-form-field {
-    width: 100%;
+    flex: 1;
   }
+}
+
+.search-help {
+  flex: 0 0 auto;
+  color: var(--text-tertiary);
 }
 
 .header-actions {

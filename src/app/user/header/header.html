@@ -17,6 +17,17 @@
         <mat-icon>search</mat-icon>
       </button>
     </mat-form-field>
+    <button
+      mat-icon-button
+      type="button"
+      class="search-help"
+      aria-label="Ayuda de búsqueda"
+      [matTooltip]="searchHelpText"
+      matTooltipPosition="below"
+      matTooltipClass="search-help-tooltip"
+    >
+      <mat-icon>help_outline</mat-icon>
+    </button>
   </div>
   <div class="header-actions">
     <button mat-icon-button routerLink="/cart" aria-label="Cart" class="cart-btn">
