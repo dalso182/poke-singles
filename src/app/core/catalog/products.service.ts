@@ -3,7 +3,9 @@ import { SupabaseService } from '../supabase/supabase.service';
 import type {
   ProductInsert,
   ProductRow,
+  ProductSearchRow,
   ProductUpdate,
+  SortKey,
 } from './catalog.types';
 
 export interface ProductListParams {
@@ -18,6 +20,19 @@ export interface ProductListParams {
 export interface ProductListResult {
   rows: ProductRow[];
   total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface ProductSearchParams {
+  q: string;
+  sort: SortKey;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface ProductSearchResult {
+  rows: ProductSearchRow[];
   page: number;
   pageSize: number;
 }
@@ -111,6 +126,26 @@ export class ProductsService {
 
   async setActive(id: string, active: boolean): Promise<ProductRow> {
     return this.update(id, { active });
+  }
+
+  /**
+   * Customer-facing search. Calls the `search_products` RPC which encapsulates
+   * the four sort modes (relevance, price-asc, price-desc, recent) and the
+   * substring ILIKE against the `products_search` view's `search_text` column.
+   * RLS still applies (function is `security invoker`), so anon clients only
+   * see active in-stock priced rows.
+   */
+  async search(params: ProductSearchParams): Promise<ProductSearchResult> {
+    const page = Math.max(1, params.page ?? 1);
+    const pageSize = Math.max(1, Math.min(200, params.pageSize ?? 60));
+    const { data, error } = await (this.supabase.client as any).rpc('search_products', {
+      q: params.q,
+      sort: params.sort,
+      limit_n: pageSize,
+      offset_n: (page - 1) * pageSize,
+    });
+    if (error) throw error;
+    return { rows: (data ?? []) as ProductSearchRow[], page, pageSize };
   }
 
   async slugInUse(slug: string, exceptId?: string): Promise<boolean> {

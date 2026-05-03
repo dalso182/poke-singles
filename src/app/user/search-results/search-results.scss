@@ -1,3 +1,8 @@
+// Inherits the same .breadcrumb, .cards-grid, .product-card, .card-image,
+// .card-info, .card-name, .card-meta, .card-stock, .card-price, .add-btn
+// rules from card-list.scss; this file only owns the search-specific
+// header + toolbar + empty state.
+
 .breadcrumb {
   display: flex;
   align-items: center;
@@ -44,35 +49,47 @@
   font-weight: 500;
 }
 
-.cards-header {
+.search-header {
   margin-bottom: 24px;
 
   h1 {
     font-family: var(--font-brand);
-    font-size: 36px;
+    font-size: 28px;
     font-weight: 800;
     letter-spacing: -1px;
     color: var(--text-primary);
-    margin: 0 0 8px 0;
+    margin: 0 0 12px 0;
+    word-break: break-word;
   }
+}
 
-  .lead {
-    color: var(--text-secondary);
-    font-size: 14px;
-    margin: 0;
-  }
+.search-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.search-count {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.sort-field {
+  width: 240px;
+}
+
+.search-empty {
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 48px 0;
 }
 
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 12px;
-}
-
-.cards-empty {
-  color: var(--text-secondary);
-  text-align: center;
-  padding: 48px 0;
 }
 
 .product-card {
@@ -89,8 +106,6 @@
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   }
 
-  // Bottom-right corner cluster: type icons + condition pill, pinned outside
-  // the .card-info flow so they sit at the card edge regardless of content.
   > .card-corner {
     position: absolute;
     right: 8px;
@@ -111,6 +126,7 @@
     }
   }
 }
+
 .card-image {
   flex: 0 0 auto;
   width: 150px;
@@ -118,7 +134,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 10px 6px 10px 10px;
+  padding: 6px;
   box-sizing: border-box;
 
   img {
@@ -131,7 +147,7 @@
 
 .card-info {
   flex: 1;
-  padding: 12px 19px;
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -162,15 +178,9 @@
   color: var(--text-secondary);
 }
 
-.card-stock-out {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--brand-red);
-}
-
 .card-price {
   font-family: var(--font-brand);
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 800;
   letter-spacing: -0.5px;
   color: var(--text-primary);

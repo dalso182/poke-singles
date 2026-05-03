@@ -1,38 +1,241 @@
-<a mat-button routerLink="/products" class="back-link">
-  <mat-icon>arrow_back</mat-icon>
-  Volver a cartas
-</a>
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a routerLink="/" class="breadcrumb-home" aria-label="Inicio">
+    <mat-icon>home</mat-icon>
+  </a>
+  <span class="breadcrumb-sep">›</span>
+  <a routerLink="/products" class="breadcrumb-link">Cartas</a>
+  <span class="breadcrumb-sep">›</span>
+  <span class="breadcrumb-current">{{ product()?.name ?? '—' }}</span>
+</nav>
 
-<article class="card-detail">
-  <div class="card-image-placeholder">
-    <mat-icon>style</mat-icon>
-    <span class="placeholder-id">{{ id() }}</span>
-  </div>
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
 
-  <section class="card-info">
-    <h1>Placeholder Card</h1>
-    <p class="set">Mock data — id: <code>{{ id() }}</code></p>
+@if (notFound()) {
+  <mat-card class="detail-not-found">
+    <mat-card-content>
+      <p>No encontramos esta carta.</p>
+      <a mat-stroked-button routerLink="/products">Volver al catálogo</a>
+    </mat-card-content>
+  </mat-card>
+}
 
-    <mat-chip-set>
-      <mat-chip>Holo</mat-chip>
-      <mat-chip>Near Mint</mat-chip>
-      <mat-chip>1ra Edición</mat-chip>
-    </mat-chip-set>
+@if (product(); as p) {
+  <section class="detail-grid">
+    <div class="detail-image">
+      @if (p.image_url) {
+        <img [src]="p.image_url" [alt]="p.name" />
+      } @else {
+        <div class="detail-image-placeholder">Sin imagen</div>
+      }
+    </div>
 
-    <div class="price">₡—</div>
-    <p class="muted">
-      Stock y precio se cargarán desde Supabase cuando el endpoint esté conectado.
-    </p>
+    <div class="detail-info">
+      @if (set(); as s) {
+        <span class="brand-eyebrow">{{ s.name }}</span>
+      }
+      <h1>{{ p.name }}</h1>
+      <p class="brand-mono detail-meta">
+        @if (p.card_number) { #{{ p.card_number }} }
+        @if (p.rarity) { · {{ p.rarity }} }
+        @if (p.regulation_mark) { · Reg {{ p.regulation_mark }} }
+      </p>
 
-    <div class="actions">
-      <button mat-flat-button>
-        <mat-icon>add_shopping_cart</mat-icon>
-        Añadir al carrito
+      <div class="detail-price-block">
+        <div class="detail-price">₡{{ p.price | number: '1.0-0' }}</div>
+        <div class="detail-stock">
+          {{ p.quantity }} disponible{{ p.quantity !== 1 ? 's' : '' }}
+        </div>
+      </div>
+
+      <button
+        mat-flat-button
+        color="primary"
+        class="detail-add-btn"
+        (click)="onAddToCart()"
+        [disabled]="p.quantity === 0"
+      >
+        <mat-icon>shopping_cart</mat-icon>
+        {{ p.quantity === 0 ? 'Agotada' : 'Añadir al carrito' }}
       </button>
-      <button mat-stroked-button>
-        <mat-icon>favorite_border</mat-icon>
-        Wishlist
-      </button>
+
+      <dl class="detail-specs">
+        <dt>Condición</dt>
+        <dd>{{ p.condition || '—' }}</dd>
+        <dt>Idioma</dt>
+        <dd>{{ languageLabel(p.language) }}</dd>
+        @if (p.variant) {
+          <dt>Variante</dt>
+          <dd>{{ variantLabel(p.variant) }}</dd>
+        }
+      </dl>
+
+      @if (tags().length) {
+        <mat-chip-set class="detail-tags">
+          @for (t of tags(); track t.id) {
+            <mat-chip>{{ t.name }}</mat-chip>
+          }
+        </mat-chip-set>
+      }
     </div>
   </section>
-</article>
+
+  @if (card(); as c) {
+    @if (isPokemon()) {
+      <mat-card class="detail-section">
+        <mat-card-header>
+          <mat-card-title>Estadísticas</mat-card-title>
+        </mat-card-header>
+        <mat-card-content class="detail-stats-grid">
+          @if (c.hp) {
+            <div><span class="brand-mono">HP</span><strong>{{ c.hp }}</strong></div>
+          }
+          @if (c.types?.length) {
+            <div><span class="brand-mono">Tipo</span><strong>{{ c.types?.join(' · ') }}</strong></div>
+          }
+          @if (c.stage) {
+            <div><span class="brand-mono">Etapa</span><strong>{{ c.stage }}</strong></div>
+          }
+          @if (c.evolveFrom) {
+            <div><span class="brand-mono">Evoluciona de</span><strong>{{ c.evolveFrom }}</strong></div>
+          }
+          @if (c.dexId?.length) {
+            <div><span class="brand-mono">Pokédex #</span><strong>{{ c.dexId?.join(', ') }}</strong></div>
+          }
+          @if (c.suffix) {
+            <div><span class="brand-mono">Sufijo</span><strong>{{ c.suffix }}</strong></div>
+          }
+          @if (c.weight) {
+            <div><span class="brand-mono">Peso</span><strong>{{ c.weight }}</strong></div>
+          }
+          @if (c.level) {
+            <div><span class="brand-mono">Nivel</span><strong>{{ c.level }}</strong></div>
+          }
+        </mat-card-content>
+      </mat-card>
+    }
+
+    @if (c.item; as item) {
+      <mat-card class="detail-section">
+        <mat-card-header>
+          <mat-card-title>Objeto</mat-card-title>
+          <mat-card-subtitle>{{ item.name }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <p>{{ item.effect }}</p>
+        </mat-card-content>
+      </mat-card>
+    }
+
+    @if (abilities().length) {
+      <mat-card class="detail-section">
+        <mat-card-header>
+          <mat-card-title>Habilidades</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          @for (a of abilities(); track a.name) {
+            <div class="detail-ability">
+              <h3>
+                <span class="brand-eyebrow">{{ a.type }}</span>
+                {{ a.name }}
+              </h3>
+              <p>{{ a.effect }}</p>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+    }
+
+    @if (attacks().length) {
+      <mat-card class="detail-section">
+        <mat-card-header>
+          <mat-card-title>Ataques</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          @for (atk of attacks(); track atk.name) {
+            <div class="detail-attack">
+              <div class="detail-attack-row">
+                <span class="brand-mono detail-attack-cost">
+                  {{ (atk.cost ?? []).join(' ') || '—' }}
+                </span>
+                <h3 class="detail-attack-name">{{ atk.name }}</h3>
+                @if (atk.damage) {
+                  <span class="detail-attack-damage">{{ atk.damage }}</span>
+                }
+              </div>
+              @if (atk.effect) {
+                <p>{{ atk.effect }}</p>
+              }
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+    }
+
+    @if (weaknesses().length || resistances().length || c.retreat !== undefined) {
+      <mat-card class="detail-section">
+        <mat-card-content class="detail-defense-grid">
+          @if (weaknesses().length) {
+            <div>
+              <span class="brand-eyebrow">Debilidad</span>
+              @for (w of weaknesses(); track w.type) {
+                <div>{{ w.type }} {{ w.value || '' }}</div>
+              }
+            </div>
+          }
+          @if (resistances().length) {
+            <div>
+              <span class="brand-eyebrow">Resistencia</span>
+              @for (r of resistances(); track r.type) {
+                <div>{{ r.type }} {{ r.value || '' }}</div>
+              }
+            </div>
+          }
+          @if (c.retreat !== undefined) {
+            <div>
+              <span class="brand-eyebrow">Costo de retirada</span>
+              <div>{{ c.retreat }}</div>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+    }
+
+    @if (!isPokemon() && c.effect) {
+      <mat-card class="detail-section">
+        <mat-card-content>
+          <p>{{ c.effect }}</p>
+        </mat-card-content>
+      </mat-card>
+    }
+
+    @if (c.description || p.illustrator || p.legal_standard !== null) {
+      <mat-card class="detail-section detail-flavor">
+        <mat-card-content>
+          @if (c.description) {
+            <p class="detail-flavor-text"><em>{{ c.description }}</em></p>
+          }
+          <p class="brand-mono detail-credits">
+            @if (p.illustrator) { Ilustrado por {{ p.illustrator }} }
+            @if (p.legal_standard !== null) {
+              · Standard {{ p.legal_standard ? '✓' : '✗' }}
+              · Expanded {{ p.legal_expanded ? '✓' : '✗' }}
+            }
+          </p>
+        </mat-card-content>
+      </mat-card>
+    }
+  }
+
+  @if (p.description) {
+    <mat-card class="detail-section">
+      <mat-card-header>
+        <mat-card-title>Notas del vendedor</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <p>{{ p.description }}</p>
+      </mat-card-content>
+    </mat-card>
+  }
+}

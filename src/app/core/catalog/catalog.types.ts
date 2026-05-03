@@ -124,6 +124,46 @@ export interface TcgdexCardRow {
   fetched_at: string;
 }
 
+// Row shape returned by the `products_search` view / `search_products` RPC.
+// Mirrors `ProductRow` minus a few admin-only columns and adds the joined
+// set fields plus `search_text` / `card_type_names`.
+export interface ProductSearchRow {
+  id: string;
+  slug: string;
+  name: string;
+  pokemon_name: string | null;
+  card_number: string | null;
+  rarity: string | null;
+  illustrator: string | null;
+  regulation_mark: string | null;
+  category: string | null;
+  stage: string | null;
+  type1: string | null;
+  type2: string | null;
+  legal_standard: boolean | null;
+  legal_expanded: boolean | null;
+  language: string;
+  condition: string | null;
+  variant: string | null;
+  price: number;
+  quantity: number;
+  image_url: string | null;
+  set_id: string | null;
+  category_id: string;
+  tcgdex_id: string | null;
+  last_restocked_at: string | null;
+  created_at: string;
+  set_name: string | null;
+  set_code: string | null;
+  card_type_names: string;
+  search_text: string;
+}
+
+export type SortKey = 'relevance' | 'price-asc' | 'price-desc' | 'recent';
+
+export const DEFAULT_SORT_WITH_QUERY: SortKey = 'relevance';
+export const DEFAULT_SORT_NO_QUERY: SortKey = 'recent';
+
 export type ProductUpdate = Partial<Omit<ProductInsert, 'category_id'>> & {
   category_id?: string;
 };

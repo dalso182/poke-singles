@@ -88,3 +88,27 @@
   font-weight: 500;
   margin-right: 8px;
 }
+
+// Condition pill: small inline badge that signals card grade at a glance.
+// Modifiers map to a fixed traffic-light: green = NM, amber = LP, orange = MP,
+// red = HP / DMG. The red here is `--danger` (Material's error red), NOT
+// `--brand-red`, per the brand-red usage rules.
+.condition-pill {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid currentColor;
+  margin-left: 6px;
+  vertical-align: baseline;
+  line-height: 1.2;
+}
+
+.condition-pill--nm { color: var(--success); }
+.condition-pill--lp { color: var(--warning); }
+.condition-pill--mp { color: #c2410c; }
+.condition-pill--hp { color: var(--danger); }

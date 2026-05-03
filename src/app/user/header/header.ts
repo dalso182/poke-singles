@@ -60,7 +60,7 @@ export class Header {
   protected onSearch(query: string): void {
     const q = query.trim();
     if (q) {
-      this.router.navigate(['/products'], { queryParams: { q } });
+      this.router.navigate(['/buscar'], { queryParams: { q } });
     }
   }
 

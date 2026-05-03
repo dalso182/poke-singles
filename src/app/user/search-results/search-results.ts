@@ -1,68 +1,88 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
-import { RouterLink } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
+import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ProductsService } from '../../core/catalog/products.service';
-import { SetsService } from '../../core/catalog/sets.service';
-import type { ProductRow, SetRow } from '../../core/catalog/catalog.types';
+import type { ProductSearchRow, SortKey } from '../../core/catalog/catalog.types';
 
 @Component({
-  selector: 'app-card-list',
+  selector: 'app-search-results',
   imports: [
     RouterLink,
     DecimalPipe,
-    MatCardModule,
     MatButtonModule,
+    MatCardModule,
+    MatFormFieldModule,
     MatIconModule,
     MatProgressBarModule,
+    MatSelectModule,
     MatSnackBarModule,
   ],
-  templateUrl: './card-list.html',
-  styleUrl: './card-list.scss',
+  templateUrl: './search-results.html',
+  styleUrl: './search-results.scss',
 })
-export class CardList {
+export class SearchResults {
+  // URL-bound via withComponentInputBinding(). Empty defaults handle the
+  // "browse via /buscar with no params" case.
+  readonly q = input<string>('');
+  readonly sort = input<string>('');
+
   private readonly products = inject(ProductsService);
-  private readonly sets = inject(SetsService);
+  private readonly router = inject(Router);
   private readonly snack = inject(MatSnackBar);
 
-  protected readonly cards = signal<ProductRow[]>([]);
-  protected readonly setsById = signal<Map<string, SetRow>>(new Map());
-  protected readonly loading = signal(true);
+  protected readonly results = signal<ProductSearchRow[]>([]);
+  protected readonly loading = signal(false);
+
+  /** Resolves the URL's raw `sort` param to a known SortKey, falling back to
+   *  the per-context default (relevance with a query, recent without). */
+  protected readonly normalizedSort = computed<SortKey>(() => {
+    const v = this.sort();
+    if (v === 'price-asc' || v === 'price-desc' || v === 'recent' || v === 'relevance') {
+      return v;
+    }
+    return this.q().trim() ? 'relevance' : 'recent';
+  });
+
+  protected readonly hasQuery = computed(() => this.q().trim().length > 0);
 
   constructor() {
-    this.bootstrap();
+    effect(() => {
+      const q = this.q().trim();
+      const sort = this.normalizedSort();
+      void this.fetch(q, sort);
+    });
   }
 
-  private async bootstrap(): Promise<void> {
+  private async fetch(q: string, sort: SortKey): Promise<void> {
+    this.loading.set(true);
     try {
-      // RLS already filters to (active = true and quantity > 0) for the anon
-      // client, so we don't need to repeat those constraints here.
-      const [{ rows }, sets] = await Promise.all([
-        this.products.list({ pageSize: 60 }),
-        this.sets.list(),
-      ]);
-      this.cards.set(rows);
-      this.setsById.set(new Map(sets.map((s) => [s.id, s])));
+      const { rows } = await this.products.search({ q, sort, pageSize: 60 });
+      this.results.set(rows);
     } catch (err) {
       this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
+      this.results.set([]);
     } finally {
       this.loading.set(false);
     }
   }
 
-  protected setName(setId: string | null): string {
-    if (!setId) return '';
-    return this.setsById().get(setId)?.name ?? '';
+  protected onSortChange(next: SortKey): void {
+    void this.router.navigate(['/buscar'], {
+      queryParams: { q: this.q() || null, sort: next },
+      queryParamsHandling: 'merge',
+    });
   }
 
-  protected metaLine(card: ProductRow): string {
-    const setName = this.setName(card.set_id);
+  protected metaLine(card: ProductSearchRow): string {
     const parts = [
-      setName,
+      card.set_name ?? '',
       card.rarity ?? '',
       card.card_number ? `#${card.card_number}` : '',
     ].filter((s) => s && s.length > 0);

@@ -3,26 +3,60 @@
     <mat-icon>home</mat-icon>
   </a>
   <span class="breadcrumb-sep">›</span>
-  <span class="breadcrumb-current">Cartas</span>
+  @if (hasQuery()) {
+    <a routerLink="/buscar" class="breadcrumb-link">Buscar</a>
+    <span class="breadcrumb-sep">›</span>
+    <span class="breadcrumb-current">{{ q() }}</span>
+  } @else {
+    <span class="breadcrumb-current">Buscar</span>
+  }
 </nav>
 
-<header class="cards-header">
-  <h1>Cartas</h1>
-  <p class="lead">
-    Singles auténticas, condición verificada, envío seguro a todo Costa Rica.
-  </p>
+<header class="search-header">
+  <h1>
+    @if (hasQuery()) {
+      Resultados para “{{ q() }}”
+    } @else {
+      Cartas
+    }
+  </h1>
+  <div class="search-toolbar">
+    <span class="search-count">
+      {{ results().length }} resultado{{ results().length !== 1 ? 's' : '' }}
+    </span>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="sort-field">
+      <mat-label>Ordenar por</mat-label>
+      <mat-select
+        [value]="normalizedSort()"
+        (selectionChange)="onSortChange($event.value)"
+      >
+        @if (hasQuery()) {
+          <mat-option value="relevance">Relevancia</mat-option>
+        }
+        <mat-option value="price-asc">Precio (Menor a Mayor)</mat-option>
+        <mat-option value="price-desc">Precio (Mayor a Menor)</mat-option>
+        <mat-option value="recent">Más recientes</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
 </header>
 
 @if (loading()) {
   <mat-progress-bar mode="indeterminate" />
 }
 
-@if (!loading() && cards().length === 0) {
-  <p class="cards-empty">Aún no hay cartas en stock. Vuelve pronto.</p>
+@if (!loading() && results().length === 0) {
+  <p class="search-empty">
+    @if (hasQuery()) {
+      No encontramos cartas para “{{ q() }}”.
+    } @else {
+      Aún no hay cartas en stock. Vuelve pronto.
+    }
+  </p>
 }
 
 <div class="cards-grid">
-  @for (card of cards(); track card.id) {
+  @for (card of results(); track card.id) {
     <div class="product-card">
       <a [routerLink]="['/products', card.slug]" class="card-image">
         @if (card.image_url) {
@@ -43,11 +77,9 @@
       <div class="card-info">
         <a [routerLink]="['/products', card.slug]" class="card-name">{{ card.name }}</a>
         <div class="card-meta">{{ metaLine(card) }}</div>
-
         <div class="card-stock">
           {{ card.quantity }} disponible{{ card.quantity > 1 ? 's' : '' }}
         </div>
-
         <div class="card-price">₡{{ card.price | number: '1.0-0' }}</div>
         <button mat-flat-button class="add-btn" [disabled]="card.quantity === 0">
           {{ card.quantity === 0 ? 'Agotada' : 'Añadir' }}

@@ -130,72 +130,106 @@ export type Database = {
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "product_card_types_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_search"
+            referencedColumns: ["id"]
+          },
         ]
       }
       products: {
         Row: {
           active: boolean
           card_number: string | null
+          category: string | null
           category_id: string
           condition: string | null
           created_at: string
           description: string | null
           first_listed_at: string
           id: string
+          illustrator: string | null
           image_url: string | null
           language: string
           last_restocked_at: string | null
+          legal_expanded: boolean | null
+          legal_standard: boolean | null
           name: string
           pokemon_name: string | null
           price: number
           quantity: number
           rarity: string | null
+          regulation_mark: string | null
           set_id: string | null
           slug: string
+          stage: string | null
+          tcgdex_id: string | null
+          type1: string | null
+          type2: string | null
           updated_at: string
           variant: string | null
         }
         Insert: {
           active?: boolean
           card_number?: string | null
+          category?: string | null
           category_id: string
           condition?: string | null
           created_at?: string
           description?: string | null
           first_listed_at?: string
           id?: string
+          illustrator?: string | null
           image_url?: string | null
           language?: string
           last_restocked_at?: string | null
+          legal_expanded?: boolean | null
+          legal_standard?: boolean | null
           name: string
           pokemon_name?: string | null
           price: number
           quantity?: number
           rarity?: string | null
+          regulation_mark?: string | null
           set_id?: string | null
           slug: string
+          stage?: string | null
+          tcgdex_id?: string | null
+          type1?: string | null
+          type2?: string | null
           updated_at?: string
           variant?: string | null
         }
         Update: {
           active?: boolean
           card_number?: string | null
+          category?: string | null
           category_id?: string
           condition?: string | null
           created_at?: string
           description?: string | null
           first_listed_at?: string
           id?: string
+          illustrator?: string | null
           image_url?: string | null
           language?: string
           last_restocked_at?: string | null
+          legal_expanded?: boolean | null
+          legal_standard?: boolean | null
           name?: string
           pokemon_name?: string | null
           price?: number
           quantity?: number
           rarity?: string | null
+          regulation_mark?: string | null
           set_id?: string | null
           slug?: string
+          stage?: string | null
+          tcgdex_id?: string | null
+          type1?: string | null
+          type2?: string | null
           updated_at?: string
           variant?: string | null
         }
@@ -213,6 +247,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sets"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_tcgdex_id_fkey"
+            columns: ["tcgdex_id"]
+            isOneToOne: false
+            referencedRelation: "tcgdex_cards"
+            referencedColumns: ["tcgdex_id"]
           },
         ]
       }
@@ -246,71 +287,119 @@ export type Database = {
         }
         Relationships: []
       }
+      tcgdex_cards: {
+        Row: {
+          data: Json
+          fetched_at: string
+          tcgdex_id: string
+        }
+        Insert: {
+          data: Json
+          fetched_at?: string
+          tcgdex_id: string
+        }
+        Update: {
+          data?: Json
+          fetched_at?: string
+          tcgdex_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       available_products: {
         Row: {
           active: boolean | null
           card_number: string | null
+          category: string | null
           category_id: string | null
           condition: string | null
           created_at: string | null
           description: string | null
           first_listed_at: string | null
           id: string | null
+          illustrator: string | null
           image_url: string | null
           language: string | null
           last_restocked_at: string | null
+          legal_expanded: boolean | null
+          legal_standard: boolean | null
           name: string | null
           pokemon_name: string | null
           price: number | null
           quantity: number | null
           rarity: string | null
+          regulation_mark: string | null
           set_id: string | null
           slug: string | null
+          stage: string | null
+          tcgdex_id: string | null
+          type1: string | null
+          type2: string | null
           updated_at: string | null
+          variant: string | null
         }
         Insert: {
           active?: boolean | null
           card_number?: string | null
+          category?: string | null
           category_id?: string | null
           condition?: string | null
           created_at?: string | null
           description?: string | null
           first_listed_at?: string | null
           id?: string | null
+          illustrator?: string | null
           image_url?: string | null
           language?: string | null
           last_restocked_at?: string | null
+          legal_expanded?: boolean | null
+          legal_standard?: boolean | null
           name?: string | null
           pokemon_name?: string | null
           price?: number | null
           quantity?: number | null
           rarity?: string | null
+          regulation_mark?: string | null
           set_id?: string | null
           slug?: string | null
+          stage?: string | null
+          tcgdex_id?: string | null
+          type1?: string | null
+          type2?: string | null
           updated_at?: string | null
+          variant?: string | null
         }
         Update: {
           active?: boolean | null
           card_number?: string | null
+          category?: string | null
           category_id?: string | null
           condition?: string | null
           created_at?: string | null
           description?: string | null
           first_listed_at?: string | null
           id?: string | null
+          illustrator?: string | null
           image_url?: string | null
           language?: string | null
           last_restocked_at?: string | null
+          legal_expanded?: boolean | null
+          legal_standard?: boolean | null
           name?: string | null
           pokemon_name?: string | null
           price?: number | null
           quantity?: number | null
           rarity?: string | null
+          regulation_mark?: string | null
           set_id?: string | null
           slug?: string | null
+          stage?: string | null
+          tcgdex_id?: string | null
+          type1?: string | null
+          type2?: string | null
           updated_at?: string | null
+          variant?: string | null
         }
         Relationships: [
           {
@@ -327,11 +416,114 @@ export type Database = {
             referencedRelation: "sets"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "products_tcgdex_id_fkey"
+            columns: ["tcgdex_id"]
+            isOneToOne: false
+            referencedRelation: "tcgdex_cards"
+            referencedColumns: ["tcgdex_id"]
+          },
+        ]
+      }
+      products_search: {
+        Row: {
+          card_number: string | null
+          card_type_names: string | null
+          category: string | null
+          category_id: string | null
+          condition: string | null
+          created_at: string | null
+          id: string | null
+          illustrator: string | null
+          image_url: string | null
+          language: string | null
+          last_restocked_at: string | null
+          legal_expanded: boolean | null
+          legal_standard: boolean | null
+          name: string | null
+          pokemon_name: string | null
+          price: number | null
+          quantity: number | null
+          rarity: string | null
+          regulation_mark: string | null
+          search_text: string | null
+          set_code: string | null
+          set_id: string | null
+          set_name: string | null
+          slug: string | null
+          stage: string | null
+          tcgdex_id: string | null
+          type1: string | null
+          type2: string | null
+          variant: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_set_id_fkey"
+            columns: ["set_id"]
+            isOneToOne: false
+            referencedRelation: "sets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_tcgdex_id_fkey"
+            columns: ["tcgdex_id"]
+            isOneToOne: false
+            referencedRelation: "tcgdex_cards"
+            referencedColumns: ["tcgdex_id"]
+          },
         ]
       }
     }
     Functions: {
       is_admin: { Args: never; Returns: boolean }
+      search_products: {
+        Args: { limit_n?: number; offset_n?: number; q: string; sort?: string }
+        Returns: {
+          card_number: string | null
+          card_type_names: string | null
+          category: string | null
+          category_id: string | null
+          condition: string | null
+          created_at: string | null
+          id: string | null
+          illustrator: string | null
+          image_url: string | null
+          language: string | null
+          last_restocked_at: string | null
+          legal_expanded: boolean | null
+          legal_standard: boolean | null
+          name: string | null
+          pokemon_name: string | null
+          price: number | null
+          quantity: number | null
+          rarity: string | null
+          regulation_mark: string | null
+          search_text: string | null
+          set_code: string | null
+          set_id: string | null
+          set_name: string | null
+          slug: string | null
+          stage: string | null
+          tcgdex_id: string | null
+          type1: string | null
+          type2: string | null
+          variant: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "products_search"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
     }
     Enums: {
       [_ in never]: never

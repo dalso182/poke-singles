@@ -72,7 +72,12 @@ export const routes: Routes = [
           import('./user/card-list/card-list').then((m) => m.CardList),
       },
       {
-        path: 'products/:id',
+        path: 'buscar',
+        loadComponent: () =>
+          import('./user/search-results/search-results').then((m) => m.SearchResults),
+      },
+      {
+        path: 'products/:slug',
         loadComponent: () =>
           import('./user/detail/detail').then((m) => m.Detail),
       },
