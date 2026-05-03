@@ -1,25 +1,48 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import type { Card } from '@tcgdex/sdk';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatDialog } from '@angular/material/dialog';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { CardTypeahead } from '../../shared/card-typeahead/card-typeahead';
+import { SetTypeahead } from '../../shared/set-typeahead/set-typeahead';
+import {
+  ImagePickerDialog,
+  type ImagePickerResult,
+} from '../../shared/image-picker/image-picker-dialog';
+import { ImageBrowserService } from '../../core/images/image-browser.service';
 import { CategoriesService } from '../../core/catalog/categories.service';
+import { CardTypesService } from '../../core/catalog/card-types.service';
 import { ProductsService } from '../../core/catalog/products.service';
 import { SetsService } from '../../core/catalog/sets.service';
+import { TcgdexCardsService } from '../../core/catalog/tcgdex-cards.service';
+import { LocalStorageService } from '../../core/storage/local-storage.service';
 import {
   CONDITION_OPTIONS,
   LANGUAGE_OPTIONS,
+  VARIANT_OPTIONS,
 } from '../../core/catalog/catalog.types';
-import type { CategoryRow } from '../../core/catalog/catalog.types';
+import type { CardTypeRow, CategoryRow, SetRow, VariantCode } from '../../core/catalog/catalog.types';
+
+const PICKER_SET_STORAGE_KEY = 'admin:add-product:picker-set-id';
 
 @Component({
   selector: 'app-add-product',
@@ -27,8 +50,10 @@ import type { CategoryRow } from '../../core/catalog/catalog.types';
     ReactiveFormsModule,
     RouterLink,
     CardTypeahead,
+    SetTypeahead,
     MatButtonModule,
     MatCardModule,
+    MatCheckboxModule,
     MatDividerModule,
     MatFormFieldModule,
     MatIconModule,
@@ -36,6 +61,7 @@ import type { CategoryRow } from '../../core/catalog/catalog.types';
     MatProgressBarModule,
     MatSelectModule,
     MatSnackBarModule,
+    MatTooltipModule,
   ],
   templateUrl: './add-product.html',
   styleUrl: './add-product.scss',
@@ -44,17 +70,52 @@ export class AddProduct {
   private readonly fb = inject(FormBuilder);
   private readonly products = inject(ProductsService);
   private readonly categories = inject(CategoriesService);
+  private readonly cardTypes = inject(CardTypesService);
   private readonly sets = inject(SetsService);
+  private readonly tcgdexCards = inject(TcgdexCardsService);
   private readonly snack = inject(MatSnackBar);
   private readonly router = inject(Router);
+  private readonly dialog = inject(MatDialog);
+  private readonly imageBrowser = inject(ImageBrowserService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly storage = inject(LocalStorageService);
+
+  protected readonly imagePickerEnabled = this.imageBrowser.isEnabled();
 
   protected readonly conditions = CONDITION_OPTIONS;
   protected readonly languages = LANGUAGE_OPTIONS;
   protected readonly categoriesList = signal<CategoryRow[]>([]);
+  protected readonly cardTypesList = signal<CardTypeRow[]>([]);
+  protected readonly selectedCardTypeIds = signal<Set<string>>(new Set());
+  private readonly setsById = signal<Map<string, SetRow>>(new Map());
   protected readonly selectedCard = signal<Card | null>(null);
   protected readonly manualMode = signal(false);
   protected readonly saving = signal(false);
   protected readonly hasCategories = computed(() => this.categoriesList().length > 0);
+
+  // Optional set filter for the TCGdex card picker. Holds a Supabase set_id (UUID);
+  // we resolve its TCGdex code through `setsById` to feed `card-typeahead`.
+  // Persisted in localStorage so an admin adding several cards from one set keeps
+  // the filter across page loads — cleared via the X button on the SetTypeahead.
+  protected readonly pickerSetId = signal<string | null>(
+    this.storage.get(PICKER_SET_STORAGE_KEY),
+  );
+  protected readonly pickerSetCode = computed<string | null>(() => {
+    const id = this.pickerSetId();
+    if (!id) return null;
+    return this.setsById().get(id)?.code ?? null;
+  });
+
+  // When a TCGdex card is selected, narrow the dropdown to the variants the
+  // card actually has (boolean true). In manual mode show all options.
+  protected readonly variantOptions = computed(() => {
+    const card = this.selectedCard();
+    if (!card) return VARIANT_OPTIONS;
+    const variants = (card as { variants?: Partial<Record<VariantCode, boolean>> }).variants;
+    if (!variants) return VARIANT_OPTIONS;
+    const allowed = VARIANT_OPTIONS.filter((opt) => variants[opt.value] === true);
+    return allowed.length > 0 ? allowed : VARIANT_OPTIONS;
+  });
 
   protected readonly form: FormGroup = this.fb.nonNullable.group({
     name: ['', Validators.required],
@@ -62,27 +123,66 @@ export class AddProduct {
     rarity: [''],
     card_number: [''],
     image_url: [''],
-    slug: ['', [Validators.required, Validators.pattern(/^[a-z0-9-]+$/)]],
+    slug: [
+      { value: '', disabled: true },
+      [Validators.required, Validators.pattern(/^[a-z0-9-]+$/)],
+    ],
+    set_id: [null as string | null],
     category_id: ['', Validators.required],
     condition: ['NM'],
     language: ['EN', Validators.required],
+    variant: [''],
     price: [0, [Validators.required, Validators.min(0)]],
     quantity: [1, [Validators.required, Validators.min(0)]],
+    // TCGdex-derived metadata. Not rendered as form inputs — patched by
+    // `onCardSelected` and serialised on submit. Manual mode leaves them null.
+    tcgdex_id: [null as string | null],
+    illustrator: [null as string | null],
+    regulation_mark: [null as string | null],
+    category: [null as string | null],
+    stage: [null as string | null],
+    type1: [null as string | null],
+    type2: [null as string | null],
+    legal_standard: [null as boolean | null],
+    legal_expanded: [null as boolean | null],
   });
 
   constructor() {
     this.bootstrap();
+    this.form.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.refreshSlug());
+    effect(() => this.storage.set(PICKER_SET_STORAGE_KEY, this.pickerSetId()));
   }
 
   private async bootstrap(): Promise<void> {
     try {
-      this.categoriesList.set(await this.categories.list({ activeOnly: true }));
+      const [cats, sets, types] = await Promise.all([
+        this.categories.list({ activeOnly: true }),
+        this.sets.list(),
+        this.cardTypes.list({ activeOnly: true }),
+      ]);
+      this.categoriesList.set(cats);
+      this.setsById.set(new Map(sets.map((s) => [s.id, s])));
+      this.cardTypesList.set(types);
+      this.refreshSlug();
     } catch (err) {
       this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
     }
   }
 
-  protected onCardSelected(card: Card): void {
+  protected isCardTypeSelected(id: string): boolean {
+    return this.selectedCardTypeIds().has(id);
+  }
+
+  protected toggleCardType(id: string, checked: boolean): void {
+    const next = new Set(this.selectedCardTypeIds());
+    if (checked) next.add(id);
+    else next.delete(id);
+    this.selectedCardTypeIds.set(next);
+  }
+
+  protected async onCardSelected(card: Card): Promise<void> {
     this.selectedCard.set(card);
     this.form.patchValue({
       name: card.name,
@@ -90,33 +190,116 @@ export class AddProduct {
       rarity: card.rarity ?? '',
       card_number: card.localId ?? '',
       image_url: card.image ? `${card.image}/high.webp` : '',
-      slug: this.suggestSlug(card),
+      variant: this.defaultVariantFor(card),
+      tcgdex_id: card.id,
+      illustrator: card.illustrator ?? null,
+      regulation_mark: card.regulationMark ?? null,
+      category: card.category ?? null,
+      stage: card.stage ?? null,
+      type1: card.types?.[0] ?? null,
+      type2: card.types?.[1] ?? null,
+      legal_standard: card.legal?.standard ?? null,
+      legal_expanded: card.legal?.expanded ?? null,
+    });
+    // Default to the "Singles" category for TCGdex picks unless the admin
+    // already chose something else. Looked up by slug so renaming the display
+    // name doesn't break this.
+    if (!this.form.get('category_id')!.value) {
+      const singles = this.categoriesList().find((c) => c.slug.toLowerCase() === 'singles');
+      if (singles) this.form.patchValue({ category_id: singles.id });
+    }
+    // Cache the full TCGdex payload so the detail page can read attacks /
+    // abilities / weaknesses without round-tripping to TCGdex on every view.
+    // The `tcgdex_id` FK on `products` references this row, so we upsert
+    // before submit to satisfy the constraint.
+    try {
+      await this.tcgdexCards.upsert(card.id, card);
+    } catch (err) {
+      this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
+    }
+    try {
+      const setRow = await this.sets.findOrCreateFromTcgdex(card);
+      // Make sure the freshly-created set is in our id→row map so the slug
+      // computation can resolve its code on the next change.
+      const next = new Map(this.setsById());
+      next.set(setRow.id, setRow);
+      this.setsById.set(next);
+      this.form.patchValue({ set_id: setRow.id });
+    } catch (err) {
+      this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
+    }
+  }
+
+  /** Pre-fill with the first available variant, preferring `normal` if present. */
+  private defaultVariantFor(card: Card): VariantCode | '' {
+    const variants = (card as { variants?: Partial<Record<VariantCode, boolean>> }).variants;
+    if (!variants) return '';
+    if (variants.normal) return 'normal';
+    const first = (Object.keys(variants) as VariantCode[]).find((k) => variants[k] === true);
+    return first ?? '';
+  }
+
+  protected openImagePicker(): void {
+    const ref = this.dialog.open<ImagePickerDialog, undefined, ImagePickerResult>(
+      ImagePickerDialog,
+      { width: '880px', maxWidth: '95vw', autoFocus: 'first-tabbable' },
+    );
+    ref.afterClosed().subscribe((result) => {
+      if (!result) return;
+      this.form.patchValue({ image_url: result.url });
+      this.form.get('image_url')!.markAsDirty();
     });
   }
 
   protected enableManualMode(): void {
     this.manualMode.set(true);
     this.selectedCard.set(null);
+    this.selectedCardTypeIds.set(new Set());
     this.form.reset({
       name: '',
       pokemon_name: '',
       rarity: '',
       card_number: '',
       image_url: '',
-      slug: '',
+      set_id: null,
       category_id: '',
       condition: 'NM',
       language: 'EN',
+      variant: '',
       price: 0,
       quantity: 1,
+      tcgdex_id: null,
+      illustrator: null,
+      regulation_mark: null,
+      category: null,
+      stage: null,
+      type1: null,
+      type2: null,
+      legal_standard: null,
+      legal_expanded: null,
     });
   }
 
-  private suggestSlug(card: Card): string {
+  private refreshSlug(): void {
+    const next = this.computeSlug();
+    const slug = this.form.controls['slug'];
+    if (slug.value !== next) {
+      slug.setValue(next, { emitEvent: false });
+    }
+  }
+
+  private computeSlug(): string {
+    const raw = this.form.getRawValue();
+    const setCode = raw.set_id ? this.setsById().get(raw.set_id)?.code ?? '' : '';
+    // English is the default — only suffix when the listing is non-EN.
+    const langSuffix = raw.language && raw.language !== 'EN' ? raw.language : '';
     const parts = [
-      card.name,
-      card.localId ?? '',
-      card.set?.id ?? '',
+      raw.name ?? '',
+      raw.card_number ?? '',
+      setCode,
+      raw.variant ?? '',
+      raw.condition ?? '',
+      langSuffix,
     ].filter(Boolean);
     return parts
       .join('-')
@@ -138,12 +321,6 @@ export class AddProduct {
         this.snack.open('Ese slug ya está en uso. Edítalo y reintenta.', 'OK', { duration: 5000 });
         return;
       }
-      let setId: string | null = null;
-      const card = this.selectedCard();
-      if (card) {
-        const setRow = await this.sets.findOrCreateFromTcgdex(card);
-        setId = setRow.id;
-      }
       const created = await this.products.create({
         name: raw.name,
         pokemon_name: raw.pokemon_name || null,
@@ -152,12 +329,23 @@ export class AddProduct {
         card_number: raw.card_number || null,
         image_url: raw.image_url || null,
         category_id: raw.category_id,
-        set_id: setId,
+        set_id: raw.set_id || null,
         condition: raw.condition || null,
         language: raw.language,
+        variant: raw.variant || null,
         price: Number(raw.price),
         quantity: Number(raw.quantity),
+        tcgdex_id: raw.tcgdex_id || null,
+        illustrator: raw.illustrator || null,
+        regulation_mark: raw.regulation_mark || null,
+        category: raw.category || null,
+        stage: raw.stage || null,
+        type1: raw.type1 || null,
+        type2: raw.type2 || null,
+        legal_standard: raw.legal_standard,
+        legal_expanded: raw.legal_expanded,
       });
+      await this.products.setCardTypes(created.id, [...this.selectedCardTypeIds()]);
       this.snack.open('Producto creado', 'Editar', { duration: 5000 })
         .onAction()
         .subscribe(() => this.router.navigate(['/admin/products', created.id, 'edit']));
@@ -171,18 +359,29 @@ export class AddProduct {
 
   private resetForNext(): void {
     this.selectedCard.set(null);
+    this.selectedCardTypeIds.set(new Set());
     this.form.reset({
       name: '',
       pokemon_name: '',
       rarity: '',
       card_number: '',
       image_url: '',
-      slug: '',
+      set_id: null,
       category_id: this.form.get('category_id')!.value, // keep last category
       condition: 'NM',
       language: this.form.get('language')!.value, // keep last language
+      variant: '',
       price: 0,
       quantity: 1,
+      tcgdex_id: null,
+      illustrator: null,
+      regulation_mark: null,
+      category: null,
+      stage: null,
+      type1: null,
+      type2: null,
+      legal_standard: null,
+      legal_expanded: null,
     });
     this.manualMode.set(false);
   }

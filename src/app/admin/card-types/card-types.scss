@@ -1,0 +1,56 @@
+.card-types {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 960px;
+}
+
+.card-types__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+
+  h1 {
+    margin: 4px 0 8px;
+  }
+}
+
+.muted {
+  color: var(--mat-sys-on-surface-variant);
+  margin: 0;
+}
+
+.card-types__add-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr 120px auto;
+  gap: 12px;
+  align-items: start;
+}
+
+.card-types__sort-field {
+  width: 120px;
+}
+
+.card-types__table-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.card-types__table {
+  width: 100%;
+
+  td {
+    padding-block: 8px;
+  }
+
+  mat-form-field {
+    width: 100%;
+  }
+}
+
+.card-types__empty {
+  padding: 24px;
+  text-align: center;
+}

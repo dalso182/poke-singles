@@ -1,0 +1,97 @@
+<h2 mat-dialog-title class="image-picker__title">
+  <mat-icon>folder_open</mat-icon>
+  <span>Imagen</span>
+</h2>
+
+<div class="image-picker__bar">
+  <nav class="image-picker__crumbs" aria-label="Ruta">
+    @for (crumb of crumbs(); track crumb.path; let last = $last) {
+      <button
+        mat-button
+        type="button"
+        class="image-picker__crumb"
+        [class.image-picker__crumb--active]="last"
+        [disabled]="last"
+        (click)="navigate(crumb.path)"
+      >
+        {{ crumb.label }}
+      </button>
+      @if (!last) {
+        <mat-icon class="image-picker__crumb-sep">chevron_right</mat-icon>
+      }
+    }
+  </nav>
+
+  <mat-form-field appearance="outline" subscriptSizing="dynamic" class="image-picker__search">
+    <mat-icon matPrefix>search</mat-icon>
+    <input matInput [formControl]="searchControl" placeholder="Buscar en esta carpeta…" />
+  </mat-form-field>
+</div>
+
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<mat-dialog-content class="image-picker__content">
+  @if (errorMessage(); as msg) {
+    <div class="image-picker__error">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ msg }}</span>
+    </div>
+  } @else if (listing(); as list) {
+    @if (visibleDirs().length === 0 && visibleFiles().length === 0 && !loading()) {
+      <p class="image-picker__empty">Sin coincidencias en esta carpeta.</p>
+    }
+
+    @if (visibleDirs().length > 0) {
+      <h3 class="image-picker__section">Carpetas</h3>
+      <div class="image-picker__grid image-picker__grid--folders">
+        @for (dir of visibleDirs(); track dir.path) {
+          <button
+            type="button"
+            class="image-picker__cell image-picker__cell--folder"
+            (click)="navigate(dir.path)"
+            [attr.aria-label]="'Abrir carpeta ' + dir.name"
+          >
+            <mat-icon>folder</mat-icon>
+            <span class="image-picker__name">{{ dir.name }}</span>
+          </button>
+        }
+      </div>
+    }
+
+    @if (visibleFiles().length > 0) {
+      <h3 class="image-picker__section">Imágenes</h3>
+      <div class="image-picker__grid">
+        @for (file of visibleFiles(); track file.path) {
+          <button
+            type="button"
+            class="image-picker__cell image-picker__cell--file"
+            (click)="pick(file)"
+            [attr.aria-label]="'Seleccionar ' + file.name"
+          >
+            <span class="image-picker__thumb">
+              <img [src]="file.url" [alt]="file.name" loading="lazy" />
+            </span>
+            <span class="image-picker__name">{{ file.name }}</span>
+            <span class="image-picker__meta">{{ formatSize(file.size) }}</span>
+          </button>
+        }
+      </div>
+    }
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions class="image-picker__actions">
+  <button
+    mat-stroked-button
+    type="button"
+    (click)="goUp()"
+    [disabled]="loading() || (listing()?.parent ?? null) === null"
+  >
+    <mat-icon>arrow_upward</mat-icon>
+    Subir
+  </button>
+  <span class="image-picker__spacer"></span>
+  <button mat-button type="button" (click)="onCancel()">Cancelar</button>
+</mat-dialog-actions>

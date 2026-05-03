@@ -3,9 +3,7 @@
     <mat-icon>home</mat-icon>
   </a>
   <span class="breadcrumb-sep">›</span>
-  <a routerLink="/products" class="breadcrumb-link">Sword &amp; Shield</a>
-  <span class="breadcrumb-sep">›</span>
-  <span class="breadcrumb-current">Crown Zenith</span>
+  <span class="breadcrumb-current">Cartas</span>
 </nav>
 
 <header class="cards-header">
@@ -15,25 +13,33 @@
   </p>
 </header>
 
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+@if (!loading() && cards().length === 0) {
+  <p class="cards-empty">Aún no hay cartas en stock. Vuelve pronto.</p>
+}
+
 <div class="cards-grid">
-  @for (card of cards; track card.id) {
-    <div
-      class="product-card"
-      [class.product-card--featured]="card.featured"
-      [class.product-card--sold-out]="card.stock === 0"
-    >
-      <a [routerLink]="['/products', card.id]" class="card-image">
-        <img [src]="card.image" [alt]="card.name" loading="lazy" />
+  @for (card of cards(); track card.id) {
+    <div class="product-card">
+      <a [routerLink]="['/products', card.slug]" class="card-image">
+        @if (card.image_url) {
+          <img [src]="card.image_url" [alt]="card.name" loading="lazy" />
+        }
       </a>
       <div class="card-info">
-        <a [routerLink]="['/products', card.id]" class="card-name">{{ card.name }}</a>
-        <div class="card-meta">{{ card.set }}, {{ card.rarity }}, #{{ card.number }}</div>
+        <a [routerLink]="['/products', card.slug]" class="card-name">{{ card.name }}</a>
+        <div class="card-meta">{{ metaLine(card) }}</div>
 
-          <div class="card-stock">{{ card.stock }} disponible{{ card.stock > 1 ? 's' : '' }}</div>
-        
-        <div class="card-price">₡{{ card.priceCRC | number: '1.0-0' }}</div>
-        <button mat-flat-button class="add-btn" [disabled]="card.stock === 0">
-          {{ card.stock === 0 ? 'Agotada' : 'Añadir' }}
+        <div class="card-stock">
+          {{ card.quantity }} disponible{{ card.quantity > 1 ? 's' : '' }}
+        </div>
+
+        <div class="card-price">₡{{ card.price | number: '1.0-0' }}</div>
+        <button mat-flat-button class="add-btn" [disabled]="card.quantity === 0">
+          {{ card.quantity === 0 ? 'Agotada' : 'Añadir' }}
         </button>
       </div>
     </div>

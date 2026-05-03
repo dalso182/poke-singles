@@ -19,4 +19,12 @@ export const environment = {
     // when you want to hit a local TCGdex mirror during development.
     endpoint: 'http://localhost:3000/v2',
   },
+  images: {
+    // Absolute URL to the read-only PHP listing endpoint that powers the
+    // admin image picker. Empty string disables the picker (the URL field
+    // becomes manual-only). The PHP file lives at server/list-images.php in
+    // the repo and must be uploaded once to the root of the images folder
+    // on SiteGround.
+    listUrl: 'https://poke-singles.com/card-images/list-images.php',
+  },
 };

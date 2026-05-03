@@ -1,15 +1,45 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import type { Card, Set as TcgdexSet, SetResume } from '@tcgdex/sdk';
 import { SupabaseService } from '../supabase/supabase.service';
 import { TcgdexService } from '../tcgdex/tcgdex.service';
 import type { SetInsert, SetRow, SetUpdate } from './catalog.types';
+
+// TCGdex series we never sell as physical singles. Filtered at sync time so
+// they never enter the `sets` table.
+const EXCLUDED_SERIES = new Set<string>(['Pokémon TCG Pocket']);
 
 @Injectable({ providedIn: 'root' })
 export class SetsService {
   private readonly supabase = inject(SupabaseService);
   private readonly tcgdex = inject(TcgdexService);
 
-  async list(): Promise<SetRow[]> {
+  // Process-lifetime cache. The sets list is small (~250 rows) and changes only
+  // when an admin runs the TCGdex sync or edits a set, so a single signal is
+  // enough — mutating methods call `invalidate()` so subsequent reads refetch.
+  private readonly cache = signal<SetRow[] | null>(null);
+  private inflight: Promise<SetRow[]> | null = null;
+
+  async list(options: { refresh?: boolean } = {}): Promise<SetRow[]> {
+    if (!options.refresh) {
+      const cached = this.cache();
+      if (cached) return cached;
+      if (this.inflight) return this.inflight;
+    }
+    this.inflight = this.fetch();
+    try {
+      const rows = await this.inflight;
+      this.cache.set(rows);
+      return rows;
+    } finally {
+      this.inflight = null;
+    }
+  }
+
+  invalidate(): void {
+    this.cache.set(null);
+  }
+
+  private async fetch(): Promise<SetRow[]> {
     const { data, error } = await (this.supabase.client as any)
       .from('sets')
       .select('*')
@@ -46,6 +76,7 @@ export class SetsService {
       .select('*')
       .single();
     if (error) throw error;
+    this.invalidate();
     return data as SetRow;
   }
 
@@ -57,6 +88,7 @@ export class SetsService {
       .select('*')
       .single();
     if (error) throw error;
+    this.invalidate();
     return data as SetRow;
   }
 
@@ -74,6 +106,7 @@ export class SetsService {
       .delete()
       .eq('id', id);
     if (error) throw error;
+    this.invalidate();
     return { deleted: true, productCount: 0 };
   }
 
@@ -87,26 +120,83 @@ export class SetsService {
     const existing = await this.findByCode(resume.id);
     if (existing) return existing;
 
-    let series: string | null = null;
-    let releaseDate: string | null = null;
-    let symbolImageUrl: string | null = null;
-    try {
-      const full: TcgdexSet | null = await this.tcgdex.client.set.get(resume.id);
-      if (full) {
-        series = (full as any).serie?.name ?? null;
-        releaseDate = (full as any).releaseDate ?? null;
-        symbolImageUrl = full.symbol ? `${full.symbol}.webp` : null;
-      }
-    } catch {
-      // TCGdex hydration is best-effort; fall back to the resume fields.
-    }
-
+    const hydrated = await this.hydrateSetFromTcgdex(resume.id);
     return this.create({
       code: resume.id,
       name: resume.name,
-      series,
-      release_date: releaseDate,
-      symbol_image_url: symbolImageUrl,
+      series: hydrated.series,
+      release_date: hydrated.releaseDate,
+      symbol_image_url: hydrated.symbolImageUrl,
     });
+  }
+
+  /**
+   * Pull every set from TCGdex and insert any whose `code` isn't already in
+   * the `sets` table. Existing rows are never overwritten — admin-edited
+   * names and pre-order entries are preserved. Per-set errors are swallowed
+   * so one bad set doesn't abort the batch.
+   *
+   * Sets whose series matches `EXCLUDED_SERIES` are skipped entirely (they
+   * are mobile-game-only and never sold as physical singles).
+   */
+  async syncFromTcgdex(): Promise<{
+    added: number;
+    skipped: number;
+    failed: number;
+    excluded: number;
+  }> {
+    const [resumes, existing] = await Promise.all([
+      this.tcgdex.client.set.list(),
+      this.list({ refresh: true }),
+    ]);
+    const existingCodes = new Set(existing.map((s) => s.code));
+
+    let added = 0;
+    let skipped = 0;
+    let failed = 0;
+    let excluded = 0;
+    for (const resume of resumes) {
+      if (existingCodes.has(resume.id)) {
+        skipped++;
+        continue;
+      }
+      try {
+        const hydrated = await this.hydrateSetFromTcgdex(resume.id);
+        if (hydrated.series && EXCLUDED_SERIES.has(hydrated.series)) {
+          excluded++;
+          continue;
+        }
+        await this.create({
+          code: resume.id,
+          name: resume.name,
+          series: hydrated.series,
+          release_date: hydrated.releaseDate,
+          symbol_image_url: hydrated.symbolImageUrl,
+        });
+        added++;
+      } catch {
+        failed++;
+      }
+    }
+    this.invalidate();
+    return { added, skipped, failed, excluded };
+  }
+
+  private async hydrateSetFromTcgdex(code: string): Promise<{
+    series: string | null;
+    releaseDate: string | null;
+    symbolImageUrl: string | null;
+  }> {
+    try {
+      const full: TcgdexSet | null = await this.tcgdex.client.set.get(code);
+      if (!full) return { series: null, releaseDate: null, symbolImageUrl: null };
+      return {
+        series: (full as any).serie?.name ?? null,
+        releaseDate: (full as any).releaseDate ?? null,
+        symbolImageUrl: full.symbol ? `${full.symbol}.webp` : null,
+      };
+    } catch {
+      return { series: null, releaseDate: null, symbolImageUrl: null };
+    }
   }
 }

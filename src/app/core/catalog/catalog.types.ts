@@ -21,6 +21,24 @@ export interface CategoryInsert {
 
 export type CategoryUpdate = Partial<CategoryInsert>;
 
+export interface CardTypeRow {
+  id: string;
+  slug: string;
+  name: string;
+  active: boolean;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface CardTypeInsert {
+  slug: string;
+  name: string;
+  active?: boolean;
+  sort_order?: number;
+}
+
+export type CardTypeUpdate = Partial<CardTypeInsert>;
+
 export interface SetRow {
   id: string;
   code: string;
@@ -53,6 +71,7 @@ export interface ProductRow {
   card_number: string | null;
   language: string;
   condition: string | null;
+  variant: string | null;
   price: number;
   quantity: number;
   image_url: string | null;
@@ -61,6 +80,15 @@ export interface ProductRow {
   last_restocked_at: string | null;
   created_at: string;
   updated_at: string;
+  tcgdex_id: string | null;
+  illustrator: string | null;
+  regulation_mark: string | null;
+  category: string | null;
+  stage: string | null;
+  type1: string | null;
+  type2: string | null;
+  legal_standard: boolean | null;
+  legal_expanded: boolean | null;
 }
 
 export interface ProductInsert {
@@ -74,10 +102,26 @@ export interface ProductInsert {
   card_number?: string | null;
   language?: string;
   condition?: string | null;
+  variant?: string | null;
   price: number;
   quantity?: number;
   image_url?: string | null;
   active?: boolean;
+  tcgdex_id?: string | null;
+  illustrator?: string | null;
+  regulation_mark?: string | null;
+  category?: string | null;
+  stage?: string | null;
+  type1?: string | null;
+  type2?: string | null;
+  legal_standard?: boolean | null;
+  legal_expanded?: boolean | null;
+}
+
+export interface TcgdexCardRow {
+  tcgdex_id: string;
+  data: unknown;
+  fetched_at: string;
 }
 
 export type ProductUpdate = Partial<Omit<ProductInsert, 'category_id'>> & {
@@ -86,6 +130,15 @@ export type ProductUpdate = Partial<Omit<ProductInsert, 'category_id'>> & {
 
 export type ConditionCode = 'NM' | 'LP' | 'MP' | 'HP' | 'DMG';
 export type LanguageCode = 'EN' | 'ES' | 'JP';
+
+// Keys mirror the booleans on TCGdex's `card.variants` object so we can map
+// directly between the API response and the stored value.
+export type VariantCode =
+  | 'normal'
+  | 'holo'
+  | 'reverse'
+  | 'firstEdition'
+  | 'wPromo';
 
 export const CONDITION_OPTIONS: readonly { value: ConditionCode; label: string }[] = [
   { value: 'NM', label: 'NM — Near Mint' },
@@ -100,3 +153,26 @@ export const LANGUAGE_OPTIONS: readonly { value: LanguageCode; label: string }[]
   { value: 'ES', label: 'Español' },
   { value: 'JP', label: 'Japonés' },
 ];
+
+export const VARIANT_OPTIONS: readonly { value: VariantCode; label: string }[] = [
+  { value: 'normal', label: 'Normal' },
+  { value: 'holo', label: 'Holo' },
+  { value: 'reverse', label: 'Reverse Holo' },
+  { value: 'firstEdition', label: '1ª edición' },
+  { value: 'wPromo', label: 'Promo' },
+];
+
+export interface AppSettingsRow {
+  id: true;
+  exchange_rate_usd_crc: number | null;
+  maintenance_mode: boolean;
+  maintenance_message: string | null;
+  updated_at: string;
+}
+
+export type AppSettingsUpdate = Partial<
+  Pick<
+    AppSettingsRow,
+    'exchange_rate_usd_crc' | 'maintenance_mode' | 'maintenance_message'
+  >
+>;

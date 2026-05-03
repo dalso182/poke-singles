@@ -1,0 +1,72 @@
+.admin-config {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 800px;
+}
+
+.admin-config__header {
+  h1 {
+    margin: 4px 0 8px;
+  }
+
+  p {
+    max-width: 60ch;
+  }
+}
+
+.muted {
+  color: var(--mat-sys-on-surface-variant);
+  margin: 0;
+}
+
+.admin-config__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-config__panel {
+  padding: 8px;
+}
+
+.admin-config__hint {
+  margin: 0 0 12px;
+  font-size: 13px;
+}
+
+.admin-config__full {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+}
+
+.admin-config__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.admin-config__divider {
+  margin: 8px 0;
+}
+
+.admin-config__advanced {
+  background: var(--mat-sys-surface-variant);
+}
+
+.admin-config__op {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.admin-config__op-text {
+  flex: 1 1 320px;
+  min-width: 0;
+
+  strong {
+    display: block;
+    margin-bottom: 4px;
+  }
+}

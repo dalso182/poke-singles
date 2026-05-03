@@ -1,5 +1,5 @@
 <section class="add-product">
-  <header class="add-product__header">
+  <header class="add-product__header admin-page-header">
     <span class="brand-eyebrow">Inventario</span>
     <h1>Agregar producto</h1>
     <p class="muted">
@@ -21,9 +21,16 @@
 
   @if (!manualMode() && !selectedCard()) {
     <mat-card class="add-product__panel">
-      <mat-card-content>
+      <mat-card-content class="add-product__picker">
+        <app-set-typeahead
+          label="Filtrar por set (opcional)"
+          placeholder="Acotar cartas a un set…"
+          [value]="pickerSetId()"
+          (valueChange)="pickerSetId.set($event)"
+        />
         <app-card-typeahead
           placeholder="Buscar carta en TCGdex…"
+          [setCode]="pickerSetCode()"
           (cardSelected)="onCardSelected($event)"
         />
         <button
@@ -52,6 +59,18 @@
               <p class="brand-mono">
                 {{ card.id }} · {{ card.set.name }} · {{ card.rarity || '—' }}
               </p>
+              @if (card.illustrator || card.regulationMark || card.stage) {
+                <p class="brand-mono add-product__tcgdex-meta">
+                  @if (card.illustrator) { Ilustrado por {{ card.illustrator }} }
+                  @if (card.regulationMark) { · Reg {{ card.regulationMark }} }
+                  @if (card.stage) { · {{ card.stage }} }
+                </p>
+              }
+              @if (card.types?.length) {
+                <p class="brand-mono add-product__tcgdex-meta">
+                  Tipos: {{ card.types?.join(', ') }}
+                </p>
+              }
               <button
                 mat-button
                 type="button"
@@ -85,23 +104,37 @@
             <mat-label>Número en set</mat-label>
             <input matInput formControlName="card_number" />
           </mat-form-field>
-          <mat-form-field appearance="outline" class="add-product__full">
+          <app-set-typeahead
+            label="Set"
+            placeholder="Buscar set por código, nombre o serie…"
+            [value]="form.controls['set_id'].value"
+            (valueChange)="form.controls['set_id'].setValue($event)"
+          />
+          <mat-form-field appearance="outline">
             <mat-label>Slug</mat-label>
             <input matInput formControlName="slug" />
-            <mat-hint>Sólo minúsculas, números y guiones. URL pública.</mat-hint>
             @if (form.get('slug')?.hasError('duplicate')) {
-              <mat-error>Slug ya en uso.</mat-error>
-            }
-            @if (form.get('slug')?.hasError('pattern')) {
-              <mat-error>Sólo minúsculas, números y guiones.</mat-error>
+              <mat-error>Slug ya en uso. Cambia uno de los campos de origen.</mat-error>
             }
           </mat-form-field>
           <mat-form-field appearance="outline" class="add-product__full">
             <mat-label>URL de la imagen</mat-label>
             <input matInput formControlName="image_url" />
+            @if (imagePickerEnabled) {
+              <button
+                matSuffix
+                mat-icon-button
+                type="button"
+                (click)="openImagePicker()"
+                matTooltip="Buscar en el servidor"
+                aria-label="Buscar imagen en el servidor"
+              >
+                <mat-icon>folder_open</mat-icon>
+              </button>
+            }
           </mat-form-field>
 
-          <mat-divider class="add-product__full add-product__divider" />
+          <mat-divider class="add-product__full" />
 
           <mat-form-field appearance="outline">
             <mat-label>Categoría</mat-label>
@@ -121,6 +154,18 @@
             </mat-select>
           </mat-form-field>
           <mat-form-field appearance="outline">
+            <mat-label>Variante</mat-label>
+            <mat-select formControlName="variant">
+              <mat-option value="">—</mat-option>
+              @for (v of variantOptions(); track v.value) {
+                <mat-option [value]="v.value">{{ v.label }}</mat-option>
+              }
+            </mat-select>
+            @if (selectedCard()) {
+              <mat-hint>Sólo se listan las variantes disponibles para esta carta.</mat-hint>
+            }
+          </mat-form-field>
+          <mat-form-field appearance="outline">
             <mat-label>Idioma</mat-label>
             <mat-select formControlName="language">
               @for (l of languages; track l.value) {
@@ -136,8 +181,28 @@
             <mat-label>Cantidad inicial</mat-label>
             <input matInput type="number" formControlName="quantity" min="0" />
           </mat-form-field>
+          <div></div>
         </mat-card-content>
       </mat-card>
+
+      @if (cardTypesList().length > 0) {
+        <mat-card class="add-product__panel">
+          <mat-card-header>
+            <mat-card-title>Tipos de carta</mat-card-title>
+            <mat-card-subtitle>Selecciona todas las que apliquen</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content class="card-types-grid">
+            @for (t of cardTypesList(); track t.id) {
+              <mat-checkbox
+                [checked]="isCardTypeSelected(t.id)"
+                (change)="toggleCardType(t.id, $event.checked)"
+              >
+                {{ t.name }}
+              </mat-checkbox>
+            }
+          </mat-card-content>
+        </mat-card>
+      }
 
       <div class="add-product__actions">
         <button mat-stroked-button type="button" (click)="selectedCard.set(null); manualMode.set(false)">

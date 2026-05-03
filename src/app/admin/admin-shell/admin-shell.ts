@@ -47,9 +47,11 @@ export class AdminShell {
     { label: 'Agregar producto', icon: 'add_box',              path: '/admin/products/new', exact: true },
     { label: 'Productos',        icon: 'inventory_2',          path: '/admin/products',     exact: true },
     { label: 'Categorías', icon: 'category', path: '/admin/categories' },
+    { label: 'Tipos de carta', icon: 'local_offer', path: '/admin/card-types' },
     { label: 'Sets', icon: 'collections_bookmark', path: '/admin/sets' },
     { label: 'Pedidos', icon: 'receipt_long', path: '/admin/orders' },
     { label: 'Clientes', icon: 'group', path: '/admin/customers' },
+    { label: 'Configuración', icon: 'settings', path: '/admin/config' },
   ];
 
   protected toggleSidenav(): void {

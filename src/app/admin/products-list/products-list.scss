@@ -83,6 +83,11 @@
   &--inactive {
     opacity: 0.55;
   }
+
+  ::ng-deep td.mat-mdc-cell {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
 }
 
 .products-list__empty {

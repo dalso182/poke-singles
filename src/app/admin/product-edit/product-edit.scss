@@ -71,3 +71,62 @@
   gap: 12px;
   padding-top: 8px;
 }
+
+.card-types-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 16px;
+}
+
+.product-edit__quick {
+  border: 1px solid var(--mat-sys-primary);
+}
+
+.product-edit__quick-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.product-edit__quick-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.product-edit__quick-title {
+  font-family: var(--font-brand);
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.product-edit__quick-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.product-edit__quick-thumb {
+  width: 104px;
+  height: 146px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex: 0 0 auto;
+}
+
+.product-edit__quick-price {
+  width: 180px;
+  flex: 0 0 auto;
+}
+
+.product-edit__quick-qty {
+  width: 110px;
+  flex: 0 0 auto;
+}
+
+.product-edit__quick-actions {
+  display: flex;
+  justify-content: flex-start;
+}

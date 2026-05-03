@@ -1,0 +1,51 @@
+:host {
+  display: block;
+}
+
+.set-typeahead-field {
+  width: 100%;
+}
+
+.set-typeahead-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.set-typeahead-thumb {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+.set-typeahead-thumb--empty {
+  display: inline-block;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.set-typeahead-name {
+  flex: 1 1 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.set-typeahead-code {
+  margin-left: auto;
+  opacity: 0.6;
+  font-size: 11px;
+  flex: 0 0 auto;
+}
+
+.set-typeahead-series {
+  opacity: 0.55;
+  font-size: 11px;
+  flex: 0 0 auto;
+  max-width: 30%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

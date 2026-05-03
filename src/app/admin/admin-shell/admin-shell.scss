@@ -1,7 +1,7 @@
 :host {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  min-height: 100%;
 }
 
 .admin-toolbar {
@@ -43,7 +43,7 @@
 
 .admin-container {
   flex: 1 1 auto;
-  height: calc(100vh - 80px);
+  min-height: calc(100vh - 80px);
 
   mat-sidenav {
     width: 260px;
@@ -51,11 +51,15 @@
 }
 
 .admin-content {
-  padding: 24px;
+  padding: 24px 24px 64px;
 
   ::ng-deep .mat-mdc-card-header {
     margin-bottom: 16px;
   }
+}
+
+.admin-page-header {
+  margin-bottom: 20px;
 }
 
 .active-link {

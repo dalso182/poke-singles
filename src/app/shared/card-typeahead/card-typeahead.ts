@@ -1,7 +1,15 @@
 import { Component, inject, input, output, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { debounceTime, distinctUntilChanged, filter, switchMap, tap } from 'rxjs';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import {
+  combineLatest,
+  debounceTime,
+  distinctUntilChanged,
+  filter,
+  startWith,
+  switchMap,
+  tap,
+} from 'rxjs';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
@@ -28,6 +36,8 @@ import { TcgdexService } from '../../core/tcgdex/tcgdex.service';
 })
 export class CardTypeahead {
   readonly placeholder = input<string>('Buscar cartas…');
+  /** TCGdex set id (e.g. "sv05"). When set, narrows results to that set. */
+  readonly setCode = input<string | null>(null);
   readonly cardSelected = output<Card>();
 
   private readonly tcgdex = inject(TcgdexService);
@@ -36,20 +46,25 @@ export class CardTypeahead {
   protected readonly searching = signal(false);
 
   protected readonly suggestions = toSignal(
-    this.searchControl.valueChanges.pipe(
-      // Material autocomplete writes the selected object back into the control;
-      // ignore non-string emissions so .trim() doesn't blow up.
-      filter((value): value is string => typeof value === 'string'),
-      debounceTime(250),
-      distinctUntilChanged(),
+    combineLatest([
+      this.searchControl.valueChanges.pipe(
+        // Material autocomplete writes the selected object back into the control;
+        // ignore non-string emissions so .trim() doesn't blow up.
+        filter((value): value is string => typeof value === 'string'),
+        debounceTime(250),
+        distinctUntilChanged(),
+        startWith(''),
+      ),
+      toObservable(this.setCode),
+    ]).pipe(
       tap(() => this.searching.set(true)),
-      switchMap(async (value) => {
+      switchMap(async ([value, setCode]) => {
         const q = value.trim();
         if (q.length < 2) return [] as CardResume[];
         try {
-          return await this.tcgdex.client.card.list(
-            Query.create().contains('name', q).paginate(1, 8),
-          );
+          let query = Query.create().contains('name', q);
+          if (setCode) query = query.equal('set.id', setCode);
+          return await this.tcgdex.client.card.list(query.paginate(1, 12));
         } catch {
           return [] as CardResume[];
         }

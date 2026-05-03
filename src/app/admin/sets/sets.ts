@@ -1,15 +1,28 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatTableModule } from '@angular/material/table';
 import { SetsService } from '../../core/catalog/sets.service';
 import type { SetRow } from '../../core/catalog/catalog.types';
+import {
+  SetDetailDialog,
+  type SetDetailDialogResult,
+} from './set-detail-dialog';
+
+interface SeriesGroup {
+  readonly series: string | null;
+  readonly label: string;
+  readonly sets: readonly SetRow[];
+}
+
+const NO_SERIES_LABEL = 'Sin serie';
 
 @Component({
   selector: 'app-admin-sets',
@@ -17,12 +30,13 @@ import type { SetRow } from '../../core/catalog/catalog.types';
     ReactiveFormsModule,
     MatButtonModule,
     MatCardModule,
+    MatDialogModule,
+    MatExpansionModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
     MatProgressBarModule,
     MatSnackBarModule,
-    MatTableModule,
   ],
   templateUrl: './sets.html',
   styleUrl: './sets.scss',
@@ -31,13 +45,12 @@ export class Sets {
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(SetsService);
   private readonly snack = inject(MatSnackBar);
+  private readonly dialog = inject(MatDialog);
 
   protected readonly rows = signal<SetRow[]>([]);
   protected readonly loading = signal(false);
-  protected readonly saving = signal<string | null>(null);
-  protected readonly expandedId = signal<string | null>(null);
   protected readonly addOpen = signal(false);
-  protected readonly displayedColumns = ['symbol', 'code', 'name', 'series', 'release_date', 'actions'];
+  protected readonly addSaving = signal(false);
 
   protected readonly addForm: FormGroup = this.fb.nonNullable.group({
     code: ['', Validators.required],
@@ -47,7 +60,42 @@ export class Sets {
     symbol_image_url: [''],
   });
 
-  protected readonly editForms = new Map<string, FormGroup>();
+  protected readonly grouped = computed<SeriesGroup[]>(() => {
+    const map = new Map<string, SetRow[]>();
+    const NO_KEY = '__no_series__';
+    for (const row of this.rows()) {
+      const key = row.series ?? NO_KEY;
+      let bucket = map.get(key);
+      if (!bucket) {
+        bucket = [];
+        map.set(key, bucket);
+      }
+      bucket.push(row);
+    }
+    for (const list of map.values()) {
+      list.sort((a, b) => {
+        const da = a.release_date ?? '';
+        const db = b.release_date ?? '';
+        if (da !== db) return db.localeCompare(da);
+        return a.name.localeCompare(b.name);
+      });
+    }
+    const groups: SeriesGroup[] = Array.from(map.entries()).map(
+      ([key, sets]) => ({
+        series: key === NO_KEY ? null : key,
+        label: key === NO_KEY ? NO_SERIES_LABEL : key,
+        sets,
+      }),
+    );
+    groups.sort((a, b) => {
+      if (a.series === null) return 1;
+      if (b.series === null) return -1;
+      return a.label.localeCompare(b.label);
+    });
+    return groups;
+  });
+
+  protected readonly totalSets = computed(() => this.rows().length);
 
   constructor() {
     this.refresh();
@@ -56,20 +104,8 @@ export class Sets {
   protected async refresh(): Promise<void> {
     this.loading.set(true);
     try {
-      const rows = await this.service.list();
+      const rows = await this.service.list({ refresh: true });
       this.rows.set(rows);
-      this.editForms.clear();
-      for (const row of rows) {
-        this.editForms.set(
-          row.id,
-          this.fb.nonNullable.group({
-            name: [row.name, Validators.required],
-            series: [row.series ?? ''],
-            release_date: [row.release_date ?? ''],
-            symbol_image_url: [row.symbol_image_url ?? ''],
-          }),
-        );
-      }
     } catch (err) {
       this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
     } finally {
@@ -77,17 +113,9 @@ export class Sets {
     }
   }
 
-  protected formFor(id: string): FormGroup {
-    return this.editForms.get(id)!;
-  }
-
-  protected toggleExpanded(id: string): void {
-    this.expandedId.update((current) => (current === id ? null : id));
-  }
-
   protected async onAdd(): Promise<void> {
     if (this.addForm.invalid) return;
-    this.saving.set('__new__');
+    this.addSaving.set(true);
     try {
       const raw = this.addForm.getRawValue();
       await this.service.create({
@@ -110,53 +138,30 @@ export class Sets {
     } catch (err) {
       this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
     } finally {
-      this.saving.set(null);
+      this.addSaving.set(false);
     }
   }
 
-  protected async onSave(row: SetRow): Promise<void> {
-    const form = this.editForms.get(row.id);
-    if (!form || form.invalid) return;
-    this.saving.set(row.id);
-    try {
-      const raw = form.getRawValue();
-      await this.service.update(row.id, {
-        name: raw.name,
-        series: raw.series || null,
-        release_date: raw.release_date || null,
-        symbol_image_url: raw.symbol_image_url || null,
-      });
-      this.snack.open('Set actualizado', 'OK', { duration: 3000 });
-      await this.refresh();
-    } catch (err) {
-      this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
-    } finally {
-      this.saving.set(null);
-    }
-  }
-
-  protected async onDelete(row: SetRow): Promise<void> {
-    if (!confirm(`¿Eliminar el set "${row.name}"? Sólo se permite si no tiene productos.`)) {
-      return;
-    }
-    this.saving.set(row.id);
-    try {
-      const result = await this.service.deleteIfEmpty(row.id);
-      if (!result.deleted) {
-        this.snack.open(
-          `No se eliminó: el set tiene ${result.productCount} producto(s) asociado(s).`,
-          'OK',
-          { duration: 5000 },
+  protected openDetail(row: SetRow): void {
+    const ref = this.dialog.open<SetDetailDialog, SetRow, SetDetailDialogResult>(
+      SetDetailDialog,
+      {
+        data: row,
+        width: '560px',
+        maxWidth: '95vw',
+        autoFocus: 'first-tabbable',
+      },
+    );
+    ref.afterClosed().subscribe((result) => {
+      if (!result) return;
+      if (result.kind === 'updated') {
+        this.rows.update((rows) =>
+          rows.map((r) => (r.id === result.row.id ? result.row : r)),
         );
-      } else {
-        this.snack.open('Set eliminado', 'OK', { duration: 3000 });
-        await this.refresh();
+      } else if (result.kind === 'deleted') {
+        this.rows.update((rows) => rows.filter((r) => r.id !== result.id));
       }
-    } catch (err) {
-      this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
-    } finally {
-      this.saving.set(null);
-    }
+    });
   }
 
   private errorMessage(err: unknown): string {

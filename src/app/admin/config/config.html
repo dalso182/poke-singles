@@ -1,0 +1,107 @@
+<section class="admin-config">
+  <header class="admin-config__header admin-page-header">
+    <span class="brand-eyebrow">Administración</span>
+    <h1>Configuración</h1>
+    <p class="muted">
+      Valores globales de la tienda. Los cambios se aplican a clientes y al panel
+      en cuanto se guardan.
+    </p>
+  </header>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <form [formGroup]="form" (ngSubmit)="onSave()" class="admin-config__form">
+    <mat-card class="admin-config__panel">
+      <mat-card-header>
+        <mat-card-title>Tipo de cambio</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <p class="muted admin-config__hint">
+          Colones por dólar (USD → CRC). Se usará para mostrar precios y/o
+          calcular conversiones cuando lo conectemos.
+        </p>
+        <mat-form-field appearance="outline">
+          <mat-label>CRC por 1 USD</mat-label>
+          <input
+            matInput
+            type="number"
+            formControlName="exchange_rate_usd_crc"
+            min="0"
+            step="0.01"
+            placeholder="510.00"
+          />
+          <span matTextSuffix>CRC</span>
+        </mat-form-field>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="admin-config__panel">
+      <mat-card-header>
+        <mat-card-title>Modo mantenimiento</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <p class="muted admin-config__hint">
+          Cuando esté activo, la tienda mostrará un mensaje y no aceptará
+          pedidos. La lógica del frontend se conectará después.
+        </p>
+        <mat-slide-toggle formControlName="maintenance_mode">
+          Activar modo mantenimiento
+        </mat-slide-toggle>
+        <mat-form-field appearance="outline" class="admin-config__full">
+          <mat-label>Mensaje a mostrar</mat-label>
+          <textarea
+            matInput
+            formControlName="maintenance_message"
+            rows="3"
+            placeholder="Estamos actualizando el inventario, volvemos en un rato."
+          ></textarea>
+        </mat-form-field>
+      </mat-card-content>
+    </mat-card>
+
+    <div class="admin-config__actions">
+      <button
+        mat-flat-button
+        color="primary"
+        type="submit"
+        [disabled]="form.invalid || form.pristine || saving() || loading()"
+      >
+        Guardar cambios
+      </button>
+    </div>
+  </form>
+
+  <mat-divider class="admin-config__divider" />
+
+  <mat-card class="admin-config__panel admin-config__advanced">
+    <mat-card-header>
+      <mat-card-title>Operaciones</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="admin-config__op">
+        <div class="admin-config__op-text">
+          <strong>Importar histórico de sets de TCGdex</strong>
+          <p class="muted admin-config__hint">
+            Inserta todos los sets de TCGdex que aún no existan en la base.
+            Pensado para ejecutarse una sola vez al configurar la tienda. Es
+            seguro re-ejecutarlo: nunca sobrescribe sets existentes.
+          </p>
+        </div>
+        <button
+          mat-stroked-button
+          type="button"
+          (click)="onImportTcgdexSets()"
+          [disabled]="importing()"
+        >
+          <mat-icon>cloud_download</mat-icon>
+          {{ importing() ? 'Importando…' : 'Importar' }}
+        </button>
+      </div>
+      @if (importing()) {
+        <mat-progress-bar mode="indeterminate" />
+      }
+    </mat-card-content>
+  </mat-card>
+</section>

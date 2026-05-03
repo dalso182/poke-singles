@@ -42,44 +42,92 @@
   justify-self: end;
 }
 
-.sets__table-card {
-  padding: 0;
-  overflow: hidden;
-}
-
-.sets__table {
-  width: 100%;
-}
-
-.sets__symbol {
-  width: 32px;
-  height: 32px;
-  object-fit: contain;
-  display: block;
-
-  &--empty {
-    background: var(--surface-muted, var(--mat-sys-surface-variant));
-    border-radius: 4px;
-  }
-}
-
-.sets__edit-form {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 12px;
-  padding: 16px 24px 24px;
-
-  > button {
-    grid-column: 1 / -1;
-    justify-self: end;
-  }
-}
-
-.sets__row--hidden td {
-  display: none;
-}
-
-.sets__empty {
+.sets__empty-card {
   padding: 24px;
-  text-align: center;
+}
+
+.sets__accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sets__panel {
+  border-radius: 8px;
+}
+
+.sets__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  padding: 8px 0 4px;
+}
+
+.sets__card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 8px;
+  background: var(--mat-sys-surface);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 120ms ease, transform 120ms ease, box-shadow 120ms ease;
+  font: inherit;
+  color: inherit;
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--mat-sys-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    outline: none;
+  }
+}
+
+.sets__card-symbol {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  background: var(--mat-sys-surface-variant);
+  border-radius: 6px;
+  flex: 0 0 auto;
+
+  img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+  }
+
+  mat-icon {
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.sets__card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.sets__card-code {
+  font-size: 11px;
+  opacity: 0.7;
+  text-transform: uppercase;
+}
+
+.sets__card-name {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sets__card-date {
+  font-size: 12px;
+  color: var(--mat-sys-on-surface-variant);
 }

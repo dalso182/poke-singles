@@ -37,8 +37,18 @@ export const routes: Routes = [
           import('./admin/categories/categories').then((m) => m.Categories),
       },
       {
+        path: 'card-types',
+        loadComponent: () =>
+          import('./admin/card-types/card-types').then((m) => m.CardTypes),
+      },
+      {
         path: 'sets',
         loadComponent: () => import('./admin/sets/sets').then((m) => m.Sets),
+      },
+      {
+        path: 'config',
+        loadComponent: () =>
+          import('./admin/config/config').then((m) => m.AdminConfig),
       },
     ],
   },

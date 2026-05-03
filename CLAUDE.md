@@ -142,6 +142,29 @@ prod build with empty env values can't accidentally ship. `<dev-ref>` placeholde
 - Edge functions if/when needed; folder is empty.
 - Additional RLS policies for customer orders/cart once checkout flow is designed.
 
+## Image picker (admin)
+
+The admin product forms have a folder-icon suffix on the **URL de la imagen**
+field that opens a Windows-Explorer-style modal to pick an image from a folder
+on SiteGround. The modal lists subfolders and image files via a small read-only
+PHP endpoint.
+
+- **Endpoint script:** `server/list-images.php` in the repo. Drop it once at the
+  ROOT of the images folder on each subdomain that needs the picker
+  (e.g. `new.poke-singles.com/public_html/images/list-images.php` and the
+  equivalent on dev / prod). It is location-aware (uses `__DIR__`) so it
+  serves whatever folder it's placed in.
+- **Bound check:** the endpoint resolves `?path=` against `realpath()` and
+  refuses anything outside its own directory, so `..` traversal can't escape.
+- **No auth.** The image URLs themselves are already public assets, so the
+  listing is exposed too. If that ever needs changing, gate via a shared
+  secret stored in `app_settings` and verify in PHP.
+- **Configured per env** in `src/environments/environment*.ts`:
+  `images.listUrl` is the absolute URL to the PHP endpoint. Empty string =
+  picker disabled (folder-icon button is hidden, manual URL entry only).
+- **Service / dialog:** `src/app/core/images/image-browser.service.ts` +
+  `src/app/shared/image-picker/image-picker-dialog.{ts,html,scss}`.
+
 ## TCGdex wiring
 
 `TcgdexService` at `src/app/core/tcgdex/tcgdex.service.ts` exposes a `TCGdex`

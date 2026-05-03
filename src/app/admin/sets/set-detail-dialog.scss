@@ -1,0 +1,41 @@
+.set-detail__title {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0;
+}
+
+.set-detail__code {
+  opacity: 0.6;
+  font-size: 13px;
+}
+
+.set-detail__form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: start;
+  padding-top: 8px;
+}
+
+.set-detail__full {
+  grid-column: 1 / -1;
+}
+
+.set-detail__symbol {
+  grid-column: 1 / -1;
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  justify-self: start;
+}
+
+.set-detail__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.set-detail__spacer {
+  flex: 1 1 auto;
+}

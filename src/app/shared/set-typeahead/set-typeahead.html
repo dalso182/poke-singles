@@ -1,0 +1,44 @@
+<mat-form-field appearance="outline" subscriptSizing="dynamic" class="set-typeahead-field">
+  <mat-label>{{ label() }}</mat-label>
+  <input
+    matInput
+    [placeholder]="placeholder()"
+    [formControl]="searchControl"
+    [matAutocomplete]="auto"
+    [required]="required()"
+    (blur)="onBlur()"
+  />
+  @if (searchControl.value && value()) {
+    <button
+      mat-icon-button
+      matSuffix
+      type="button"
+      aria-label="Quitar set"
+      (click)="onClear($event)"
+    >
+      <mat-icon>close</mat-icon>
+    </button>
+  }
+  <mat-autocomplete
+    #auto="matAutocomplete"
+    [displayWith]="displayValue"
+    (optionSelected)="onSelect($event)"
+  >
+    @for (set of suggestions(); track set.id) {
+      <mat-option [value]="set">
+        <span class="set-typeahead-option">
+          @if (thumbUrl(set); as thumb) {
+            <img [src]="thumb" alt="" class="set-typeahead-thumb" />
+          } @else {
+            <span class="set-typeahead-thumb set-typeahead-thumb--empty"></span>
+          }
+          <span class="set-typeahead-name">{{ set.name }}</span>
+          <span class="brand-mono set-typeahead-code">{{ set.code }}</span>
+          @if (set.series) {
+            <span class="set-typeahead-series">{{ set.series }}</span>
+          }
+        </span>
+      </mat-option>
+    }
+  </mat-autocomplete>
+</mat-form-field>

@@ -1,0 +1,52 @@
+<h2 mat-dialog-title class="set-detail__title">
+  <span class="brand-mono set-detail__code">{{ data.code }}</span>
+  <span>{{ data.name }}</span>
+</h2>
+
+@if (saving() || deleting()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="set-detail__form">
+    @if (data.symbol_image_url) {
+      <img [src]="data.symbol_image_url" alt="" class="set-detail__symbol" />
+    }
+    <mat-form-field appearance="outline">
+      <mat-label>Nombre</mat-label>
+      <input matInput formControlName="name" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Serie</mat-label>
+      <input matInput formControlName="series" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Fecha de release</mat-label>
+      <input matInput type="date" formControlName="release_date" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="set-detail__full">
+      <mat-label>URL del símbolo</mat-label>
+      <input matInput formControlName="symbol_image_url" />
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions class="set-detail__actions">
+  <button mat-stroked-button color="warn" type="button" (click)="onDelete()" [disabled]="deleting() || saving()">
+    <mat-icon>delete_outline</mat-icon>
+    Eliminar
+  </button>
+  <span class="set-detail__spacer"></span>
+  <button mat-button type="button" (click)="onCancel()" [disabled]="saving() || deleting()">
+    Cancelar
+  </button>
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    (click)="onSave()"
+    [disabled]="form.invalid || form.pristine || saving() || deleting()"
+  >
+    Guardar
+  </button>
+</mat-dialog-actions>

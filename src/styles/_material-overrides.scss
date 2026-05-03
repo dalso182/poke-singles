@@ -13,6 +13,11 @@ html {
     elevated-container-shape: 8px,
     outlined-container-shape: 8px,
   ));
+
+  // Tables: plain white instead of the warm-cream surface tone.
+  @include mat.table-overrides((
+    background-color: #ffffff,
+  ));
 }
 
 // Global form field: reduce height.
@@ -56,6 +61,11 @@ html {
 .mat-divider {
   margin-top: 8px !important;
   margin-bottom: 8px !important;
+}
+
+// Expansion panels: white background instead of the default warm cream surface.
+.mat-expansion-panel {
+  background: white !important;
 }
 
 .mat-mdc-button,

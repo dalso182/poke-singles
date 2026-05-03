@@ -12,33 +12,59 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          exchange_rate_usd_crc: number | null
+          id: boolean
+          maintenance_message: string | null
+          maintenance_mode: boolean
+          updated_at: string
+        }
+        Insert: {
+          exchange_rate_usd_crc?: number | null
+          id?: boolean
+          maintenance_message?: string | null
+          maintenance_mode?: boolean
+          updated_at?: string
+        }
+        Update: {
+          exchange_rate_usd_crc?: number | null
+          id?: boolean
+          maintenance_message?: string | null
+          maintenance_mode?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      card_types: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          slug: string
+          sort_order: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+          sort_order?: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           active: boolean
@@ -66,6 +92,46 @@ export type Database = {
         }
         Relationships: []
       }
+      product_card_types: {
+        Row: {
+          card_type_id: string
+          created_at: string
+          product_id: string
+        }
+        Insert: {
+          card_type_id: string
+          created_at?: string
+          product_id: string
+        }
+        Update: {
+          card_type_id?: string
+          created_at?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_card_types_card_type_id_fkey"
+            columns: ["card_type_id"]
+            isOneToOne: false
+            referencedRelation: "card_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_card_types_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "available_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_card_types_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           active: boolean
@@ -87,6 +153,7 @@ export type Database = {
           set_id: string | null
           slug: string
           updated_at: string
+          variant: string | null
         }
         Insert: {
           active?: boolean
@@ -108,6 +175,7 @@ export type Database = {
           set_id?: string | null
           slug: string
           updated_at?: string
+          variant?: string | null
         }
         Update: {
           active?: boolean
@@ -129,6 +197,7 @@ export type Database = {
           set_id?: string | null
           slug?: string
           updated_at?: string
+          variant?: string | null
         }
         Relationships: [
           {
@@ -391,9 +460,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },

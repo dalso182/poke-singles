@@ -123,4 +123,35 @@ export class ProductsService {
     if (error) throw error;
     return (count ?? 0) > 0;
   }
+
+  async getCardTypeIds(productId: string): Promise<string[]> {
+    const { data, error } = await (this.supabase.client as any)
+      .from('product_card_types')
+      .select('card_type_id')
+      .eq('product_id', productId);
+    if (error) throw error;
+    return ((data ?? []) as { card_type_id: string }[]).map((r) => r.card_type_id);
+  }
+
+  /**
+   * Replace the full set of card_type assignments for a product.
+   * Implemented as delete-then-insert. Admin-only writes happen one product at
+   * a time, so the brief gap between delete and insert is not a concern.
+   */
+  async setCardTypes(productId: string, cardTypeIds: string[]): Promise<void> {
+    const { error: delErr } = await (this.supabase.client as any)
+      .from('product_card_types')
+      .delete()
+      .eq('product_id', productId);
+    if (delErr) throw delErr;
+    if (cardTypeIds.length === 0) return;
+    const rows = cardTypeIds.map((card_type_id) => ({
+      product_id: productId,
+      card_type_id,
+    }));
+    const { error: insErr } = await (this.supabase.client as any)
+      .from('product_card_types')
+      .insert(rows);
+    if (insErr) throw insErr;
+  }
 }
