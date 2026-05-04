@@ -20,6 +20,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSelectModule } from '@angular/material/select';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { CardTypeahead } from '../../shared/card-typeahead/card-typeahead';
@@ -60,6 +61,7 @@ const PICKER_SET_STORAGE_KEY = 'admin:add-product:picker-set-id';
     MatInputModule,
     MatProgressBarModule,
     MatSelectModule,
+    MatSlideToggleModule,
     MatSnackBarModule,
     MatTooltipModule,
   ],
@@ -134,6 +136,7 @@ export class AddProduct {
     variant: [''],
     price: [0, [Validators.required, Validators.min(0)]],
     quantity: [1, [Validators.required, Validators.min(0)]],
+    featured: [false],
     // TCGdex-derived metadata. Not rendered as form inputs — patched by
     // `onCardSelected` and serialised on submit. Manual mode leaves them null.
     tcgdex_id: [null as string | null],
@@ -268,6 +271,7 @@ export class AddProduct {
       variant: '',
       price: 0,
       quantity: 1,
+      featured: false,
       tcgdex_id: null,
       illustrator: null,
       regulation_mark: null,
@@ -335,6 +339,7 @@ export class AddProduct {
         variant: raw.variant || null,
         price: Number(raw.price),
         quantity: Number(raw.quantity),
+        featured: raw.featured,
         tcgdex_id: raw.tcgdex_id || null,
         illustrator: raw.illustrator || null,
         regulation_mark: raw.regulation_mark || null,
@@ -373,6 +378,7 @@ export class AddProduct {
       variant: '',
       price: 0,
       quantity: 1,
+      featured: false,
       tcgdex_id: null,
       illustrator: null,
       regulation_mark: null,

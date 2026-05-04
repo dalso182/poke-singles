@@ -181,7 +181,11 @@
             <mat-label>Cantidad inicial</mat-label>
             <input matInput type="number" formControlName="quantity" min="0" />
           </mat-form-field>
-          <div></div>
+          <div class="add-product__full add-product__featured">
+            <mat-slide-toggle formControlName="featured">
+              Destacar en la portada
+            </mat-slide-toggle>
+          </div>
         </mat-card-content>
       </mat-card>
 

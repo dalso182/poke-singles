@@ -94,6 +94,7 @@ export class ProductEdit implements OnInit {
     price: [0, [Validators.required, Validators.min(0)]],
     quantity: [0, [Validators.required, Validators.min(0)]],
     active: [true],
+    featured: [false],
   });
 
   ngOnInit(): void {
@@ -135,6 +136,7 @@ export class ProductEdit implements OnInit {
         price: product.price,
         quantity: product.quantity,
         active: product.active,
+        featured: product.featured,
       });
     } catch (err) {
       this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
@@ -200,6 +202,7 @@ export class ProductEdit implements OnInit {
         price: Number(raw.price),
         quantity: Number(raw.quantity),
         active: raw.active,
+        featured: raw.featured,
       });
       await this.products.setCardTypes(product.id, [...this.selectedCardTypeIds()]);
       this.product.set(updated);

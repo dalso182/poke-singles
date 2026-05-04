@@ -1,7 +1,176 @@
-.home {
-  max-width: 720px;
+// Hero placeholder. The brand-bar gradient sits at the top edge per the
+// brand rule (one bar per page, on the first content block).
+.home-hero {
+  margin-bottom: 32px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  background: var(--surface-card);
+  overflow: hidden;
 }
 
-.muted {
-  color: var(--mat-sys-on-surface-variant);
+.home-hero__inner {
+  padding: 28px 32px 32px;
+}
+
+.home-hero h1 {
+  font-family: var(--font-brand);
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  margin: 8px 0 8px;
+}
+
+.home-hero__lead {
+  color: var(--text-secondary);
+  margin: 0;
+  font-size: 14px;
+}
+
+// Section heading rail.
+.home-section {
+  margin-bottom: 32px;
+}
+
+.home-section__header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 16px;
+
+  h2 {
+    font-family: var(--font-brand);
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin: 0;
+    flex: 1;
+  }
+}
+
+.home-section__more {
+  color: var(--accent-amber);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.home-empty {
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 24px 0;
+}
+
+// Card grid + tiles. Identical to card-list.scss / search-results.scss
+// today; a future <app-product-tile> refactor will dedupe.
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 12px;
+}
+
+.product-card {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: box-shadow 0.15s ease;
+
+  &:hover {
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  > .card-corner {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    .type-icon {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+
+    .condition-pill {
+      margin: 0;
+      background: var(--surface-card);
+    }
+  }
+}
+
+.card-image {
+  flex: 0 0 auto;
+  width: 150px;
+  background: var(--surface-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  box-sizing: border-box;
+
+  img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 3px;
+  }
+}
+
+.card-info {
+  flex: 1;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.card-name {
+  font-family: var(--font-brand);
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--text-primary);
+  text-decoration: none;
+  line-height: 1.3;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.card-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.card-stock {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.card-price {
+  font-family: var(--font-brand);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--text-primary);
+  margin-top: 2px;
+}
+
+.add-btn {
+  margin-top: 6px;
+  align-self: flex-start;
+  font-size: 12px;
+  height: 30px;
+  line-height: 30px;
 }

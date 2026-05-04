@@ -89,6 +89,7 @@ export interface ProductRow {
   type2: string | null;
   legal_standard: boolean | null;
   legal_expanded: boolean | null;
+  featured: boolean;
 }
 
 export interface ProductInsert {
@@ -116,6 +117,7 @@ export interface ProductInsert {
   type2?: string | null;
   legal_standard?: boolean | null;
   legal_expanded?: boolean | null;
+  featured?: boolean;
 }
 
 export interface TcgdexCardRow {

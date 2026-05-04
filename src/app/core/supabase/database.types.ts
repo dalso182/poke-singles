@@ -148,6 +148,7 @@ export type Database = {
           condition: string | null
           created_at: string
           description: string | null
+          featured: boolean
           first_listed_at: string
           id: string
           illustrator: string | null
@@ -179,6 +180,7 @@ export type Database = {
           condition?: string | null
           created_at?: string
           description?: string | null
+          featured?: boolean
           first_listed_at?: string
           id?: string
           illustrator?: string | null
@@ -210,6 +212,7 @@ export type Database = {
           condition?: string | null
           created_at?: string
           description?: string | null
+          featured?: boolean
           first_listed_at?: string
           id?: string
           illustrator?: string | null

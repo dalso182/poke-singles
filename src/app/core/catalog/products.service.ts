@@ -12,6 +12,7 @@ export interface ProductListParams {
   search?: string;
   categoryId?: string;
   setId?: string;
+  featured?: boolean;
   includeInactive?: boolean;
   page?: number;
   pageSize?: number;
@@ -62,6 +63,9 @@ export class ProductsService {
     }
     if (params.setId) {
       query = query.eq('set_id', params.setId);
+    }
+    if (params.featured !== undefined) {
+      query = query.eq('featured', params.featured);
     }
     if (params.search) {
       const term = params.search.trim();

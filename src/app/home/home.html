@@ -1,10 +1,82 @@
-<section class="home">
-  <h1>Poke-Singles Costa Rica</h1>
-  <p>
-    Tu tienda online de cartas de Pokémon en Costa Rica. Compra por nombre, rareza,
-    expansión o tipo.
-  </p>
-  <p class="muted">
-    The new storefront is under construction — Angular 21 + Angular Material scaffold is up.
-  </p>
+<section class="home-hero">
+  <div class="brand-bar"></div>
+  <div class="home-hero__inner">
+    <span class="brand-eyebrow">Bienvenido</span>
+    <h1>Poke-Singles Costa Rica</h1>
+    <p class="home-hero__lead">
+      Singles auténticas, condición verificada, envío seguro a todo el país.
+    </p>
+  </div>
 </section>
+
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<section class="home-section">
+  <header class="home-section__header">
+    <span class="brand-eyebrow">Inventario</span>
+    <h2>Recién llegadas</h2>
+    <a routerLink="/products" class="home-section__more">Ver todo →</a>
+  </header>
+
+  @if (!loading() && recent().length === 0) {
+    <p class="home-empty">Aún no hay cartas en stock.</p>
+  } @else {
+    <div class="cards-grid">
+      @for (card of recent(); track card.id) {
+        <ng-container
+          *ngTemplateOutlet="cardTpl; context: { $implicit: card, featured: false }"
+        />
+      }
+    </div>
+  }
+</section>
+
+@if (featured().length > 0) {
+  <section class="home-section">
+    <header class="home-section__header">
+      <span class="brand-eyebrow">Curadas</span>
+      <h2>Destacadas</h2>
+    </header>
+    <div class="cards-grid">
+      @for (card of featured(); track card.id) {
+        <ng-container
+          *ngTemplateOutlet="cardTpl; context: { $implicit: card, featured: true }"
+        />
+      }
+    </div>
+  </section>
+}
+
+<ng-template #cardTpl let-card let-isFeatured="featured">
+  <div class="product-card" [class.product-card--featured]="isFeatured">
+    <a [routerLink]="['/products', card.slug]" class="card-image">
+      @if (card.image_url) {
+        <img [src]="card.image_url" [alt]="card.name" loading="lazy" />
+      }
+    </a>
+    <div class="card-corner">
+      @if (typeIconUrl(card.type1); as src) {
+        <img [src]="src" [alt]="card.type1" class="type-icon" />
+      }
+      @if (typeIconUrl(card.type2); as src) {
+        <img [src]="src" [alt]="card.type2" class="type-icon" />
+      }
+      @if (card.condition) {
+        <span [class]="conditionClass(card.condition)">{{ card.condition }}</span>
+      }
+    </div>
+    <div class="card-info">
+      <a [routerLink]="['/products', card.slug]" class="card-name">{{ card.name }}</a>
+      <div class="card-meta">{{ metaLine(card) }}</div>
+      <div class="card-stock">
+        {{ card.quantity }} disponible{{ card.quantity > 1 ? 's' : '' }}
+      </div>
+      <div class="card-price">₡{{ card.price | number: '1.0-0' }}</div>
+      <button mat-flat-button class="add-btn" [disabled]="card.quantity === 0">
+        {{ card.quantity === 0 ? 'Agotada' : 'Añadir' }}
+      </button>
+    </div>
+  </div>
+</ng-template>
