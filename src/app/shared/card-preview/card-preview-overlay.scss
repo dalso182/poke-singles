@@ -1,0 +1,44 @@
+.card-preview {
+  position: fixed;
+  z-index: 1200; // sits above mat-sidenav (~600)
+  width: 336px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.25);
+  padding: 8px;
+  // Never block click-through to the underlying card.
+  pointer-events: none;
+  animation: card-preview-fade 120ms ease-out;
+}
+
+.card-preview img {
+  width: 100%;
+  border-radius: 8px;
+  display: block;
+}
+
+.card-preview__credit {
+  margin: 8px 4px 4px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.3px;
+  color: var(--text-tertiary);
+
+  span {
+    color: var(--text-secondary);
+    font-weight: 600;
+  }
+}
+
+@keyframes card-preview-fade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

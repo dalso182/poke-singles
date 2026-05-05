@@ -10,6 +10,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ProductsService } from '../../core/catalog/products.service';
 import type { ProductSearchRow, SortKey } from '../../core/catalog/catalog.types';
+import { CardPreviewDirective } from '../../shared/card-preview/card-preview.directive';
 
 @Component({
   selector: 'app-search-results',
@@ -23,6 +24,7 @@ import type { ProductSearchRow, SortKey } from '../../core/catalog/catalog.types
     MatProgressBarModule,
     MatSelectModule,
     MatSnackBarModule,
+    CardPreviewDirective,
   ],
   templateUrl: './search-results.html',
   styleUrl: './search-results.scss',

@@ -51,7 +51,11 @@
 
 <ng-template #cardTpl let-card let-isFeatured="featured">
   <div class="product-card" [class.product-card--featured]="isFeatured">
-    <a [routerLink]="['/products', card.slug]" class="card-image">
+    <a
+      [routerLink]="['/products', card.slug]"
+      class="card-image"
+      [appCardPreview]="card"
+    >
       @if (card.image_url) {
         <img [src]="card.image_url" [alt]="card.name" loading="lazy" />
       }

@@ -9,6 +9,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ProductsService } from '../../core/catalog/products.service';
 import { SetsService } from '../../core/catalog/sets.service';
 import type { ProductRow, SetRow } from '../../core/catalog/catalog.types';
+import { CardPreviewDirective } from '../../shared/card-preview/card-preview.directive';
 
 @Component({
   selector: 'app-card-list',
@@ -20,6 +21,7 @@ import type { ProductRow, SetRow } from '../../core/catalog/catalog.types';
     MatIconModule,
     MatProgressBarModule,
     MatSnackBarModule,
+    CardPreviewDirective,
   ],
   templateUrl: './card-list.html',
   styleUrl: './card-list.scss',

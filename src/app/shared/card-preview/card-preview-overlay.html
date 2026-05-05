@@ -1,0 +1,18 @@
+@if (preview(); as p) {
+  @if (position(); as pos) {
+    <div
+      class="card-preview"
+      [style.left.px]="pos.left"
+      [style.top.px]="pos.top"
+      role="presentation"
+      aria-hidden="true"
+    >
+      <img [src]="p.imageUrl" [alt]="p.name" />
+      @if (p.illustrator) {
+        <p class="card-preview__credit">
+          Ilustrado por <span>{{ p.illustrator }}</span>
+        </p>
+      }
+    </div>
+  }
+}

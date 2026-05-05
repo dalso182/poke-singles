@@ -7,6 +7,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ProductsService } from '../core/catalog/products.service';
 import type { ProductRow } from '../core/catalog/catalog.types';
+import { CardPreviewDirective } from '../shared/card-preview/card-preview.directive';
 
 @Component({
   selector: 'app-home',
@@ -18,6 +19,7 @@ import type { ProductRow } from '../core/catalog/catalog.types';
     MatIconModule,
     MatProgressBarModule,
     MatSnackBarModule,
+    CardPreviewDirective,
   ],
   templateUrl: './home.html',
   styleUrl: './home.scss',
