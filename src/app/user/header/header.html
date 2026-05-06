@@ -30,10 +30,10 @@
     </button>
   </div>
   <div class="header-actions">
-    <a
+    <button
       mat-icon-button
-      routerLink="/cart"
-      (click)="onCartClick($event)"
+      type="button"
+      (click)="onCartClick()"
       aria-label="Carrito"
       class="cart-btn"
     >
@@ -41,7 +41,7 @@
       @if (cartCount() > 0) {
         <span class="cart-count">{{ cartCount() }}</span>
       }
-    </a>
+    </button>
 
     <button
       mat-icon-button

@@ -76,12 +76,9 @@ export class Header {
     }
   }
 
-  protected onCartClick(event: MouseEvent): void {
-    // Suppress the routerLink so a normal click opens the drawer instead
-    // of navigating. Middle-click and ctrl/cmd-click still go through to
-    // /cart so "open in new tab" keeps working.
-    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey) return;
-    event.preventDefault();
+  protected onCartClick(): void {
+    // Cart icon opens the drawer only. The drawer's "Ver carrito completo"
+    // button is the explicit path to /cart.
     this.cart.openDrawer();
   }
 

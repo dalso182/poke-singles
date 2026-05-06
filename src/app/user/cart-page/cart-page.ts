@@ -1,12 +1,17 @@
-import { Component, inject } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { CartService } from '../../core/cart/cart.service';
+import { LocalStorageService } from '../../core/storage/local-storage.service';
 import type { CartLine } from '../../core/catalog/catalog.types';
+
+type CartView = 'list' | 'grid';
+const VIEW_STORAGE_KEY = 'cart:view';
 
 @Component({
   selector: 'app-cart-page',
@@ -15,6 +20,7 @@ import type { CartLine } from '../../core/catalog/catalog.types';
     RouterLink,
     DecimalPipe,
     MatButtonModule,
+    MatButtonToggleModule,
     MatIconModule,
     MatProgressBarModule,
     MatSnackBarModule,
@@ -25,11 +31,27 @@ import type { CartLine } from '../../core/catalog/catalog.types';
 export class CartPage {
   private readonly cart = inject(CartService);
   private readonly snack = inject(MatSnackBar);
+  private readonly storage = inject(LocalStorageService);
 
   protected readonly items = this.cart.items;
   protected readonly subtotal = this.cart.subtotal;
   protected readonly itemCount = this.cart.itemCount;
   protected readonly loading = this.cart.loading;
+  protected readonly view = signal<CartView>(this.readView());
+
+  constructor() {
+    effect(() => this.storage.set(VIEW_STORAGE_KEY, this.view()));
+  }
+
+  private readView(): CartView {
+    const raw = this.storage.get(VIEW_STORAGE_KEY);
+    return raw === 'grid' ? 'grid' : 'list';
+  }
+
+  protected onViewChange(next: CartView): void {
+    if (next !== 'list' && next !== 'grid') return;
+    this.view.set(next);
+  }
 
   protected onCheckout(): void {
     this.snack.open('Checkout disponible próximamente', 'OK', { duration: 3000 });

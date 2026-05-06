@@ -7,7 +7,25 @@
 </nav>
 
 <header class="cart-page__header">
-  <h1>Tu carrito</h1>
+  <div class="cart-page__title">
+    <h1>Tu carrito</h1>
+    @if (itemCount() > 0) {
+      <mat-button-toggle-group
+        [value]="view()"
+        (change)="onViewChange($event.value)"
+        aria-label="Cambiar vista"
+        class="cart-page__view-toggle"
+        hideSingleSelectionIndicator
+      >
+        <mat-button-toggle value="list" aria-label="Vista de lista">
+          <mat-icon>view_list</mat-icon>
+        </mat-button-toggle>
+        <mat-button-toggle value="grid" aria-label="Vista de cuadrícula">
+          <mat-icon>grid_view</mat-icon>
+        </mat-button-toggle>
+      </mat-button-toggle-group>
+    }
+  </div>
   @if (itemCount() > 0) {
     <button mat-button type="button" (click)="onClear()" class="cart-page__clear">
       <mat-icon>delete_sweep</mat-icon>
@@ -30,9 +48,10 @@
 
 @if (items().length > 0) {
   <div class="cart-page__layout">
-    <ul class="cart-page__lines">
-      @for (line of items(); track line.product_id) {
-        <li class="cart-page__line">
+    @if (view() === 'list') {
+      <ul class="cart-page__lines">
+        @for (line of items(); track line.product_id) {
+          <li class="cart-page__line">
           <a [routerLink]="['/products', line.slug]" class="cart-page__thumb">
             @if (line.image_url) {
               <img [src]="line.image_url" [alt]="line.name" loading="lazy" />
@@ -80,9 +99,7 @@
                 <mat-icon>add</mat-icon>
               </button>
             </div>
-            @if (line.quantity >= line.stock) {
-              <p class="cart-page__stock-hint">Stock disponible: {{ line.stock }}</p>
-            }
+            <p class="cart-page__stock-hint">Stock disponible: {{ line.stock }}</p>
           </div>
           <div class="cart-page__line-total">
             <span class="cart-page__line-amount">
@@ -101,6 +118,69 @@
         </li>
       }
     </ul>
+    }
+
+    @if (view() === 'grid') {
+      <ul class="cart-page__cards">
+        @for (line of items(); track line.product_id) {
+          <li class="cart-page__card">
+            <a [routerLink]="['/products', line.slug]" class="cart-page__card-image">
+              @if (line.image_url) {
+                <img [src]="line.image_url" [alt]="line.name" loading="lazy" />
+              }
+              @if (line.condition) {
+                <span [class]="conditionClass(line.condition)" class="cart-page__card-condition">
+                  {{ line.condition }}
+                </span>
+              }
+            </a>
+            <div class="cart-page__card-body">
+              <a [routerLink]="['/products', line.slug]" class="cart-page__card-name">
+                {{ line.name }}
+              </a>
+              <div class="cart-page__card-row">
+                <div class="cart-page__qty">
+                  <button
+                    mat-icon-button
+                    type="button"
+                    (click)="onDecrement(line)"
+                    [disabled]="line.quantity <= 1"
+                    aria-label="Disminuir"
+                  >
+                    <mat-icon>remove</mat-icon>
+                  </button>
+                  <span class="cart-page__qty-value">{{ line.quantity }}</span>
+                  <button
+                    mat-icon-button
+                    type="button"
+                    (click)="onIncrement(line)"
+                    [disabled]="line.quantity >= line.stock"
+                    aria-label="Aumentar"
+                  >
+                    <mat-icon>add</mat-icon>
+                  </button>
+                </div>
+                <button
+                  mat-icon-button
+                  type="button"
+                  class="cart-page__remove"
+                  (click)="onRemove(line)"
+                  aria-label="Eliminar"
+                >
+                  <mat-icon>delete_outline</mat-icon>
+                </button>
+              </div>
+              <p class="cart-page__card-price">
+                ₡{{ line.price * line.quantity | number: '1.0-0' }}
+              </p>
+              <p class="cart-page__card-stock">
+                Stock disponible: {{ line.stock }}
+              </p>
+            </div>
+          </li>
+        }
+      </ul>
+    }
 
     <aside class="cart-page__summary">
       <div class="cart-page__summary-card">
