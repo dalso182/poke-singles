@@ -189,10 +189,62 @@
           <dt>Artículos</dt>
           <dd>{{ itemCount() }}</dd>
         </dl>
-        <dl class="cart-page__summary-row cart-page__summary-row--total">
+        <dl class="cart-page__summary-row">
           <dt>Subtotal</dt>
           <dd>₡{{ subtotal() | number: '1.0-0' }}</dd>
         </dl>
+
+        @if (appliedCoupon(); as coupon) {
+          <div class="cart-page__applied-coupon">
+            <span class="brand-mono">{{ coupon.code }}</span>
+            <button
+              mat-icon-button
+              type="button"
+              (click)="onRemoveCoupon()"
+              aria-label="Quitar cupón"
+            >
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+          <dl class="cart-page__summary-row cart-page__summary-row--discount">
+            <dt>Descuento</dt>
+            <dd class="price--sale">−₡{{ discount() | number: '1.0-0' }}</dd>
+          </dl>
+        } @else {
+          <form
+            class="cart-page__coupon"
+            (ngSubmit)="onApplyCoupon()"
+          >
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Código de cupón</mat-label>
+              <input
+                matInput
+                [formControl]="couponControl"
+                autocomplete="off"
+                [disabled]="!isSignedIn() || applyingCoupon()"
+              />
+              @if (couponError()) {
+                <mat-error>{{ couponError() }}</mat-error>
+              }
+              @if (!isSignedIn() && !couponError()) {
+                <mat-hint>Inicia sesión para usar un cupón.</mat-hint>
+              }
+            </mat-form-field>
+            <button
+              mat-stroked-button
+              type="submit"
+              [disabled]="!isSignedIn() || applyingCoupon()"
+            >
+              {{ applyingCoupon() ? 'Aplicando…' : 'Aplicar' }}
+            </button>
+          </form>
+        }
+
+        <dl class="cart-page__summary-row cart-page__summary-row--total">
+          <dt>Total</dt>
+          <dd>₡{{ total() | number: '1.0-0' }}</dd>
+        </dl>
+
         <button
           mat-flat-button
           color="primary"

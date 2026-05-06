@@ -48,6 +48,7 @@ export class AdminShell {
     { label: 'Productos',        icon: 'inventory_2',          path: '/admin/products',     exact: true },
     { label: 'Categorías', icon: 'category', path: '/admin/categories' },
     { label: 'Tipos de carta', icon: 'local_offer', path: '/admin/card-types' },
+    { label: 'Cupones', icon: 'redeem', path: '/admin/coupons' },
     { label: 'Sets', icon: 'collections_bookmark', path: '/admin/sets' },
     { label: 'Pedidos', icon: 'receipt_long', path: '/admin/orders' },
     { label: 'Clientes', icon: 'group', path: '/admin/customers' },

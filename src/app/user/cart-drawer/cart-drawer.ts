@@ -28,6 +28,9 @@ export class CartDrawer {
   protected readonly items = this.cart.items;
   protected readonly subtotal = this.cart.subtotal;
   protected readonly itemCount = this.cart.itemCount;
+  protected readonly appliedCoupon = this.cart.appliedCoupon;
+  protected readonly discount = this.cart.discount;
+  protected readonly total = this.cart.total;
 
   protected close(): void {
     this.cart.closeDrawer();

@@ -207,3 +207,16 @@
 .cart-drawer__cta {
   width: 100%;
 }
+
+.cart-drawer__applied-coupon {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 6px 12px;
+  background: var(--surface-tonal);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}

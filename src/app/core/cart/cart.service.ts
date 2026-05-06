@@ -4,10 +4,13 @@ import { SupabaseService } from '../supabase/supabase.service';
 import { LocalStorageService } from '../storage/local-storage.service';
 import type {
   AnonCartItem,
+  AppliedCoupon,
   CartItemRow,
   CartLine,
+  CouponErrorCode,
   ProductRow,
   SetRow,
+  ValidateCouponResult,
 } from '../catalog/catalog.types';
 
 const STORAGE_KEY = 'cart:v1';
@@ -33,15 +36,39 @@ export class CartService {
   private readonly _items = signal<CartLine[]>([]);
   private readonly _loading = signal(false);
   private readonly _drawerOpen = signal(false);
+  private readonly _appliedCoupon = signal<AppliedCoupon | null>(null);
+  /** Bumped whenever an applied coupon is auto-dropped on revalidation.
+   *  Components that want to flash a snackbar effect off this signal. */
+  private readonly _couponDroppedTick = signal<{
+    error: CouponErrorCode;
+    gap?: number;
+    at: number;
+  } | null>(null);
 
   readonly items = this._items.asReadonly();
   readonly loading = this._loading.asReadonly();
   readonly drawerOpen = this._drawerOpen.asReadonly();
+  readonly appliedCoupon = this._appliedCoupon.asReadonly();
+  readonly couponDroppedTick = this._couponDroppedTick.asReadonly();
   readonly itemCount = computed(() =>
     this._items().reduce((n, l) => n + l.quantity, 0),
   );
   readonly subtotal = computed(() =>
     this._items().reduce((s, l) => s + l.price * l.quantity, 0),
+  );
+
+  /** Discount calculated client-side; mirrors the SQL formula in
+   *  calculate_coupon_discount so we don't need an RPC round-trip every
+   *  time the subtotal changes. The server is still the source of truth
+   *  at apply-time (validate_coupon) and redemption-time. */
+  readonly discount = computed(() => {
+    const c = this._appliedCoupon();
+    if (!c) return 0;
+    return computeDiscountClientSide(c, this.subtotal());
+  });
+
+  readonly total = computed(() =>
+    Math.max(0, this.subtotal() - this.discount()),
   );
 
   /** Last-seen user id; lets the auth effect detect transitions
@@ -115,6 +142,7 @@ export class CartService {
       ...lines,
     ]);
     this.openDrawer();
+    void this.revalidateAppliedCoupon();
     return {};
   }
 
@@ -146,6 +174,7 @@ export class CartService {
     this._items.update((lines) =>
       lines.map((l) => (l.product_id === productId ? { ...l, quantity: qty } : l)),
     );
+    void this.revalidateAppliedCoupon();
     return {};
   }
 
@@ -161,6 +190,7 @@ export class CartService {
       this.writeAnon(this.readAnon().filter((it) => it.product_id !== productId));
     }
     this._items.update((lines) => lines.filter((l) => l.product_id !== productId));
+    void this.revalidateAppliedCoupon();
   }
 
   async clear(): Promise<void> {
@@ -174,6 +204,8 @@ export class CartService {
       this.storage.set(STORAGE_KEY, null);
     }
     this._items.set([]);
+    // Empty cart can never satisfy a coupon's minimum, so always drop it.
+    if (this._appliedCoupon()) await this.removeCoupon();
   }
 
   openDrawer(): void {
@@ -182,6 +214,108 @@ export class CartService {
 
   closeDrawer(): void {
     this._drawerOpen.set(false);
+  }
+
+  /** Validate a coupon code against the current subtotal and, on success,
+   *  persist the choice on the user's `carts` row. Returns `{}` on success
+   *  or `{ error, gap? }` for the UI to map to Spanish copy. */
+  async applyCoupon(code: string): Promise<{ error?: CouponErrorCode; gap?: number }> {
+    const userId = this.lastUserId;
+    if (!userId) return { error: 'AUTH_REQUIRED' };
+
+    const trimmed = code.trim().toUpperCase();
+    if (!trimmed) return { error: 'NOT_FOUND' };
+
+    const { data, error } = await (this.supabase.client as any).rpc('validate_coupon', {
+      p_code: trimmed,
+      p_subtotal: this.subtotal(),
+    });
+    if (error) {
+      console.error('[cart] validate_coupon', error);
+      return { error: 'NOT_FOUND' };
+    }
+    const result = data as ValidateCouponResult;
+    if (!result.ok) return { error: result.error, gap: result.gap };
+
+    this._appliedCoupon.set({
+      coupon_id: result.coupon_id,
+      code: trimmed,
+      type: result.type,
+      discount_value: result.discount_value,
+      min_purchase_amount: result.min_purchase_amount,
+    });
+    const { error: upErr } = await (this.supabase.client as any)
+      .from('carts')
+      .upsert(
+        { user_id: userId, coupon_id: result.coupon_id, updated_at: new Date().toISOString() },
+        { onConflict: 'user_id' },
+      );
+    if (upErr) console.error('[cart] carts upsert', upErr);
+    return {};
+  }
+
+  async removeCoupon(): Promise<void> {
+    const userId = this.lastUserId;
+    this._appliedCoupon.set(null);
+    if (!userId) return;
+    const { error } = await (this.supabase.client as any)
+      .from('carts')
+      .update({ coupon_id: null, updated_at: new Date().toISOString() })
+      .eq('user_id', userId);
+    if (error) console.error('[cart] removeCoupon', error);
+  }
+
+  /** Pull the user's saved coupon (if any) via the get_my_applied_coupon
+   *  RPC, which silently filters out expired / inactive / deleted rows. */
+  private async hydrateAppliedCoupon(): Promise<void> {
+    const { data, error } = await (this.supabase.client as any).rpc(
+      'get_my_applied_coupon',
+    );
+    if (error) {
+      console.error('[cart] hydrateAppliedCoupon', error);
+      this._appliedCoupon.set(null);
+      return;
+    }
+    if (!data) {
+      this._appliedCoupon.set(null);
+      return;
+    }
+    const c = data as {
+      coupon_id: string;
+      code: string;
+      type: AppliedCoupon['type'];
+      discount_value: number;
+      min_purchase_amount: number | null;
+    };
+    this._appliedCoupon.set({
+      coupon_id: c.coupon_id,
+      code: c.code,
+      type: c.type,
+      discount_value: c.discount_value,
+      min_purchase_amount: c.min_purchase_amount,
+    });
+  }
+
+  /** Re-runs validate_coupon with the current subtotal. If the coupon no
+   *  longer applies (e.g. subtotal dropped below the minimum), drops it
+   *  and bumps `couponDroppedTick` so subscribers can flash a snackbar.
+   *  Called after every cart mutation that changes the subtotal. */
+  private async revalidateAppliedCoupon(): Promise<void> {
+    const c = this._appliedCoupon();
+    if (!c || !this.lastUserId) return;
+    const { data, error } = await (this.supabase.client as any).rpc('validate_coupon', {
+      p_code: c.code,
+      p_subtotal: this.subtotal(),
+    });
+    if (error) return;
+    const result = data as ValidateCouponResult;
+    if (result.ok) return;
+    await this.removeCoupon();
+    this._couponDroppedTick.set({
+      error: result.error,
+      gap: result.gap,
+      at: Date.now(),
+    });
   }
 
   // ---------------------------------------------------------------------
@@ -202,11 +336,15 @@ export class CartService {
         }
         this.storage.set(STORAGE_KEY, null);
         await this.hydrateFromDb(current);
+        await this.hydrateAppliedCoupon();
       } else if (current) {
         // Already signed in (page refresh) or switched accounts.
         await this.hydrateFromDb(current);
+        await this.hydrateAppliedCoupon();
       } else {
         // Signed out (or never signed in) — read from localStorage.
+        // Coupons require auth, so the applied-coupon state is reset.
+        this._appliedCoupon.set(null);
         await this.hydrateFromAnon();
       }
     } finally {
@@ -460,4 +598,25 @@ export class CartService {
     }
     return 'Error desconocido';
   }
+}
+
+/** Mirrors `public.calculate_coupon_discount` so we can render the discount
+ *  line without an RPC round-trip on every cart change. The server is still
+ *  the source of truth at apply-time and (eventually) at redemption-time. */
+function computeDiscountClientSide(coupon: AppliedCoupon, subtotal: number): number {
+  if (subtotal <= 0) return 0;
+  let amount = 0;
+  if (coupon.type === 'PERCENTAGE') {
+    amount = round2(subtotal * coupon.discount_value / 100);
+  } else if (coupon.type === 'FIXED_ON_THRESHOLD') {
+    if (coupon.min_purchase_amount == null || subtotal < coupon.min_purchase_amount) {
+      return 0;
+    }
+    amount = coupon.discount_value;
+  }
+  return Math.min(amount, subtotal);
+}
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
 }

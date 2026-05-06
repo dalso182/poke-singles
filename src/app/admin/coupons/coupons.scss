@@ -1,0 +1,63 @@
+.coupons {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 1100px;
+}
+
+.coupons__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+
+  h1 {
+    margin: 4px 0 8px;
+  }
+}
+
+.muted {
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.coupons__filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.coupons__search {
+  flex: 1;
+  min-width: 220px;
+}
+
+.coupons__table-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.coupons__table {
+  width: 100%;
+
+  td {
+    padding-block: 8px;
+  }
+}
+
+.coupons__expired {
+  color: var(--text-tertiary);
+}
+
+.coupons__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.coupons__empty {
+  padding: 24px;
+  text-align: center;
+}

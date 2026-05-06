@@ -43,6 +43,22 @@ export const routes: Routes = [
           import('./admin/card-types/card-types').then((m) => m.CardTypes),
       },
       {
+        path: 'coupons',
+        pathMatch: 'full',
+        loadComponent: () =>
+          import('./admin/coupons/coupons').then((m) => m.Coupons),
+      },
+      {
+        path: 'coupons/new',
+        loadComponent: () =>
+          import('./admin/coupons/coupon-edit').then((m) => m.CouponEdit),
+      },
+      {
+        path: 'coupons/:id/edit',
+        loadComponent: () =>
+          import('./admin/coupons/coupon-edit').then((m) => m.CouponEdit),
+      },
+      {
         path: 'sets',
         loadComponent: () => import('./admin/sets/sets').then((m) => m.Sets),
       },

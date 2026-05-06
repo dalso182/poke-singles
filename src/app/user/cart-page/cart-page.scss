@@ -332,6 +332,45 @@
   text-align: center;
 }
 
+.cart-page__coupon {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 4px 0;
+
+  mat-form-field {
+    flex: 1;
+  }
+
+  button {
+    margin-top: 2px; // align with the form-field outline top
+  }
+}
+
+.cart-page__applied-coupon {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--surface-tonal);
+  border-radius: 6px;
+  margin: 4px 0;
+
+  span {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+  }
+}
+
+.cart-page__summary-row--discount {
+  dd {
+    font-family: var(--font-brand);
+    font-weight: 700;
+  }
+}
+
 // ---- Grid view ---------------------------------------------------------
 
 .cart-page__cards {

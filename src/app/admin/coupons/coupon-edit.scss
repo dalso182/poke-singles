@@ -1,0 +1,45 @@
+.coupon-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 720px;
+}
+
+.coupon-edit__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  h1 {
+    margin: 4px 0 0;
+  }
+}
+
+.coupon-edit__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.coupon-edit__panel {
+  padding: 8px;
+}
+
+.coupon-edit__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.coupon-edit__active {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+}
+
+.coupon-edit__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 8px;
+}

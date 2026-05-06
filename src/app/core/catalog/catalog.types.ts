@@ -172,6 +172,70 @@ export interface AnonCartItem {
   added_at: string;
 }
 
+// ---- Coupons ----
+
+export type CouponType = 'PERCENTAGE' | 'FIXED_ON_THRESHOLD';
+
+export type CouponErrorCode =
+  | 'AUTH_REQUIRED'
+  | 'NOT_FOUND'
+  | 'INACTIVE'
+  | 'EXPIRED'
+  | 'LIMIT_REACHED'
+  | 'BELOW_MINIMUM';
+
+/** Result returned by the validate_coupon RPC. */
+export type ValidateCouponResult =
+  | {
+      ok: true;
+      coupon_id: string;
+      type: CouponType;
+      discount_value: number;
+      min_purchase_amount: number | null;
+      expires_at: string;
+    }
+  | { ok: false; error: CouponErrorCode; gap?: number };
+
+/** Subset of coupon data the cart keeps in memory after a successful
+ *  validate / hydrate. The full row lives on the server. */
+export interface AppliedCoupon {
+  coupon_id: string;
+  code: string;
+  type: CouponType;
+  discount_value: number;
+  min_purchase_amount: number | null;
+}
+
+/** Admin row for the coupons table. Mirrors the DB shape. */
+export interface CouponRow {
+  id: string;
+  code: string;
+  type: CouponType;
+  discount_value: number;
+  min_purchase_amount: number | null;
+  expires_at: string;
+  max_uses_per_user: number;
+  is_active: boolean;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CouponInsert {
+  code: string;
+  type: CouponType;
+  discount_value: number;
+  min_purchase_amount?: number | null;
+  expires_at: string;
+  max_uses_per_user?: number;
+  is_active?: boolean;
+}
+
+export type CouponUpdate = Partial<Omit<CouponInsert, 'code'>> & {
+  code?: string;
+  deleted_at?: string | null;
+};
+
 // Row shape returned by the `products_search` view / `search_products` RPC.
 // Mirrors `ProductRow` minus a few admin-only columns and adds the joined
 // set fields plus `search_text` / `card_type_names`.
