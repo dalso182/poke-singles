@@ -13,6 +13,14 @@
   padding: 24px;
 }
 
-::ng-deep .user-shell-container mat-sidenav {
+// Left navigation sidenav. Excluded from the right-side cart drawer via the
+// `:not(.user-shell-cart-drawer)` predicate so each panel can have its own
+// width.
+::ng-deep .user-shell-container mat-sidenav:not(.user-shell-cart-drawer) {
   width: 260px;
+}
+
+::ng-deep .user-shell-container mat-sidenav.user-shell-cart-drawer {
+  width: 360px;
+  max-width: 90vw;
 }

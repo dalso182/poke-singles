@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ProductsService } from '../core/catalog/products.service';
+import { CartService } from '../core/cart/cart.service';
 import type { ProductRow } from '../core/catalog/catalog.types';
 import { CardPreviewDirective } from '../shared/card-preview/card-preview.directive';
 
@@ -26,6 +27,7 @@ import { CardPreviewDirective } from '../shared/card-preview/card-preview.direct
 })
 export class Home {
   private readonly products = inject(ProductsService);
+  private readonly cart = inject(CartService);
   private readonly snack = inject(MatSnackBar);
 
   protected readonly recent = signal<ProductRow[]>([]);
@@ -74,6 +76,13 @@ export class Home {
     if (!type) return null;
     const slug = TYPE_ICON_MAP[type];
     return slug ? `assets/images/types/${slug}.png` : null;
+  }
+
+  protected async onAddToCart(card: ProductRow, event: Event): Promise<void> {
+    event.preventDefault();
+    event.stopPropagation();
+    const { error } = await this.cart.add(card.id, 1);
+    if (error) this.snack.open(error, 'OK', { duration: 4000 });
   }
 
   private errorMessage(err: unknown): string {

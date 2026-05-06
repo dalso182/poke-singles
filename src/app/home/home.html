@@ -78,7 +78,13 @@
         {{ card.quantity }} disponible{{ card.quantity > 1 ? 's' : '' }}
       </div>
       <div class="card-price">₡{{ card.price | number: '1.0-0' }}</div>
-      <button mat-flat-button class="add-btn" [disabled]="card.quantity === 0">
+      <button
+        mat-flat-button
+        class="add-btn"
+        type="button"
+        [disabled]="card.quantity === 0"
+        (click)="onAddToCart(card, $event)"
+      >
         {{ card.quantity === 0 ? 'Agotada' : 'Añadir' }}
       </button>
     </div>

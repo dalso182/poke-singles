@@ -139,6 +139,39 @@ export type ProfileUpdate = Partial<
   Pick<ProfileRow, 'full_name' | 'phone' | 'default_shipping_address'>
 >;
 
+export interface CartItemRow {
+  user_id: string;
+  product_id: string;
+  quantity: number;
+  added_at: string;
+}
+
+/** Cart item joined with the product fields the cart UI needs to render
+ *  without a second fetch. Used by both the drawer and `/cart`. */
+export interface CartLine {
+  product_id: string;
+  quantity: number;
+  added_at: string;
+  name: string;
+  slug: string;
+  image_url: string | null;
+  price: number;
+  /** Current `products.quantity` at the time of hydrate. Drives stock caps. */
+  stock: number;
+  condition: string | null;
+  card_number: string | null;
+  type1: string | null;
+  type2: string | null;
+  set_name: string | null;
+}
+
+/** localStorage shape — same as the DB row minus `user_id`. */
+export interface AnonCartItem {
+  product_id: string;
+  quantity: number;
+  added_at: string;
+}
+
 // Row shape returned by the `products_search` view / `search_products` RPC.
 // Mirrors `ProductRow` minus a few admin-only columns and adds the joined
 // set fields plus `search_text` / `card_type_names`.

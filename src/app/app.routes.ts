@@ -88,6 +88,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./user/account/account').then((m) => m.Account),
       },
+      {
+        path: 'cart',
+        loadComponent: () =>
+          import('./user/cart-page/cart-page').then((m) => m.CartPage),
+      },
     ],
   },
 ];

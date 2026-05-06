@@ -11,6 +11,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../core/auth/auth.service';
+import { CartService } from '../../core/cart/cart.service';
 
 const INSTAGRAM_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
   <path d="M12 2.163c3.204 0 3.584.012 4.85.07 1.366.062 2.633.334 3.608 1.31.975.975 1.248 2.242 1.31 3.608.058 1.266.07 1.646.07 4.85s-.012 3.584-.07 4.85c-.062 1.366-.334 2.633-1.31 3.608-.975.975-2.242 1.248-3.608 1.31-1.266.058-1.646.07-4.85.07s-3.584-.012-4.85-.07c-1.366-.062-2.633-.334-3.608-1.31-.975-.975-1.248-2.242-1.31-3.608C2.175 15.584 2.163 15.204 2.163 12s.012-3.584.07-4.85c.062-1.366.334-2.633 1.31-3.608.975-.975 2.242-1.248 3.608-1.31 1.266-.058 1.646-.07 4.85-.07zm0-2.163c-3.259 0-3.667.014-4.947.072-1.635.074-3.197.56-4.31 1.673C1.63 2.858 1.144 4.42 1.07 6.055 1.014 7.335 1 7.741 1 12c0 4.259.014 4.667.072 5.947.074 1.635.56 3.197 1.673 4.31 1.113 1.113 2.675 1.599 4.31 1.673C8.333 23.986 8.741 24 12 24c3.259 0 3.667-.014 4.947-.072 1.635-.074 3.197-.56 4.31-1.673 1.113-1.113 1.599-2.675 1.673-4.31.058-1.28.072-1.688.072-5.947 0-4.259-.014-4.667-.072-5.947-.074-1.635-.56-3.197-1.673-4.31C19.144 1.63 17.582 1.144 15.947 1.07 14.667 1.014 14.259 1 12 1zm0 5.838a5.162 5.162 0 1 0 0 10.324 5.162 5.162 0 0 0 0-10.324zm0 8.162a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm5.406-9.845a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4z"/>
@@ -44,12 +45,14 @@ export class Header {
 
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
+  private readonly cart = inject(CartService);
   private readonly dialog = inject(MatDialog);
   private readonly snack = inject(MatSnackBar);
 
   protected readonly currentUser = this.auth.currentUser;
   protected readonly isSignedIn = this.auth.isSignedIn;
   protected readonly isAdmin = this.auth.isAdmin;
+  protected readonly cartCount = this.cart.itemCount;
 
   // Tooltip content shown on hover of the search-help icon. Lists every
   // field the search-text bucket covers so customers know what to type.
@@ -71,6 +74,15 @@ export class Header {
     if (q) {
       this.router.navigate(['/buscar'], { queryParams: { q } });
     }
+  }
+
+  protected onCartClick(event: MouseEvent): void {
+    // Suppress the routerLink so a normal click opens the drawer instead
+    // of navigating. Middle-click and ctrl/cmd-click still go through to
+    // /cart so "open in new tab" keeps working.
+    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    event.preventDefault();
+    this.cart.openDrawer();
   }
 
   protected async openLogin(): Promise<void> {

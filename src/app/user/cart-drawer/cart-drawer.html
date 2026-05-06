@@ -1,0 +1,92 @@
+<header class="cart-drawer__header">
+  <h2>Carrito ({{ itemCount() }})</h2>
+  <button mat-icon-button type="button" (click)="close()" aria-label="Cerrar">
+    <mat-icon>close</mat-icon>
+  </button>
+</header>
+
+@if (items().length === 0) {
+  <div class="cart-drawer__empty">
+    <mat-icon>shopping_cart</mat-icon>
+    <p>Tu carrito está vacío</p>
+    <a mat-stroked-button routerLink="/products" (click)="close()">
+      Explorar cartas
+    </a>
+  </div>
+} @else {
+  <ul class="cart-drawer__lines">
+    @for (line of items(); track line.product_id) {
+      <li class="cart-drawer__line">
+        <a [routerLink]="['/products', line.slug]" (click)="close()" class="cart-drawer__thumb">
+          @if (line.image_url) {
+            <img [src]="line.image_url" [alt]="line.name" loading="lazy" />
+          }
+        </a>
+        <div class="cart-drawer__line-body">
+          <div class="cart-drawer__line-head">
+            <a [routerLink]="['/products', line.slug]" (click)="close()" class="cart-drawer__name">
+              {{ line.name }}
+            </a>
+            @if (line.condition) {
+              <span [class]="conditionClass(line.condition)">{{ line.condition }}</span>
+            }
+          </div>
+          @if (line.set_name) {
+            <p class="cart-drawer__set">{{ line.set_name }}</p>
+          }
+          <div class="cart-drawer__line-foot">
+            <div class="cart-drawer__qty">
+              <button
+                mat-icon-button
+                type="button"
+                (click)="onDecrement(line)"
+                [disabled]="line.quantity <= 1"
+                aria-label="Disminuir"
+              >
+                <mat-icon>remove</mat-icon>
+              </button>
+              <span class="cart-drawer__qty-value">{{ line.quantity }}</span>
+              <button
+                mat-icon-button
+                type="button"
+                (click)="onIncrement(line)"
+                [disabled]="line.quantity >= line.stock"
+                aria-label="Aumentar"
+              >
+                <mat-icon>add</mat-icon>
+              </button>
+            </div>
+            <span class="cart-drawer__line-price">
+              ₡{{ line.price * line.quantity | number: '1.0-0' }}
+            </span>
+            <button
+              mat-icon-button
+              type="button"
+              class="cart-drawer__remove"
+              (click)="onRemove(line)"
+              aria-label="Eliminar"
+            >
+              <mat-icon>delete_outline</mat-icon>
+            </button>
+          </div>
+          @if (line.quantity >= line.stock) {
+            <p class="cart-drawer__stock-hint">Stock disponible: {{ line.stock }}</p>
+          }
+        </div>
+      </li>
+    }
+  </ul>
+
+  <footer class="cart-drawer__footer">
+    <div class="cart-drawer__subtotal">
+      <span>Subtotal</span>
+      <strong>₡{{ subtotal() | number: '1.0-0' }}</strong>
+    </div>
+    <button mat-flat-button color="primary" (click)="onCheckout()" class="cart-drawer__cta">
+      Continuar al checkout
+    </button>
+    <button mat-stroked-button (click)="goToCart()" class="cart-drawer__cta">
+      Ver carrito completo
+    </button>
+  </footer>
+}

@@ -1,0 +1,130 @@
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a routerLink="/" class="breadcrumb-home" aria-label="Inicio">
+    <mat-icon>home</mat-icon>
+  </a>
+  <span class="breadcrumb-sep">›</span>
+  <span class="breadcrumb-current">Carrito</span>
+</nav>
+
+<header class="cart-page__header">
+  <h1>Tu carrito</h1>
+  @if (itemCount() > 0) {
+    <button mat-button type="button" (click)="onClear()" class="cart-page__clear">
+      <mat-icon>delete_sweep</mat-icon>
+      Vaciar carrito
+    </button>
+  }
+</header>
+
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+@if (!loading() && items().length === 0) {
+  <div class="cart-page__empty">
+    <mat-icon>shopping_cart</mat-icon>
+    <p>Tu carrito está vacío.</p>
+    <a mat-flat-button color="primary" routerLink="/products">Explorar cartas</a>
+  </div>
+}
+
+@if (items().length > 0) {
+  <div class="cart-page__layout">
+    <ul class="cart-page__lines">
+      @for (line of items(); track line.product_id) {
+        <li class="cart-page__line">
+          <a [routerLink]="['/products', line.slug]" class="cart-page__thumb">
+            @if (line.image_url) {
+              <img [src]="line.image_url" [alt]="line.name" loading="lazy" />
+            }
+          </a>
+          <div class="cart-page__line-body">
+            <div class="cart-page__line-head">
+              <a [routerLink]="['/products', line.slug]" class="cart-page__name">
+                {{ line.name }}
+              </a>
+              @if (line.condition) {
+                <span [class]="conditionClass(line.condition)">{{ line.condition }}</span>
+              }
+            </div>
+            @if (line.set_name || line.card_number) {
+              <p class="cart-page__set">
+                @if (line.set_name) { {{ line.set_name }} }
+                @if (line.set_name && line.card_number) { · }
+                @if (line.card_number) { #{{ line.card_number }} }
+              </p>
+            }
+            <p class="cart-page__unit-price">
+              ₡{{ line.price | number: '1.0-0' }} c/u
+            </p>
+          </div>
+          <div class="cart-page__line-controls">
+            <div class="cart-page__qty">
+              <button
+                mat-icon-button
+                type="button"
+                (click)="onDecrement(line)"
+                [disabled]="line.quantity <= 1"
+                aria-label="Disminuir"
+              >
+                <mat-icon>remove</mat-icon>
+              </button>
+              <span class="cart-page__qty-value">{{ line.quantity }}</span>
+              <button
+                mat-icon-button
+                type="button"
+                (click)="onIncrement(line)"
+                [disabled]="line.quantity >= line.stock"
+                aria-label="Aumentar"
+              >
+                <mat-icon>add</mat-icon>
+              </button>
+            </div>
+            @if (line.quantity >= line.stock) {
+              <p class="cart-page__stock-hint">Stock disponible: {{ line.stock }}</p>
+            }
+          </div>
+          <div class="cart-page__line-total">
+            <span class="cart-page__line-amount">
+              ₡{{ line.price * line.quantity | number: '1.0-0' }}
+            </span>
+            <button
+              mat-icon-button
+              type="button"
+              class="cart-page__remove"
+              (click)="onRemove(line)"
+              aria-label="Eliminar"
+            >
+              <mat-icon>delete_outline</mat-icon>
+            </button>
+          </div>
+        </li>
+      }
+    </ul>
+
+    <aside class="cart-page__summary">
+      <div class="cart-page__summary-card">
+        <h2>Resumen</h2>
+        <dl class="cart-page__summary-row">
+          <dt>Artículos</dt>
+          <dd>{{ itemCount() }}</dd>
+        </dl>
+        <dl class="cart-page__summary-row cart-page__summary-row--total">
+          <dt>Subtotal</dt>
+          <dd>₡{{ subtotal() | number: '1.0-0' }}</dd>
+        </dl>
+        <button
+          mat-flat-button
+          color="primary"
+          class="cart-page__checkout"
+          (click)="onCheckout()"
+        >
+          Continuar al checkout
+        </button>
+        <p class="cart-page__note">
+          El envío se calcula al confirmar la compra.
+        </p>
+      </div>
+    </aside>
+  </div>
+}

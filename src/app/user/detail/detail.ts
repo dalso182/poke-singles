@@ -19,6 +19,7 @@ import { ProductsService } from '../../core/catalog/products.service';
 import { TcgdexCardsService } from '../../core/catalog/tcgdex-cards.service';
 import { SetsService } from '../../core/catalog/sets.service';
 import { CardTypesService } from '../../core/catalog/card-types.service';
+import { CartService } from '../../core/cart/cart.service';
 import {
   LANGUAGE_OPTIONS,
   VARIANT_OPTIONS,
@@ -51,6 +52,7 @@ export class Detail implements OnInit {
   private readonly tcgdexCards = inject(TcgdexCardsService);
   private readonly sets = inject(SetsService);
   private readonly cardTypes = inject(CardTypesService);
+  private readonly cart = inject(CartService);
   private readonly snack = inject(MatSnackBar);
   private readonly router = inject(Router);
 
@@ -120,9 +122,15 @@ export class Detail implements OnInit {
     }
   }
 
-  protected onAddToCart(): void {
-    // Cart is out of scope for now (CLAUDE.md). Stub feedback only.
-    this.snack.open('Carrito disponible próximamente', 'OK', { duration: 3000 });
+  protected async onAddToCart(): Promise<void> {
+    const product = this.product();
+    if (!product) return;
+    const { error } = await this.cart.add(product.id, 1);
+    if (error) {
+      this.snack.open(error, 'OK', { duration: 4000 });
+      return;
+    }
+    // Drawer opens automatically via CartService.add().
   }
 
   protected languageLabel(value: string | null): string {
