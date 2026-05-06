@@ -89,12 +89,12 @@
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   }
 
-  // Bottom-right corner cluster: type icons + condition pill, pinned outside
-  // the .card-info flow so they sit at the card edge regardless of content.
+  // Bottom-right corner cluster: type icons + condition pill, pinned to
+  // the info panel's bottom-right corner.
   > .card-corner {
     position: absolute;
-    right: 8px;
-    bottom: 8px;
+    right: 10px;
+    bottom: 10px;
     display: flex;
     align-items: center;
     gap: 4px;

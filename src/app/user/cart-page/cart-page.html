@@ -128,16 +128,18 @@
               @if (line.image_url) {
                 <img [src]="line.image_url" [alt]="line.name" loading="lazy" />
               }
-              @if (line.condition) {
-                <span [class]="conditionClass(line.condition)" class="cart-page__card-condition">
-                  {{ line.condition }}
-                </span>
-              }
             </a>
             <div class="cart-page__card-body">
               <a [routerLink]="['/products', line.slug]" class="cart-page__card-name">
                 {{ line.name }}
               </a>
+              @if (line.set_name || line.card_number) {
+                <p class="cart-page__card-meta">
+                  @if (line.set_name) { {{ line.set_name }} }
+                  @if (line.set_name && line.card_number) { · }
+                  @if (line.card_number) { #{{ line.card_number }} }
+                </p>
+              }
               <div class="cart-page__card-row">
                 <div class="cart-page__qty">
                   <button
@@ -177,6 +179,11 @@
                 Stock disponible: {{ line.stock }}
               </p>
             </div>
+            @if (line.condition) {
+              <span [class]="conditionClass(line.condition)" class="cart-page__card-condition">
+                {{ line.condition }}
+              </span>
+            }
           </li>
         }
       </ul>

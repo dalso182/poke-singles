@@ -12,20 +12,27 @@ hosted on SiteGround. The OpenCart site stays live until the new one ships.
 
 ## Status
 
-- ✅ Angular 21 + Material 21 scaffold
-- ✅ Vault Light brand theme applied (Tico Blue / Amber Glow / warm cream / Manrope)
-- ✅ User shell (header + sidenav + footer), home, product list, product detail
-- ✅ Admin panel: shell, profile menu (Google OAuth), dashboard, CRUD for products/categories/sets
+- ✅ Angular 21 + Material 21 scaffold, Vault Light brand theme
 - ✅ Designer reference at `/library`
-- ✅ SiteGround SFTP deploy script (`npm run deploy:dev` / `:prod`)
-- ✅ Two-tier env model (local / dev tier / prod) wired in `angular.json`
-- ✅ Supabase dev project linked (`dhslfridsjdmhwzrgebv`); SDK + `SupabaseService` wired
-- ✅ Deploy guard refuses uploads to the live OpenCart root
-- ✅ Schema design + migrations (products, categories, sets, conditions, prices, stock, audit trails)
-- ✅ Admin auth (Google OAuth) + RLS policies (admin role check)
-- ✅ TCGdex endpoint configurable per environment (dev / prod)
-- ⬜ Prod Supabase project
-- ⬜ Customer auth + cart, checkout, payments (SINPE Móvil + bank transfer)
+- ✅ SiteGround SFTP deploy + two-tier env model + deploy guard against the live OpenCart root
+- ✅ Supabase dev project linked + SDK + `SupabaseService` + RLS-with-`is_admin()` pattern
+- ✅ Catalog schema: products, categories, sets, card_types (many-to-many),
+  TCGdex metadata cache (`tcgdex_cards`), `app_settings`, audit triggers
+- ✅ Admin panel: dashboard, CRUD for products / categories / card-types / sets / coupons / config,
+  Google OAuth, image picker over a server-side PHP listing, TCGdex-driven add-product flow
+- ✅ Customer storefront: home (hero + recent + featured rails), `/products`,
+  `/products/:slug` detail with TCGdex Card data (attacks, abilities, weaknesses, illustrator),
+  `/buscar` search (substring + 4 sort modes), hover-preview overlay, condition pills, type icons
+- ✅ Customer auth: magic link + password + Google, `profiles` table, `/account` page (`customerGuard`)
+- ✅ Cart: anonymous localStorage + DB-backed for signed-in (with merge-on-sign-in),
+  drawer + `/cart` page (list / grid views), stock validation at add time
+- ✅ Coupons: PERCENTAGE + FIXED_ON_THRESHOLD, admin CRUD with soft-delete-with-undo,
+  customer apply / remove with auto-revalidate on cart mutations
+  (redemption deferred to the checkout plan)
+- ✅ TCGdex endpoint configurable per environment + `npm run seed:dev` populates the dev catalog
+- ⬜ Prod Supabase project + cutover
+- ⬜ Checkout: `orders` + `coupon_redemptions` + `place_order` RPC + buyer info form + SINPE Móvil instructions
+- ⬜ Customer order history
 - ⬜ OpenCart → Supabase data import
 - ⬜ 301 redirect map for old OpenCart URLs
 
@@ -75,18 +82,23 @@ Deploy details: `scripts/deploy.mjs` reads `.env.local` (gitignored — copy fro
 
 | Path | Component | Notes |
 |---|---|---|
-| `/` | Home | Landing page (inside UserShell) |
-| `/products` | CardList | Product grid |
-| `/products/:slug` | Detail | Product detail; `:slug` bound via `input()` |
+| `/` | Home | Hero + Recién llegadas + Destacadas rails |
+| `/products` | CardList | Product grid (DB-backed, hover preview, condition + type badges) |
+| `/products/:slug` | Detail | TCGdex Card data + price + add-to-cart |
+| `/buscar` | SearchResults | URL-bound search (`q`) + sort (`relevance` / `price-asc` / `price-desc` / `recent`) |
+| `/cart` | CartPage | Line items, quantity edit, list / grid views, coupon input, summary |
+| `/account` | Account | Read-only email + editable name/phone + sign out (`customerGuard`) |
 | `/admin` | AdminShell | Requires admin role; uses Google OAuth |
 | `/admin/` | Dashboard | Admin home (default after `/admin`) |
 | `/admin/products` | ProductsList | Paginated table with search + filters |
-| `/admin/products/new` | AddProduct | TCGdex typeahead autofill + manual mode |
-| `/admin/products/:id/edit` | ProductEdit | Full form (metadata + commerce) |
-| `/admin/categories` | Categories | CRUD with inline edit, soft-delete with undo |
-| `/admin/sets` | Sets | Expandable rows, find-or-create from TCGdex |
-| `/admin/orders` | Placeholder | TBD |
-| `/admin/customers` | Placeholder | TBD |
+| `/admin/products/new` | AddProduct | TCGdex typeahead + set filter, image picker |
+| `/admin/products/:id/edit` | ProductEdit | Quick-update card + full form |
+| `/admin/categories` | Categories | Inline-edit CRUD |
+| `/admin/card-types` | CardTypes | Inline-edit CRUD for the multi-tag taxonomy |
+| `/admin/sets` | Sets | Expandable rows, find-or-create from TCGdex, detail dialog |
+| `/admin/coupons` | Coupons | List with active/inactive/expired/deleted filters, soft-delete-with-undo |
+| `/admin/coupons/new`, `/admin/coupons/:id/edit` | CouponEdit | Type-reactive form (PERCENTAGE / FIXED_ON_THRESHOLD), date picker |
+| `/admin/config` | AdminConfig | Exchange rate, maintenance mode |
 | `/library` | Library | Designer reference (no app chrome) |
 
 ## Deploying
@@ -181,17 +193,37 @@ const { data, error } = await supabase.from('<table>').select('*');
 
 Re-run `npm run db:types:dev` after every migration so generated types stay in sync.
 
-**Schema:** Catalog tables (categories, sets, products) with triggers for audit
-(updated_at, first_listed_at), restock notifications, and Pokemon name normalization.
-Admin role detected via `is_admin()` helper (checks `auth.jwt claims → 'app_metadata'.'role'`).
+**Schema:**
+
+- **Catalog:** `categories`, `sets`, `products`, `card_types` + `product_card_types`
+  junction, `tcgdex_cards` (JSONB cache of the TCGdex Card payload), `app_settings`.
+- **Customer:** `profiles` (1:1 with `auth.users`, auto-created via the
+  `handle_new_user` trigger), `cart_items` (PK `(user_id, product_id)`),
+  `carts` (1 row per user; currently holds `coupon_id`).
+- **Coupons:** `coupons` (`PERCENTAGE` / `FIXED_ON_THRESHOLD`, soft-delete via
+  `deleted_at`). Customers access via three RPCs (`security definer`,
+  search_path-locked): `validate_coupon`, `calculate_coupon_discount`,
+  `get_my_applied_coupon`. `coupon_redemptions` is intentionally deferred to
+  the orders/checkout plan.
+- **Search:** `products_search` view (joins products + sets + aggregated card
+  types into a `search_text` column; `description` excluded) plus the
+  `search_products(q, sort, limit_n, offset_n)` RPC behind `/buscar`.
+- Triggers: `updated_at`, `first_listed_at`, restock tracking, `pokemon_name`
+  normalization. RLS: admin-only mutations gated by `is_admin()` (reads
+  `auth.jwt → app_metadata.role`); customer-self policies on `profiles` /
+  `cart_items` / `carts`.
+
+`scripts/seed-products.mjs` populates the dev catalog from TCGdex (~1500 cards
+across the latest SwSh + SV sets) — see `npm run seed:dev{,:clean}`.
 
 **Still pending:**
 
 - Prod Supabase project — when ready, fill in `environment.prod.ts` with prod creds
   and replace the `<prod-ref>` placeholders in `package.json` (4 of them: `db:types:prod`,
   `db:push:prod`, `functions:prod` — note `db:types` already uses the linked project)
-- Customer auth (email/password + magic link signup) and customer-side RLS policies
-  (for orders, cart, wishlist when those tables exist)
+- Orders + checkout (`orders`, `coupon_redemptions`, `place_order` RPC,
+  buyer-info form, SINPE Móvil instructions) — cart and coupon validation are
+  live, redemption needs the commitment event
 
 ## Repo layout
 

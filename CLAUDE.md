@@ -138,9 +138,112 @@ prod build with empty env values can't accidentally ship. `<dev-ref>` placeholde
 
 - Prod Supabase project + filled-in `environment.prod.ts` + replacing the four
   `<prod-ref>` placeholders in `package.json`.
-- Customer auth (email signup / magic link) — admin auth (Google OAuth) is live.
 - Edge functions if/when needed; folder is empty.
-- Additional RLS policies for customer orders/cart once checkout flow is designed.
+- Orders + checkout (`orders`, `coupon_redemptions`, `place_order` RPC). The
+  cart and coupon validation are live but redemption needs a commitment event.
+
+## Customer auth
+
+Live. `AuthService` (`src/app/core/auth/auth.service.ts`) wraps three sign-in
+methods: `signInWithMagicLink(email)` (recommended; doubles as signup),
+`signInWithPassword(email, password)`, and `signInWithGoogle()` (the same
+button is used by admins). `LoginDialog` lays them out in that order.
+
+Customer rows live in `auth.users` plus a 1:1 `profiles` table:
+
+```
+profiles(id PK FK auth.users, full_name, phone, default_shipping_address jsonb,
+         created_at, updated_at)
+```
+
+`handle_new_user()` trigger fires on every `auth.users` insert and creates the
+profile row from `raw_user_meta_data` (`full_name` for password signup and
+magic link, `name` from Google). RLS is self-only; admins read all.
+
+`/account` (gated by `customerGuard`) lets the user edit `full_name` + `phone`
+and sign out. The shipping-address editor stub waits for checkout.
+
+Admins are users where `app_metadata.role = 'admin'`, set manually via SQL.
+The `is_admin()` helper is unchanged — Google customer sign-in just produces
+a regular non-admin row.
+
+## Cart
+
+DB-backed when signed in (`cart_items` keyed by `(user_id, product_id)`),
+`localStorage` (`cart:v1`) when signed out. `CartService`
+(`src/app/core/cart/cart.service.ts`) owns both backends; an `effect()` on
+`auth.currentUser()` switches between them and merges anonymous items into the
+DB on sign-in (sums quantities, caps at stock, clears localStorage).
+
+Surfaces: header badge bound to `cart.itemCount()`, a right-side `mat-sidenav`
+drawer (`<app-cart-drawer>`) mounted in `UserShell` that opens on add and on
+icon-click, and `/cart` (full review with list/grid view toggle persisted to
+localStorage under `cart:view`).
+
+Cart-level metadata (currently just the applied coupon) lives in a separate
+1-row-per-user `carts` table with self-only RLS — `cart_items` stays as the
+line-items table.
+
+## Coupons
+
+Admin-curated discounts. Two types: `PERCENTAGE` (capped at 100%) and
+`FIXED_ON_THRESHOLD` (requires a `min_purchase_amount`). Both use
+`numeric(12, 2)` for amounts.
+
+All business logic lives in three Postgres RPCs (`security definer`,
+`search_path = public, pg_temp`, granted to `authenticated`):
+
+- `validate_coupon(p_code, p_subtotal)` returns `{ ok, ... }` or
+  `{ ok: false, error: <CODE> [, gap] }`. Error codes are machine-readable
+  (`AUTH_REQUIRED`, `NOT_FOUND`, `INACTIVE`, `EXPIRED`, `LIMIT_REACHED`,
+  `BELOW_MINIMUM`); UI maps to Spanish via
+  `src/app/core/catalog/coupon-errors.ts`.
+- `calculate_coupon_discount(p_coupon_id, p_subtotal)` returns a `numeric`
+  capped at the subtotal. The TS mirror in `cart.service.ts` avoids an RPC
+  round-trip on every cart change.
+- `get_my_applied_coupon()` returns the cart's currently-attached coupon
+  (silently dropping expired/inactive/deleted refs) so customers can hydrate
+  the applied state without a direct read on `coupons`.
+
+Customers never read `coupons` directly — the table has no public-read RLS
+policy, only `coupons_admin_all`. The chosen coupon id rides on the user's
+`carts.coupon_id`, the cart re-validates after every mutation, and a
+`couponDroppedTick` signal flashes a snackbar when an auto-drop happens
+(e.g. subtotal fell below the threshold).
+
+Admin CRUD lives at `/admin/coupons` (list with active/inactive/expired/
+deleted filters + search + soft-delete-with-undo) and `/admin/coupons/new` /
+`/admin/coupons/:id/edit` (shared form with type-reactive validators).
+
+**Redemption is intentionally NOT wired yet.** `max_uses_per_user` is captured
+on the row but unenforced — a TODO in `validate_coupon` marks the spot. The
+redemption call belongs in the orders/checkout plan, atomically inside the
+`place_order` transaction. Until that ships, customers can preview the
+discount but no `coupon_redemptions` rows are written.
+
+## Customer search
+
+`/buscar?q=…&sort=…` runs against the `products_search` view (joins products
++ sets + aggregated card_types into a single `search_text` column;
+`description` is OMITTED to avoid flavor-text false positives) via the
+`search_products(q, sort, limit_n, offset_n)` RPC. Sort modes: `relevance`
+(default with a query — name-prefix > pokemon-prefix > name-substring > rest,
+then most recent), `price-asc`, `price-desc`, `recent` (default browse).
+Header search input + magnifier → `Router.navigate(['/buscar'], { q })`.
+
+The public-read RLS predicate on `products` was tightened to also require
+`price > 0` (matching `active = true` and `quantity > 0`), so $0 listings are
+never visible to anon clients regardless of which query path.
+
+## Hover preview (card grids)
+
+A single `<app-card-preview-overlay>` mounted once in `UserShell` handles the
+hover-zoom on every card grid (home, `/products`, `/buscar`). The
+`[appCardPreview]` directive on each `.card-image` host calls
+`CardPreviewService.show(card, anchor)` on mouseenter (180ms debounce).
+Touch devices are skipped via `matchMedia('(hover: hover)')`. Image data is
+already loaded by the listing — the overlay is pure presentation, no extra
+fetches.
 
 ## Image picker (admin)
 
@@ -193,56 +296,86 @@ src/
 ├── app/
 │   ├── app.ts                       Root: just <router-outlet>
 │   ├── app.routes.ts                Top-level routes (see below)
-│   ├── app.config.ts                Providers: router (with input binding +
-│                                    in-memory anchor scrolling), animations,
-│                                    error listeners
+│   ├── app.config.ts                Providers: router (input binding + anchor
+│                                    scrolling), animations, error listeners
 │   ├── user/                        Customer-facing (UserShell branch)
 │   │   ├── user-shell/              Composes Header + Navigation + Footer +
-│   │                                <router-outlet>
-│   │   ├── header/                  mat-toolbar with logo, search, cart icon,
-│   │                                account, social icons (Instagram / Facebook
-│   │                                / WhatsApp via custom SVG icons registered
-│   │                                in MatIconRegistry)
+│   │                                <router-outlet> + cart drawer (mat-sidenav
+│   │                                position="end") + card preview overlay
+│   │   ├── header/                  mat-toolbar with logo, search bar + help
+│   │                                tooltip, cart icon (opens drawer), profile
+│   │                                menu, social icons (Instagram / Facebook /
+│   │                                WhatsApp via custom SVG icons)
 │   │   ├── navigation/              mat-sidenav nav-list
 │   │   ├── footer/                  Site footer
-│   │   ├── card-list/               Product grid (mock data — featured + sold-
-│   │                                out + sale-price variants demoed)
-│   │   └── detail/                  Product detail (route param via input())
+│   │   ├── card-list/               /products — DB-backed product grid with
+│   │                                hover preview, condition pill, type icons
+│   │   ├── search-results/          /buscar — substring + sort over the
+│   │                                products_search view via search_products RPC
+│   │   ├── detail/                  /products/:slug — pulls product + cached
+│   │                                TCGdex Card payload (attacks, abilities,
+│   │                                weaknesses, illustrator, etc.)
+│   │   ├── cart-drawer/             Right-side slide-in drawer (subtotal,
+│   │                                applied coupon, lines, qty stepper)
+│   │   ├── cart-page/               /cart — list + grid view toggle, summary
+│   │                                card with coupon input, discount, total
+│   │   └── account/                 /account — read-only email + editable
+│   │                                full_name + phone + sign-out (customerGuard)
 │   ├── admin/
 │   │   ├── admin-shell/             /admin entry — toolbar (profile menu), sidenav
 │   │   ├── admin-dashboard/         Dashboard (lazy)
 │   │   ├── products-list/           Paginated product table with search + filters
-│   │   ├── product-edit/            Product form (metadata + commerce fields)
+│   │   ├── product-edit/            Product form (quick-update card + full form)
+│   │   ├── add-product/             New product form with TCGdex card + set
+│   │                                typeaheads, image picker, default Singles
+│   │                                category, multi-select card-types
 │   │   ├── categories/              Category CRUD with inline edit
-│   │   ├── sets/                    Set management (create from TCGdex or manual)
-│   │   └── add-product/             New product form with TCGdex typeahead
-│   ├── library/                     /library — designer reference page
-│   │   ├── library.ts               Standalone, imports ~30 Material modules
-│   │   ├── library-dialog.ts        Sibling component for the dialog demo
-│   │   ├── library.html             17 sections: typography, palette, buttons,
-│   │                                forms, chips, cards, lists, tabs,
-│   │                                expansion, stepper, menu, tooltip,
-│   │                                progress, badge, snackbar/dialog, table,
-│   │                                brand utilities
-│   │   └── library.scss             Sticky-rail TOC + section spacing
-│   └── home/                        Landing page (renders inside UserShell)
-├── environments/
-│   ├── environment.ts               Dev/local — wired to project dhslfridsjdmhwzrgebv
-│   └── environment.prod.ts          Prod — substituted by fileReplacements (TBD)
+│   │   ├── card-types/              Card-type taxonomy CRUD (Full Art, VMAX, etc.)
+│   │   ├── sets/                    Set management with detail dialog
+│   │   ├── coupons/                 Coupon CRUD: list with filters + soft-delete
+│   │                                with undo, separate add/edit form
+│   │   └── config/                  /admin/config — exchange rate, maintenance
+│   ├── auth/login-dialog/           Shared login dialog: magic link (primary),
+│   │                                password sign-in / sign-up tabs, Google OAuth
+│   ├── core/
+│   │   ├── auth/                    AuthService (sign-in methods + isAdmin),
+│   │                                ProfilesService, adminGuard, customerGuard
+│   │   ├── catalog/                 ProductsService (list + search RPC + cart-
+│   │                                type junction), CategoriesService, SetsService,
+│   │                                CardTypesService, CouponsService,
+│   │                                TcgdexCardsService, type definitions, coupon
+│   │                                error map
+│   │   ├── cart/                    CartService — dual-backend (localStorage anon
+│   │                                / cart_items DB + carts row), applied-coupon
+│   │                                signal, drawer state, mutation revalidation
+│   │   ├── images/                  ImageBrowserService for the picker dialog
+│   │   ├── preview/                 CardPreviewService (single shared overlay)
+│   │   ├── settings/                AppSettingsService (exchange rate, etc.)
+│   │   ├── storage/                 LocalStorageService (SSR-safe wrapper)
+│   │   ├── supabase/                SupabaseService + generated database.types
+│   │   └── tcgdex/                  TcgdexService (TCG card-data SDK wrapper)
+│   ├── shared/
+│   │   ├── card-typeahead/          TCGdex card autocomplete with set filter
+│   │   ├── set-typeahead/           Set autocomplete (cached SetsService.list)
+│   │   ├── image-picker/            Folder/file picker dialog over the PHP listing
+│   │   └── card-preview/            Hover-preview directive + overlay component
+│   ├── library/                     /library — designer reference (no shell)
+│   └── home/                        Landing page (hero + recent + featured rails)
+├── environments/                    environment.ts (dev) + environment.prod.ts
 ├── styles.scss                      Theme entry — see Brand theme
-├── styles/                          Theme partials (see Brand theme)
-│   ├── _theme-colors.scss           M3 tonal palettes (generated)
-│   ├── _brand-tokens.scss           :root CSS vars
-│   ├── _material-overrides.scss     Component overrides (button/card shape, type)
-│   └── _brand-utilities.scss        .brand-bar etc.
-├── assets/images/                   card1..card12.jpg, poke-singles-logo.png
+├── styles/                          _theme-colors / _brand-tokens /
+│                                    _material-overrides / _brand-utilities
+├── assets/images/                   logo + types/ (energy icons) + 1edition / promo
 ├── index.html                       Manrope + IBM Plex Mono link, Material Icons
 └── main.ts                          bootstrapApplication(App, appConfig)
 
 scripts/deploy.mjs                   SiteGround SFTP deploy (see Deploy section)
-src/app/core/supabase/               SupabaseService + generated database.types
-src/app/core/tcgdex/                 TcgdexService (TCG card-data SDK wrapper)
-supabase/                            Linked to dhslfridsjdmhwzrgebv; empty schema
+scripts/seed-products.mjs            TCGdex → Supabase catalog seeder (dev only)
+scripts/tcgdex-smoke.mjs             SDK smoke test
+server/list-images.php               Image-picker endpoint (deploy to image roots)
+supabase/migrations/                 Catalog, app_settings, card_types, TCGdex
+                                     metadata cache, search RPCs, profiles, cart,
+                                     coupons. Re-run db:types:dev after changes.
 brand-guidelines.html                Design system spec (open in browser)
 ```
 
@@ -256,17 +389,23 @@ UserShell wrapper** — Angular's router needs that ordering or it tries to matc
 /admin                  → AdminShell (lazy, canActivate: [adminGuard])
   /                     → Dashboard
   /products             → ProductsList (paginated, searchable, filterable)
-  /products/new         → AddProduct (TCGdex typeahead)
-  /products/:id/edit    → ProductEdit (metadata + commerce fields)
+  /products/new         → AddProduct (TCGdex typeahead + set filter)
+  /products/:id/edit    → ProductEdit (quick-update card + full form)
   /categories           → Categories (CRUD with inline edit)
-  /sets                 → Sets (manual add, lazy expand)
-  /orders               → Placeholder
-  /customers            → Placeholder
+  /card-types           → CardTypes (taxonomy CRUD)
+  /coupons              → Coupons (list + filters)
+  /coupons/new          → CouponEdit (create)
+  /coupons/:id/edit     → CouponEdit (update)
+  /sets                 → Sets (with detail dialog)
+  /config               → AdminConfig (exchange rate, maintenance flag)
 /library                → Library (lazy, no shell wrapper)
 /                       → UserShell (lazy, wraps the children below)
-  /                     → Home
-  /products             → CardList
+  /                     → Home (hero + recent + featured rails)
+  /products             → CardList (DB-backed grid with hover preview)
   /products/:slug       → Detail (slug bound via input.required<string>())
+  /buscar               → SearchResults (q + sort URL params)
+  /cart                 → CartPage (list/grid view toggle)
+  /account              → Account (canActivate: [customerGuard])
 ```
 
 `/library` and `/admin` deliberately bypass UserShell: library is a designer
@@ -286,8 +425,10 @@ unsigned users to /, shows LoginDialog; redirects non-admins to / with snackbar)
 These are deliberately deferred and will each get their own plan when picked up:
 
 - Prod Supabase project + cutover wiring (environment.prod.ts, `<prod-ref>` npm script placeholders)
-- Customer auth (email/password + magic link signup; separate from admin OAuth)
-- Cart state, persistence, checkout
+- **Checkout / orders.** `orders` + `coupon_redemptions` tables, `place_order`
+  RPC (atomically creates the order + redeems the coupon + decrements stock),
+  buyer-info form, SINPE-instructions page. Cart and coupon application are
+  live but redemption is gated on this.
 - Payments: **SINPE Móvil** + bank transfer (matching the existing OpenCart flow)
 - Customer order history + invoice download
 - OpenCart 3.0 data export → Supabase import (products, categories, customers,

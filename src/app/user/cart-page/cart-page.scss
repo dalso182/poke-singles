@@ -118,7 +118,7 @@
 
 .cart-page__line {
   display: grid;
-  grid-template-columns: 90px 1fr auto auto;
+  grid-template-columns: 90px 1fr auto 140px;
   gap: 16px;
   align-items: center;
   padding: 16px;
@@ -251,6 +251,8 @@
   font-size: 18px;
   font-weight: 800;
   letter-spacing: -0.3px;
+  min-width: 100px;
+  text-align: right;
 }
 
 .cart-page__remove .mat-icon {
@@ -383,6 +385,7 @@
 }
 
 .cart-page__card {
+  position: relative;
   display: flex;
   flex-direction: column;
   background: var(--surface-card);
@@ -413,8 +416,9 @@
 
 .cart-page__card-condition {
   position: absolute;
-  top: 8px;
+  bottom: 8px;
   right: 8px;
+  margin-left: 0;
   background: var(--surface-card);
 }
 
@@ -437,10 +441,18 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
   min-height: 36px; // reserve 2 lines so cards align
+  margin-bottom: 0;
 
   &:hover {
     text-decoration: underline;
   }
+}
+
+.cart-page__card-meta {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin: -4px 0 0;
+  line-height: 1.4;
 }
 
 .cart-page__card-row {
