@@ -1,0 +1,56 @@
+.account {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 720px;
+}
+
+.account__header {
+  padding-bottom: 8px;
+
+  h1 {
+    margin: 6px 0 0;
+    font-family: var(--font-brand);
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+}
+
+.account__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.account__panel {
+  padding: 8px;
+}
+
+.account__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 16px;
+}
+
+.account__full {
+  grid-column: 1 / -1;
+}
+
+.account__placeholder {
+  background: var(--surface-tonal);
+
+  p.muted {
+    color: var(--text-secondary);
+    margin: 4px 0 12px;
+    font-size: 14px;
+  }
+}
+
+.account__actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-top: 8px;
+}

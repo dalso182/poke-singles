@@ -126,6 +126,19 @@ export interface TcgdexCardRow {
   fetched_at: string;
 }
 
+export interface ProfileRow {
+  id: string;
+  full_name: string | null;
+  phone: string | null;
+  default_shipping_address: unknown | null; // refine when checkout lands
+  created_at: string;
+  updated_at: string;
+}
+
+export type ProfileUpdate = Partial<
+  Pick<ProfileRow, 'full_name' | 'phone' | 'default_shipping_address'>
+>;
+
 // Row shape returned by the `products_search` view / `search_products` RPC.
 // Mirrors `ProductRow` minus a few admin-only columns and adds the joined
 // set fields plus `search_text` / `card_type_names`.

@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { adminGuard } from './core/auth/admin.guard';
+import { customerGuard } from './core/auth/customer.guard';
 
 export const routes: Routes = [
   {
@@ -80,6 +81,12 @@ export const routes: Routes = [
         path: 'products/:slug',
         loadComponent: () =>
           import('./user/detail/detail').then((m) => m.Detail),
+      },
+      {
+        path: 'account',
+        canActivate: [customerGuard],
+        loadComponent: () =>
+          import('./user/account/account').then((m) => m.Account),
       },
     ],
   },

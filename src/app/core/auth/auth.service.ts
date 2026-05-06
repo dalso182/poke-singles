@@ -68,6 +68,22 @@ export class AuthService {
     return { error: this.mapError(error) };
   }
 
+  /**
+   * Send a passwordless magic-link to the given email. The link doubles as
+   * signup for new emails (Supabase's `shouldCreateUser` defaults to true)
+   * and as login for returning emails. After the user clicks it, Supabase
+   * redirects them back to `emailRedirectTo` with a session in the URL
+   * fragment, which the SDK auto-detects on page load.
+   */
+  async signInWithMagicLink(email: string): Promise<AuthActionResult> {
+    const redirectTo = this.getAppBaseUrl();
+    const { error } = await this.supabase.client.auth.signInWithOtp({
+      email,
+      options: redirectTo ? { emailRedirectTo: redirectTo } : undefined,
+    });
+    return { error: this.mapError(error) };
+  }
+
   async signOut(): Promise<AuthActionResult> {
     const { error } = await this.supabase.client.auth.signOut();
     return { error: this.mapError(error) };

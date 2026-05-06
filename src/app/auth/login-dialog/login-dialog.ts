@@ -20,6 +20,10 @@ type SignUpForm = FormGroup<{
   displayName: FormControl<string>;
 }>;
 
+type MagicLinkForm = FormGroup<{
+  email: FormControl<string>;
+}>;
+
 @Component({
   selector: 'app-login-dialog',
   imports: [
@@ -54,6 +58,13 @@ export class LoginDialog {
     }),
   });
 
+  protected readonly magicLinkForm: MagicLinkForm = new FormGroup({
+    email: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.email],
+    }),
+  });
+
   protected readonly signUpForm: SignUpForm = new FormGroup({
     email: new FormControl('', {
       nonNullable: true,
@@ -68,6 +79,25 @@ export class LoginDialog {
       validators: [Validators.required, Validators.minLength(2)],
     }),
   });
+
+  async sendMagicLink(): Promise<void> {
+    if (this.magicLinkForm.invalid || this.submitting()) {
+      this.magicLinkForm.markAllAsTouched();
+      return;
+    }
+    this.beginSubmit();
+    const email = this.magicLinkForm.controls.email.value.trim();
+    const { error } = await this.auth.signInWithMagicLink(email);
+    this.submitting.set(false);
+    if (error) {
+      this.showError(error);
+      return;
+    }
+    this.errorMessage.set('');
+    this.infoMessage.set(
+      `Te enviamos un correo a ${email}. Haz clic en el enlace para iniciar sesión.`,
+    );
+  }
 
   async signIn(): Promise<void> {
     if (this.signInForm.invalid || this.submitting()) {
