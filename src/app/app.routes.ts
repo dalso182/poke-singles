@@ -59,6 +59,22 @@ export const routes: Routes = [
           import('./admin/coupons/coupon-edit').then((m) => m.CouponEdit),
       },
       {
+        path: 'shipping-methods',
+        loadComponent: () =>
+          import('./admin/shipping-methods/shipping-methods').then((m) => m.ShippingMethods),
+      },
+      {
+        path: 'orders',
+        pathMatch: 'full',
+        loadComponent: () =>
+          import('./admin/orders/orders').then((m) => m.Orders),
+      },
+      {
+        path: 'orders/:id',
+        loadComponent: () =>
+          import('./admin/order-detail/order-detail').then((m) => m.OrderDetail),
+      },
+      {
         path: 'sets',
         loadComponent: () => import('./admin/sets/sets').then((m) => m.Sets),
       },
@@ -108,6 +124,18 @@ export const routes: Routes = [
         path: 'cart',
         loadComponent: () =>
           import('./user/cart-page/cart-page').then((m) => m.CartPage),
+      },
+      {
+        path: 'checkout',
+        loadComponent: () =>
+          import('./user/checkout/checkout').then((m) => m.Checkout),
+      },
+      {
+        path: 'checkout/confirmation/:id',
+        loadComponent: () =>
+          import('./user/order-confirmation/order-confirmation').then(
+            (m) => m.OrderConfirmation,
+          ),
       },
     ],
   },

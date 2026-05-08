@@ -46,6 +46,37 @@
       </mat-card-content>
     </mat-card>
 
+    <mat-card class="account__panel">
+      <mat-card-header>
+        <mat-card-title>Mis pedidos</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if (myOrders().length === 0) {
+          <p class="muted">Aún no has hecho un pedido.</p>
+        } @else {
+          <ul class="account__orders">
+            @for (order of myOrders(); track order.id) {
+              <li class="account__order">
+                <a [routerLink]="['/checkout/confirmation', order.id]"
+                   [queryParams]="{ email: order.customer_email }">
+                  <span class="brand-mono account__order-ref">{{ shortRef(order.order_number) }}</span>
+                </a>
+                <span class="order-status order-status--{{ order.status }}">
+                  {{ statusLabel(order.status) }}
+                </span>
+                <span class="account__order-date">
+                  {{ order.created_at | date: 'mediumDate' }}
+                </span>
+                <span class="account__order-total">
+                  ₡{{ order.total | number: '1.0-0' }}
+                </span>
+              </li>
+            }
+          </ul>
+        }
+      </mat-card-content>
+    </mat-card>
+
     <div class="account__actions">
       <button
         mat-stroked-button

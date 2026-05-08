@@ -1,0 +1,201 @@
+<header class="checkout__header">
+  <h1>Finalizar compra</h1>
+</header>
+
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+@if (!loading() && items().length === 0) {
+  <mat-card class="checkout__empty">
+    <mat-card-content>
+      <p>Tu carrito está vacío.</p>
+      <a mat-stroked-button routerLink="/products">Explorar cartas</a>
+    </mat-card-content>
+  </mat-card>
+}
+
+@if (items().length > 0) {
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="checkout__layout">
+    <div class="checkout__main">
+
+      <mat-card class="checkout__panel">
+        <mat-card-header>
+          <mat-card-title>Contacto</mat-card-title>
+          <mat-card-subtitle>Te avisaremos por estos medios.</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content class="checkout__grid">
+          <mat-form-field appearance="outline" class="checkout__full">
+            <mat-label>Correo</mat-label>
+            <input matInput type="email" formControlName="email" autocomplete="email" />
+            @if (form.controls['email'].touched && form.controls['email'].invalid) {
+              <mat-error>Ingresa un correo válido.</mat-error>
+            }
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre completo</mat-label>
+            <input matInput type="text" formControlName="name" autocomplete="name" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Teléfono</mat-label>
+            <input matInput type="tel" formControlName="phone" autocomplete="tel" />
+            <mat-hint>Para coordinar el SINPE / WhatsApp.</mat-hint>
+          </mat-form-field>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="checkout__panel">
+        <mat-card-header>
+          <mat-card-title>Envío</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          @if (shippingMethods().length === 0) {
+            <p class="muted">No hay métodos de envío configurados. Contáctanos.</p>
+          } @else {
+            <mat-radio-group formControlName="shipping_method_id" class="checkout__shipping">
+              @for (method of shippingMethods(); track method.id) {
+                <mat-radio-button [value]="method.id" class="checkout__shipping-option">
+                  <div class="checkout__shipping-row">
+                    <div>
+                      <strong>{{ method.name }}</strong>
+                      @if (method.description) {
+                        <p class="muted checkout__shipping-desc">{{ method.description }}</p>
+                      }
+                    </div>
+                    <span class="checkout__shipping-price">
+                      @if (method.price === 0) { Gratis }
+                      @else { ₡{{ method.price | number: '1.0-0' }} }
+                    </span>
+                  </div>
+                </mat-radio-button>
+              }
+            </mat-radio-group>
+          }
+
+          <div class="checkout__grid checkout__address">
+            <mat-form-field appearance="outline" class="checkout__full">
+              <mat-label>Dirección (línea 1)</mat-label>
+              <input matInput type="text" formControlName="line1" autocomplete="address-line1" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="checkout__full">
+              <mat-label>Línea 2 (opcional)</mat-label>
+              <input matInput type="text" formControlName="line2" autocomplete="address-line2" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Cantón / ciudad</mat-label>
+              <input matInput type="text" formControlName="city" autocomplete="address-level2" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Provincia</mat-label>
+              <input matInput type="text" formControlName="province" autocomplete="address-level1" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="checkout__full">
+              <mat-label>Notas para el repartidor (opcional)</mat-label>
+              <textarea matInput rows="3" formControlName="address_notes"></textarea>
+            </mat-form-field>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="checkout__panel">
+        <mat-card-header>
+          <mat-card-title>Pago</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <mat-radio-group formControlName="payment_method" class="checkout__payment">
+            <mat-radio-button value="sinpe_or_transfer">
+              <div>
+                <strong>SINPE Móvil / Transferencia bancaria</strong>
+                <p class="muted">
+                  Te mostramos los datos en la siguiente pantalla. Puedes adjuntar el
+                  comprobante o enviarlo por WhatsApp.
+                </p>
+              </div>
+            </mat-radio-button>
+            <mat-radio-button value="payment_link">
+              <div>
+                <strong>Pago por enlace</strong>
+                <p class="muted">
+                  Te contactaremos por teléfono con un enlace de pago.
+                </p>
+              </div>
+            </mat-radio-button>
+          </mat-radio-group>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="checkout__panel">
+        <mat-card-header>
+          <mat-card-title>Notas (opcional)</mat-card-title>
+        </mat-card-header>
+        <mat-card-content class="checkout__grid">
+          <mat-form-field appearance="outline" class="checkout__full">
+            <mat-label>Algo que debamos saber</mat-label>
+            <textarea matInput rows="3" formControlName="customer_notes"></textarea>
+          </mat-form-field>
+        </mat-card-content>
+      </mat-card>
+
+    </div>
+
+    <aside class="checkout__summary">
+      <div class="checkout__summary-card">
+        <h2>Tu pedido</h2>
+        <ul class="checkout__items">
+          @for (line of items(); track line.product_id) {
+            <li class="checkout__item">
+              @if (line.image_url) {
+                <img [src]="line.image_url" [alt]="line.name" loading="lazy" />
+              }
+              <div class="checkout__item-body">
+                <span class="checkout__item-name">{{ line.name }}</span>
+                <span class="muted checkout__item-meta">x{{ line.quantity }}</span>
+              </div>
+              <span class="checkout__item-price">
+                ₡{{ line.price * line.quantity | number: '1.0-0' }}
+              </span>
+            </li>
+          }
+        </ul>
+
+        <dl class="checkout__summary-row">
+          <dt>Subtotal</dt>
+          <dd>₡{{ subtotal() | number: '1.0-0' }}</dd>
+        </dl>
+        @if (appliedCoupon(); as coupon) {
+          <dl class="checkout__summary-row">
+            <dt>
+              @if (coupon.type === 'PERCENTAGE') {
+                {{ coupon.code }} ({{ coupon.discount_value }}%)
+              } @else {
+                Descuento ({{ coupon.code }})
+              }
+            </dt>
+            <dd class="price--sale">−₡{{ discount() | number: '1.0-0' }}</dd>
+          </dl>
+        }
+        <dl class="checkout__summary-row">
+          <dt>Envío</dt>
+          <dd>₡{{ selectedShippingPrice() | number: '1.0-0' }}</dd>
+        </dl>
+        <dl class="checkout__summary-row checkout__summary-row--total">
+          <dt>Total</dt>
+          <dd>₡{{ total() | number: '1.0-0' }}</dd>
+        </dl>
+
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          class="checkout__place"
+          [disabled]="form.invalid || placing()"
+        >
+          {{ placing() ? 'Procesando…' : 'Confirmar pedido' }}
+        </button>
+        <p class="muted checkout__legal">
+          Al confirmar, recibirás las instrucciones de pago en la siguiente pantalla.
+        </p>
+      </div>
+    </aside>
+  </form>
+}

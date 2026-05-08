@@ -48,6 +48,10 @@ export class AdminConfig {
     ],
     maintenance_mode: [false],
     maintenance_message: [''],
+    sinpe_phone: [''],
+    whatsapp_number: [''],
+    bank_account_info: [''],
+    order_notification_recipients: [''],
   });
 
   constructor() {
@@ -63,6 +67,10 @@ export class AdminConfig {
         exchange_rate_usd_crc: row.exchange_rate_usd_crc,
         maintenance_mode: row.maintenance_mode,
         maintenance_message: row.maintenance_message ?? '',
+        sinpe_phone: row.sinpe_phone ?? '',
+        whatsapp_number: row.whatsapp_number ?? '',
+        bank_account_info: row.bank_account_info ?? '',
+        order_notification_recipients: row.order_notification_recipients ?? '',
       });
       this.form.markAsPristine();
     } catch (err) {
@@ -84,6 +92,10 @@ export class AdminConfig {
             : Number(raw.exchange_rate_usd_crc),
         maintenance_mode: !!raw.maintenance_mode,
         maintenance_message: raw.maintenance_message?.trim() || null,
+        sinpe_phone: raw.sinpe_phone?.trim() || null,
+        whatsapp_number: raw.whatsapp_number?.trim() || null,
+        bank_account_info: raw.bank_account_info?.trim() || null,
+        order_notification_recipients: (raw.order_notification_recipients ?? '').trim(),
       });
       this.current.set(updated);
       this.form.markAsPristine();

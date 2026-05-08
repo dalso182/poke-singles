@@ -214,21 +214,27 @@
             </button>
           </div>
           <dl class="cart-page__summary-row cart-page__summary-row--discount">
-            <dt>Descuento</dt>
+            <dt>
+              @if (coupon.type === 'PERCENTAGE') {
+                {{ coupon.code }} ({{ coupon.discount_value }}%)
+              } @else {
+                Descuento
+              }
+            </dt>
             <dd class="price--sale">−₡{{ discount() | number: '1.0-0' }}</dd>
           </dl>
         } @else {
           <form
             class="cart-page__coupon"
+            [formGroup]="couponForm"
             (ngSubmit)="onApplyCoupon()"
           >
             <mat-form-field appearance="outline" subscriptSizing="dynamic">
               <mat-label>Código de cupón</mat-label>
               <input
                 matInput
-                [formControl]="couponControl"
+                formControlName="code"
                 autocomplete="off"
-                [disabled]="!isSignedIn() || applyingCoupon()"
               />
               @if (couponError()) {
                 <mat-error>{{ couponError() }}</mat-error>

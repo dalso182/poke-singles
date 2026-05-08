@@ -112,3 +112,22 @@
 .condition-pill--lp { color: var(--warning); }
 .condition-pill--mp { color: #c2410c; }
 .condition-pill--hp { color: var(--danger); }
+
+// Order-status pill — used on /account, /admin/orders, /admin/orders/:id.
+// Default style covers `pending`; modifiers tint by status.
+.order-status {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface-tonal);
+  color: var(--text-secondary);
+
+  &--paid       { background: #dcfce7; color: var(--success); }
+  &--shipped    { background: #dbeafe; color: #1d4ed8; }
+  &--completed  { background: #dcfce7; color: var(--success); }
+  &--cancelled  { background: #fee2e2; color: var(--danger); }
+}

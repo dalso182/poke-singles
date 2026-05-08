@@ -42,7 +42,8 @@ export class CartDrawer {
   }
 
   protected onCheckout(): void {
-    this.snack.open('Checkout disponible próximamente', 'OK', { duration: 3000 });
+    this.cart.closeDrawer();
+    void this.router.navigate(['/checkout']);
   }
 
   protected async onIncrement(line: CartLine): Promise<void> {

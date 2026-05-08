@@ -1,0 +1,135 @@
+<section class="orders">
+  <header class="orders__header admin-page-header">
+    <div>
+      <span class="brand-eyebrow">Operaciones</span>
+      <h1>Pedidos</h1>
+      <p class="muted">Recibos, comprobantes y entregas.</p>
+    </div>
+  </header>
+
+  <mat-card class="orders__filters">
+    <mat-card-content class="orders__filters-row">
+      <mat-button-toggle-group
+        [formControl]="statusControl"
+        aria-label="Filtrar por estado"
+        hideSingleSelectionIndicator
+      >
+        <mat-button-toggle value="all">Todos</mat-button-toggle>
+        <mat-button-toggle value="pending">Pendientes</mat-button-toggle>
+        <mat-button-toggle value="paid">Pagados</mat-button-toggle>
+        <mat-button-toggle value="completed">Completados</mat-button-toggle>
+        <mat-button-toggle value="cancelled">Cancelados</mat-button-toggle>
+      </mat-button-toggle-group>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="orders__search">
+        <mat-label>Buscar</mat-label>
+        <input matInput [formControl]="searchControl" autocomplete="off" placeholder="email, nombre o #7300" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="orders__payment">
+        <mat-label>Pago</mat-label>
+        <mat-select [formControl]="paymentControl">
+          <mat-option value="all">Todos</mat-option>
+          <mat-option value="sinpe_or_transfer">SINPE / Transferencia</mat-option>
+          <mat-option value="payment_link">Enlace de pago</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </mat-card-content>
+  </mat-card>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <mat-card class="orders__table-card">
+    <table mat-table [dataSource]="rows()" class="orders__table">
+      <ng-container matColumnDef="ref">
+        <th mat-header-cell *matHeaderCellDef>Pedido</th>
+        <td mat-cell *matCellDef="let row" class="brand-mono">{{ shortRef(row.order_number) }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="customer">
+        <th mat-header-cell *matHeaderCellDef>Cliente</th>
+        <td mat-cell *matCellDef="let row">
+          <div class="orders__customer">
+            <strong>{{ row.customer_name }}</strong>
+            <small class="muted">{{ row.customer_email }}</small>
+          </div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="total">
+        <th mat-header-cell *matHeaderCellDef class="orders__num">Total</th>
+        <td mat-cell *matCellDef="let row" class="orders__num">
+          ₡{{ row.total | number: '1.0-0' }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="payment">
+        <th mat-header-cell *matHeaderCellDef>Pago</th>
+        <td mat-cell *matCellDef="let row">{{ paymentLabel(row.payment_method) }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="proof">
+        <th mat-header-cell *matHeaderCellDef>Comprobante</th>
+        <td mat-cell *matCellDef="let row">
+          @switch (proofKind(row.payment_proof_url)) {
+            @case ('file') {
+              <button
+                mat-icon-button
+                type="button"
+                (click)="openProof(row)"
+                matTooltip="Abrir comprobante"
+                aria-label="Abrir comprobante"
+              >
+                <mat-icon>image</mat-icon>
+              </button>
+            }
+            @case ('whatsapp') {
+              <span class="orders__whatsapp" matTooltip="Comprobante enviado por WhatsApp">
+                <mat-icon>chat</mat-icon>
+              </span>
+            }
+            @default {
+              <span class="muted">—</span>
+            }
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>Estado</th>
+        <td mat-cell *matCellDef="let row">
+          <span class="order-status order-status--{{ row.status }}">
+            {{ statusLabel(row.status) }}
+          </span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="date">
+        <th mat-header-cell *matHeaderCellDef>Fecha</th>
+        <td mat-cell *matCellDef="let row">{{ row.created_at | date: 'short' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let row">
+          <a mat-stroked-button [routerLink]="['/admin/orders', row.id]">Ver</a>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+
+    @if (!loading() && rows().length === 0) {
+      <p class="orders__empty muted">Sin pedidos en este filtro.</p>
+    }
+
+    <mat-paginator
+      [length]="total()"
+      [pageSize]="pageSize()"
+      [pageSizeOptions]="[10, 25, 50, 100]"
+      [pageIndex]="page() - 1"
+      (page)="onPage($event)"
+    />
+  </mat-card>
+</section>

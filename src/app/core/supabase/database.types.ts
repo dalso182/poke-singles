@@ -16,25 +16,34 @@ export type Database = {
     Tables: {
       app_settings: {
         Row: {
+          bank_account_info: string | null
           exchange_rate_usd_crc: number | null
           id: boolean
           maintenance_message: string | null
           maintenance_mode: boolean
+          sinpe_phone: string | null
           updated_at: string
+          whatsapp_number: string | null
         }
         Insert: {
+          bank_account_info?: string | null
           exchange_rate_usd_crc?: number | null
           id?: boolean
           maintenance_message?: string | null
           maintenance_mode?: boolean
+          sinpe_phone?: string | null
           updated_at?: string
+          whatsapp_number?: string | null
         }
         Update: {
+          bank_account_info?: string | null
           exchange_rate_usd_crc?: number | null
           id?: boolean
           maintenance_message?: string | null
           maintenance_mode?: boolean
+          sinpe_phone?: string | null
           updated_at?: string
+          whatsapp_number?: string | null
         }
         Relationships: []
       }
@@ -108,6 +117,32 @@ export type Database = {
           },
         ]
       }
+      carts: {
+        Row: {
+          coupon_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          coupon_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          coupon_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carts_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           active: boolean
@@ -134,6 +169,251 @@ export type Database = {
           sort_order?: number
         }
         Relationships: []
+      }
+      coupon_redemptions: {
+        Row: {
+          coupon_id: string
+          discount_amount_applied: number
+          guest_email: string | null
+          id: string
+          order_id: string
+          redeemed_at: string
+          user_id: string | null
+        }
+        Insert: {
+          coupon_id: string
+          discount_amount_applied: number
+          guest_email?: string | null
+          id?: string
+          order_id: string
+          redeemed_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          coupon_id?: string
+          discount_amount_applied?: number
+          guest_email?: string | null
+          id?: string
+          order_id?: string
+          redeemed_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_redemptions_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coupon_redemptions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coupons: {
+        Row: {
+          code: string
+          created_at: string
+          deleted_at: string | null
+          discount_value: number
+          expires_at: string
+          id: string
+          is_active: boolean
+          max_uses_per_user: number
+          min_purchase_amount: number | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          deleted_at?: string | null
+          discount_value: number
+          expires_at: string
+          id?: string
+          is_active?: boolean
+          max_uses_per_user?: number
+          min_purchase_amount?: number | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          deleted_at?: string | null
+          discount_value?: number
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          max_uses_per_user?: number
+          min_purchase_amount?: number | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      order_items: {
+        Row: {
+          created_at: string
+          id: string
+          line_total: number
+          order_id: string
+          product_condition: string | null
+          product_id: string | null
+          product_image_url: string | null
+          product_name: string
+          product_slug: string
+          quantity: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          line_total: number
+          order_id: string
+          product_condition?: string | null
+          product_id?: string | null
+          product_image_url?: string | null
+          product_name: string
+          product_slug: string
+          quantity: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          line_total?: number
+          order_id?: string
+          product_condition?: string | null
+          product_id?: string | null
+          product_image_url?: string | null
+          product_name?: string
+          product_slug?: string
+          quantity?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "available_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_search"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          coupon_code: string | null
+          coupon_id: string | null
+          created_at: string
+          customer_email: string
+          customer_name: string
+          customer_notes: string | null
+          customer_phone: string
+          discount_amount: number
+          id: string
+          order_number: number
+          payment_method: string
+          payment_proof_url: string | null
+          shipping_address: Json | null
+          shipping_amount: number
+          shipping_method_id: string | null
+          shipping_method_name: string
+          status: string
+          subtotal: number
+          total: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          coupon_code?: string | null
+          coupon_id?: string | null
+          created_at?: string
+          customer_email: string
+          customer_name: string
+          customer_notes?: string | null
+          customer_phone: string
+          discount_amount?: number
+          id?: string
+          order_number?: number
+          payment_method: string
+          payment_proof_url?: string | null
+          shipping_address?: Json | null
+          shipping_amount?: number
+          shipping_method_id?: string | null
+          shipping_method_name: string
+          status?: string
+          subtotal: number
+          total: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          coupon_code?: string | null
+          coupon_id?: string | null
+          created_at?: string
+          customer_email?: string
+          customer_name?: string
+          customer_notes?: string | null
+          customer_phone?: string
+          discount_amount?: number
+          id?: string
+          order_number?: number
+          payment_method?: string
+          payment_proof_url?: string | null
+          shipping_address?: Json | null
+          shipping_amount?: number
+          shipping_method_id?: string | null
+          shipping_method_name?: string
+          status?: string
+          subtotal?: number
+          total?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_shipping_method_id_fkey"
+            columns: ["shipping_method_id"]
+            isOneToOne: false
+            referencedRelation: "shipping_methods"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       product_card_types: {
         Row: {
@@ -360,6 +640,42 @@ export type Database = {
         }
         Relationships: []
       }
+      shipping_methods: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          price: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          price: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tcgdex_cards: {
         Row: {
           data: Json
@@ -556,7 +872,22 @@ export type Database = {
       }
     }
     Functions: {
+      attach_payment_proof: {
+        Args: { p_email: string; p_file_path: string; p_order_id: string }
+        Returns: Json
+      }
+      calculate_coupon_discount: {
+        Args: { p_coupon_id: string; p_subtotal: number }
+        Returns: number
+      }
+      cancel_order: { Args: { p_order_id: string }; Returns: Json }
+      get_guest_order: {
+        Args: { p_email: string; p_order_id: string }
+        Returns: Json
+      }
+      get_my_applied_coupon: { Args: never; Returns: Json }
       is_admin: { Args: never; Returns: boolean }
+      place_order: { Args: { p_input: Json }; Returns: Json }
       search_products: {
         Args: { limit_n?: number; offset_n?: number; q: string; sort?: string }
         Returns: {
@@ -596,6 +927,10 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      validate_coupon: {
+        Args: { p_code: string; p_subtotal: number }
+        Returns: Json
       }
     }
     Enums: {

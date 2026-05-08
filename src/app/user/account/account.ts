@@ -1,6 +1,7 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { DecimalPipe, DatePipe } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -10,12 +11,16 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AuthService } from '../../core/auth/auth.service';
 import { ProfilesService } from '../../core/auth/profiles.service';
-import type { ProfileRow } from '../../core/catalog/catalog.types';
+import { OrdersService } from '../../core/orders/orders.service';
+import type { OrderRow, ProfileRow } from '../../core/catalog/catalog.types';
 
 @Component({
   selector: 'app-account',
   imports: [
+    DecimalPipe,
+    DatePipe,
     ReactiveFormsModule,
+    RouterLink,
     MatButtonModule,
     MatCardModule,
     MatFormFieldModule,
@@ -31,10 +36,12 @@ export class Account implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
   private readonly profiles = inject(ProfilesService);
+  private readonly orders = inject(OrdersService);
   private readonly snack = inject(MatSnackBar);
   private readonly router = inject(Router);
 
   protected readonly profile = signal<ProfileRow | null>(null);
+  protected readonly myOrders = signal<OrderRow[]>([]);
   protected readonly loading = signal(false);
   protected readonly saving = signal(false);
   protected readonly email = computed(() => this.auth.currentUser()?.email ?? '');
@@ -51,8 +58,12 @@ export class Account implements OnInit {
   private async bootstrap(): Promise<void> {
     this.loading.set(true);
     try {
-      const profile = await this.profiles.getMine();
+      const [profile, orders] = await Promise.all([
+        this.profiles.getMine(),
+        this.orders.getMyOrders().catch(() => [] as OrderRow[]),
+      ]);
       this.profile.set(profile);
+      this.myOrders.set(orders);
       if (profile) {
         this.form.patchValue({
           full_name: profile.full_name ?? '',
@@ -65,6 +76,20 @@ export class Account implements OnInit {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  protected statusLabel(status: OrderRow['status']): string {
+    switch (status) {
+      case 'pending':   return 'Pendiente de pago';
+      case 'paid':      return 'Pagado';
+      case 'shipped':   return 'Enviado';
+      case 'completed': return 'Completado';
+      case 'cancelled': return 'Cancelado';
+    }
+  }
+
+  protected shortRef(orderNumber: number): string {
+    return `#${orderNumber}`;
   }
 
   protected async onSave(): Promise<void> {

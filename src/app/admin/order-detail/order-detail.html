@@ -1,0 +1,331 @@
+<section class="order-detail">
+  <header class="order-detail__header admin-page-header">
+    <button mat-icon-button (click)="goBack()" aria-label="Volver">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <div class="order-detail__title">
+      <span class="brand-eyebrow">Pedido</span>
+      <h1>
+        <span class="brand-mono">{{ shortRef() }}</span>
+        @if (order(); as o) {
+          <span class="order-status order-status--{{ o.status }}">
+            {{ statusLabel(o.status) }}
+          </span>
+        }
+      </h1>
+    </div>
+  </header>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  @if (notFound()) {
+    <mat-card class="order-detail__not-found">
+      <mat-card-content>
+        <p>No encontramos este pedido.</p>
+        <a mat-stroked-button routerLink="/admin/orders">Volver al listado</a>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  @if (order(); as o) {
+    <mat-card class="order-detail__panel order-detail__actions">
+      <mat-card-content class="order-detail__actions-row">
+        @if (forwardAction(); as action) {
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            (click)="onForward()"
+            [disabled]="working()"
+          >
+            <mat-icon>check_circle</mat-icon>
+            {{ action.label }}
+          </button>
+        }
+        <button
+          mat-stroked-button
+          color="warn"
+          type="button"
+          (click)="onCancel()"
+          [disabled]="!canCancel() || working()"
+          class="order-detail__cancel"
+        >
+          <mat-icon>cancel</mat-icon>
+          Cancelar pedido
+        </button>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-tab-group animationDuration="180ms" class="order-detail__tabs">
+      <mat-tab label="Info pedido">
+        <div class="order-detail__tab-body">
+          <mat-card class="order-detail__panel">
+            <mat-card-header>
+              <mat-card-title>Cliente</mat-card-title>
+            </mat-card-header>
+            <mat-card-content class="order-detail__customer">
+              <p><strong>{{ o.customer_name }}</strong></p>
+              <p>
+                <a [href]="'mailto:' + o.customer_email">{{ o.customer_email }}</a>
+                ·
+                <a [href]="'tel:' + o.customer_phone">{{ o.customer_phone }}</a>
+              </p>
+              @if (o.customer_notes) {
+                <p class="muted">
+                  <strong>Notas:</strong> {{ o.customer_notes }}
+                </p>
+              }
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="order-detail__panel">
+            <mat-card-header>
+              <mat-card-title>Envío</mat-card-title>
+              <mat-card-subtitle>{{ o.shipping_method_name }}</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              @if (o.shipping_address; as addr) {
+                <p>{{ addr.line1 }}{{ addr.line2 ? ', ' + addr.line2 : '' }}</p>
+                <p>{{ addr.city }}, {{ addr.province }}</p>
+                @if (addr.notes) {
+                  <p class="muted">{{ addr.notes }}</p>
+                }
+              } @else {
+                <p class="muted">Sin dirección registrada.</p>
+              }
+              <p class="muted">
+                Costo de envío: ₡{{ o.shipping_amount | number: '1.0-0' }}
+              </p>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="order-detail__panel">
+            <mat-card-header>
+              <mat-card-title>Comprobante de pago</mat-card-title>
+              <mat-card-subtitle>{{ paymentLabel(o.payment_method) }}</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              @if (o.payment_method === 'payment_link') {
+                <p class="muted">
+                  Pago por enlace — gestionado fuera del sistema. Marca el pedido
+                  como pagado cuando confirmes la transacción.
+                </p>
+              } @else {
+                @switch (proofKind()) {
+                  @case ('file') {
+                    @if (proofUrl(); as url) {
+                      <a [href]="url" target="_blank" rel="noopener" class="order-detail__proof-link">
+                        <img [src]="url" [alt]="'Comprobante ' + shortRef()" class="order-detail__proof-img" />
+                      </a>
+                      <p class="muted order-detail__proof-hint">
+                        <mat-icon>open_in_new</mat-icon>
+                        Click para abrir en tamaño completo.
+                      </p>
+                    } @else {
+                      <p class="muted">No se pudo generar el enlace al comprobante.</p>
+                    }
+                  }
+                  @case ('whatsapp') {
+                    <div class="order-detail__whatsapp">
+                      <mat-icon>chat</mat-icon>
+                      Comprobante enviado por WhatsApp. Revisa los mensajes.
+                    </div>
+                  }
+                  @default {
+                    <p class="muted">Aún sin comprobante.</p>
+                  }
+                }
+
+                <div class="order-detail__proof-actions">
+                  <input
+                    #proofUploadInput
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,application/pdf"
+                    hidden
+                    (change)="onAdminUploadProof($event)"
+                  />
+                  <button
+                    mat-stroked-button
+                    type="button"
+                    (click)="proofUploadInput.click()"
+                    [disabled]="uploadingProof()"
+                  >
+                    <mat-icon>{{ proofKind() === 'file' ? 'autorenew' : 'upload' }}</mat-icon>
+                    {{ proofKind() === 'file' ? 'Reemplazar comprobante' : 'Adjuntar comprobante' }}
+                  </button>
+                  @if (uploadingProof()) {
+                    <span class="muted">Subiendo…</span>
+                  }
+                </div>
+              }
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="order-detail__panel">
+            <mat-card-header>
+              <mat-card-title>Ítems</mat-card-title>
+              <mat-card-subtitle class="muted">
+                Snapshots — el producto pudo cambiar después del pedido.
+              </mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <table mat-table [dataSource]="items()" class="order-detail__items-table">
+                <ng-container matColumnDef="image">
+                  <th mat-header-cell *matHeaderCellDef></th>
+                  <td mat-cell *matCellDef="let item">
+                    @if (item.product_image_url) {
+                      <img [src]="item.product_image_url" [alt]="item.product_name" class="order-detail__item-thumb" />
+                    }
+                  </td>
+                </ng-container>
+                <ng-container matColumnDef="name">
+                  <th mat-header-cell *matHeaderCellDef>Carta</th>
+                  <td mat-cell *matCellDef="let item">
+                    <a [routerLink]="['/products', item.product_slug]" target="_blank" rel="noopener">
+                      {{ item.product_name }}
+                    </a>
+                  </td>
+                </ng-container>
+                <ng-container matColumnDef="condition">
+                  <th mat-header-cell *matHeaderCellDef>Condición</th>
+                  <td mat-cell *matCellDef="let item">
+                    @if (item.product_condition) {
+                      <span [class]="conditionClass(item.product_condition)">
+                        {{ item.product_condition }}
+                      </span>
+                    } @else {
+                      <span class="muted">—</span>
+                    }
+                  </td>
+                </ng-container>
+                <ng-container matColumnDef="qty">
+                  <th mat-header-cell *matHeaderCellDef>Cant.</th>
+                  <td mat-cell *matCellDef="let item">{{ item.quantity }}</td>
+                </ng-container>
+                <ng-container matColumnDef="unit">
+                  <th mat-header-cell *matHeaderCellDef class="order-detail__num">Precio</th>
+                  <td mat-cell *matCellDef="let item" class="order-detail__num">
+                    ₡{{ item.unit_price | number: '1.0-0' }}
+                  </td>
+                </ng-container>
+                <ng-container matColumnDef="total">
+                  <th mat-header-cell *matHeaderCellDef class="order-detail__num">Total</th>
+                  <td mat-cell *matCellDef="let item" class="order-detail__num">
+                    ₡{{ item.line_total | number: '1.0-0' }}
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+              </table>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="order-detail__panel">
+            <mat-card-header>
+              <mat-card-title>Resumen</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <dl class="order-detail__row">
+                <dt>Subtotal</dt>
+                <dd>₡{{ o.subtotal | number: '1.0-0' }}</dd>
+              </dl>
+              @if (o.discount_amount > 0) {
+                <dl class="order-detail__row">
+                  <dt>{{ o.coupon_code || 'Descuento' }}</dt>
+                  <dd class="price--sale">−₡{{ o.discount_amount | number: '1.0-0' }}</dd>
+                </dl>
+              }
+              <dl class="order-detail__row">
+                <dt>Envío</dt>
+                <dd>₡{{ o.shipping_amount | number: '1.0-0' }}</dd>
+              </dl>
+              <dl class="order-detail__row order-detail__row--total">
+                <dt>Total</dt>
+                <dd>₡{{ o.total | number: '1.0-0' }}</dd>
+              </dl>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="order-detail__panel order-detail__audit">
+            <mat-card-content>
+              <dl class="order-detail__audit-grid">
+                <dt>ID interno</dt>
+                <dd class="brand-mono">{{ o.id }}</dd>
+                <dt>Creado</dt>
+                <dd>{{ o.created_at | date: 'medium' }}</dd>
+                <dt>Última actualización</dt>
+                <dd>{{ o.updated_at | date: 'medium' }}</dd>
+              </dl>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </mat-tab>
+
+      <mat-tab [label]="'Items (' + items().length + ')'">
+        <div class="order-detail__tab-body">
+          <p class="muted order-detail__items-hint">
+            Para preparar el pedido. Snapshots — el producto pudo cambiar después.
+          </p>
+          <div class="order-detail__items-grid">
+            @for (item of items(); track item.id) {
+              <article
+                class="order-detail__pick"
+                [class.order-detail__pick--checked]="isPicked(item.id)"
+                role="button"
+                tabindex="0"
+                [attr.aria-pressed]="isPicked(item.id)"
+                [attr.aria-label]="
+                  (isPicked(item.id) ? 'Desmarcar ' : 'Marcar como preparada: ') + item.product_name
+                "
+                (click)="togglePick(item.id)"
+                (keydown.enter)="togglePick(item.id); $event.preventDefault()"
+                (keydown.space)="togglePick(item.id); $event.preventDefault()"
+              >
+                @if (item.quantity > 1) {
+                  <span class="order-detail__pick-qty">×{{ item.quantity }}</span>
+                }
+                <a
+                  [routerLink]="['/products', item.product_slug]"
+                  target="_blank"
+                  rel="noopener"
+                  class="order-detail__pick-external"
+                  (click)="$event.stopPropagation()"
+                  matTooltip="Abrir carta en otra pestaña"
+                  aria-label="Abrir carta en otra pestaña"
+                >
+                  <mat-icon>open_in_new</mat-icon>
+                </a>
+                @if (item.product_image_url) {
+                  <div class="order-detail__pick-image">
+                    <img [src]="item.product_image_url" [alt]="item.product_name" loading="lazy" />
+                  </div>
+                } @else {
+                  <div class="order-detail__pick-image order-detail__pick-image--empty">Sin imagen</div>
+                }
+                <div class="order-detail__pick-body">
+                  <span class="order-detail__pick-name">{{ item.product_name }}</span>
+                  <p class="brand-mono order-detail__pick-set">
+                    @if (setLabel(item); as label) { {{ label }} }
+                  </p>
+                  @if (item.product_condition) {
+                    <span [class]="conditionClass(item.product_condition)">
+                      {{ item.product_condition }}
+                    </span>
+                  }
+                </div>
+                @if (isPicked(item.id)) {
+                  <div class="order-detail__pick-check" aria-hidden="true">
+                    <mat-icon>check_circle</mat-icon>
+                  </div>
+                }
+              </article>
+            }
+          </div>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  }
+</section>

@@ -45,3 +45,9 @@ site_url = "http://localhost:4242"
 additional_redirect_urls = ["https://poke-singles.com", "https://dev.poke-singles.com"]
 jwt_expiry = 3600
 enable_signup = true
+
+# Email-on-order-placed. Verifies the request body's email matches the
+# order's customer_email before sending — anon callers (guest checkout)
+# must be able to invoke without a JWT.
+[functions.send-order-email]
+verify_jwt = false

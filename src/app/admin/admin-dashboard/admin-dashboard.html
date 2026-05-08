@@ -1,7 +1,34 @@
-<div class="admin-placeholder">
-  <h1>Panel de administración</h1>
-  <p class="muted">
-    Placeholder shell — falta conectar Supabase auth y crear las páginas
-    (Productos, Pedidos, Clientes).
-  </p>
-</div>
+<section class="dashboard">
+  <header class="dashboard__header">
+    <h1>Panel de administración</h1>
+    <p class="muted">Resumen del estado de la tienda.</p>
+  </header>
+
+  <div class="dashboard__tiles">
+    <a class="dashboard__tile" routerLink="/admin/orders" [queryParams]="{ status: 'pending' }">
+      <span class="brand-eyebrow">Pedidos</span>
+      <span class="dashboard__metric">
+        @if (pendingCount() === null) {
+          —
+        } @else {
+          {{ pendingCount() }}
+        }
+      </span>
+      <span class="dashboard__caption">
+        @if (pendingCount() === 0) {
+          Sin pendientes ✓
+        } @else if (pendingCount() === 1) {
+          Pedido pendiente
+        } @else {
+          Pedidos pendientes
+        }
+      </span>
+      @if ((pendingCount() ?? 0) > 0) {
+        <span class="dashboard__cta">
+          Ver pendientes
+          <mat-icon>arrow_forward</mat-icon>
+        </span>
+      }
+    </a>
+  </div>
+</section>

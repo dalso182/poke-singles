@@ -54,3 +54,67 @@
   gap: 12px;
   padding-top: 8px;
 }
+
+.account__orders {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.account__order {
+  display: grid;
+  grid-template-columns: 140px 1fr 120px 110px;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+
+  a {
+    color: var(--mat-sys-primary);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.account__order-ref {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+// .order-status pill itself is defined in _brand-utilities.scss; this just
+// pins where the pill sits in the per-order grid.
+.account__orders .order-status {
+  justify-self: start;
+}
+
+.account__order-date {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.account__order-total {
+  font-family: var(--font-brand);
+  font-weight: 700;
+  text-align: right;
+}
+
+@media (max-width: 600px) {
+  .account__order {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      'ref status'
+      'date total';
+
+    a { grid-area: ref; }
+    .order-status { grid-area: status; justify-self: end; }
+    .account__order-date { grid-area: date; }
+    .account__order-total { grid-area: total; }
+  }
+}

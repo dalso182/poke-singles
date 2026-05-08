@@ -236,6 +236,118 @@ export type CouponUpdate = Partial<Omit<CouponInsert, 'code'>> & {
   deleted_at?: string | null;
 };
 
+// ---- Shipping methods ----
+
+export interface ShippingMethodRow {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  sort_order: number;
+  is_active: boolean;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ShippingMethodInsert {
+  name: string;
+  description?: string | null;
+  price: number;
+  sort_order?: number;
+  is_active?: boolean;
+}
+
+export type ShippingMethodUpdate = Partial<ShippingMethodInsert> & {
+  deleted_at?: string | null;
+};
+
+// ---- Orders ----
+
+export type OrderStatus =
+  | 'pending'
+  | 'paid'
+  | 'shipped'
+  | 'completed'
+  | 'cancelled';
+
+export type PaymentMethod = 'sinpe_or_transfer' | 'payment_link';
+
+export interface ShippingAddress {
+  line1: string;
+  line2?: string | null;
+  city: string;
+  province: string;
+  notes?: string | null;
+}
+
+export interface OrderRow {
+  id: string;
+  /** Human-friendly sequential number, e.g. 7300. Display this; UUID `id`
+   *  stays the source of truth for foreign keys, URLs, and RPC params. */
+  order_number: number;
+  user_id: string | null;
+  status: OrderStatus;
+  customer_email: string;
+  customer_name: string;
+  customer_phone: string;
+  shipping_address: ShippingAddress | null;
+  shipping_method_id: string | null;
+  shipping_method_name: string;
+  shipping_amount: number;
+  payment_method: PaymentMethod;
+  payment_proof_url: string | null;
+  subtotal: number;
+  discount_amount: number;
+  coupon_id: string | null;
+  coupon_code: string | null;
+  total: number;
+  customer_notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OrderItemRow {
+  id: string;
+  order_id: string;
+  product_id: string | null;
+  product_slug: string;
+  product_name: string;
+  product_image_url: string | null;
+  product_condition: string | null;
+  product_set_name: string | null;
+  product_card_number: string | null;
+  unit_price: number;
+  quantity: number;
+  line_total: number;
+  created_at: string;
+}
+
+/** Input shape for the place_order RPC. */
+export interface PlaceOrderInput {
+  items: { product_id: string; quantity: number }[];
+  buyer: {
+    email: string;
+    name: string;
+    phone: string;
+    address?: ShippingAddress;
+  };
+  shipping_method_id: string;
+  payment_method: PaymentMethod;
+  coupon_code?: string;
+  customer_notes?: string;
+}
+
+/** Result of the place_order RPC. */
+export type PlaceOrderResult =
+  | { ok: true; order_id: string; total: number }
+  | {
+      ok: false;
+      error: string;
+      product_id?: string;
+      available?: number;
+    };
+
 // Row shape returned by the `products_search` view / `search_products` RPC.
 // Mirrors `ProductRow` minus a few admin-only columns and adds the joined
 // set fields plus `search_text` / `card_type_names`.
@@ -319,12 +431,22 @@ export interface AppSettingsRow {
   exchange_rate_usd_crc: number | null;
   maintenance_mode: boolean;
   maintenance_message: string | null;
+  sinpe_phone: string | null;
+  whatsapp_number: string | null;
+  bank_account_info: string | null;
+  order_notification_recipients: string;
   updated_at: string;
 }
 
 export type AppSettingsUpdate = Partial<
   Pick<
     AppSettingsRow,
-    'exchange_rate_usd_crc' | 'maintenance_mode' | 'maintenance_message'
+    | 'exchange_rate_usd_crc'
+    | 'maintenance_mode'
+    | 'maintenance_message'
+    | 'sinpe_phone'
+    | 'whatsapp_number'
+    | 'bank_account_info'
+    | 'order_notification_recipients'
   >
 >;

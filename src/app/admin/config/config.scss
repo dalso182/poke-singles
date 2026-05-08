@@ -28,6 +28,22 @@
 
 .admin-config__panel {
   padding: 8px;
+
+  mat-card-header {
+    margin-bottom: 8px;
+  }
+
+  mat-card-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 16px;
+    align-items: start;
+
+    p.admin-config__hint,
+    mat-slide-toggle {
+      grid-column: 1 / -1;
+    }
+  }
 }
 
 .admin-config__hint {
@@ -36,9 +52,9 @@
 }
 
 .admin-config__full {
-  display: block;
+  grid-column: 1 / -1;
   width: 100%;
-  margin-top: 12px;
+  margin-top: 4px;
 }
 
 .admin-config__actions {

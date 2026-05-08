@@ -39,6 +39,71 @@
 
     <mat-card class="admin-config__panel">
       <mat-card-header>
+        <mat-card-title>Datos de pago</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <p class="muted admin-config__hint">
+          Estos datos se muestran al cliente en la pantalla de confirmación de
+          pedido cuando paga por SINPE Móvil o transferencia bancaria.
+        </p>
+        <mat-form-field appearance="outline">
+          <mat-label>Número SINPE Móvil</mat-label>
+          <input
+            matInput
+            type="tel"
+            formControlName="sinpe_phone"
+            placeholder="+506 6345-2039"
+          />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Número de WhatsApp para comprobantes</mat-label>
+          <input
+            matInput
+            type="tel"
+            formControlName="whatsapp_number"
+            placeholder="50663452039"
+          />
+          <mat-hint>Solo dígitos, con código de país (sin + ni espacios).</mat-hint>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="admin-config__full">
+          <mat-label>Datos para transferencia bancaria</mat-label>
+          <textarea
+            matInput
+            formControlName="bank_account_info"
+            rows="4"
+            placeholder="BAC San José
+IBAN: CR00 0000 0000 0000 0000 0
+A nombre de: Poke-Singles SA
+Cédula jurídica: 3-101-…"
+          ></textarea>
+        </mat-form-field>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="admin-config__panel">
+      <mat-card-header>
+        <mat-card-title>Notificaciones de pedidos</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <p class="muted admin-config__hint">
+          Cuando un cliente realiza un pedido, se envía un correo a estas
+          direcciones (separadas por coma) además del correo de confirmación
+          al cliente. Dejar vacío para no notificar.
+        </p>
+        <mat-form-field appearance="outline" class="admin-config__full">
+          <mat-label>Destinatarios</mat-label>
+          <textarea
+            matInput
+            formControlName="order_notification_recipients"
+            rows="2"
+            placeholder="ventas@poke-singles.com, diego@poke-singles.com"
+          ></textarea>
+        </mat-form-field>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="admin-config__panel">
+      <mat-card-header>
         <mat-card-title>Modo mantenimiento</mat-card-title>
       </mat-card-header>
       <mat-card-content>

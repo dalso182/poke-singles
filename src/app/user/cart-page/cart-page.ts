@@ -1,7 +1,7 @@
 import { Component, effect, inject, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
-import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -39,6 +39,7 @@ const VIEW_STORAGE_KEY = 'cart:view';
 export class CartPage {
   private readonly cart = inject(CartService);
   private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
   private readonly snack = inject(MatSnackBar);
   private readonly storage = inject(LocalStorageService);
 
@@ -53,9 +54,14 @@ export class CartPage {
   protected readonly total = this.cart.total;
   protected readonly isSignedIn = this.auth.isSignedIn;
 
-  protected readonly couponControl = new FormControl('', {
-    nonNullable: true,
-    validators: [Validators.required, Validators.minLength(3)],
+  // FormGroup wrapper is required so Angular's FormGroupDirective binds to
+  // the <form> and `(ngSubmit)` actually fires. Without it, ReactiveFormsModule
+  // alone leaves <form> bare and the browser does a native submit → page reload.
+  protected readonly couponForm = new FormGroup({
+    code: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.minLength(3)],
+    }),
   });
   protected readonly couponError = signal<string>('');
   protected readonly applyingCoupon = signal(false);
@@ -85,7 +91,7 @@ export class CartPage {
   }
 
   protected onCheckout(): void {
-    this.snack.open('Checkout disponible próximamente', 'OK', { duration: 3000 });
+    void this.router.navigate(['/checkout']);
   }
 
   protected async onApplyCoupon(): Promise<void> {
@@ -93,19 +99,19 @@ export class CartPage {
       this.couponError.set(mapCouponError('AUTH_REQUIRED'));
       return;
     }
-    if (this.couponControl.invalid || this.applyingCoupon()) {
-      this.couponControl.markAsTouched();
+    if (this.couponForm.invalid || this.applyingCoupon()) {
+      this.couponForm.markAllAsTouched();
       return;
     }
     this.applyingCoupon.set(true);
     this.couponError.set('');
     try {
-      const result = await this.cart.applyCoupon(this.couponControl.value);
+      const result = await this.cart.applyCoupon(this.couponForm.controls.code.value);
       if (result.error) {
         this.couponError.set(mapCouponError(result.error, result.gap));
         return;
       }
-      this.couponControl.reset('');
+      this.couponForm.reset();
       this.snack.open('Cupón aplicado', 'OK', { duration: 2500 });
     } finally {
       this.applyingCoupon.set(false);
