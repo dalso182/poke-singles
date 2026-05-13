@@ -34,6 +34,9 @@
             <mat-label>Orden</mat-label>
             <input matInput type="number" formControlName="sort_order" min="0" />
           </mat-form-field>
+          <mat-slide-toggle formControlName="requires_address" class="shipping-methods__add-toggle">
+            Requiere dirección
+          </mat-slide-toggle>
           <button
             mat-flat-button
             color="primary"
@@ -87,7 +90,7 @@
       <ng-container matColumnDef="price">
         <th mat-header-cell *matHeaderCellDef>Precio</th>
         <td mat-cell *matCellDef="let row">
-          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="shipping-methods__num-field">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="shipping-methods__price-field">
             <input matInput type="number" [formControl]="$any(formFor(row.id).get('price'))" min="0" step="100" />
           </mat-form-field>
         </td>
@@ -96,9 +99,19 @@
       <ng-container matColumnDef="sort_order">
         <th mat-header-cell *matHeaderCellDef>Orden</th>
         <td mat-cell *matCellDef="let row">
-          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="shipping-methods__num-field">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="shipping-methods__order-field">
             <input matInput type="number" [formControl]="$any(formFor(row.id).get('sort_order'))" min="0" />
           </mat-form-field>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="requires_address">
+        <th mat-header-cell *matHeaderCellDef>Dirección</th>
+        <td mat-cell *matCellDef="let row">
+          <mat-slide-toggle
+            [formControl]="$any(formFor(row.id).get('requires_address'))"
+            [disabled]="saving() === row.id || !!row.deleted_at"
+          />
         </td>
       </ng-container>
 

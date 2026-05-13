@@ -50,6 +50,7 @@ export class ShippingMethods {
     'description',
     'price',
     'sort_order',
+    'requires_address',
     'is_active',
     'actions',
   ];
@@ -59,6 +60,7 @@ export class ShippingMethods {
     description: [''],
     price: [0, [Validators.required, Validators.min(0)]],
     sort_order: [0, [Validators.required, Validators.min(0)]],
+    requires_address: [true],
   });
 
   protected readonly editForms = new Map<string, FormGroup>();
@@ -92,6 +94,7 @@ export class ShippingMethods {
             description: [row.description ?? ''],
             price: [row.price, [Validators.required, Validators.min(0)]],
             sort_order: [row.sort_order, [Validators.required, Validators.min(0)]],
+            requires_address: [row.requires_address],
           }),
         );
       }
@@ -121,8 +124,9 @@ export class ShippingMethods {
         description: raw.description?.trim() || null,
         price: Number(raw.price),
         sort_order: Number(raw.sort_order),
+        requires_address: !!raw.requires_address,
       });
-      this.addForm.reset({ name: '', description: '', price: 0, sort_order: 0 });
+      this.addForm.reset({ name: '', description: '', price: 0, sort_order: 0, requires_address: true });
       this.addOpen.set(false);
       await this.refresh();
       this.snack.open('Método de envío creado', 'OK', { duration: 3000 });
@@ -144,6 +148,7 @@ export class ShippingMethods {
         description: raw.description?.trim() || null,
         price: Number(raw.price),
         sort_order: Number(raw.sort_order),
+        requires_address: !!raw.requires_address,
       });
       this.snack.open('Método actualizado', 'OK', { duration: 3000 });
       await this.refresh();

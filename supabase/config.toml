@@ -51,3 +51,9 @@ enable_signup = true
 # must be able to invoke without a JWT.
 [functions.send-order-email]
 verify_jwt = false
+
+# Email-on-signup. Fired by the handle_new_user() trigger via pg_net.
+# No JWT (the trigger has no session); the function looks up the user
+# by id via service-role.
+[functions.send-signup-email]
+verify_jwt = false

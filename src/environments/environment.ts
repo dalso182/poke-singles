@@ -17,7 +17,8 @@ export const environment = {
     // Empty string = use the SDK default (https://api.tcgdex.net/v2).
     // Set to 'http://localhost:3000/v2' (or wherever your local proxy lives)
     // when you want to hit a local TCGdex mirror during development.
-    endpoint: 'http://localhost:3000/v2',
+   // endpoint: 'http://localhost:3000/v2',
+      endpoint: 'https://api.tcgdex.net/v2',
   },
   images: {
     // Absolute URL to the read-only PHP listing endpoint that powers the

@@ -5,8 +5,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ProductsService } from '../core/catalog/products.service';
 import { CartService } from '../core/cart/cart.service';
+import { CardConditionsDialogService } from '../core/preview/card-conditions-dialog.service';
 import type { ProductRow } from '../core/catalog/catalog.types';
 import { CardPreviewDirective } from '../shared/card-preview/card-preview.directive';
 
@@ -20,6 +22,7 @@ import { CardPreviewDirective } from '../shared/card-preview/card-preview.direct
     MatIconModule,
     MatProgressBarModule,
     MatSnackBarModule,
+    MatTooltipModule,
     CardPreviewDirective,
   ],
   templateUrl: './home.html',
@@ -29,6 +32,12 @@ export class Home {
   private readonly products = inject(ProductsService);
   private readonly cart = inject(CartService);
   private readonly snack = inject(MatSnackBar);
+  private readonly conditionsDialog = inject(CardConditionsDialogService);
+
+  protected openConditionsInfo(event: MouseEvent): void {
+    event.stopPropagation();
+    void this.conditionsDialog.open();
+  }
 
   protected readonly recent = signal<ProductRow[]>([]);
   protected readonly featured = signal<ProductRow[]>([]);

@@ -7,7 +7,16 @@ import { routes } from './app.routes';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideRouter(routes, withComponentInputBinding(), withInMemoryScrolling({ anchorScrolling: 'enabled' })),
+    provideRouter(
+      routes,
+      withComponentInputBinding(),
+      // 'enabled' = forward nav scrolls to top; back/forward restores position.
+      // The router scope is global, so footer links and any in-app nav both behave.
+      withInMemoryScrolling({
+        scrollPositionRestoration: 'enabled',
+        anchorScrolling: 'enabled',
+      }),
+    ),
     provideAnimationsAsync(),
   ],
 };

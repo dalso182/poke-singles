@@ -1,0 +1,21 @@
+<section class="static-page">
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  @if (page(); as p) {
+    <header class="static-page__header">
+      <h1>{{ p.title }}</h1>
+    </header>
+    <article class="static-page__content" [innerHTML]="safeContent()"></article>
+  }
+
+  @if (notFound() && !loading()) {
+    <div class="static-page__not-found">
+      <mat-icon>article</mat-icon>
+      <h1>Página no encontrada</h1>
+      <p class="muted">La página que buscas no existe o fue movida.</p>
+      <a mat-stroked-button routerLink="/">Volver al inicio</a>
+    </div>
+  }
+</section>

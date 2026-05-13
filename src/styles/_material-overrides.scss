@@ -18,6 +18,11 @@ html {
   @include mat.table-overrides((
     background-color: #ffffff,
   ));
+
+  // Dialogs: white surface to match the email-template brand chrome.
+  @include mat.dialog-overrides((
+    container-color: #ffffff,
+  ));
 }
 
 // Global form field: reduce height.
@@ -68,6 +73,25 @@ html {
   background: white !important;
 }
 
+// Branded dialog chrome: 3px red-amber-red accent bar across the top of every
+// Material dialog. Implemented as a background-image on the surface itself
+// (NOT a ::before pseudo — Material 3 already uses ::before on the surface
+// for its state-layer, so a competing pseudo gets stretched by Material's
+// `inset: 0` and ends up covering the whole modal). The white container
+// color from mat.dialog-overrides sits underneath as background-color, the
+// 3px gradient strip is layered on top via background-image.
+.mat-mdc-dialog-surface {
+  background-image: linear-gradient(
+    90deg,
+    var(--brand-red, #CE1126) 0%,
+    var(--accent-amber, #D4941C) 50%,
+    var(--brand-red, #CE1126) 100%
+  );
+  background-size: 100% 3px;
+  background-repeat: no-repeat;
+  background-position: top center;
+}
+
 .mat-mdc-button,
 .mat-mdc-unelevated-button,
 .mat-mdc-outlined-button,
@@ -76,6 +100,11 @@ html {
   letter-spacing: 1.2px;
   font-weight: 700;
   font-size: 12px;
+}
+
+// Global card header: breathing room between title/subtitle and card content.
+.mat-mdc-card-header {
+  margin-bottom: 16px;
 }
 
 // Wider tooltip for the multi-line search help text. Material tooltips are

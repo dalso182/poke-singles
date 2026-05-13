@@ -4,7 +4,9 @@ import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { CartService } from '../../core/cart/cart.service';
+import { CardConditionsDialogService } from '../../core/preview/card-conditions-dialog.service';
 import type { CartLine } from '../../core/catalog/catalog.types';
 
 @Component({
@@ -16,6 +18,7 @@ import type { CartLine } from '../../core/catalog/catalog.types';
     MatButtonModule,
     MatIconModule,
     MatSnackBarModule,
+    MatTooltipModule,
   ],
   templateUrl: './cart-drawer.html',
   styleUrl: './cart-drawer.scss',
@@ -24,6 +27,12 @@ export class CartDrawer {
   private readonly cart = inject(CartService);
   private readonly snack = inject(MatSnackBar);
   private readonly router = inject(Router);
+  private readonly conditionsDialog = inject(CardConditionsDialogService);
+
+  protected openConditionsInfo(event: MouseEvent): void {
+    event.stopPropagation();
+    void this.conditionsDialog.open();
+  }
 
   protected readonly items = this.cart.items;
   protected readonly subtotal = this.cart.subtotal;

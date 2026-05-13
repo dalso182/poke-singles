@@ -1,0 +1,22 @@
+<div class="welcome-dialog__title">
+  <h2 mat-dialog-title>{{ data.page.title }}</h2>
+  <button
+    mat-icon-button
+    type="button"
+    (click)="close()"
+    aria-label="Cerrar"
+    class="welcome-dialog__close"
+  >
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<mat-dialog-content class="welcome-dialog__content">
+  <article [innerHTML]="safeContent()"></article>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="welcome-dialog__actions">
+  <button mat-flat-button color="primary" type="button" (click)="close()">
+    Entendido
+  </button>
+</mat-dialog-actions>

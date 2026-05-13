@@ -1,0 +1,89 @@
+.welcome-dialog__title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 16px 8px 24px;
+  margin: 0;
+
+  h2 {
+    margin: 0;
+    padding: 0;
+    flex: 1;
+    min-width: 0;
+    font-family: var(--font-brand);
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    word-break: break-word;
+  }
+}
+
+.welcome-dialog__close {
+  flex-shrink: 0;
+}
+
+.welcome-dialog__content {
+  max-height: 65vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overflow-wrap: anywhere;
+  padding: 8px 24px 16px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-primary);
+
+  // Mirror the static-page typography so admin-authored HTML renders
+  // consistently with the rest of the site.
+  h2, h3, h4 {
+    font-family: var(--font-brand);
+    font-weight: 800;
+    margin: 20px 0 8px;
+    line-height: 1.25;
+  }
+  h2 { font-size: 18px; }
+  h3 { font-size: 16px; }
+
+  p { margin: 10px 0; }
+
+  ul, ol {
+    padding-left: 22px;
+    margin: 10px 0;
+  }
+
+  li { margin: 4px 0; }
+
+  a {
+    color: var(--mat-sys-primary);
+    text-decoration: none;
+    &:hover { text-decoration: underline; }
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+    margin: 12px 0;
+  }
+
+  figure {
+    margin: 16px 0;
+    text-align: center;
+
+    img {
+      display: inline-block;
+      max-width: min(180px, 50%);
+      margin: 0;
+    }
+  }
+
+  hr {
+    border: 0;
+    border-top: 1px solid var(--border-subtle);
+    margin: 16px 0;
+  }
+}
+
+.welcome-dialog__actions {
+  padding: 0 24px 16px;
+}

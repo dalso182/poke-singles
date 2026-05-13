@@ -28,21 +28,38 @@
         <mat-form-field appearance="outline">
           <mat-label>Teléfono</mat-label>
           <input matInput type="tel" formControlName="phone" autocomplete="tel" />
-          <mat-hint>Útil para coordinar el SINPE de tus pedidos.</mat-hint>
         </mat-form-field>
       </mat-card-content>
     </mat-card>
 
-    <mat-card class="account__panel account__placeholder">
+    <mat-card class="account__panel">
       <mat-card-header>
         <mat-card-title>Dirección de envío</mat-card-title>
-        <mat-card-subtitle>Disponible al activar el checkout</mat-card-subtitle>
+        <mat-card-subtitle>
+          Se usa para pre-llenar el checkout. Puedes editarla en cualquier pedido.
+        </mat-card-subtitle>
       </mat-card-header>
-      <mat-card-content>
-        <p class="muted">
-          Pronto podrás guardar una dirección por defecto para acelerar tus pedidos.
-        </p>
-        <button mat-stroked-button type="button" disabled>Editar dirección</button>
+      <mat-card-content class="account__grid">
+        <mat-form-field appearance="outline" class="account__full">
+          <mat-label>Dirección (línea 1)</mat-label>
+          <input matInput type="text" formControlName="line1" autocomplete="address-line1" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="account__full">
+          <mat-label>Línea 2 (opcional)</mat-label>
+          <input matInput type="text" formControlName="line2" autocomplete="address-line2" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Cantón / ciudad</mat-label>
+          <input matInput type="text" formControlName="city" autocomplete="address-level2" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Provincia</mat-label>
+          <input matInput type="text" formControlName="province" autocomplete="address-level1" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="account__full">
+          <mat-label>Notas para el repartidor (opcional)</mat-label>
+          <textarea matInput rows="2" formControlName="address_notes"></textarea>
+        </mat-form-field>
       </mat-card-content>
     </mat-card>
 

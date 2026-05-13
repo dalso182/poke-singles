@@ -51,10 +51,6 @@
 
 .checkout__panel {
   padding: 8px;
-
-  mat-card-header {
-    margin-bottom: 16px;
-  }
 }
 
 .checkout__grid {
@@ -71,6 +67,45 @@
   margin-top: 16px;
   border-top: 1px solid var(--border-subtle);
   padding-top: 16px;
+}
+
+.checkout__address-summary {
+  margin-top: 16px;
+  border-top: 1px solid var(--border-subtle);
+  padding: 16px 0 0;
+
+  p {
+    margin: 0 0 2px;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+}
+
+.checkout__address-change {
+  margin-top: 8px;
+  padding: 0;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.checkout__address-summary-body {
+  background: var(--surface-tonal);
+  padding: 12px 14px;
+  border-radius: 6px;
+}
+
+.checkout__address-summary-label {
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.checkout__address-revert {
+  margin-top: 4px;
 }
 
 .checkout__shipping {
@@ -177,8 +212,8 @@
   }
 
   img {
-    width: 36px;
-    height: 50px;
+    width: 70px;
+    height: 98px;
     object-fit: cover;
     border-radius: 4px;
   }

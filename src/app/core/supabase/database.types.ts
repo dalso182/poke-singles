@@ -21,6 +21,7 @@ export type Database = {
           id: boolean
           maintenance_message: string | null
           maintenance_mode: boolean
+          order_notification_recipients: string
           sinpe_phone: string | null
           updated_at: string
           whatsapp_number: string | null
@@ -31,6 +32,7 @@ export type Database = {
           id?: boolean
           maintenance_message?: string | null
           maintenance_mode?: boolean
+          order_notification_recipients?: string
           sinpe_phone?: string | null
           updated_at?: string
           whatsapp_number?: string | null
@@ -41,6 +43,7 @@ export type Database = {
           id?: boolean
           maintenance_message?: string | null
           maintenance_mode?: boolean
+          order_notification_recipients?: string
           sinpe_phone?: string | null
           updated_at?: string
           whatsapp_number?: string | null
@@ -263,10 +266,12 @@ export type Database = {
           id: string
           line_total: number
           order_id: string
+          product_card_number: string | null
           product_condition: string | null
           product_id: string | null
           product_image_url: string | null
           product_name: string
+          product_set_name: string | null
           product_slug: string
           quantity: number
           unit_price: number
@@ -276,10 +281,12 @@ export type Database = {
           id?: string
           line_total: number
           order_id: string
+          product_card_number?: string | null
           product_condition?: string | null
           product_id?: string | null
           product_image_url?: string | null
           product_name: string
+          product_set_name?: string | null
           product_slug: string
           quantity: number
           unit_price: number
@@ -289,10 +296,12 @@ export type Database = {
           id?: string
           line_total?: number
           order_id?: string
+          product_card_number?: string | null
           product_condition?: string | null
           product_id?: string | null
           product_image_url?: string | null
           product_name?: string
+          product_set_name?: string | null
           product_slug?: string
           quantity?: number
           unit_price?: number
@@ -649,6 +658,7 @@ export type Database = {
           is_active: boolean
           name: string
           price: number
+          requires_address: boolean
           sort_order: number
           updated_at: string
         }
@@ -660,6 +670,7 @@ export type Database = {
           is_active?: boolean
           name: string
           price: number
+          requires_address?: boolean
           sort_order?: number
           updated_at?: string
         }
@@ -671,6 +682,7 @@ export type Database = {
           is_active?: boolean
           name?: string
           price?: number
+          requires_address?: boolean
           sort_order?: number
           updated_at?: string
         }

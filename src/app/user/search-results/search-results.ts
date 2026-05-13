@@ -8,8 +8,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ProductsService } from '../../core/catalog/products.service';
 import { CartService } from '../../core/cart/cart.service';
+import { CardConditionsDialogService } from '../../core/preview/card-conditions-dialog.service';
 import type { ProductSearchRow, SortKey } from '../../core/catalog/catalog.types';
 import { CardPreviewDirective } from '../../shared/card-preview/card-preview.directive';
 
@@ -25,6 +27,7 @@ import { CardPreviewDirective } from '../../shared/card-preview/card-preview.dir
     MatProgressBarModule,
     MatSelectModule,
     MatSnackBarModule,
+    MatTooltipModule,
     CardPreviewDirective,
   ],
   templateUrl: './search-results.html',
@@ -40,6 +43,12 @@ export class SearchResults {
   private readonly cart = inject(CartService);
   private readonly router = inject(Router);
   private readonly snack = inject(MatSnackBar);
+  private readonly conditionsDialog = inject(CardConditionsDialogService);
+
+  protected openConditionsInfo(event: MouseEvent): void {
+    event.stopPropagation();
+    void this.conditionsDialog.open();
+  }
 
   protected readonly results = signal<ProductSearchRow[]>([]);
   protected readonly loading = signal(false);

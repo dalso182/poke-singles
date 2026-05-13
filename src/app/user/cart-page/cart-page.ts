@@ -9,8 +9,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { AuthService } from '../../core/auth/auth.service';
 import { CartService } from '../../core/cart/cart.service';
+import { CardConditionsDialogService } from '../../core/preview/card-conditions-dialog.service';
 import { LocalStorageService } from '../../core/storage/local-storage.service';
 import { mapCouponError } from '../../core/catalog/coupon-errors';
 import type { CartLine } from '../../core/catalog/catalog.types';
@@ -32,12 +34,19 @@ const VIEW_STORAGE_KEY = 'cart:view';
     MatInputModule,
     MatProgressBarModule,
     MatSnackBarModule,
+    MatTooltipModule,
   ],
   templateUrl: './cart-page.html',
   styleUrl: './cart-page.scss',
 })
 export class CartPage {
   private readonly cart = inject(CartService);
+  private readonly conditionsDialog = inject(CardConditionsDialogService);
+
+  protected openConditionsInfo(event: MouseEvent): void {
+    event.stopPropagation();
+    void this.conditionsDialog.open();
+  }
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly snack = inject(MatSnackBar);

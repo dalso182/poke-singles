@@ -1,0 +1,20 @@
+<div class="conditions-dialog__title">
+  <h2 mat-dialog-title>{{ data.page?.title ?? 'Estado de cartas' }}</h2>
+  <button
+    mat-icon-button
+    type="button"
+    (click)="close()"
+    aria-label="Cerrar"
+    class="conditions-dialog__close"
+  >
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<mat-dialog-content class="conditions-dialog__content">
+  @if (data.page) {
+    <article [innerHTML]="safeContent()"></article>
+  } @else {
+    <p class="muted">No pudimos cargar la guía. Intenta de nuevo más tarde.</p>
+  }
+</mat-dialog-content>

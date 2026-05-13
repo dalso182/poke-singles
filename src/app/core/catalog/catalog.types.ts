@@ -130,7 +130,7 @@ export interface ProfileRow {
   id: string;
   full_name: string | null;
   phone: string | null;
-  default_shipping_address: unknown | null; // refine when checkout lands
+  default_shipping_address: ShippingAddress | null;
   created_at: string;
   updated_at: string;
 }
@@ -242,6 +242,7 @@ export interface ShippingMethodRow {
   id: string;
   name: string;
   description: string | null;
+  requires_address: boolean;
   price: number;
   sort_order: number;
   is_active: boolean;
@@ -253,12 +254,41 @@ export interface ShippingMethodRow {
 export interface ShippingMethodInsert {
   name: string;
   description?: string | null;
+  requires_address?: boolean;
   price: number;
   sort_order?: number;
   is_active?: boolean;
 }
 
 export type ShippingMethodUpdate = Partial<ShippingMethodInsert> & {
+  deleted_at?: string | null;
+};
+
+// ---- Static pages (admin-managed CMS) ----
+
+export interface StaticPageRow {
+  id: string;
+  slug: string;
+  title: string;
+  content: string;
+  meta_description: string | null;
+  is_published: boolean;
+  sort_order: number;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StaticPageInsert {
+  slug: string;
+  title: string;
+  content?: string;
+  meta_description?: string | null;
+  is_published?: boolean;
+  sort_order?: number;
+}
+
+export type StaticPageUpdate = Partial<StaticPageInsert> & {
   deleted_at?: string | null;
 };
 
@@ -330,7 +360,8 @@ export interface PlaceOrderInput {
     email: string;
     name: string;
     phone: string;
-    address?: ShippingAddress;
+    /** Null when the chosen shipping method has requires_address = false. */
+    address: ShippingAddress | null;
   };
   shipping_method_id: string;
   payment_method: PaymentMethod;

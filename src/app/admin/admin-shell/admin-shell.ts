@@ -53,6 +53,7 @@ export class AdminShell {
     { label: 'Sets', icon: 'collections_bookmark', path: '/admin/sets' },
     { label: 'Pedidos', icon: 'receipt_long', path: '/admin/orders' },
     { label: 'Clientes', icon: 'group', path: '/admin/customers' },
+    { label: 'Páginas', icon: 'article', path: '/admin/pages' },
     { label: 'Configuración', icon: 'settings', path: '/admin/config' },
   ];
 

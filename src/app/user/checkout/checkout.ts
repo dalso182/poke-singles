@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import {
   FormBuilder,
@@ -23,6 +23,7 @@ import { ShippingMethodsService } from '../../core/catalog/shipping-methods.serv
 import type {
   PaymentMethod,
   PlaceOrderInput,
+  ProfileRow,
   ShippingAddress,
   ShippingMethodRow,
 } from '../../core/catalog/catalog.types';
@@ -63,6 +64,19 @@ export class Checkout implements OnInit {
   protected readonly loading = signal(true);
   protected readonly placing = signal(false);
 
+  /** Tracks the radio-group value so computed signals react to changes
+   *  (form `valueChanges` is hooked in the constructor below). */
+  protected readonly selectedShippingMethodId = signal<string>('');
+
+  /** Profile snapshot used to render the "Enviar a:" summary. Set by
+   *  prefillFromProfile after the auth session is ready. */
+  protected readonly savedProfile = signal<ProfileRow | null>(null);
+
+  /** 'saved' = render the profile address as read-only summary;
+   *  'custom' = show the editable address form. Forced to 'custom' when
+   *  no saved address exists. */
+  protected readonly addressMode = signal<'saved' | 'custom'>('saved');
+
   protected readonly form: FormGroup = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
     name: ['', Validators.required],
@@ -78,17 +92,68 @@ export class Checkout implements OnInit {
   });
 
   protected readonly selectedShippingPrice = computed<number>(() => {
-    const id = this.form.controls['shipping_method_id'].value;
+    const id = this.selectedShippingMethodId();
     if (!id) return 0;
     return this.shippingMethods().find((s) => s.id === id)?.price ?? 0;
+  });
+
+  protected readonly selectedMethodRequiresAddress = computed<boolean>(() => {
+    const id = this.selectedShippingMethodId();
+    const m = this.shippingMethods().find((x) => x.id === id);
+    // Default to required when the selection is unknown — fail-safe.
+    return m?.requires_address ?? true;
+  });
+
+  protected readonly hasSavedAddress = computed<boolean>(() => {
+    const addr = this.savedProfile()?.default_shipping_address;
+    return !!addr?.line1?.trim();
   });
 
   protected readonly total = computed<number>(() =>
     Math.max(0, this.subtotal() - this.discount() + this.selectedShippingPrice()),
   );
 
+  constructor() {
+    // Mirror the radio-group value into a signal so the computeds above
+    // react to user changes (FormControl.value alone isn't reactive).
+    this.form.controls['shipping_method_id'].valueChanges.subscribe((v) => {
+      this.selectedShippingMethodId.set(typeof v === 'string' ? v : '');
+    });
+
+    // Toggle address-field validators based on whether the editable form
+    // is actually rendered. The form is shown when either (a) the user
+    // explicitly switched to 'custom' mode, or (b) they have no saved
+    // address to display in the read-only summary. In 'saved' mode the
+    // form is hidden and its values came from the profile, so validators
+    // aren't needed.
+    effect(() => {
+      const required = this.selectedMethodRequiresAddress();
+      const showingForm = this.addressMode() === 'custom' || !this.hasSavedAddress();
+      const fields = ['line1', 'city', 'province'] as const;
+      const validators = required && showingForm ? Validators.required : null;
+      for (const f of fields) {
+        const ctrl = this.form.controls[f];
+        ctrl.setValidators(validators);
+        ctrl.updateValueAndValidity({ emitEvent: false });
+      }
+    });
+  }
+
   ngOnInit(): void {
     void this.bootstrap();
+  }
+
+  /** Re-patches the address controls from the saved profile so toggling
+   *  back to 'saved' mode discards any in-progress edits cleanly. */
+  protected resetAddressFromProfile(): void {
+    const addr = this.savedProfile()?.default_shipping_address;
+    this.form.patchValue({
+      line1: addr?.line1 ?? '',
+      line2: addr?.line2 ?? '',
+      city: addr?.city ?? '',
+      province: addr?.province ?? '',
+      address_notes: addr?.notes ?? '',
+    });
   }
 
   private async bootstrap(): Promise<void> {
@@ -110,15 +175,19 @@ export class Checkout implements OnInit {
   }
 
   private async prefillFromProfile(): Promise<void> {
+    // Wait for the initial session hydration so a hard refresh doesn't see
+    // currentUser() as undefined and skip the prefill.
+    await this.auth.ready;
     const user = this.auth.currentUser();
     if (!user) return;
     this.form.controls['email'].setValue(user.email ?? '');
     try {
       const profile = await this.profiles.getMine();
       if (!profile) return;
+      this.savedProfile.set(profile);
       if (profile.full_name) this.form.controls['name'].setValue(profile.full_name);
       if (profile.phone) this.form.controls['phone'].setValue(profile.phone);
-      const addr = profile.default_shipping_address as ShippingAddress | null;
+      const addr = profile.default_shipping_address;
       if (addr) {
         this.form.patchValue({
           line1: addr.line1 ?? '',
@@ -145,6 +214,18 @@ export class Checkout implements OnInit {
 
     this.placing.set(true);
     const raw = this.form.getRawValue();
+    // Pickup-style methods don't collect an address — pass null so the
+    // RPC stores no phantom address and the order detail UI doesn't
+    // render a half-empty shipping block.
+    const address: ShippingAddress | null = this.selectedMethodRequiresAddress()
+      ? {
+          line1: String(raw.line1).trim(),
+          line2: raw.line2 ? String(raw.line2).trim() : null,
+          city: String(raw.city).trim(),
+          province: String(raw.province).trim(),
+          notes: raw.address_notes ? String(raw.address_notes).trim() : null,
+        }
+      : null;
     const input: PlaceOrderInput = {
       items: this.items().map((l) => ({
         product_id: l.product_id,
@@ -154,13 +235,7 @@ export class Checkout implements OnInit {
         email: String(raw.email).trim(),
         name: String(raw.name).trim(),
         phone: String(raw.phone).trim(),
-        address: {
-          line1: String(raw.line1).trim(),
-          line2: raw.line2 ? String(raw.line2).trim() : null,
-          city: String(raw.city).trim(),
-          province: String(raw.province).trim(),
-          notes: raw.address_notes ? String(raw.address_notes).trim() : null,
-        },
+        address,
       },
       shipping_method_id: raw.shipping_method_id,
       payment_method: raw.payment_method,
@@ -189,6 +264,7 @@ export class Checkout implements OnInit {
       case 'EMPTY_CART':           return 'Tu carrito está vacío.';
       case 'EMAIL_REQUIRED':       return 'Necesitamos tu correo electrónico.';
       case 'BUYER_INFO_REQUIRED':  return 'Completa tu nombre y teléfono.';
+      case 'ADDRESS_REQUIRED':     return 'Necesitamos tu dirección de envío.';
       case 'INVALID_PAYMENT':      return 'Selecciona un método de pago.';
       case 'INVALID_SHIPPING':    return 'Selecciona un método de envío válido.';
       case 'PRODUCT_GONE':

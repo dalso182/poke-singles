@@ -24,23 +24,25 @@
           <mat-card-title>Contacto</mat-card-title>
           <mat-card-subtitle>Te avisaremos por estos medios.</mat-card-subtitle>
         </mat-card-header>
-        <mat-card-content class="checkout__grid">
-          <mat-form-field appearance="outline" class="checkout__full">
-            <mat-label>Correo</mat-label>
-            <input matInput type="email" formControlName="email" autocomplete="email" />
-            @if (form.controls['email'].touched && form.controls['email'].invalid) {
-              <mat-error>Ingresa un correo válido.</mat-error>
-            }
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Nombre completo</mat-label>
-            <input matInput type="text" formControlName="name" autocomplete="name" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Teléfono</mat-label>
-            <input matInput type="tel" formControlName="phone" autocomplete="tel" />
-            <mat-hint>Para coordinar el SINPE / WhatsApp.</mat-hint>
-          </mat-form-field>
+        <mat-card-content>
+          <div class="checkout__grid">
+            <mat-form-field appearance="outline" class="checkout__full">
+              <mat-label>Correo</mat-label>
+              <input matInput type="email" formControlName="email" autocomplete="email" />
+              @if (form.controls['email'].touched && form.controls['email'].invalid) {
+                <mat-error>Ingresa un correo válido.</mat-error>
+              }
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Nombre completo</mat-label>
+              <input matInput type="text" formControlName="name" autocomplete="name" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Teléfono</mat-label>
+              <input matInput type="tel" formControlName="phone" autocomplete="tel" />
+              <mat-hint>Para coordinar el SINPE / WhatsApp.</mat-hint>
+            </mat-form-field>
+          </div>
         </mat-card-content>
       </mat-card>
 
@@ -72,28 +74,66 @@
             </mat-radio-group>
           }
 
-          <div class="checkout__grid checkout__address">
-            <mat-form-field appearance="outline" class="checkout__full">
-              <mat-label>Dirección (línea 1)</mat-label>
-              <input matInput type="text" formControlName="line1" autocomplete="address-line1" />
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="checkout__full">
-              <mat-label>Línea 2 (opcional)</mat-label>
-              <input matInput type="text" formControlName="line2" autocomplete="address-line2" />
-            </mat-form-field>
-            <mat-form-field appearance="outline">
-              <mat-label>Cantón / ciudad</mat-label>
-              <input matInput type="text" formControlName="city" autocomplete="address-level2" />
-            </mat-form-field>
-            <mat-form-field appearance="outline">
-              <mat-label>Provincia</mat-label>
-              <input matInput type="text" formControlName="province" autocomplete="address-level1" />
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="checkout__full">
-              <mat-label>Notas para el repartidor (opcional)</mat-label>
-              <textarea matInput rows="3" formControlName="address_notes"></textarea>
-            </mat-form-field>
-          </div>
+          @if (selectedMethodRequiresAddress()) {
+            @if (addressMode() === 'saved' && hasSavedAddress()) {
+              <div class="checkout__address-summary">
+                <div class="checkout__address-summary-body">
+                  <p class="checkout__address-summary-label">Enviar a:</p>
+                  <p>
+                    {{ savedProfile()?.default_shipping_address?.line1 }}@if (savedProfile()?.default_shipping_address?.line2) {, {{ savedProfile()?.default_shipping_address?.line2 }}}
+                  </p>
+                  <p>
+                    {{ savedProfile()?.default_shipping_address?.city }}, {{ savedProfile()?.default_shipping_address?.province }}
+                  </p>
+                  @if (savedProfile()?.default_shipping_address?.notes) {
+                    <p class="muted">{{ savedProfile()?.default_shipping_address?.notes }}</p>
+                  }
+                </div>
+                <button
+                  mat-button
+                  color="primary"
+                  type="button"
+                  class="checkout__address-change"
+                  (click)="addressMode.set('custom')"
+                >
+                  Cambiar dirección
+                </button>
+              </div>
+            } @else {
+              <div class="checkout__grid checkout__address">
+                <mat-form-field appearance="outline" class="checkout__full">
+                  <mat-label>Dirección (línea 1)</mat-label>
+                  <input matInput type="text" formControlName="line1" autocomplete="address-line1" />
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="checkout__full">
+                  <mat-label>Línea 2 (opcional)</mat-label>
+                  <input matInput type="text" formControlName="line2" autocomplete="address-line2" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Cantón / ciudad</mat-label>
+                  <input matInput type="text" formControlName="city" autocomplete="address-level2" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Provincia</mat-label>
+                  <input matInput type="text" formControlName="province" autocomplete="address-level1" />
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="checkout__full">
+                  <mat-label>Notas para el repartidor (opcional)</mat-label>
+                  <textarea matInput rows="3" formControlName="address_notes"></textarea>
+                </mat-form-field>
+              </div>
+              @if (hasSavedAddress()) {
+                <button
+                  mat-button
+                  type="button"
+                  class="checkout__address-revert"
+                  (click)="addressMode.set('saved'); resetAddressFromProfile()"
+                >
+                  Usar la dirección guardada
+                </button>
+              }
+            }
+          }
         </mat-card-content>
       </mat-card>
 
@@ -128,11 +168,13 @@
         <mat-card-header>
           <mat-card-title>Notas (opcional)</mat-card-title>
         </mat-card-header>
-        <mat-card-content class="checkout__grid">
-          <mat-form-field appearance="outline" class="checkout__full">
-            <mat-label>Algo que debamos saber</mat-label>
-            <textarea matInput rows="3" formControlName="customer_notes"></textarea>
-          </mat-form-field>
+        <mat-card-content>
+          <div class="checkout__grid">
+            <mat-form-field appearance="outline" class="checkout__full">
+              <mat-label>Algo que debamos saber</mat-label>
+              <textarea matInput rows="3" formControlName="customer_notes"></textarea>
+            </mat-form-field>
+          </div>
         </mat-card-content>
       </mat-card>
 

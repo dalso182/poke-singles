@@ -1,0 +1,94 @@
+.conditions-dialog__title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 16px 8px 24px;
+  margin: 0;
+
+  // mat-dialog-title injects its own padding/margin on the h2; override
+  // so the wrapper above controls layout entirely.
+  h2 {
+    margin: 0;
+    padding: 0;
+    flex: 1;
+    min-width: 0;
+    font-family: var(--font-brand);
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    word-break: break-word;
+  }
+}
+
+.conditions-dialog__close {
+  flex-shrink: 0;
+}
+
+.conditions-dialog__content {
+  max-height: 70vh;
+  overflow-y: auto;
+  // Kill horizontal scroll for long words / pasted content; the article
+  // below already wraps via overflow-wrap, this is belt-and-braces.
+  overflow-x: hidden;
+  overflow-wrap: anywhere;
+  padding: 8px 24px 24px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-primary);
+
+  // Mirror static-page typography so the modal renders the same HTML
+  // consistently with the standalone /info/estado-de-cartas page.
+  h2, h3, h4 {
+    font-family: var(--font-brand);
+    font-weight: 800;
+    margin: 20px 0 8px;
+    line-height: 1.25;
+  }
+  h2 { font-size: 18px; }
+  h3 { font-size: 16px; }
+
+  p { margin: 10px 0; }
+
+  ul, ol {
+    padding-left: 22px;
+    margin: 10px 0;
+  }
+
+  li { margin: 4px 0; }
+
+  a {
+    color: var(--mat-sys-primary);
+    text-decoration: none;
+    &:hover { text-decoration: underline; }
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+    margin: 12px 0;
+  }
+
+  figure {
+    margin: 16px 0;
+    text-align: center;
+
+    img {
+      display: inline-block;
+      max-width: min(180px, 50%);
+      margin: 0;
+    }
+  }
+
+  hr {
+    border: 0;
+    border-top: 1px solid var(--border-subtle);
+    margin: 16px 0;
+  }
+}
+
+.muted {
+  color: var(--text-secondary);
+  margin: 0;
+}

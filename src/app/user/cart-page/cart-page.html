@@ -63,7 +63,15 @@
                 {{ line.name }}
               </a>
               @if (line.condition) {
-                <span [class]="conditionClass(line.condition)">{{ line.condition }}</span>
+                <button
+                  type="button"
+                  [class]="conditionClass(line.condition) + ' condition-pill--btn'"
+                  (click)="openConditionsInfo($event)"
+                  matTooltip="Ver guía de condiciones"
+                  aria-label="Ver guía de condiciones"
+                >
+                  {{ line.condition }}
+                </button>
               }
             </div>
             @if (line.set_name || line.card_number) {
@@ -180,9 +188,15 @@
               </p>
             </div>
             @if (line.condition) {
-              <span [class]="conditionClass(line.condition)" class="cart-page__card-condition">
+              <button
+                type="button"
+                [class]="conditionClass(line.condition) + ' condition-pill--btn cart-page__card-condition'"
+                (click)="openConditionsInfo($event)"
+                matTooltip="Ver guía de condiciones"
+                aria-label="Ver guía de condiciones"
+              >
                 {{ line.condition }}
-              </span>
+              </button>
             }
           </li>
         }

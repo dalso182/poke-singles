@@ -44,14 +44,50 @@
 
 .shipping-methods__table-card {
   padding: 0;
-  overflow: hidden;
+  overflow-x: auto;
 }
 
 .shipping-methods__table {
   width: 100%;
 
+  // Keep every cell middle-aligned so toggles, buttons, and form-field
+  // outlines all sit on the same baseline — without this the row
+  // dividers visually shift between form-field cells and toggle cells.
+  td, th { vertical-align: middle; }
   td { padding-block: 8px; }
   mat-form-field { width: 100%; }
+
+  .mat-column-price {
+    width: 100px;
+    min-width: 100px;
+    max-width: 100px;
+  }
+
+  .mat-column-sort_order {
+    width: 90px;
+    min-width: 90px;
+    max-width: 90px;
+  }
+
+  .mat-column-requires_address {
+    width: 90px;
+    min-width: 90px;
+    max-width: 90px;
+    text-align: center;
+  }
+
+  .mat-column-is_active {
+    width: 70px;
+    min-width: 70px;
+    max-width: 70px;
+    text-align: center;
+  }
+
+  .mat-column-actions {
+    width: 140px;
+    min-width: 140px;
+    max-width: 140px;
+  }
 }
 
 .shipping-methods__actions {

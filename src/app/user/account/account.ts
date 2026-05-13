@@ -12,7 +12,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AuthService } from '../../core/auth/auth.service';
 import { ProfilesService } from '../../core/auth/profiles.service';
 import { OrdersService } from '../../core/orders/orders.service';
-import type { OrderRow, ProfileRow } from '../../core/catalog/catalog.types';
+import type { OrderRow, ProfileRow, ShippingAddress } from '../../core/catalog/catalog.types';
 
 @Component({
   selector: 'app-account',
@@ -49,6 +49,11 @@ export class Account implements OnInit {
   protected readonly form: FormGroup = this.fb.nonNullable.group({
     full_name: [''],
     phone: [''],
+    line1: [''],
+    line2: [''],
+    city: [''],
+    province: [''],
+    address_notes: [''],
   });
 
   ngOnInit(): void {
@@ -58,16 +63,27 @@ export class Account implements OnInit {
   private async bootstrap(): Promise<void> {
     this.loading.set(true);
     try {
+      // Wait for the initial session hydration so RLS-scoped reads don't
+      // come back empty on a hard refresh. customerGuard awaits this too,
+      // but defensive here in case the page is reached without the guard.
+      await this.auth.ready;
       const [profile, orders] = await Promise.all([
         this.profiles.getMine(),
         this.orders.getMyOrders().catch(() => [] as OrderRow[]),
       ]);
+      console.debug('[account] profile fetched', profile);
       this.profile.set(profile);
       this.myOrders.set(orders);
       if (profile) {
+        const addr = profile.default_shipping_address;
         this.form.patchValue({
           full_name: profile.full_name ?? '',
           phone: profile.phone ?? '',
+          line1: addr?.line1 ?? '',
+          line2: addr?.line2 ?? '',
+          city: addr?.city ?? '',
+          province: addr?.province ?? '',
+          address_notes: addr?.notes ?? '',
         });
       }
       this.form.markAsPristine();
@@ -97,9 +113,26 @@ export class Account implements OnInit {
     this.saving.set(true);
     try {
       const raw = this.form.getRawValue();
+      const line1 = raw.line1?.trim() ?? '';
+      const city = raw.city?.trim() ?? '';
+      const province = raw.province?.trim() ?? '';
+      // Persist an address only when the required fields are filled — a
+      // partial address (e.g. just a city) isn't useful to anyone and would
+      // get rejected at checkout. Empty everything → null on the row.
+      const address: ShippingAddress | null =
+        line1 && city && province
+          ? {
+              line1,
+              line2: raw.line2?.trim() || null,
+              city,
+              province,
+              notes: raw.address_notes?.trim() || null,
+            }
+          : null;
       const updated = await this.profiles.updateMine({
         full_name: raw.full_name?.trim() || null,
         phone: raw.phone?.trim() || null,
+        default_shipping_address: address,
       });
       this.profile.set(updated);
       this.form.markAsPristine();

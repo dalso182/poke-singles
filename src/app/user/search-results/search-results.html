@@ -75,7 +75,15 @@
           <img [src]="src" [alt]="card.type2" class="type-icon" />
         }
         @if (card.condition) {
-          <span [class]="conditionClass(card.condition)">{{ card.condition }}</span>
+          <button
+            type="button"
+            [class]="conditionClass(card.condition) + ' condition-pill--btn'"
+            (click)="openConditionsInfo($event)"
+            matTooltip="Ver guía de condiciones"
+            aria-label="Ver guía de condiciones"
+          >
+            {{ card.condition }}
+          </button>
         }
       </div>
       <div class="card-info">

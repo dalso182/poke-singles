@@ -1,0 +1,134 @@
+.page-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 1200px;
+}
+
+.page-edit__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.page-edit__title {
+  display: flex;
+  flex-direction: column;
+
+  h1 { margin: 4px 0 0; font-size: 22px; }
+}
+
+.muted {
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.page-edit__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.page-edit__panel {
+  padding: 8px;
+}
+
+.page-edit__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.page-edit__full {
+  grid-column: 1 / -1;
+}
+
+.page-edit__num-field {
+  max-width: 120px;
+}
+
+.page-edit__toggle {
+  align-self: center;
+}
+
+.page-edit__editor {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 880px) {
+  .page-edit__editor {
+    grid-template-columns: 1fr;
+  }
+}
+
+.page-edit__editor-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.page-edit__editor-label {
+  font-size: 11px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+// Editor + preview share a fixed pane height and scroll independently.
+// Long pages can grow indefinitely without dragging the form; both panes
+// stay locked at the same height so the side-by-side comparison works.
+$pane-height: 600px;
+
+.page-edit__textarea {
+  width: 100%;
+  height: $pane-height;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  background: var(--surface-card);
+  color: var(--text-primary);
+  resize: vertical;
+  overflow: auto;
+  box-sizing: border-box;
+
+  &:focus {
+    outline: 2px solid var(--mat-sys-primary);
+    outline-offset: -1px;
+    border-color: transparent;
+  }
+}
+
+.page-edit__preview {
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 16px;
+  background: var(--surface-tonal);
+  height: $pane-height;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  line-height: 1.6;
+  box-sizing: border-box;
+
+  // Reasonable defaults for whatever HTML the admin pastes in.
+  h1, h2, h3 { margin: 12px 0 6px; }
+  p { margin: 8px 0; }
+  ul, ol { padding-left: 24px; margin: 8px 0; }
+  a { color: var(--mat-sys-primary); }
+  img { max-width: 100%; height: auto; border-radius: 4px; }
+  pre { white-space: pre-wrap; word-wrap: break-word; }
+}
+
+.page-edit__actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}

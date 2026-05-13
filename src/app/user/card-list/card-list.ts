@@ -6,9 +6,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ProductsService } from '../../core/catalog/products.service';
 import { SetsService } from '../../core/catalog/sets.service';
 import { CartService } from '../../core/cart/cart.service';
+import { CardConditionsDialogService } from '../../core/preview/card-conditions-dialog.service';
 import type { ProductRow, SetRow } from '../../core/catalog/catalog.types';
 import { CardPreviewDirective } from '../../shared/card-preview/card-preview.directive';
 
@@ -22,6 +24,7 @@ import { CardPreviewDirective } from '../../shared/card-preview/card-preview.dir
     MatIconModule,
     MatProgressBarModule,
     MatSnackBarModule,
+    MatTooltipModule,
     CardPreviewDirective,
   ],
   templateUrl: './card-list.html',
@@ -32,6 +35,12 @@ export class CardList {
   private readonly sets = inject(SetsService);
   private readonly cart = inject(CartService);
   private readonly snack = inject(MatSnackBar);
+  private readonly conditionsDialog = inject(CardConditionsDialogService);
+
+  protected openConditionsInfo(event: MouseEvent): void {
+    event.stopPropagation();
+    void this.conditionsDialog.open();
+  }
 
   protected readonly cards = signal<ProductRow[]>([]);
   protected readonly setsById = signal<Map<string, SetRow>>(new Map());

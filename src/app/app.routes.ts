@@ -79,6 +79,22 @@ export const routes: Routes = [
         loadComponent: () => import('./admin/sets/sets').then((m) => m.Sets),
       },
       {
+        path: 'pages',
+        pathMatch: 'full',
+        loadComponent: () =>
+          import('./admin/pages/pages-list').then((m) => m.PagesList),
+      },
+      {
+        path: 'pages/new',
+        loadComponent: () =>
+          import('./admin/pages/page-edit').then((m) => m.PageEdit),
+      },
+      {
+        path: 'pages/:id/edit',
+        loadComponent: () =>
+          import('./admin/pages/page-edit').then((m) => m.PageEdit),
+      },
+      {
         path: 'config',
         loadComponent: () =>
           import('./admin/config/config').then((m) => m.AdminConfig),
@@ -136,6 +152,11 @@ export const routes: Routes = [
           import('./user/order-confirmation/order-confirmation').then(
             (m) => m.OrderConfirmation,
           ),
+      },
+      {
+        path: 'info/:slug',
+        loadComponent: () =>
+          import('./user/static-page/static-page').then((m) => m.StaticPage),
       },
     ],
   },

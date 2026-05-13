@@ -1,0 +1,111 @@
+<section class="pages-list">
+  <header class="pages-list__header admin-page-header">
+    <div>
+      <span class="brand-eyebrow">Contenido</span>
+      <h1>Páginas</h1>
+      <p class="muted">
+        Páginas estáticas (Sobre nosotros, Envíos, FAQ, etc.). Editables y
+        visibles en /info/&lt;slug&gt;.
+      </p>
+    </div>
+    <a mat-flat-button color="primary" routerLink="/admin/pages/new">
+      <mat-icon>add</mat-icon>
+      Crear página
+    </a>
+  </header>
+
+  <div class="pages-list__filters">
+    <mat-button-toggle-group
+      [value]="filter()"
+      (change)="onFilterChange($event.value)"
+      aria-label="Filtrar páginas"
+      hideSingleSelectionIndicator
+    >
+      <mat-button-toggle value="all">Todas</mat-button-toggle>
+      <mat-button-toggle value="published">Publicadas</mat-button-toggle>
+      <mat-button-toggle value="unpublished">No publicadas</mat-button-toggle>
+      <mat-button-toggle value="deleted">Eliminadas</mat-button-toggle>
+    </mat-button-toggle-group>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="pages-list__search">
+      <mat-label>Buscar</mat-label>
+      <input matInput [formControl]="searchControl" autocomplete="off" placeholder="título o slug" />
+    </mat-form-field>
+  </div>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <mat-card class="pages-list__table-card">
+    <table mat-table [dataSource]="visibleRows()" class="pages-list__table">
+      <ng-container matColumnDef="title">
+        <th mat-header-cell *matHeaderCellDef>Título</th>
+        <td mat-cell *matCellDef="let row">
+          <strong>{{ row.title }}</strong>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="slug">
+        <th mat-header-cell *matHeaderCellDef>Slug</th>
+        <td mat-cell *matCellDef="let row" class="brand-mono">/info/{{ row.slug }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="is_published">
+        <th mat-header-cell *matHeaderCellDef>Publicada</th>
+        <td mat-cell *matCellDef="let row">
+          @if (row.is_published) {
+            <span class="pages-list__pill pages-list__pill--on">Publicada</span>
+          } @else {
+            <span class="pages-list__pill pages-list__pill--off">Borrador</span>
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="updated_at">
+        <th mat-header-cell *matHeaderCellDef>Actualizada</th>
+        <td mat-cell *matCellDef="let row">{{ row.updated_at | date: 'short' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let row" class="pages-list__actions">
+          @if (!row.deleted_at) {
+            <a
+              mat-stroked-button
+              [routerLink]="['/admin/pages', row.id, 'edit']"
+            >
+              Editar
+            </a>
+            <button
+              mat-icon-button
+              type="button"
+              [disabled]="saving() === row.id"
+              (click)="onDelete(row)"
+              aria-label="Eliminar"
+              matTooltip="Eliminar"
+            >
+              <mat-icon>delete_outline</mat-icon>
+            </button>
+          } @else {
+            <button
+              mat-stroked-button
+              type="button"
+              (click)="onRestore(row.id)"
+            >
+              Restaurar
+            </button>
+          }
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+
+    @if (!loading() && visibleRows().length === 0) {
+      <p class="pages-list__empty muted">
+        Sin páginas en este filtro. Crea una con el botón de arriba.
+      </p>
+    }
+  </mat-card>
+</section>

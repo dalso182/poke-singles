@@ -160,6 +160,15 @@ profiles(id PK FK auth.users, full_name, phone, default_shipping_address jsonb,
 profile row from `raw_user_meta_data` (`full_name` for password signup and
 magic link, `name` from Google). RLS is self-only; admins read all.
 
+The trigger also fires a best-effort `pg_net.http_post` to the
+`send-signup-email` Edge Function so admins get a "nuevo cliente" email on
+every signup (covers all three paths: password, magic link, Google).
+Recipients come from `app_settings.order_notification_recipients`. The
+function URL + anon key are stored in Supabase Vault as `signup_email_url`
+and `supabase_anon_key` — set them once per environment via
+`select vault.create_secret(...)`. If either secret is missing the trigger
+silently skips notification (signup still completes).
+
 `/account` (gated by `customerGuard`) lets the user edit `full_name` + `phone`
 and sign out. The shipping-address editor stub waits for checkout.
 

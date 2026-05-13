@@ -113,6 +113,30 @@
 .condition-pill--mp { color: #c2410c; }
 .condition-pill--hp { color: var(--danger); }
 
+// Button-styled pill — strips default button chrome so a <button> with
+// .condition-pill renders identical to the span variant, but stays
+// keyboard-accessible and gets a subtle hover/focus affordance to hint
+// it's interactive (opens the conditions-info modal).
+.condition-pill--btn {
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.05s ease;
+
+  &:hover {
+    background: color-mix(in srgb, currentColor 8%, transparent);
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--mat-sys-primary);
+    outline-offset: 2px;
+  }
+}
+
 // Order-status pill — used on /account, /admin/orders, /admin/orders/:id.
 // Default style covers `pending`; modifiers tint by status.
 .order-status {

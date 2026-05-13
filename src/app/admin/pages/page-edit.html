@@ -1,0 +1,106 @@
+<section class="page-edit">
+  <header class="page-edit__header admin-page-header">
+    <a mat-icon-button routerLink="/admin/pages" aria-label="Volver">
+      <mat-icon>arrow_back</mat-icon>
+    </a>
+    <div class="page-edit__title">
+      <span class="brand-eyebrow">Contenido</span>
+      <h1>{{ mode() === 'edit' ? 'Editar página' : 'Crear página' }}</h1>
+    </div>
+  </header>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="page-edit__form">
+    <mat-card class="page-edit__panel">
+      <mat-card-header>
+        <mat-card-title>Datos</mat-card-title>
+      </mat-card-header>
+      <mat-card-content class="page-edit__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Título</mat-label>
+          <input matInput type="text" formControlName="title" autocomplete="off" />
+          @if (form.controls['title'].touched && form.controls['title'].invalid) {
+            <mat-error>Necesitamos un título.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Slug (URL)</mat-label>
+          <span matTextPrefix>/info/&nbsp;</span>
+          <input
+            matInput
+            type="text"
+            formControlName="slug"
+            autocomplete="off"
+            (blur)="onSlugBlur()"
+            placeholder="sobre-nosotros"
+          />
+          @if (mode() === 'edit') {
+            <mat-hint>El slug no se puede cambiar después de crear la página.</mat-hint>
+          }
+          @if (form.controls['slug'].touched && form.controls['slug'].invalid) {
+            <mat-error>Solo letras minúsculas, números y guiones.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="page-edit__full">
+          <mat-label>Descripción (SEO)</mat-label>
+          <textarea
+            matInput
+            rows="2"
+            formControlName="meta_description"
+            placeholder="Resumen breve de la página, máx. 160 caracteres."
+          ></textarea>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="page-edit__num-field">
+          <mat-label>Orden</mat-label>
+          <input matInput type="number" formControlName="sort_order" min="0" />
+        </mat-form-field>
+
+        <mat-slide-toggle formControlName="is_published" class="page-edit__toggle">
+          Publicada
+        </mat-slide-toggle>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="page-edit__panel">
+      <mat-card-header>
+        <mat-card-title>Contenido (HTML)</mat-card-title>
+        <mat-card-subtitle class="muted">
+          Pegá el HTML directamente. Vista previa al lado.
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content class="page-edit__editor">
+        <div class="page-edit__editor-pane">
+          <label class="page-edit__editor-label">HTML</label>
+          <textarea
+            class="page-edit__textarea"
+            formControlName="content"
+            rows="22"
+            spellcheck="false"
+          ></textarea>
+        </div>
+        <div class="page-edit__editor-pane">
+          <label class="page-edit__editor-label">Vista previa</label>
+          <div class="page-edit__preview" [innerHTML]="previewHtml()"></div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <div class="page-edit__actions">
+      <a mat-stroked-button routerLink="/admin/pages">Cancelar</a>
+      <button
+        mat-flat-button
+        color="primary"
+        type="submit"
+        [disabled]="form.invalid || saving()"
+      >
+        {{ saving() ? 'Guardando…' : (mode() === 'edit' ? 'Guardar' : 'Crear página') }}
+      </button>
+    </div>
+  </form>
+</section>
