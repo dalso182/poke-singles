@@ -45,6 +45,9 @@ export interface ProductSearchParams {
   /** Multi-card-type filter — array-overlap against products_search.card_type_ids.
    *  Empty / undefined = no filter. */
   cardTypeIds?: string[];
+  /** When true, restrict results to discounted products (sale_price is not
+   *  null). Drives the /ofertas listing. Default false. */
+  onSaleOnly?: boolean;
   page?: number;
   pageSize?: number;
 }
@@ -213,6 +216,7 @@ export class ProductsService {
       // function body.
       p_card_type_ids:
         params.cardTypeIds && params.cardTypeIds.length > 0 ? params.cardTypeIds : null,
+      p_on_sale_only: params.onSaleOnly ?? false,
     });
     if (error) throw error;
     return { rows: (data ?? []) as ProductSearchRow[], page, pageSize };

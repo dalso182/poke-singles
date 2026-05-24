@@ -141,6 +141,14 @@ export const routes: Routes = [
         loadComponent: () => import('./user/rifas/rifas').then((m) => m.Rifas),
       },
       {
+        // Reuses CardList; route data flips it into discounted-only mode and
+        // keeps filter/sort navigation on /ofertas (see CardList.basePath).
+        path: 'ofertas',
+        data: { onSaleOnly: true, basePath: '/ofertas' },
+        loadComponent: () =>
+          import('./user/card-list/card-list').then((m) => m.CardList),
+      },
+      {
         path: 'products/:slug',
         loadComponent: () =>
           import('./user/detail/detail').then((m) => m.Detail),

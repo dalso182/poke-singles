@@ -42,6 +42,12 @@ export class CardList {
   readonly types = input<string | undefined>(undefined);
   /** URL `sort` param. No query here, so 'relevance' is never offered. */
   readonly sort = input<string>('recent');
+  /** Route-data bound. When true the grid lists only discounted products and
+   *  the page presents as /ofertas. Default false = the full /products grid. */
+  readonly onSaleOnly = input<boolean>(false);
+  /** Route-data bound. Base path used for filter/sort navigation so the same
+   *  component keeps you on /products or /ofertas as appropriate. */
+  readonly basePath = input<string>('/products');
 
   private readonly products = inject(ProductsService);
   private readonly setsService = inject(SetsService);
@@ -71,6 +77,19 @@ export class CardList {
     normalizeSort(this.sort(), false),
   );
 
+  // Page chrome switches between the full catalog grid and the offers grid.
+  protected readonly pageTitle = computed(() => (this.onSaleOnly() ? 'Ofertas' : 'Cartas'));
+  protected readonly pageLead = computed(() =>
+    this.onSaleOnly()
+      ? 'Cartas con precio rebajado. Stock limitado — aprovecha antes de que se agoten.'
+      : 'Singles auténticas, condición verificada, envío seguro a todo Costa Rica.',
+  );
+  protected readonly emptyText = computed(() =>
+    this.onSaleOnly()
+      ? 'No hay ofertas en este momento. Vuelve pronto.'
+      : 'Aún no hay cartas en stock. Vuelve pronto.',
+  );
+
   constructor() {
     void this.bootstrapMeta();
 
@@ -86,11 +105,16 @@ export class CardList {
 
   private async bootstrapMeta(): Promise<void> {
     try {
+      // Offers mode scopes the facet counts to discounted products via the
+      // query-aware count fns (q=''); the full grid uses the cached globals.
+      const onSale = this.onSaleOnly();
       const [sets, setCounts, cardTypes, cardTypeCounts] = await Promise.all([
         this.setsService.list(),
-        this.setsService.counts(),
+        onSale ? this.setsService.countsForQuery('', { onSaleOnly: true }) : this.setsService.counts(),
         this.cardTypesService.list({ activeOnly: true }),
-        this.cardTypesService.counts(),
+        onSale
+          ? this.cardTypesService.countsForQuery('', { onSaleOnly: true })
+          : this.cardTypesService.counts(),
       ]);
       this.allSets.set(sets);
       this.setCounts.set(setCounts);
@@ -116,6 +140,7 @@ export class CardList {
         pageSize: 60,
         setIds: setIds.length > 0 ? setIds : undefined,
         cardTypeIds: cardTypeIds.length > 0 ? cardTypeIds : undefined,
+        onSaleOnly: this.onSaleOnly(),
       });
       this.cards.set(rows);
     } catch (err) {
@@ -126,28 +151,28 @@ export class CardList {
   }
 
   protected onSortChange(next: SortKey): void {
-    void this.router.navigate(['/products'], {
+    void this.router.navigate([this.basePath()], {
       queryParams: { sort: next },
       queryParamsHandling: 'merge',
     });
   }
 
   protected onSetsChange(ids: string[]): void {
-    void this.router.navigate(['/products'], {
+    void this.router.navigate([this.basePath()], {
       queryParams: { sets: ids.length > 0 ? ids.join(',') : null },
       queryParamsHandling: 'merge',
     });
   }
 
   protected onCardTypesChange(ids: string[]): void {
-    void this.router.navigate(['/products'], {
+    void this.router.navigate([this.basePath()], {
       queryParams: { types: ids.length > 0 ? ids.join(',') : null },
       queryParamsHandling: 'merge',
     });
   }
 
   protected onClearAllFilters(): void {
-    void this.router.navigate(['/products'], {
+    void this.router.navigate([this.basePath()], {
       queryParams: { sets: null, types: null },
       queryParamsHandling: 'merge',
     });

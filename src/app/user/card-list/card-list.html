@@ -3,14 +3,12 @@
     <mat-icon>home</mat-icon>
   </a>
   <span class="breadcrumb-sep">›</span>
-  <span class="breadcrumb-current">Cartas</span>
+  <span class="breadcrumb-current">{{ pageTitle() }}</span>
 </nav>
 
 <header class="cards-header">
-  <h1>Cartas</h1>
-  <p class="lead">
-    Singles auténticas, condición verificada, envío seguro a todo Costa Rica.
-  </p>
+  <h1>{{ pageTitle() }}</h1>
+  <p class="lead">{{ pageLead() }}</p>
 </header>
 
 <app-filters-bar
@@ -21,14 +19,14 @@
     [sets]="allSets()"
     [counts]="setCounts()"
     [selected]="selectedSetIds()"
-    [hideZero]="false"
+    [hideZero]="onSaleOnly()"
     (selectionChange)="onSetsChange($event)"
   />
   <app-card-type-filter
     [cardTypes]="allCardTypes()"
     [counts]="cardTypeCounts()"
     [selected]="selectedCardTypeIds()"
-    [hideZero]="false"
+    [hideZero]="onSaleOnly()"
     (selectionChange)="onCardTypesChange($event)"
   />
   <app-sort-select
@@ -43,7 +41,7 @@
 }
 
 @if (!loading() && cards().length === 0) {
-  <p class="cards-empty">Aún no hay cartas en stock. Vuelve pronto.</p>
+  <p class="cards-empty">{{ emptyText() }}</p>
 }
 
 <div class="cards-grid">

@@ -61,9 +61,16 @@ export class CardTypesService {
     );
   }
 
-  /** Query-aware facet counts for /buscar. Uncached. */
-  async countsForQuery(q: string): Promise<Map<string, number>> {
-    const { data, error } = await (this.supabase.client as any).rpc('search_card_type_counts', { q });
+  /** Query-aware facet counts for /buscar. Uncached. Pass `onSaleOnly` to
+   *  scope the counts to discounted products (the /ofertas facet). */
+  async countsForQuery(
+    q: string,
+    opts: { onSaleOnly?: boolean } = {},
+  ): Promise<Map<string, number>> {
+    const { data, error } = await (this.supabase.client as any).rpc('search_card_type_counts', {
+      q,
+      p_on_sale_only: opts.onSaleOnly ?? false,
+    });
     if (error) throw error;
     return new Map<string, number>(
       ((data ?? []) as { card_type_id: string; in_stock_count: number | string }[]).map((r) => [

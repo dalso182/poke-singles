@@ -77,9 +77,16 @@ export class SetsService {
   /** Per-set counts of products matching a customer search query. Used by
    *  the /buscar Set filter so the counts reflect only what's in the
    *  current result set (faceted search). Not cached — the query changes
-   *  with every keystroke / sort change. */
-  async countsForQuery(q: string): Promise<Map<string, number>> {
-    const { data, error } = await (this.supabase.client as any).rpc('search_set_counts', { q });
+   *  with every keystroke / sort change. Pass `onSaleOnly` to scope the
+   *  counts to discounted products (the /ofertas facet). */
+  async countsForQuery(
+    q: string,
+    opts: { onSaleOnly?: boolean } = {},
+  ): Promise<Map<string, number>> {
+    const { data, error } = await (this.supabase.client as any).rpc('search_set_counts', {
+      q,
+      p_on_sale_only: opts.onSaleOnly ?? false,
+    });
     if (error) throw error;
     return new Map<string, number>(
       ((data ?? []) as { set_id: string; in_stock_count: number | string }[]).map((r) => [
