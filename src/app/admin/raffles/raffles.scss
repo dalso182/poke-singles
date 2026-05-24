@@ -18,6 +18,12 @@
 
 .raffles__table {
   width: 100%;
+
+  .mat-mdc-header-cell,
+  .mat-mdc-cell {
+    padding-top: 14px;
+    padding-bottom: 14px;
+  }
 }
 
 .raffles__thumb {
