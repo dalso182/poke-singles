@@ -6,6 +6,10 @@
 /out-tsc
 /bazel-out
 
+# Downloaded TCGdex card images (scripts/fetch-card-images.mjs). Large, self-hosted
+# via scripts/upload-images.mjs — never committed and never part of a dist deploy.
+/card-images
+
 # Node
 /node_modules
 npm-debug.log

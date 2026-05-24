@@ -188,6 +188,7 @@ async function upsertSet(tcgdexSet) {
     series: tcgdexSet.serie?.name ?? null,
     release_date: tcgdexSet.releaseDate ?? null,
     symbol_image_url: tcgdexSet.symbol ? `${tcgdexSet.symbol}.webp` : null,
+    printed_total: tcgdexSet.cardCount?.official ?? null,
   };
   if (DRY_RUN) {
     console.log(`[seed] (dry-run) upsert set ${payload.code}`);

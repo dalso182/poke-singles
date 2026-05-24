@@ -20,7 +20,9 @@
     "functions:dev": "npx --yes supabase functions deploy --project-ref dhslfridsjdmhwzrgebv",
     "functions:prod": "npx --yes supabase functions deploy --project-ref <prod-ref>",
     "seed:dev": "node scripts/seed-products.mjs",
-    "seed:dev:clean": "node scripts/seed-products.mjs --clean"
+    "seed:dev:clean": "node scripts/seed-products.mjs --clean",
+    "images:fetch": "node scripts/fetch-card-images.mjs",
+    "images:upload": "node scripts/upload-images.mjs"
   },
   "private": true,
   "packageManager": "npm@10.8.2",

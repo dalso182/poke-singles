@@ -58,6 +58,7 @@ export class Sets {
     series: [''],
     release_date: [''],
     symbol_image_url: [''],
+    printed_total: [''],
   });
 
   protected readonly grouped = computed<SeriesGroup[]>(() => {
@@ -124,6 +125,7 @@ export class Sets {
         series: raw.series || null,
         release_date: raw.release_date || null,
         symbol_image_url: raw.symbol_image_url || null,
+        printed_total: raw.printed_total ? Number(raw.printed_total) : null,
       });
       this.addForm.reset({
         code: '',
@@ -131,6 +133,7 @@ export class Sets {
         series: '',
         release_date: '',
         symbol_image_url: '',
+        printed_total: '',
       });
       this.addOpen.set(false);
       await this.refresh();

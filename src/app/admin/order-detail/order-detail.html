@@ -30,6 +30,24 @@
   }
 
   @if (order(); as o) {
+    @if (o.status === 'cancelled') {
+      <div class="order-detail__cancel-banner" role="status">
+        <mat-icon class="order-detail__cancel-banner-icon">cancel</mat-icon>
+        <div class="order-detail__cancel-banner-body">
+          <strong>Pedido cancelado.</strong>
+          @if (o.cancellation_notes) {
+            <span class="order-detail__cancel-banner-notes">
+              {{ o.cancellation_notes }}
+            </span>
+          } @else {
+            <span class="order-detail__cancel-banner-notes muted">
+              Sin nota.
+            </span>
+          }
+        </div>
+      </div>
+    }
+
     <mat-card class="order-detail__panel order-detail__actions">
       <mat-card-content class="order-detail__actions-row">
         @if (forwardAction(); as action) {

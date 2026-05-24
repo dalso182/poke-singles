@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
+import { SocialIcons } from '../../shared/social-icons/social-icons';
 
 interface NavItem {
   readonly label: string;
@@ -12,7 +13,7 @@ interface NavItem {
 
 @Component({
   selector: 'app-navigation',
-  imports: [RouterLink, RouterLinkActive, MatListModule, MatIconModule],
+  imports: [RouterLink, RouterLinkActive, MatListModule, MatIconModule, SocialIcons],
   templateUrl: './navigation.html',
   styleUrl: './navigation.scss',
 })

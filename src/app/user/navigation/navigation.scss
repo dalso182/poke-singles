@@ -1,9 +1,29 @@
 :host {
-  display: block;
+  display: flex;
+  flex-direction: column;
   width: 240px;
+  height: 100%;
+}
+
+mat-nav-list {
+  flex: 1 1 auto;
 }
 
 .active-link {
   background-color: var(--mat-sys-secondary-container);
   color: var(--mat-sys-on-secondary-container);
+}
+
+// Social icons only show up on mobile — desktop already has them in the header.
+.nav-social {
+  display: none;
+}
+
+@media (max-width: 599px) {
+  .nav-social {
+    display: flex;
+    justify-content: center;
+    padding: 16px 8px;
+    border-top: 1px solid var(--border-subtle);
+  }
 }

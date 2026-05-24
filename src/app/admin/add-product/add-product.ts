@@ -30,11 +30,13 @@ import {
   type ImagePickerResult,
 } from '../../shared/image-picker/image-picker-dialog';
 import { ImageBrowserService } from '../../core/images/image-browser.service';
+import { resolveHostedSrc, tcgdexImageToHostedPath } from '../../core/images/card-image-url';
 import { CategoriesService } from '../../core/catalog/categories.service';
 import { CardTypesService } from '../../core/catalog/card-types.service';
 import { ProductsService } from '../../core/catalog/products.service';
 import { SetsService } from '../../core/catalog/sets.service';
 import { TcgdexCardsService } from '../../core/catalog/tcgdex-cards.service';
+import { AppSettingsService } from '../../core/settings/app-settings.service';
 import { LocalStorageService } from '../../core/storage/local-storage.service';
 import {
   CONDITION_OPTIONS,
@@ -75,6 +77,7 @@ export class AddProduct {
   private readonly cardTypes = inject(CardTypesService);
   private readonly sets = inject(SetsService);
   private readonly tcgdexCards = inject(TcgdexCardsService);
+  private readonly settings = inject(AppSettingsService);
   private readonly snack = inject(MatSnackBar);
   private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
@@ -91,6 +94,16 @@ export class AddProduct {
   protected readonly selectedCardTypeIds = signal<Set<string>>(new Set());
   private readonly setsById = signal<Map<string, SetRow>>(new Map());
   protected readonly selectedCard = signal<Card | null>(null);
+  // True once the form preview <img> fails to load — i.e. the hosted image
+  // isn't on our server yet. Reset on each card selection.
+  protected readonly previewMissing = signal(false);
+
+  /** Direct TCGplayer product URL for the picked card, when it has pricing data. */
+  protected readonly tcgplayerUrl = computed(() => {
+    const card = this.selectedCard();
+    const id = card ? this.firstTcgplayerVariant(card)?.productId : null;
+    return id ? `https://www.tcgplayer.com/product/${id}` : null;
+  });
   protected readonly manualMode = signal(false);
   protected readonly saving = signal(false);
   protected readonly hasCategories = computed(() => this.categoriesList().length > 0);
@@ -187,12 +200,14 @@ export class AddProduct {
 
   protected async onCardSelected(card: Card): Promise<void> {
     this.selectedCard.set(card);
+    this.previewMissing.set(false);
     this.form.patchValue({
       name: card.name,
       pokemon_name: card.name, // user can refine; trigger lowercase+trims server-side
       rarity: card.rarity ?? '',
       card_number: card.localId ?? '',
-      image_url: card.image ? `${card.image}/high.webp` : '',
+      // Point at our self-hosted copy (relative path), not the TCGdex CDN.
+      image_url: tcgdexImageToHostedPath(card.image),
       variant: this.defaultVariantFor(card),
       tcgdex_id: card.id,
       illustrator: card.illustrator ?? null,
@@ -210,6 +225,20 @@ export class AddProduct {
     if (!this.form.get('category_id')!.value) {
       const singles = this.categoriesList().find((c) => c.slug.toLowerCase() === 'singles');
       if (singles) this.form.patchValue({ category_id: singles.id });
+    }
+    // Suggest a price from the TCGplayer market value (USD) × exchange rate,
+    // rounded up to the nearest ₡100. Skipped silently if the card has no
+    // pricing or no exchange rate is configured — the admin can still type it.
+    try {
+      const usd = this.tcgplayerMarketUsd(card);
+      if (usd) {
+        const { exchange_rate_usd_crc: rate } = await this.settings.get();
+        if (rate && rate > 0) {
+          this.form.patchValue({ price: Math.ceil((usd * rate) / 100) * 100 });
+        }
+      }
+    } catch {
+      // Best-effort suggestion; ignore and leave the price for manual entry.
     }
     // Cache the full TCGdex payload so the detail page can read attacks /
     // abilities / weaknesses without round-tripping to TCGdex on every view.
@@ -233,6 +262,29 @@ export class AddProduct {
     }
   }
 
+  /** First TCGplayer variant object on the card payload (skips metadata keys). */
+  private firstTcgplayerVariant(
+    card: Card,
+  ): { productId?: number | null; marketPrice?: number | null } | null {
+    const tp = (card as unknown as {
+      pricing?: { tcgplayer?: Record<string, unknown> };
+    }).pricing?.tcgplayer;
+    if (!tp) return null;
+    for (const [key, val] of Object.entries(tp)) {
+      if (key === 'updated' || key === 'unit') continue;
+      if (val && typeof val === 'object') {
+        return val as { productId?: number | null; marketPrice?: number | null };
+      }
+    }
+    return null;
+  }
+
+  /** First available TCGplayer market price (USD) on the card payload, if any. */
+  private tcgplayerMarketUsd(card: Card): number | null {
+    const price = this.firstTcgplayerVariant(card)?.marketPrice;
+    return typeof price === 'number' && price > 0 ? price : null;
+  }
+
   /** Pre-fill with the first available variant, preferring `normal` if present. */
   private defaultVariantFor(card: Card): VariantCode | '' {
     const variants = (card as { variants?: Partial<Record<VariantCode, boolean>> }).variants;
@@ -240,6 +292,15 @@ export class AddProduct {
     if (variants.normal) return 'normal';
     const first = (Object.keys(variants) as VariantCode[]).find((k) => variants[k] === true);
     return first ?? '';
+  }
+
+  /**
+   * Resolve the image_url control value to a loadable preview src: relative
+   * `/card-images/...` paths are made absolute against the hosted origin so the
+   * preview loads from our server; picker/manual absolute URLs pass through.
+   */
+  protected previewSrc(value: string | null | undefined): string | null {
+    return value ? resolveHostedSrc(value, this.imageBrowser.origin) : null;
   }
 
   protected openImagePicker(): void {

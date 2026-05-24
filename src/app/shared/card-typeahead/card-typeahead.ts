@@ -85,11 +85,14 @@ export class CardTypeahead {
 
   protected async onSelect(event: MatAutocompleteSelectedEvent): Promise<void> {
     const resume = event.option.value as CardResume;
-    console.log('[card-typeahead] selected resume:', resume);
     this.searchControl.setValue(resume.name, { emitEvent: false });
     try {
-      const detail = await this.tcgdex.client.card.get(resume.id);
-      console.log('[card-typeahead] full card detail:', detail);
+      // Use the low-level `fetch` (raw JSON) rather than `card.get` (a Card
+      // model instance): the model carries an `sdk` back-reference to the
+      // TCGdex client, which makes JSON.stringify throw a circular-structure
+      // error when the payload is later cached to `tcgdex_cards`. This mirrors
+      // the seed script's path (scripts/seed-products.mjs).
+      const detail = await this.tcgdex.client.fetch('cards', resume.id);
       if (detail) this.cardSelected.emit(detail);
     } catch (err) {
       console.error('[card-typeahead] failed to fetch card detail:', err);

@@ -123,3 +123,46 @@
 .spacer {
   flex: 1 1 auto;
 }
+
+// Mobile: drop the wordmark, let the search field claim the freed space,
+// and hide the social-icons cluster + search-help button to keep the row
+// compact on narrow screens.
+@media (max-width: 599px) {
+  .app-header {
+    padding: 0 4px;
+  }
+
+  .brand {
+    margin-left: 0;
+    gap: 4px;
+  }
+
+  .brand-logo {
+    height: 48px;
+    width: 48px;
+  }
+
+  .brand-eyebrow--inline {
+    display: none;
+  }
+
+  .header-left {
+    flex: 0 0 auto;
+  }
+
+  .search-field {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+  }
+
+  .search-help,
+  .header-social {
+    display: none;
+  }
+
+  .header-actions {
+    flex: 0 0 auto;
+    gap: 0;
+  }
+}

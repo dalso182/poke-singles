@@ -47,8 +47,8 @@ export class Header {
   // field the search-text bucket covers so customers know what to type.
   protected readonly searchHelpText =
     'Busca por: nombre de la carta, Pokémon, set (nombre o código), número, ' +
-    'tipo (Fire, Water…), ilustrador, marca de regulación o tipo de carta ' +
-    '(Full Art, VMAX…).';
+    'número/total (p. ej. 15/151), tipo (Fire, Water…), ilustrador, marca ' +
+    'de regulación o tipo de carta (Full Art, VMAX…).';
 
   protected onSearch(query: string): void {
     const q = query.trim();

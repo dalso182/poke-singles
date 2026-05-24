@@ -339,6 +339,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          cancellation_notes: string | null
           coupon_code: string | null
           coupon_id: string | null
           created_at: string
@@ -362,6 +363,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          cancellation_notes?: string | null
           coupon_code?: string | null
           coupon_id?: string | null
           created_at?: string
@@ -385,6 +387,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          cancellation_notes?: string | null
           coupon_code?: string | null
           coupon_id?: string | null
           created_at?: string
@@ -625,6 +628,7 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          printed_total: number | null
           release_date: string | null
           series: string | null
           symbol_image_url: string | null
@@ -634,6 +638,7 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          printed_total?: number | null
           release_date?: string | null
           series?: string | null
           symbol_image_url?: string | null
@@ -643,6 +648,7 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          printed_total?: number | null
           release_date?: string | null
           series?: string | null
           symbol_image_url?: string | null
@@ -684,6 +690,45 @@ export type Database = {
           price?: number
           requires_address?: boolean
           sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      static_pages: {
+        Row: {
+          content: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          is_published: boolean
+          meta_description: string | null
+          slug: string
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_published?: boolean
+          meta_description?: string | null
+          slug: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_published?: boolean
+          meta_description?: string | null
+          slug?: string
+          sort_order?: number
+          title?: string
           updated_at?: string
         }
         Relationships: []
@@ -829,6 +874,7 @@ export type Database = {
       products_search: {
         Row: {
           card_number: string | null
+          card_type_ids: string[] | null
           card_type_names: string | null
           category: string | null
           category_id: string | null
@@ -851,6 +897,7 @@ export type Database = {
           set_code: string | null
           set_id: string | null
           set_name: string | null
+          set_printed_total: number | null
           slug: string | null
           stage: string | null
           tcgdex_id: string | null
@@ -893,6 +940,13 @@ export type Database = {
         Returns: number
       }
       cancel_order: { Args: { p_order_id: string }; Returns: Json }
+      card_type_product_counts: {
+        Args: never
+        Returns: {
+          card_type_id: string
+          in_stock_count: number
+        }[]
+      }
       get_guest_order: {
         Args: { p_email: string; p_order_id: string }
         Returns: Json
@@ -900,10 +954,25 @@ export type Database = {
       get_my_applied_coupon: { Args: never; Returns: Json }
       is_admin: { Args: never; Returns: boolean }
       place_order: { Args: { p_input: Json }; Returns: Json }
+      search_card_type_counts: {
+        Args: { q: string }
+        Returns: {
+          card_type_id: string
+          in_stock_count: number
+        }[]
+      }
       search_products: {
-        Args: { limit_n?: number; offset_n?: number; q: string; sort?: string }
+        Args: {
+          card_type_ids?: string[]
+          limit_n?: number
+          offset_n?: number
+          q: string
+          set_ids?: string[]
+          sort?: string
+        }
         Returns: {
           card_number: string | null
+          card_type_ids: string[] | null
           card_type_names: string | null
           category: string | null
           category_id: string | null
@@ -926,6 +995,7 @@ export type Database = {
           set_code: string | null
           set_id: string | null
           set_name: string | null
+          set_printed_total: number | null
           slug: string | null
           stage: string | null
           tcgdex_id: string | null
@@ -939,6 +1009,20 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      search_set_counts: {
+        Args: { q: string }
+        Returns: {
+          in_stock_count: number
+          set_id: string
+        }[]
+      }
+      set_product_counts: {
+        Args: never
+        Returns: {
+          in_stock_count: number
+          set_id: string
+        }[]
       }
       validate_coupon: {
         Args: { p_code: string; p_subtotal: number }

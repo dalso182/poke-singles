@@ -1,0 +1,26 @@
+<h2 mat-dialog-title>Cancelar pedido {{ data.shortRef }}</h2>
+
+<mat-dialog-content class="cancel-order-dialog__body">
+  <p class="cancel-order-dialog__lead">
+    Se restaurará el stock de cada ítem. Opcionalmente puedes anotar el motivo
+    para referencia futura.
+  </p>
+  <mat-form-field appearance="outline" class="cancel-order-dialog__field">
+    <mat-label>Motivo (opcional)</mat-label>
+    <textarea
+      matInput
+      [formControl]="notes"
+      rows="3"
+      maxlength="500"
+      placeholder="p. ej. Cliente cambió de opinión, sin stock, pago no recibido…"
+      cdkFocusInitial
+    ></textarea>
+  </mat-form-field>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="onCancel()">Volver</button>
+  <button mat-flat-button color="warn" type="button" (click)="onConfirm()">
+    Cancelar pedido
+  </button>
+</mat-dialog-actions>

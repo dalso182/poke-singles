@@ -18,6 +18,6 @@ export const environment = {
   images: {
     // Absolute URL to the read-only PHP listing endpoint. Empty string =
     // picker disabled. See environment.ts for setup.
-    listUrl: 'https://poke-singles.com/card-images/list-images.php',
+    listUrl: 'https://new.poke-singles.com/card-images/list-images.php',
   },
 };

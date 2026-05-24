@@ -26,6 +26,6 @@ export const environment = {
     // becomes manual-only). The PHP file lives at server/list-images.php in
     // the repo and must be uploaded once to the root of the images folder
     // on SiteGround.
-    listUrl: 'https://poke-singles.com/card-images/list-images.php',
+    listUrl: 'https://new.poke-singles.com/card-images/list-images.php',
   },
 };

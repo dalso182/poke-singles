@@ -1,0 +1,65 @@
+<button
+  type="button"
+  mat-stroked-button
+  class="set-filter__trigger"
+  [class.set-filter__trigger--active]="selectedCount() > 0"
+  [matMenuTriggerFor]="panel"
+>
+  <span class="set-filter__label">Set</span>
+  @if (selectedCount() > 0) {
+    <span class="set-filter__count">{{ selectedCount() }}</span>
+  }
+  <mat-icon class="set-filter__chevron">expand_more</mat-icon>
+</button>
+
+<mat-menu #panel="matMenu" class="set-filter__menu" xPosition="after">
+  <div class="set-filter__panel" (click)="$event.stopPropagation()">
+    <div class="set-filter__search">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="set-filter__search-field">
+        <mat-icon matPrefix>search</mat-icon>
+        <input
+          matInput
+          type="text"
+          [formControl]="searchControl"
+          placeholder="Find a Set"
+          autocomplete="off"
+          (click)="$event.stopPropagation()"
+          (keydown)="$event.stopPropagation()"
+        />
+      </mat-form-field>
+    </div>
+
+    <div class="set-filter__list">
+      @for (s of visibleSets(); track s.id) {
+        <div
+          class="set-filter__item"
+          [class.set-filter__item--checked]="isChecked(s.id)"
+          (click)="$event.stopPropagation()"
+        >
+          <mat-checkbox
+            class="set-filter__item-check"
+            [checked]="isChecked(s.id)"
+            (change)="toggle(s.id, $event.checked)"
+            (click)="$event.stopPropagation()"
+          />
+          @if (s.symbolUrl) {
+            <img [src]="s.symbolUrl" alt="" class="set-filter__item-thumb" />
+          } @else {
+            <span class="set-filter__item-thumb set-filter__item-thumb--empty"></span>
+          }
+          <span class="set-filter__item-name">{{ s.name }}</span>
+          <span class="brand-mono set-filter__item-code">{{ s.code }}</span>
+          <span class="set-filter__item-count">({{ s.count }})</span>
+        </div>
+      } @empty {
+        <p class="set-filter__empty">Sin resultados</p>
+      }
+    </div>
+
+    @if (selectedCount() > 0) {
+      <div class="set-filter__footer">
+        <button mat-button type="button" (click)="clear($event)">Limpiar selección</button>
+      </div>
+    }
+  </div>
+</mat-menu>

@@ -34,6 +34,42 @@
   margin: 0;
 }
 
+// Small banner above the action bar when status === 'cancelled'. Shows the
+// cancellation note (or "Sin nota.") so admins immediately see why.
+.order-detail__cancel-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--brand-red) 8%, var(--surface-card));
+  border: 1px solid color-mix(in srgb, var(--brand-red) 30%, transparent);
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.order-detail__cancel-banner-icon {
+  color: var(--brand-red);
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.order-detail__cancel-banner-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+
+  strong { color: var(--brand-red); }
+}
+
+.order-detail__cancel-banner-notes {
+  color: var(--text-primary);
+}
+
 .order-detail__not-found {
   max-width: 480px;
 

@@ -136,6 +136,81 @@ Deploy details: `scripts/deploy.mjs` reads `.env.local` (gitignored — copy fro
 > `new.poke-singles.com` are allowed. To deploy to the live site at cutover, edit
 > `BLOCKED_REMOTE_PATHS` in the script deliberately.
 
+## Self-hosting card images
+
+The store can serve its own card art instead of hotlinking the TCGdex CDN
+(`assets.tcgdex.net`). Two scripts download every image once and host them on
+SiteGround under `/card-images/`:
+
+- `npm run images:fetch` → `scripts/fetch-card-images.mjs` — download into a gitignored
+  `./card-images/` (outside `dist/`, so a normal `deploy:*` can never sweep it up).
+- `npm run images:upload` → `scripts/upload-images.mjs` — tar + SSH-extract to
+  `<remote>/card-images`, reusing the same `.env.local` creds as deploy.
+
+**Folder layout:** `card-images/<serie>/<set>/<localId>.webp`
+(e.g. `card-images/swsh/swsh3/136.webp`). Reference images by **relative** path
+(`/card-images/...`) so they keep resolving when `new.poke-singles.com` is later
+promoted to the main domain.
+
+### Run it
+
+```bash
+# 1. See exact set/card counts + size estimate (downloads nothing).
+node scripts/fetch-card-images.mjs --dry-run
+
+# 2. Download all English sets (~1.5–2.5 GB). Resumable — re-run to fill gaps / retry.
+npm run images:fetch
+
+# 3. Upload: dry-run to confirm the target, then ship.
+node scripts/upload-images.mjs --dry-run
+npm run images:upload
+```
+
+When a new set is released later, fetch and upload just that set:
+
+```bash
+node scripts/fetch-card-images.mjs --sets=ME05
+node scripts/upload-images.mjs --sets=ME05
+```
+
+### Flags
+
+**`fetch-card-images.mjs`**
+
+| Flag | Effect |
+|---|---|
+| `--dry-run` | List + size estimate, write nothing |
+| `--sets=a,b` | Only these TCGdex set IDs (the "new set" path) |
+| `--series=a,b` | Only sets in these serie IDs |
+| `--quality=high\|low` | Card quality (default `high`) |
+| `--ext=webp\|png\|jpg` | Image format (default `webp`) |
+| `--logos` | Also download each set's logo + symbol |
+| `--concurrency=8` / `--out=./card-images` | Parallelism / output root |
+
+**`upload-images.mjs`**
+
+| Flag | Effect |
+|---|---|
+| `--dry-run` | Show target + file count, connect to nothing |
+| `--sets=a,b` | Upload only those set subtrees |
+| `--env=dev\|prod` | Which `.env.local` creds + remote dir (default `dev`) |
+| `--sftp` | Per-file SFTP instead of tar + extract (slower fallback) |
+
+### Notes
+
+- **Resumable & safe:** files that already exist (non-empty) are skipped; downloads write
+  to `*.part` then rename, so an interrupted run never leaves a truncated "complete" file.
+- **No DB writes.** Set `products.image_url` to the relative `/card-images/...` path
+  yourself — the scripts never touch Supabase.
+- Cards with no community scan are recorded in `card-images/missing-images.json` (not
+  treated as failures); a set→serie name map is written to `card-images/_manifest.json`.
+- **Target dir** defaults to `<DEV_DEPLOY_REMOTE_DIR>/card-images` (or
+  `<DEPLOY_REMOTE_DIR>/card-images` with `--env=prod`); override with `IMAGES_REMOTE_DIR`
+  in `.env.local`. The uploader refuses any path not ending in `/card-images`, so it can
+  never write into the app root.
+- Requires `tar` on PATH (built into Windows 10/11, macOS, Linux) for the default
+  transport, and SSH access to SiteGround (already used by deploy).
+
 ## Brand theme
 
 The Vault Light system is implemented across these files:
@@ -228,12 +303,15 @@ across the latest SwSh + SV sets) — see `npm run seed:dev{,:clean}`.
 ## Repo layout
 
 ```
-src/                      Angular app (see CLAUDE.md → Project layout)
-scripts/deploy.mjs        SiteGround SFTP deploy
-supabase/                 Scaffolded; migrations + functions empty
-brand-guidelines.html     Design system spec — open in browser
-.env.local.example        Template for SFTP creds (copy to .env.local)
-CLAUDE.md                 Deeper notes for working in this repo with Claude Code
+src/                          Angular app (see CLAUDE.md → Project layout)
+scripts/deploy.mjs            SiteGround SFTP deploy
+scripts/seed-products.mjs     Seed the dev catalog from TCGdex
+scripts/fetch-card-images.mjs Download TCGdex card images → ./card-images/
+scripts/upload-images.mjs     Upload ./card-images/ to SiteGround
+supabase/                     Scaffolded; migrations + functions empty
+brand-guidelines.html         Design system spec — open in browser
+.env.local.example            Template for SFTP creds (copy to .env.local)
+CLAUDE.md                     Deeper notes for working in this repo with Claude Code
 ```
 
 ## Conventions

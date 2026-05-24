@@ -1,0 +1,47 @@
+<div class="product-card" [class.product-card--featured]="featured()">
+  <a
+    [routerLink]="['/products', card().slug]"
+    class="card-image"
+    [appCardPreview]="card()"
+  >
+    @if (card().image_url) {
+      <img [src]="card().image_url" [alt]="card().name" loading="lazy" />
+    }
+  </a>
+  <div class="card-info">
+    <a [routerLink]="['/products', card().slug]" class="card-name">{{ card().name }}</a>
+    <div class="card-meta">{{ metaLine(card()) }}</div>
+    <div class="card-stock">
+      {{ card().quantity }} disponible{{ card().quantity > 1 ? 's' : '' }}
+    </div>
+    <div class="card-price">₡{{ card().price | number: '1.0-0' }}</div>
+    <button
+      mat-flat-button
+      class="add-btn"
+      type="button"
+      [disabled]="card().quantity === 0"
+      (click)="onAddToCart($event)"
+    >
+      {{ card().quantity === 0 ? 'Agotada' : 'Añadir' }}
+    </button>
+    <div class="card-corner">
+      @if (typeIconUrl(card().type1); as src) {
+        <img [src]="src" [alt]="card().type1" class="type-icon" />
+      }
+      @if (typeIconUrl(card().type2); as src) {
+        <img [src]="src" [alt]="card().type2" class="type-icon" />
+      }
+      @if (card().condition) {
+        <button
+          type="button"
+          [class]="conditionClass(card().condition) + ' condition-pill--btn'"
+          (click)="openConditionsInfo($event)"
+          matTooltip="Ver guía de condiciones"
+          aria-label="Ver guía de condiciones"
+        >
+          {{ card().condition }}
+        </button>
+      }
+    </div>
+  </div>
+</div>

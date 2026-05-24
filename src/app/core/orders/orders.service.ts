@@ -243,10 +243,11 @@ export class OrdersService {
 
   async cancelOrder(
     id: string,
+    notes?: string | null,
   ): Promise<{ ok: true } | { ok: false; error: string }> {
     const { data, error } = await (this.supabase.client as any).rpc(
       'cancel_order',
-      { p_order_id: id },
+      { p_order_id: id, p_notes: notes ?? null },
     );
     if (error) {
       console.error('[orders] cancelOrder', error);

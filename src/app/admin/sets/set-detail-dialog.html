@@ -24,6 +24,10 @@
       <mat-label>Fecha de release</mat-label>
       <input matInput type="date" formControlName="release_date" />
     </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Total impreso</mat-label>
+      <input matInput type="number" min="1" formControlName="printed_total" placeholder="151" />
+    </mat-form-field>
     <mat-form-field appearance="outline" class="set-detail__full">
       <mat-label>URL del símbolo</mat-label>
       <input matInput formControlName="symbol_image_url" />

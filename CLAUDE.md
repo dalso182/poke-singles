@@ -232,13 +232,46 @@ discount but no `coupon_redemptions` rows are written.
 
 ## Customer search
 
-`/buscar?q=…&sort=…` runs against the `products_search` view (joins products
-+ sets + aggregated card_types into a single `search_text` column;
-`description` is OMITTED to avoid flavor-text false positives) via the
-`search_products(q, sort, limit_n, offset_n)` RPC. Sort modes: `relevance`
-(default with a query — name-prefix > pokemon-prefix > name-substring > rest,
-then most recent), `price-asc`, `price-desc`, `recent` (default browse).
-Header search input + magnifier → `Router.navigate(['/buscar'], { q })`.
+`/buscar?q=…&sort=…&sets=…&types=…` runs against the `products_search`
+view (joins products + sets + aggregated card_types into a single
+`search_text` column; `description` is OMITTED to avoid flavor-text false
+positives) via the
+`search_products(q, sort, limit_n, offset_n, set_ids, card_type_ids)` RPC.
+Sort modes: `relevance` (default with a query — name-prefix >
+pokemon-prefix > name-substring > rest, then most recent), `price-asc`,
+`price-desc`, `recent` (default browse). The optional `set_ids uuid[]`
+narrows results to products whose `set_id` is in the array;
+`card_type_ids uuid[]` does the same against
+`products_search.card_type_ids` via array overlap (`&&`). Both filter
+arrays are passed as `null` when no filter is active.
+
+`/products` also routes through this RPC (with `q=''` and `sort='recent'`)
+so both pages share one data path, one filter pipeline, and one row shape
+(`ProductSearchRow`). Header search input + magnifier →
+`Router.navigate(['/buscar'], { q })`.
+
+## Card tile + grids
+
+The product tile is one shared component: **`<app-product-card>`** at
+`src/app/shared/product-card/`. Three pages render it — `/products`
+(`user/card-list/`), `/buscar` (`user/search-results/`), and the home
+rails (`home/`). All tile-level visuals (image, badges, name, meta line,
+stock, price, "Añadir" button, condition pill, type icons) and behaviors
+(add-to-cart, condition-info dialog) live in the shared component, so
+tile changes touch exactly one file.
+
+The input shape is `ProductCardItem` (in `catalog.types.ts`) — a minimal
+structural subset satisfied by both `ProductSearchRow` (listings, from the
+`search_products` RPC) and `ProductListRow` (home, from `products.list()`
+with a sets embed). No mapping at call sites: `<app-product-card [card]="row" />`.
+Pass `[featured]="true"` to apply the `.product-card--featured` modifier
+(used on the home "Destacadas" rail).
+
+The `.cards-grid` wrapper stays on each page — listings use
+`minmax(400px, 1fr)`, home rails use `minmax(320px, 1fr)` for denser tiles.
+Filter chrome (`<app-filters-bar>` + `<app-set-filter>` + `<app-card-type-filter>`)
+also stays on each page since `/products` and `/buscar` share a filter
+contract but home doesn't.
 
 The public-read RLS predicate on `products` was tightened to also require
 `price > 0` (matching `active = true` and `quantity > 0`), so $0 listings are

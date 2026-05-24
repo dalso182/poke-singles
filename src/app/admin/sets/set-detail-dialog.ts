@@ -50,6 +50,7 @@ export class SetDetailDialog {
     series: [this.data.series ?? ''],
     release_date: [this.data.release_date ?? ''],
     symbol_image_url: [this.data.symbol_image_url ?? ''],
+    printed_total: [this.data.printed_total != null ? String(this.data.printed_total) : ''],
   });
 
   protected async onSave(): Promise<void> {
@@ -62,6 +63,7 @@ export class SetDetailDialog {
         series: raw.series || null,
         release_date: raw.release_date || null,
         symbol_image_url: raw.symbol_image_url || null,
+        printed_total: raw.printed_total ? Number(raw.printed_total) : null,
       });
       this.snack.open('Set actualizado', 'OK', { duration: 3000 });
       this.dialogRef.close({ kind: 'updated', row });

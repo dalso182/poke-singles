@@ -72,11 +72,12 @@
 }
 
 .add-product__thumb {
-  width: 80px;
-  height: 112px;
-  object-fit: cover;
+  width: 180px;
+  height: 252px;
+  object-fit: contain;
   border-radius: 4px;
   display: block;
+  flex-shrink: 0;
 }
 
 .add-product__grid {
@@ -113,6 +114,12 @@
 
 .add-product__tcgdex-meta {
   color: var(--mat-sys-on-surface-variant);
+  font-size: 12px;
+  margin: 4px 0;
+}
+
+.add-product__preview-missing {
+  color: var(--mat-sys-error);
   font-size: 12px;
   margin: 4px 0;
 }

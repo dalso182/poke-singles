@@ -1,34 +1,37 @@
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
-import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { ProductsService } from '../../core/catalog/products.service';
-import { CartService } from '../../core/cart/cart.service';
-import { CardConditionsDialogService } from '../../core/preview/card-conditions-dialog.service';
-import type { ProductSearchRow, SortKey } from '../../core/catalog/catalog.types';
-import { CardPreviewDirective } from '../../shared/card-preview/card-preview.directive';
+import { SetsService } from '../../core/catalog/sets.service';
+import { CardTypesService } from '../../core/catalog/card-types.service';
+import type {
+  CardTypeRow,
+  ProductSearchRow,
+  SetRow,
+  SortKey,
+} from '../../core/catalog/catalog.types';
+import { FiltersBar } from '../../shared/filters-bar/filters-bar';
+import { SetFilter } from '../../shared/filters-bar/set-filter/set-filter';
+import { CardTypeFilter } from '../../shared/filters-bar/card-type-filter/card-type-filter';
+import { ProductCard } from '../../shared/product-card/product-card';
 
 @Component({
   selector: 'app-search-results',
   imports: [
     RouterLink,
-    DecimalPipe,
-    MatButtonModule,
-    MatCardModule,
     MatFormFieldModule,
     MatIconModule,
     MatProgressBarModule,
     MatSelectModule,
     MatSnackBarModule,
-    MatTooltipModule,
-    CardPreviewDirective,
+    FiltersBar,
+    SetFilter,
+    CardTypeFilter,
+    ProductCard,
   ],
   templateUrl: './search-results.html',
   styleUrl: './search-results.scss',
@@ -38,17 +41,28 @@ export class SearchResults {
   // "browse via /buscar with no params" case.
   readonly q = input<string>('');
   readonly sort = input<string>('');
+  /** Comma-separated set ids; parsed into selectedSetIds. */
+  readonly sets = input<string | undefined>(undefined);
+  /** Comma-separated card-type ids; parsed into selectedCardTypeIds. */
+  readonly types = input<string | undefined>(undefined);
 
   private readonly products = inject(ProductsService);
-  private readonly cart = inject(CartService);
+  private readonly setsService = inject(SetsService);
+  private readonly cardTypesService = inject(CardTypesService);
   private readonly router = inject(Router);
   private readonly snack = inject(MatSnackBar);
-  private readonly conditionsDialog = inject(CardConditionsDialogService);
 
-  protected openConditionsInfo(event: MouseEvent): void {
-    event.stopPropagation();
-    void this.conditionsDialog.open();
-  }
+  protected readonly allSets = signal<SetRow[]>([]);
+  protected readonly setCounts = signal<Map<string, number>>(new Map());
+  protected readonly allCardTypes = signal<CardTypeRow[]>([]);
+  protected readonly cardTypeCounts = signal<Map<string, number>>(new Map());
+
+  protected readonly selectedSetIds = computed<string[]>(() => parseIdList(this.sets()));
+  protected readonly selectedCardTypeIds = computed<string[]>(() => parseIdList(this.types()));
+
+  protected readonly anyFilterActive = computed<boolean>(
+    () => this.selectedSetIds().length > 0 || this.selectedCardTypeIds().length > 0,
+  );
 
   protected readonly results = signal<ProductSearchRow[]>([]);
   protected readonly loading = signal(false);
@@ -66,17 +80,63 @@ export class SearchResults {
   protected readonly hasQuery = computed(() => this.q().trim().length > 0);
 
   constructor() {
+    void this.loadFilterMeta();
     effect(() => {
       const q = this.q().trim();
       const sort = this.normalizedSort();
-      void this.fetch(q, sort);
+      const setIds = this.selectedSetIds();
+      const cardTypeIds = this.selectedCardTypeIds();
+      void this.fetch(q, sort, setIds, cardTypeIds);
+      // Refresh facet counts whenever the search query changes — counts
+      // exclude the set/card-type filters on purpose so other options
+      // remain meaningful when one is already selected.
+      void this.refreshCounts(q);
     });
   }
 
-  private async fetch(q: string, sort: SortKey): Promise<void> {
+  private async loadFilterMeta(): Promise<void> {
+    try {
+      const [sets, cardTypes] = await Promise.all([
+        this.setsService.list(),
+        this.cardTypesService.list({ activeOnly: true }),
+      ]);
+      this.allSets.set(sets);
+      this.allCardTypes.set(cardTypes);
+    } catch {
+      // Best-effort — the page still works without the filter chrome.
+    }
+  }
+
+  /** Query-aware facet counts: counts of products matching the current
+   *  search query, grouped by set / card_type. */
+  private async refreshCounts(q: string): Promise<void> {
+    try {
+      const [setCounts, cardTypeCounts] = await Promise.all([
+        this.setsService.countsForQuery(q),
+        this.cardTypesService.countsForQuery(q),
+      ]);
+      this.setCounts.set(setCounts);
+      this.cardTypeCounts.set(cardTypeCounts);
+    } catch {
+      // Leave previous counts in place if the fetch fails.
+    }
+  }
+
+  private async fetch(
+    q: string,
+    sort: SortKey,
+    setIds: string[],
+    cardTypeIds: string[],
+  ): Promise<void> {
     this.loading.set(true);
     try {
-      const { rows } = await this.products.search({ q, sort, pageSize: 60 });
+      const { rows } = await this.products.search({
+        q,
+        sort,
+        pageSize: 60,
+        setIds: setIds.length > 0 ? setIds : undefined,
+        cardTypeIds: cardTypeIds.length > 0 ? cardTypeIds : undefined,
+      });
       this.results.set(rows);
     } catch (err) {
       this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
@@ -88,45 +148,30 @@ export class SearchResults {
 
   protected onSortChange(next: SortKey): void {
     void this.router.navigate(['/buscar'], {
-      queryParams: { q: this.q() || null, sort: next },
+      queryParams: { sort: next },
       queryParamsHandling: 'merge',
     });
   }
 
-  protected metaLine(card: ProductSearchRow): string {
-    const parts = [
-      card.set_name ?? '',
-      card.rarity ?? '',
-      card.card_number ? `#${card.card_number}` : '',
-    ].filter((s) => s && s.length > 0);
-    return parts.join(', ');
+  protected onSetsChange(ids: string[]): void {
+    void this.router.navigate(['/buscar'], {
+      queryParams: { sets: ids.length > 0 ? ids.join(',') : null },
+      queryParamsHandling: 'merge',
+    });
   }
 
-  protected conditionClass(condition: string | null): string {
-    if (!condition) return '';
-    const code = condition.toUpperCase();
-    let modifier = '';
-    if (code === 'NM') modifier = 'condition-pill--nm';
-    else if (code === 'LP') modifier = 'condition-pill--lp';
-    else if (code === 'MP') modifier = 'condition-pill--mp';
-    else if (code === 'HP' || code === 'DMG') modifier = 'condition-pill--hp';
-    return `condition-pill ${modifier}`;
+  protected onCardTypesChange(ids: string[]): void {
+    void this.router.navigate(['/buscar'], {
+      queryParams: { types: ids.length > 0 ? ids.join(',') : null },
+      queryParamsHandling: 'merge',
+    });
   }
 
-  /** Resolve a TCGdex type name to the matching icon under assets/images/types.
-   *  TCGdex uses "Lightning"/"Darkness"/"Metal" while the icons are named
-   *  electric/dark/steel — handle both spellings. */
-  protected typeIconUrl(type: string | null): string | null {
-    if (!type) return null;
-    const slug = TYPE_ICON_MAP[type];
-    return slug ? `assets/images/types/${slug}.png` : null;
-  }
-
-  protected async onAddToCart(card: ProductSearchRow, event: Event): Promise<void> {
-    event.preventDefault();
-    event.stopPropagation();
-    const { error } = await this.cart.add(card.id, 1);
-    if (error) this.snack.open(error, 'OK', { duration: 4000 });
+  protected onClearAllFilters(): void {
+    void this.router.navigate(['/buscar'], {
+      queryParams: { sets: null, types: null },
+      queryParamsHandling: 'merge',
+    });
   }
 
   private errorMessage(err: unknown): string {
@@ -137,19 +182,8 @@ export class SearchResults {
   }
 }
 
-const TYPE_ICON_MAP: Record<string, string> = {
-  Colorless: 'colorless',
-  Darkness: 'dark',
-  Dark: 'dark',
-  Dragon: 'dragon',
-  Lightning: 'electric',
-  Electric: 'electric',
-  Fairy: 'fairy',
-  Fighting: 'fighting',
-  Fire: 'fire',
-  Grass: 'grass',
-  Psychic: 'psychic',
-  Metal: 'steel',
-  Steel: 'steel',
-  Water: 'water',
-};
+function parseIdList(raw: string | undefined): string[] {
+  const s = (raw ?? '').trim();
+  if (!s) return [];
+  return s.split(',').map((x) => x.trim()).filter(Boolean);
+}

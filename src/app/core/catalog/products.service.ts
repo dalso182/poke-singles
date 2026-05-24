@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { SupabaseService } from '../supabase/supabase.service';
 import type {
   ProductInsert,
+  ProductListRow,
   ProductRow,
   ProductSearchRow,
   ProductUpdate,
@@ -12,6 +13,9 @@ export interface ProductListParams {
   search?: string;
   categoryId?: string;
   setId?: string;
+  /** Multi-set filter — products whose set_id is in this list. Wins over
+   *  `setId` when both are provided. Empty array is ignored. */
+  setIds?: string[];
   featured?: boolean;
   includeInactive?: boolean;
   page?: number;
@@ -19,7 +23,7 @@ export interface ProductListParams {
 }
 
 export interface ProductListResult {
-  rows: ProductRow[];
+  rows: ProductListRow[];
   total: number;
   page: number;
   pageSize: number;
@@ -28,6 +32,13 @@ export interface ProductListResult {
 export interface ProductSearchParams {
   q: string;
   sort: SortKey;
+  /** Multi-set filter — same shape as ProductListParams.setIds, narrows
+   *  search to products whose set_id is in this list. Empty / undefined =
+   *  no filter. */
+  setIds?: string[];
+  /** Multi-card-type filter — array-overlap against products_search.card_type_ids.
+   *  Empty / undefined = no filter. */
+  cardTypeIds?: string[];
   page?: number;
   pageSize?: number;
 }
@@ -50,7 +61,7 @@ export class ProductsService {
 
     let query = (this.supabase.client as any)
       .from('products')
-      .select('*', { count: 'exact' })
+      .select('*, sets(name, printed_total)', { count: 'exact' })
       .order('last_restocked_at', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: false })
       .range(from, to);
@@ -61,7 +72,9 @@ export class ProductsService {
     if (params.categoryId) {
       query = query.eq('category_id', params.categoryId);
     }
-    if (params.setId) {
+    if (params.setIds && params.setIds.length > 0) {
+      query = query.in('set_id', params.setIds);
+    } else if (params.setId) {
       query = query.eq('set_id', params.setId);
     }
     if (params.featured !== undefined) {
@@ -79,12 +92,16 @@ export class ProductsService {
 
     const { data, error, count } = await query;
     if (error) throw error;
-    return {
-      rows: (data ?? []) as ProductRow[],
-      total: count ?? 0,
-      page,
-      pageSize,
-    };
+    // Flatten the postgrest embed (`sets: { name, printed_total } | null`)
+    // into top-level `set_name` / `set_printed_total` so callers stay flat.
+    const rows: ProductListRow[] = ((data ?? []) as (ProductRow & {
+      sets: { name: string | null; printed_total: number | null } | null;
+    })[]).map(({ sets, ...rest }) => ({
+      ...rest,
+      set_name: sets?.name ?? null,
+      set_printed_total: sets?.printed_total ?? null,
+    }));
+    return { rows, total: count ?? 0, page, pageSize };
   }
 
   async get(id: string): Promise<ProductRow | null> {
@@ -147,6 +164,12 @@ export class ProductsService {
       sort: params.sort,
       limit_n: pageSize,
       offset_n: (page - 1) * pageSize,
+      set_ids: params.setIds && params.setIds.length > 0 ? params.setIds : null,
+      // Param prefixed `p_` in SQL to avoid clashing with the
+      // products_search.card_type_ids column of the same name inside the
+      // function body.
+      p_card_type_ids:
+        params.cardTypeIds && params.cardTypeIds.length > 0 ? params.cardTypeIds : null,
     });
     if (error) throw error;
     return { rows: (data ?? []) as ProductSearchRow[], page, pageSize };

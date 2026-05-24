@@ -19,6 +19,11 @@ export class SetsService {
   private readonly cache = signal<SetRow[] | null>(null);
   private inflight: Promise<SetRow[]> | null = null;
 
+  // Per-set in-stock product counts, cached for the session. Refresh on
+  // explicit invalidate() (admins rarely flip product availability).
+  private readonly countsCache = signal<Map<string, number> | null>(null);
+  private countsInflight: Promise<Map<string, number>> | null = null;
+
   async list(options: { refresh?: boolean } = {}): Promise<SetRow[]> {
     if (!options.refresh) {
       const cached = this.cache();
@@ -37,6 +42,51 @@ export class SetsService {
 
   invalidate(): void {
     this.cache.set(null);
+    this.countsCache.set(null);
+  }
+
+  /** Per-set in-stock product counts. Returns a Map keyed by set_id;
+   *  sets with zero in-stock products are absent from the map. */
+  async counts(options: { refresh?: boolean } = {}): Promise<Map<string, number>> {
+    if (!options.refresh) {
+      const cached = this.countsCache();
+      if (cached) return cached;
+      if (this.countsInflight) return this.countsInflight;
+    }
+    this.countsInflight = this.fetchCounts();
+    try {
+      const map = await this.countsInflight;
+      this.countsCache.set(map);
+      return map;
+    } finally {
+      this.countsInflight = null;
+    }
+  }
+
+  private async fetchCounts(): Promise<Map<string, number>> {
+    const { data, error } = await (this.supabase.client as any).rpc('set_product_counts');
+    if (error) throw error;
+    return new Map<string, number>(
+      ((data ?? []) as { set_id: string; in_stock_count: number | string }[]).map((r) => [
+        r.set_id,
+        Number(r.in_stock_count),
+      ]),
+    );
+  }
+
+  /** Per-set counts of products matching a customer search query. Used by
+   *  the /buscar Set filter so the counts reflect only what's in the
+   *  current result set (faceted search). Not cached — the query changes
+   *  with every keystroke / sort change. */
+  async countsForQuery(q: string): Promise<Map<string, number>> {
+    const { data, error } = await (this.supabase.client as any).rpc('search_set_counts', { q });
+    if (error) throw error;
+    return new Map<string, number>(
+      ((data ?? []) as { set_id: string; in_stock_count: number | string }[]).map((r) => [
+        r.set_id,
+        Number(r.in_stock_count),
+      ]),
+    );
   }
 
   private async fetch(): Promise<SetRow[]> {
@@ -127,6 +177,7 @@ export class SetsService {
       series: hydrated.series,
       release_date: hydrated.releaseDate,
       symbol_image_url: hydrated.symbolImageUrl,
+      printed_total: hydrated.printedTotal,
     });
   }
 
@@ -172,6 +223,7 @@ export class SetsService {
           series: hydrated.series,
           release_date: hydrated.releaseDate,
           symbol_image_url: hydrated.symbolImageUrl,
+          printed_total: hydrated.printedTotal,
         });
         added++;
       } catch {
@@ -186,17 +238,31 @@ export class SetsService {
     series: string | null;
     releaseDate: string | null;
     symbolImageUrl: string | null;
+    printedTotal: number | null;
   }> {
     try {
       const full: TcgdexSet | null = await this.tcgdex.client.set.get(code);
-      if (!full) return { series: null, releaseDate: null, symbolImageUrl: null };
+      if (!full) {
+        return {
+          series: null,
+          releaseDate: null,
+          symbolImageUrl: null,
+          printedTotal: null,
+        };
+      }
       return {
         series: (full as any).serie?.name ?? null,
         releaseDate: (full as any).releaseDate ?? null,
         symbolImageUrl: full.symbol ? `${full.symbol}.webp` : null,
+        printedTotal: (full as any).cardCount?.official ?? null,
       };
     } catch {
-      return { series: null, releaseDate: null, symbolImageUrl: null };
+      return {
+        series: null,
+        releaseDate: null,
+        symbolImageUrl: null,
+        printedTotal: null,
+      };
     }
   }
 }

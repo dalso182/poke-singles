@@ -46,6 +46,7 @@ export interface SetRow {
   series: string | null;
   release_date: string | null;
   symbol_image_url: string | null;
+  printed_total: number | null;
   created_at: string;
 }
 
@@ -55,6 +56,7 @@ export interface SetInsert {
   series?: string | null;
   release_date?: string | null;
   symbol_image_url?: string | null;
+  printed_total?: number | null;
 }
 
 export type SetUpdate = Partial<Omit<SetInsert, 'code'>>;
@@ -118,6 +120,33 @@ export interface ProductInsert {
   legal_standard?: boolean | null;
   legal_expanded?: boolean | null;
   featured?: boolean;
+}
+
+/** ProductRow plus the joined set's name + printed_total. Returned by
+ *  ProductsService.list() so callers that render card meta lines (home
+ *  rails, admin tables) don't need a separate fetch for the set. */
+export interface ProductListRow extends ProductRow {
+  set_name: string | null;
+  set_printed_total: number | null;
+}
+
+/** Minimal shape the shared <app-product-card> needs. Structurally satisfied
+ *  by ProductSearchRow (listings) and ProductListRow (home rails) — no
+ *  mapping required at call sites. */
+export interface ProductCardItem {
+  id: string;
+  slug: string;
+  name: string;
+  image_url: string | null;
+  illustrator: string | null;
+  price: number;
+  quantity: number;
+  card_number: string | null;
+  set_name: string | null;
+  set_printed_total: number | null;
+  condition: string | null;
+  type1: string | null;
+  type2: string | null;
 }
 
 export interface TcgdexCardRow {
@@ -333,6 +362,7 @@ export interface OrderRow {
   coupon_code: string | null;
   total: number;
   customer_notes: string | null;
+  cancellation_notes: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -411,7 +441,9 @@ export interface ProductSearchRow {
   set_name: string | null;
   set_code: string | null;
   card_type_names: string;
+  card_type_ids: string[];
   search_text: string;
+  set_printed_total: number | null;
 }
 
 export type SortKey = 'relevance' | 'price-asc' | 'price-desc' | 'recent';

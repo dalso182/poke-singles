@@ -25,6 +25,20 @@ export interface ImageListing {
 export class ImageBrowserService {
   private readonly endpoint = environment.images?.listUrl ?? '';
 
+  /**
+   * Origin (scheme + host) serving the `/card-images/` tree, derived from the
+   * listing endpoint. Used to resolve relative image paths for display. Empty
+   * when the picker is unconfigured or the URL is malformed.
+   */
+  readonly origin = (() => {
+    if (!this.endpoint) return '';
+    try {
+      return new URL(this.endpoint).origin;
+    } catch {
+      return '';
+    }
+  })();
+
   isEnabled(): boolean {
     return this.endpoint.length > 0;
   }

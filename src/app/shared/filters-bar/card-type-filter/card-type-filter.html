@@ -1,0 +1,50 @@
+<button
+  type="button"
+  mat-stroked-button
+  class="card-type-filter__trigger"
+  [class.card-type-filter__trigger--active]="selectedCount() > 0"
+  [matMenuTriggerFor]="panel"
+>
+  <span class="card-type-filter__label">Rareza</span>
+  @if (selectedCount() > 0) {
+    <span class="card-type-filter__count">{{ selectedCount() }}</span>
+  }
+  <mat-icon class="card-type-filter__chevron">expand_more</mat-icon>
+</button>
+
+<mat-menu #panel="matMenu" class="card-type-filter__menu" xPosition="after">
+  <div class="card-type-filter__panel" (click)="$event.stopPropagation()">
+    <div class="card-type-filter__header">
+      <span class="card-type-filter__header-label">Rareza</span>
+    </div>
+
+    @if (visibleTypes().length === 0) {
+      <p class="card-type-filter__empty">Sin resultados</p>
+    } @else {
+      <div class="card-type-filter__grid">
+        @for (t of visibleTypes(); track t.id) {
+          <div
+            class="card-type-filter__item"
+            [class.card-type-filter__item--checked]="isChecked(t.id)"
+            (click)="$event.stopPropagation()"
+          >
+            <mat-checkbox
+              [checked]="isChecked(t.id)"
+              (change)="toggle(t.id, $event.checked)"
+              (click)="$event.stopPropagation()"
+            >
+              <span class="card-type-filter__item-name">{{ t.name }}</span>
+            </mat-checkbox>
+            <span class="card-type-filter__item-count">({{ t.count }})</span>
+          </div>
+        }
+      </div>
+    }
+
+    @if (selectedCount() > 0) {
+      <div class="card-type-filter__footer">
+        <button mat-button type="button" (click)="clear($event)">Limpiar selección</button>
+      </div>
+    }
+  </div>
+</mat-menu>

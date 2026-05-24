@@ -1,65 +1,108 @@
-import { Component, inject, signal } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
-import { RouterLink } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
+import { Component, computed, effect, inject, input, signal } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { ProductsService } from '../../core/catalog/products.service';
 import { SetsService } from '../../core/catalog/sets.service';
-import { CartService } from '../../core/cart/cart.service';
-import { CardConditionsDialogService } from '../../core/preview/card-conditions-dialog.service';
-import type { ProductRow, SetRow } from '../../core/catalog/catalog.types';
-import { CardPreviewDirective } from '../../shared/card-preview/card-preview.directive';
+import { CardTypesService } from '../../core/catalog/card-types.service';
+import type {
+  CardTypeRow,
+  ProductSearchRow,
+  SetRow,
+} from '../../core/catalog/catalog.types';
+import { FiltersBar } from '../../shared/filters-bar/filters-bar';
+import { SetFilter } from '../../shared/filters-bar/set-filter/set-filter';
+import { CardTypeFilter } from '../../shared/filters-bar/card-type-filter/card-type-filter';
+import { ProductCard } from '../../shared/product-card/product-card';
 
 @Component({
   selector: 'app-card-list',
   imports: [
     RouterLink,
-    DecimalPipe,
-    MatCardModule,
-    MatButtonModule,
     MatIconModule,
     MatProgressBarModule,
     MatSnackBarModule,
-    MatTooltipModule,
-    CardPreviewDirective,
+    FiltersBar,
+    SetFilter,
+    CardTypeFilter,
+    ProductCard,
   ],
   templateUrl: './card-list.html',
   styleUrl: './card-list.scss',
 })
 export class CardList {
+  /** URL-bound via withComponentInputBinding(). Comma-separated set ids. */
+  readonly sets = input<string | undefined>(undefined);
+  /** Comma-separated card-type ids. */
+  readonly types = input<string | undefined>(undefined);
+
   private readonly products = inject(ProductsService);
-  private readonly sets = inject(SetsService);
-  private readonly cart = inject(CartService);
+  private readonly setsService = inject(SetsService);
+  private readonly cardTypesService = inject(CardTypesService);
   private readonly snack = inject(MatSnackBar);
-  private readonly conditionsDialog = inject(CardConditionsDialogService);
+  private readonly router = inject(Router);
 
-  protected openConditionsInfo(event: MouseEvent): void {
-    event.stopPropagation();
-    void this.conditionsDialog.open();
-  }
-
-  protected readonly cards = signal<ProductRow[]>([]);
-  protected readonly setsById = signal<Map<string, SetRow>>(new Map());
+  protected readonly cards = signal<ProductSearchRow[]>([]);
+  protected readonly allSets = signal<SetRow[]>([]);
+  protected readonly setCounts = signal<Map<string, number>>(new Map());
+  protected readonly allCardTypes = signal<CardTypeRow[]>([]);
+  protected readonly cardTypeCounts = signal<Map<string, number>>(new Map());
   protected readonly loading = signal(true);
 
+  protected readonly selectedSetIds = computed<string[]>(() =>
+    parseIdList(this.sets()),
+  );
+  protected readonly selectedCardTypeIds = computed<string[]>(() =>
+    parseIdList(this.types()),
+  );
+
+  protected readonly anyFilterActive = computed<boolean>(
+    () => this.selectedSetIds().length > 0 || this.selectedCardTypeIds().length > 0,
+  );
+
   constructor() {
-    this.bootstrap();
+    void this.bootstrapMeta();
+
+    // Refetch whenever either filter selection changes (initial render
+    // included).
+    effect(() => {
+      const setIds = this.selectedSetIds();
+      const cardTypeIds = this.selectedCardTypeIds();
+      void this.fetchProducts(setIds, cardTypeIds);
+    });
   }
 
-  private async bootstrap(): Promise<void> {
+  private async bootstrapMeta(): Promise<void> {
     try {
-      // RLS already filters to (active = true and quantity > 0) for the anon
-      // client, so we don't need to repeat those constraints here.
-      const [{ rows }, sets] = await Promise.all([
-        this.products.list({ pageSize: 60 }),
-        this.sets.list(),
+      const [sets, setCounts, cardTypes, cardTypeCounts] = await Promise.all([
+        this.setsService.list(),
+        this.setsService.counts(),
+        this.cardTypesService.list({ activeOnly: true }),
+        this.cardTypesService.counts(),
       ]);
+      this.allSets.set(sets);
+      this.setCounts.set(setCounts);
+      this.allCardTypes.set(cardTypes);
+      this.cardTypeCounts.set(cardTypeCounts);
+    } catch (err) {
+      this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
+    }
+  }
+
+  private async fetchProducts(setIds: string[], cardTypeIds: string[]): Promise<void> {
+    this.loading.set(true);
+    try {
+      // Route through the search RPC even with q='' so we get one row
+      // shape + one filter pipeline shared with /buscar.
+      const { rows } = await this.products.search({
+        q: '',
+        sort: 'recent',
+        pageSize: 60,
+        setIds: setIds.length > 0 ? setIds : undefined,
+        cardTypeIds: cardTypeIds.length > 0 ? cardTypeIds : undefined,
+      });
       this.cards.set(rows);
-      this.setsById.set(new Map(sets.map((s) => [s.id, s])));
     } catch (err) {
       this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
     } finally {
@@ -67,46 +110,25 @@ export class CardList {
     }
   }
 
-  protected setName(setId: string | null): string {
-    if (!setId) return '';
-    return this.setsById().get(setId)?.name ?? '';
+  protected onSetsChange(ids: string[]): void {
+    void this.router.navigate(['/products'], {
+      queryParams: { sets: ids.length > 0 ? ids.join(',') : null },
+      queryParamsHandling: 'merge',
+    });
   }
 
-  protected metaLine(card: ProductRow): string {
-    const setName = this.setName(card.set_id);
-    const parts = [
-      setName,
-      card.rarity ?? '',
-      card.card_number ? `#${card.card_number}` : '',
-    ].filter((s) => s && s.length > 0);
-    return parts.join(', ');
+  protected onCardTypesChange(ids: string[]): void {
+    void this.router.navigate(['/products'], {
+      queryParams: { types: ids.length > 0 ? ids.join(',') : null },
+      queryParamsHandling: 'merge',
+    });
   }
 
-  protected conditionClass(condition: string | null): string {
-    if (!condition) return '';
-    const code = condition.toUpperCase();
-    let modifier = '';
-    if (code === 'NM') modifier = 'condition-pill--nm';
-    else if (code === 'LP') modifier = 'condition-pill--lp';
-    else if (code === 'MP') modifier = 'condition-pill--mp';
-    else if (code === 'HP' || code === 'DMG') modifier = 'condition-pill--hp';
-    return `condition-pill ${modifier}`;
-  }
-
-  /** Resolve a TCGdex type name to the matching icon under assets/images/types.
-   *  TCGdex uses "Lightning"/"Darkness"/"Metal" while the icons are named
-   *  electric/dark/steel — handle both spellings. */
-  protected typeIconUrl(type: string | null): string | null {
-    if (!type) return null;
-    const slug = TYPE_ICON_MAP[type];
-    return slug ? `assets/images/types/${slug}.png` : null;
-  }
-
-  protected async onAddToCart(card: ProductRow, event: Event): Promise<void> {
-    event.preventDefault();
-    event.stopPropagation();
-    const { error } = await this.cart.add(card.id, 1);
-    if (error) this.snack.open(error, 'OK', { duration: 4000 });
+  protected onClearAllFilters(): void {
+    void this.router.navigate(['/products'], {
+      queryParams: { sets: null, types: null },
+      queryParamsHandling: 'merge',
+    });
   }
 
   private errorMessage(err: unknown): string {
@@ -117,19 +139,8 @@ export class CardList {
   }
 }
 
-const TYPE_ICON_MAP: Record<string, string> = {
-  Colorless: 'colorless',
-  Darkness: 'dark',
-  Dark: 'dark',
-  Dragon: 'dragon',
-  Lightning: 'electric',
-  Electric: 'electric',
-  Fairy: 'fairy',
-  Fighting: 'fighting',
-  Fire: 'fire',
-  Grass: 'grass',
-  Psychic: 'psychic',
-  Metal: 'steel',
-  Steel: 'steel',
-  Water: 'water',
-};
+function parseIdList(raw: string | undefined): string[] {
+  const s = (raw ?? '').trim();
+  if (!s) return [];
+  return s.split(',').map((x) => x.trim()).filter(Boolean);
+}

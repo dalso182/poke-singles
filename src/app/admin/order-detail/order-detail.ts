@@ -3,6 +3,7 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -16,6 +17,11 @@ import type {
   OrderRow,
   OrderStatus,
 } from '../../core/catalog/catalog.types';
+import {
+  CancelOrderDialog,
+  type CancelOrderDialogData,
+  type CancelOrderDialogResult,
+} from './cancel-order-dialog';
 
 const PICK_STORAGE_PREFIX = 'pick:order:';
 
@@ -53,6 +59,7 @@ export class OrderDetail implements OnInit {
   private readonly router = inject(Router);
   private readonly snack = inject(MatSnackBar);
   private readonly storage = inject(LocalStorageService);
+  private readonly dialog = inject(MatDialog);
 
   protected readonly order = signal<OrderRow | null>(null);
   protected readonly items = signal<OrderItemRow[]>([]);
@@ -150,20 +157,32 @@ export class OrderDetail implements OnInit {
   protected async onCancel(): Promise<void> {
     const order = this.order();
     if (!order || this.working()) return;
-    if (!confirm(
-      `¿Cancelar el pedido ${this.shortRef()}? Se restaurará el stock de cada ítem.`,
-    )) {
-      return;
-    }
+
+    const ref = this.dialog.open<
+      CancelOrderDialog,
+      CancelOrderDialogData,
+      CancelOrderDialogResult
+    >(CancelOrderDialog, {
+      data: { shortRef: this.shortRef() },
+      autoFocus: 'first-tabbable',
+      restoreFocus: true,
+    });
+    const notes = await new Promise<CancelOrderDialogResult | undefined>((resolve) =>
+      ref.afterClosed().subscribe(resolve),
+    );
+    // Null = dismissed via "Volver" or backdrop. Empty string = confirmed
+    // with no note (sent through as null to the RPC).
+    if (notes === null || notes === undefined) return;
+
     this.working.set(true);
     try {
-      const result = await this.orders.cancelOrder(order.id);
+      const result = await this.orders.cancelOrder(order.id, notes || null);
       if (!result.ok) {
         this.snack.open(this.cancelErrorCopy(result.error), 'OK', { duration: 5000 });
         return;
       }
       this.snack.open('Pedido cancelado y stock restaurado.', 'OK', { duration: 4000 });
-      // Refresh from DB so the UI reflects the new status.
+      // Refresh from DB so the UI reflects the new status + notes.
       const refreshed = await this.orders.getOrderForAdmin(order.id);
       if (refreshed) {
         this.order.set(refreshed.order);
