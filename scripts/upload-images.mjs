@@ -10,6 +10,7 @@
 //   npm run images:upload                          — upload ALL of ./card-images to the dev domain
 //   node scripts/upload-images.mjs --dry-run       — show target + file count, connect to nothing
 //   node scripts/upload-images.mjs --sets=ME05     — upload only those set subtrees (pairs with fetch --sets)
+//   node scripts/upload-images.mjs --endpoints-only — push ONLY server/*.php (no image tree, no tar). Fast.
 //   node scripts/upload-images.mjs --env=prod      — use prod creds (DEPLOY_*) instead of dev (DEV_DEPLOY_*)
 //   node scripts/upload-images.mjs --sftp          — per-file SFTP instead of tarball+extract (slower, no remote tar)
 //
@@ -40,6 +41,7 @@ const FLAG_SET = new Set(ARGS);
 const DRY_RUN = FLAG_SET.has('--dry-run');
 const USE_SFTP = FLAG_SET.has('--sftp');
 const NO_PHP = FLAG_SET.has('--no-php');
+const ENDPOINTS_ONLY = FLAG_SET.has('--endpoints-only');
 
 function argValue(prefix, fallback = null) {
   const a = ARGS.find((x) => x.startsWith(prefix));
@@ -172,6 +174,27 @@ function sshExec(sftp, cmd) {
   });
 }
 
+// All PHP endpoints under server/ (list-images.php, upload-image.php, and any we
+// add later). Globbed so new endpoints ship automatically.
+async function endpointPhpFiles() {
+  const dir = path.join(REPO_ROOT, 'server');
+  if (!existsSync(dir)) return [];
+  const entries = await readdir(dir);
+  return entries
+    .filter((n) => n.toLowerCase().endsWith('.php'))
+    .sort()
+    .map((n) => path.join(dir, n));
+}
+
+// fastPut every server/*.php into the card-images root.
+async function uploadEndpoints(sftp, remoteDir) {
+  for (const php of await endpointPhpFiles()) {
+    const name = path.basename(php);
+    log(`uploading ${name}…`);
+    await sftp.fastPut(php, `${remoteDir}/${name}`);
+  }
+}
+
 function buildTarball(archivePath, members) {
   // Run tar with cwd=OUT_DIR so archive entries are relative (./swsh/swsh3/...),
   // which extract cleanly inside the remote card-images dir.
@@ -184,9 +207,35 @@ function buildTarball(archivePath, members) {
 // ---- Main ----------------------------------------------------------------
 
 async function main() {
-  if (!existsSync(OUT_DIR)) abort(`output dir not found: ${OUT_DIR}. Run images:fetch first.`);
-
   const remoteDir = resolveRemoteDir();
+
+  // Fast path: push only the server/*.php endpoints — no image tree, no tar.
+  if (ENDPOINTS_ONLY) {
+    const auth = await buildAuthOptions();
+    const names = (await endpointPhpFiles()).map((f) => path.basename(f));
+    log(`env=${ENV} endpoints-only${DRY_RUN ? '  (dry run)' : ''}`);
+    log(`remote: ${remoteDir}`);
+    log(`endpoints: ${names.join(', ') || '(no .php found in server/)'}`);
+    if (DRY_RUN) {
+      log(`dry run — would connect to ${auth.username}@${auth.host}:${auth.port} and upload ${names.length} file(s).`);
+      return;
+    }
+    const sftp = new SftpClient();
+    try {
+      log(`connecting to ${auth.username}@${auth.host}:${auth.port}…`);
+      await sftp.connect(auth);
+      await sftp.mkdir(remoteDir, true).catch(() => {}); // idempotent
+      await uploadEndpoints(sftp, remoteDir);
+      log('done.');
+    } catch (err) {
+      abort(`upload failed: ${err?.message ?? err}`);
+    } finally {
+      await sftp.end().catch(() => {});
+    }
+    return;
+  }
+
+  if (!existsSync(OUT_DIR)) abort(`output dir not found: ${OUT_DIR}. Run images:fetch first.`);
 
   // Work out what to upload: specific set subtrees or the whole tree.
   let members; // tar members, relative to OUT_DIR
@@ -239,13 +288,9 @@ async function main() {
       await sshExec(sftp, `cd '${remoteDir}' && tar -xzf '${path.basename(archivePath)}' && rm -f '${path.basename(archivePath)}'`);
     }
 
-    // Drop the image-picker endpoint into the card-images root (full uploads only).
+    // Drop the image-picker endpoints into the card-images root (full uploads only).
     if (!SETS_FILTER && !NO_PHP) {
-      const php = path.join(REPO_ROOT, 'server', 'list-images.php');
-      if (existsSync(php)) {
-        log('uploading list-images.php…');
-        await sftp.fastPut(php, `${remoteDir}/list-images.php`);
-      }
+      await uploadEndpoints(sftp, remoteDir);
     }
 
     log('done.');

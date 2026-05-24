@@ -22,7 +22,8 @@
     "seed:dev": "node scripts/seed-products.mjs",
     "seed:dev:clean": "node scripts/seed-products.mjs --clean",
     "images:fetch": "node scripts/fetch-card-images.mjs",
-    "images:upload": "node scripts/upload-images.mjs"
+    "images:upload": "node scripts/upload-images.mjs",
+    "images:upload:endpoints": "node scripts/upload-images.mjs --endpoints-only"
   },
   "private": true,
   "packageManager": "npm@10.8.2",

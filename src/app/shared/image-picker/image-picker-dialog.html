@@ -28,7 +28,25 @@
   </mat-form-field>
 </div>
 
-@if (loading()) {
+@if (creatingFolder()) {
+  <div class="image-picker__new-folder">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="image-picker__new-folder-field">
+      <mat-label>Nombre de la carpeta</mat-label>
+      <input
+        matInput
+        [formControl]="folderNameControl"
+        (keyup.enter)="confirmNewFolder()"
+        placeholder="p. ej. accesorios"
+      />
+    </mat-form-field>
+    <button mat-flat-button type="button" (click)="confirmNewFolder()" [disabled]="loading() || uploading()">
+      Crear
+    </button>
+    <button mat-button type="button" (click)="cancelNewFolder()">Cancelar</button>
+  </div>
+}
+
+@if (loading() || uploading()) {
   <mat-progress-bar mode="indeterminate" />
 }
 
@@ -67,6 +85,7 @@
           <button
             type="button"
             class="image-picker__cell image-picker__cell--file"
+            [class.image-picker__cell--recent]="file.path === recentlyUploaded()"
             (click)="pick(file)"
             [attr.aria-label]="'Seleccionar ' + file.name"
           >
@@ -84,14 +103,37 @@
 
 <mat-dialog-actions class="image-picker__actions">
   <button
-    mat-stroked-button
+    mat-icon-button
     type="button"
     (click)="goUp()"
-    [disabled]="loading() || (listing()?.parent ?? null) === null"
+    matTooltip="Carpeta superior"
+    aria-label="Carpeta superior"
+    [disabled]="loading() || uploading() || (listing()?.parent ?? null) === null"
   >
     <mat-icon>arrow_upward</mat-icon>
-    Subir
   </button>
+
+  <button
+    mat-stroked-button
+    type="button"
+    (click)="creatingFolder.set(true)"
+    [disabled]="loading() || uploading() || creatingFolder()"
+  >
+    <mat-icon>create_new_folder</mat-icon>
+    Nueva carpeta
+  </button>
+
+  <input #fileInput type="file" accept="image/*" hidden (change)="onFileSelected($event)" />
+  <button
+    mat-flat-button
+    type="button"
+    (click)="fileInput.click()"
+    [disabled]="loading() || uploading()"
+  >
+    <mat-icon>upload</mat-icon>
+    Subir imagen
+  </button>
+
   <span class="image-picker__spacer"></span>
-  <button mat-button type="button" (click)="onCancel()">Cancelar</button>
+  <button mat-button type="button" (click)="onCancel()" [disabled]="uploading()">Cancelar</button>
 </mat-dialog-actions>

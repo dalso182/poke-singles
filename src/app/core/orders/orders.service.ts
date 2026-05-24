@@ -7,6 +7,7 @@ import type {
   PaymentMethod,
   PlaceOrderInput,
   PlaceOrderResult,
+  RaffleBuyerRow,
 } from '../catalog/catalog.types';
 
 /** WhatsApp sentinel value stored in `orders.payment_proof_url` when the
@@ -219,6 +220,47 @@ export class OrdersService {
       order_items: OrderItemRow[];
     };
     return { order: orderRow as OrderRow, items: order_items ?? [] };
+  }
+
+  /** Admin read: every order that bought entries for a raffle product, newest
+   *  first. One row per order (cart lines are unique per product). RLS
+   *  (order_items_admin_all / orders_admin_all) returns all rows for admins. */
+  async listRaffleBuyers(productId: string): Promise<RaffleBuyerRow[]> {
+    const { data, error } = await (this.supabase.client as any)
+      .from('order_items')
+      .select(
+        'quantity, orders(id, order_number, customer_name, customer_phone, customer_email, status, created_at)',
+      )
+      .eq('product_id', productId);
+    if (error) {
+      console.error('[orders] listRaffleBuyers', error);
+      throw error;
+    }
+    type Row = {
+      quantity: number;
+      orders: {
+        id: string;
+        order_number: number;
+        customer_name: string;
+        customer_phone: string;
+        customer_email: string;
+        status: OrderStatus;
+        created_at: string;
+      } | null;
+    };
+    return ((data ?? []) as Row[])
+      .filter((r) => r.orders != null)
+      .map((r) => ({
+        order_id: r.orders!.id,
+        order_number: r.orders!.order_number,
+        customer_name: r.orders!.customer_name,
+        customer_phone: r.orders!.customer_phone,
+        customer_email: r.orders!.customer_email,
+        status: r.orders!.status,
+        quantity: r.quantity,
+        created_at: r.orders!.created_at,
+      }))
+      .sort((a, b) => b.created_at.localeCompare(a.created_at));
   }
 
   /** Forward status transition (pending → paid → shipped → completed).

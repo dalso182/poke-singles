@@ -1,0 +1,46 @@
+// Page chrome only — the raffle tile lives in <app-raffle-card>
+// (src/app/shared/raffle-card/).
+
+.rifas-header {
+  margin-bottom: 24px;
+
+  h1 {
+    font-family: var(--font-brand);
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    color: var(--text-primary);
+    margin: 4px 0 8px 0;
+  }
+
+  .lead {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin: 0;
+    max-width: 60ch;
+  }
+}
+
+mat-tab-group {
+  margin-top: 8px;
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  justify-content: start;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+@media (max-width: 599px) {
+  .cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rifas-empty {
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 48px 0;
+}

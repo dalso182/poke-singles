@@ -39,7 +39,7 @@
     </header>
     <div class="cards-grid">
       @for (card of featured(); track card.id) {
-        <app-product-card [card]="card" [featured]="true" />
+        <app-product-card [card]="card" />
       }
     </div>
   </section>

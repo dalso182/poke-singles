@@ -1,0 +1,119 @@
+<div
+  class="raffle-card"
+  [class.product-card--on-sale]="isOnSale() && raffle().status === 'scheduled'"
+  [class.raffle-card--sold-out]="soldOut() && raffle().status === 'scheduled'"
+  [class.raffle-card--done]="raffle().status !== 'scheduled'"
+>
+  <div class="card-image">
+    @if (raffle().image_url) {
+      <img [src]="raffle().image_url" [alt]="raffle().name" loading="lazy" />
+    }
+    @if (raffle().status === 'drawn') {
+      <span class="raffle-badge raffle-badge--won">SORTEADA</span>
+    } @else if (soldOut()) {
+      <span class="raffle-badge">AGOTADA</span>
+    }
+  </div>
+
+  <div class="card-info">
+    <h3 class="card-name">{{ raffle().name }}</h3>
+
+    @switch (raffle().status) {
+      @case ('drawn') {
+        <div class="raffle-winner">
+          <mat-icon>emoji_events</mat-icon>
+          <span>Ganador: <strong>{{ raffle().winner_name }}</strong></span>
+        </div>
+        @if (raffle().draw_at) {
+          <div class="raffle-date">
+            <mat-icon>event_available</mat-icon>
+            <span>Sorteada el {{ raffle().draw_at | date: 'd/MM/yyyy' : 'UTC' }}</span>
+          </div>
+        }
+        @if (raffle().notes) {
+          <p class="raffle-notes">{{ raffle().notes }}</p>
+        }
+      }
+      @case ('void') {
+        <div class="raffle-winner raffle-winner--void">
+          <mat-icon>do_not_disturb</mat-icon>
+          <span>Rifa finalizada · sin participantes</span>
+        </div>
+        @if (raffle().notes) {
+          <p class="raffle-notes">{{ raffle().notes }}</p>
+        }
+      }
+      @default {
+        <div class="raffle-date">
+          <mat-icon>event</mat-icon>
+          @if (raffle().draw_at) {
+            <span>Sorteo: {{ raffle().draw_at | date: 'd/MM/yyyy' : 'UTC' }}</span>
+          } @else {
+            <span>Fecha por definir</span>
+          }
+        </div>
+
+        @if (raffle().sale_price != null && raffle().sale_price! < raffle().price) {
+          <div class="card-price">
+            <span class="price--sale">₡{{ raffle().sale_price! | number: '1.0-0' }}</span>
+            <span class="price--original">₡{{ raffle().price | number: '1.0-0' }}</span>
+            <span class="price-unit">por número</span>
+          </div>
+        } @else {
+          <div class="card-price">
+            ₡{{ raffle().price | number: '1.0-0' }}
+            <span class="price-unit">por número</span>
+          </div>
+        }
+
+        <div class="card-stock">
+          @if (soldOut()) {
+            Rifa completa
+          } @else {
+            {{ raffle().quantity }} número{{ raffle().quantity > 1 ? 's' : '' }}
+            disponible{{ raffle().quantity > 1 ? 's' : '' }}
+          }
+        </div>
+
+        @if (raffle().notes) {
+          <p class="raffle-notes">{{ raffle().notes }}</p>
+        }
+
+        <div class="raffle-actions">
+          @if (!soldOut()) {
+            <div class="qty-stepper" role="group" aria-label="Cantidad de números">
+              <button
+                mat-icon-button
+                type="button"
+                aria-label="Menos"
+                [disabled]="qty() <= 1"
+                (click)="step(-1)"
+              >
+                <mat-icon>remove</mat-icon>
+              </button>
+              <span class="qty-value">{{ qty() }}</span>
+              <button
+                mat-icon-button
+                type="button"
+                aria-label="Más"
+                [disabled]="qty() >= raffle().quantity"
+                (click)="step(1)"
+              >
+                <mat-icon>add</mat-icon>
+              </button>
+            </div>
+          }
+          <button
+            mat-flat-button
+            class="add-btn"
+            type="button"
+            [disabled]="soldOut()"
+            (click)="onAddToCart()"
+          >
+            {{ soldOut() ? 'AGOTADA' : 'Añadir' }}
+          </button>
+        </div>
+      }
+    }
+  </div>
+</div>

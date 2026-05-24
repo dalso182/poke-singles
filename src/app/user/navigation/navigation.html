@@ -1,5 +1,5 @@
 <mat-nav-list>
-  @for (item of items; track item.path) {
+  @for (item of items(); track item.path) {
     <a
       mat-list-item
       [routerLink]="item.path"

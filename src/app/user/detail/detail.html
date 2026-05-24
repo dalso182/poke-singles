@@ -43,7 +43,14 @@
       </p>
 
       <div class="detail-price-block">
-        <div class="detail-price">₡{{ p.price | number: '1.0-0' }}</div>
+        @if (p.sale_price != null && p.sale_price < p.price) {
+          <div class="detail-price">
+            <span class="price--sale">₡{{ p.sale_price | number: '1.0-0' }}</span>
+            <span class="price--original">₡{{ p.price | number: '1.0-0' }}</span>
+          </div>
+        } @else {
+          <div class="detail-price">₡{{ p.price | number: '1.0-0' }}</div>
+        }
         <div class="detail-stock">
           {{ p.quantity }} disponible{{ p.quantity !== 1 ? 's' : '' }}
         </div>

@@ -86,6 +86,7 @@ Deploy details: `scripts/deploy.mjs` reads `.env.local` (gitignored — copy fro
 | `/products` | CardList | Product grid (DB-backed, hover preview, condition + type badges) |
 | `/products/:slug` | Detail | TCGdex Card data + price + add-to-cart |
 | `/buscar` | SearchResults | URL-bound search (`q`) + sort (`relevance` / `price-asc` / `price-desc` / `recent`) |
+| `/rifas` | Rifas | Raffles — Activas / Completadas tabs, buy entries, winner display |
 | `/cart` | CartPage | Line items, quantity edit, list / grid views, coupon input, summary |
 | `/account` | Account | Read-only email + editable name/phone + sign out (`customerGuard`) |
 | `/admin` | AdminShell | Requires admin role; uses Google OAuth |
@@ -98,6 +99,8 @@ Deploy details: `scripts/deploy.mjs` reads `.env.local` (gitignored — copy fro
 | `/admin/sets` | Sets | Expandable rows, find-or-create from TCGdex, detail dialog |
 | `/admin/coupons` | Coupons | List with active/inactive/expired/deleted filters, soft-delete-with-undo |
 | `/admin/coupons/new`, `/admin/coupons/:id/edit` | CouponEdit | Type-reactive form (PERCENTAGE / FIXED_ON_THRESHOLD), date picker |
+| `/admin/raffles` | Raffles | Activas / Completadas toggle, "Agregar rifa" |
+| `/admin/raffles/:id` | RaffleDetail | Participants + payment status, draw winner (blocked until paid), copy names for the wheel |
 | `/admin/config` | AdminConfig | Exchange rate, maintenance mode |
 | `/library` | Library | Designer reference (no app chrome) |
 
@@ -192,6 +195,7 @@ node scripts/upload-images.mjs --sets=ME05
 | Flag | Effect |
 |---|---|
 | `--dry-run` | Show target + file count, connect to nothing |
+| `--endpoints-only` | Push only `server/*.php` (picker endpoints) — no image tree, no tar. Fast (`npm run images:upload:endpoints`) |
 | `--sets=a,b` | Upload only those set subtrees |
 | `--env=dev\|prod` | Which `.env.local` creds + remote dir (default `dev`) |
 | `--sftp` | Per-file SFTP instead of tar + extract (slower fallback) |
@@ -283,6 +287,11 @@ Re-run `npm run db:types:dev` after every migration so generated types stay in s
 - **Search:** `products_search` view (joins products + sets + aggregated card
   types into a `search_text` column; `description` excluded) plus the
   `search_products(q, sort, limit_n, offset_n)` RPC behind `/buscar`.
+- **Raffles:** `raffles` (1:1 with a Rifas-category product — draw date + winner
+  result). Public `/rifas` via the `rifas_listing` view; admin draw via
+  `draw_raffle` (blocked until entries are paid, weighted by entries) +
+  `admin_raffles_summary` RPC; winner emails via the `send-raffle-result` edge
+  function.
 - Triggers: `updated_at`, `first_listed_at`, restock tracking, `pokemon_name`
   normalization. RLS: admin-only mutations gated by `is_admin()` (reads
   `auth.jwt → app_metadata.role`); customer-self policies on `profiles` /

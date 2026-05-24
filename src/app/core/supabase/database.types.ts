@@ -118,6 +118,13 @@ export type Database = {
             referencedRelation: "products_search"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "rifas_listing"
+            referencedColumns: ["id"]
+          },
         ]
       }
       carts: {
@@ -220,6 +227,7 @@ export type Database = {
       }
       coupons: {
         Row: {
+          category_ids: string[] | null
           code: string
           created_at: string
           deleted_at: string | null
@@ -233,6 +241,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          category_ids?: string[] | null
           code: string
           created_at?: string
           deleted_at?: string | null
@@ -246,6 +255,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          category_ids?: string[] | null
           code?: string
           created_at?: string
           deleted_at?: string | null
@@ -333,6 +343,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products_search"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "rifas_listing"
             referencedColumns: ["id"]
           },
         ]
@@ -472,6 +489,13 @@ export type Database = {
             referencedRelation: "products_search"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "product_card_types_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "rifas_listing"
+            referencedColumns: ["id"]
+          },
         ]
       }
       products: {
@@ -498,6 +522,7 @@ export type Database = {
           quantity: number
           rarity: string | null
           regulation_mark: string | null
+          sale_price: number | null
           set_id: string | null
           slug: string
           stage: string | null
@@ -530,6 +555,7 @@ export type Database = {
           quantity?: number
           rarity?: string | null
           regulation_mark?: string | null
+          sale_price?: number | null
           set_id?: string | null
           slug: string
           stage?: string | null
@@ -562,6 +588,7 @@ export type Database = {
           quantity?: number
           rarity?: string | null
           regulation_mark?: string | null
+          sale_price?: number | null
           set_id?: string | null
           slug?: string
           stage?: string | null
@@ -621,6 +648,90 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      raffles: {
+        Row: {
+          created_at: string
+          draw_at: string | null
+          drawn_at: string | null
+          drawn_by: string | null
+          notified_at: string | null
+          product_id: string
+          status: string
+          total_entries: number
+          updated_at: string
+          winner_email: string | null
+          winner_name: string | null
+          winner_order_id: string | null
+          winning_entry: number | null
+        }
+        Insert: {
+          created_at?: string
+          draw_at?: string | null
+          drawn_at?: string | null
+          drawn_by?: string | null
+          notified_at?: string | null
+          product_id: string
+          status?: string
+          total_entries?: number
+          updated_at?: string
+          winner_email?: string | null
+          winner_name?: string | null
+          winner_order_id?: string | null
+          winning_entry?: number | null
+        }
+        Update: {
+          created_at?: string
+          draw_at?: string | null
+          drawn_at?: string | null
+          drawn_by?: string | null
+          notified_at?: string | null
+          product_id?: string
+          status?: string
+          total_entries?: number
+          updated_at?: string
+          winner_email?: string | null
+          winner_name?: string | null
+          winner_order_id?: string | null
+          winning_entry?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "raffles_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "available_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products_search"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "rifas_listing"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_winner_order_id_fkey"
+            columns: ["winner_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sets: {
         Row: {
@@ -893,6 +1004,7 @@ export type Database = {
           quantity: number | null
           rarity: string | null
           regulation_mark: string | null
+          sale_price: number | null
           search_text: string | null
           set_code: string | null
           set_id: string | null
@@ -929,8 +1041,45 @@ export type Database = {
           },
         ]
       }
+      rifas_listing: {
+        Row: {
+          draw_at: string | null
+          id: string | null
+          image_url: string | null
+          name: string | null
+          notes: string | null
+          price: number | null
+          quantity: number | null
+          sale_price: number | null
+          set_name: string | null
+          slug: string | null
+          status: string | null
+          total_entries: number | null
+          winner_name: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      admin_raffles_summary: {
+        Args: never
+        Returns: {
+          active: boolean
+          draw_at: string
+          drawn_at: string
+          entries_pending: number
+          entries_sold: number
+          image_url: string
+          name: string
+          participants: number
+          price: number
+          product_id: string
+          quantity: number
+          slug: string
+          status: string
+          winner_name: string
+        }[]
+      }
       attach_payment_proof: {
         Args: { p_email: string; p_file_path: string; p_order_id: string }
         Returns: Json
@@ -939,13 +1088,40 @@ export type Database = {
         Args: { p_coupon_id: string; p_subtotal: number }
         Returns: number
       }
-      cancel_order: { Args: { p_order_id: string }; Returns: Json }
+      cancel_order: {
+        Args: { p_notes?: string; p_order_id: string }
+        Returns: Json
+      }
       card_type_product_counts: {
         Args: never
         Returns: {
           card_type_id: string
           in_stock_count: number
         }[]
+      }
+      draw_raffle: {
+        Args: { p_product_id: string }
+        Returns: {
+          created_at: string
+          draw_at: string | null
+          drawn_at: string | null
+          drawn_by: string | null
+          notified_at: string | null
+          product_id: string
+          status: string
+          total_entries: number
+          updated_at: string
+          winner_email: string | null
+          winner_name: string | null
+          winner_order_id: string | null
+          winning_entry: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "raffles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       get_guest_order: {
         Args: { p_email: string; p_order_id: string }
@@ -954,6 +1130,7 @@ export type Database = {
       get_my_applied_coupon: { Args: never; Returns: Json }
       is_admin: { Args: never; Returns: boolean }
       place_order: { Args: { p_input: Json }; Returns: Json }
+      raffle_category_id: { Args: never; Returns: string }
       search_card_type_counts: {
         Args: { q: string }
         Returns: {
@@ -963,9 +1140,9 @@ export type Database = {
       }
       search_products: {
         Args: {
-          card_type_ids?: string[]
           limit_n?: number
           offset_n?: number
+          p_card_type_ids?: string[]
           q: string
           set_ids?: string[]
           sort?: string
@@ -991,6 +1168,7 @@ export type Database = {
           quantity: number | null
           rarity: string | null
           regulation_mark: string | null
+          sale_price: number | null
           search_text: string | null
           set_code: string | null
           set_id: string | null

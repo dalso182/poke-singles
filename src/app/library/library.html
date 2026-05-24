@@ -62,8 +62,8 @@
         <div class="type-spec">
           <div class="type-meta brand-mono">Price · sale</div>
           <div class="sample-sale">
-            <span class="price--original">₡88,200.00</span>
             <span class="price--sale">₡66,500.00</span>
+            <span class="price--original">₡88,200.00</span>
           </div>
         </div>
       </section>
@@ -87,8 +87,9 @@
         <h2 style="margin-top: 48px">Brand-only tokens</h2>
         <p class="lead-sm">
           These live <strong>outside</strong> Material's color system. Brand red is restricted to
-          three uses: <code>.brand-bar</code>, <code>.price--sale</code>, and the
-          <code>AGOTADA</code> badge. Danger (the form-error red) is intentionally a different hue.
+          two uses: <code>.brand-bar</code> and the <code>AGOTADA</code> badge. Sale prices
+          (<code>.price--sale</code>) use Amber Glow. Danger (the form-error red) is intentionally
+          a different hue.
         </p>
         <div class="swatches">
           @for (s of brandSwatches; track s.cssVar) {
@@ -295,12 +296,15 @@
             </mat-card-actions>
           </mat-card>
 
-          <mat-card appearance="outlined" class="card-with-media product-card product-card--featured">
-            <img mat-card-image src="assets/images/card2.jpg" alt="Featured card" />
+          <mat-card appearance="outlined" class="card-with-media product-card product-card--on-sale">
+            <img mat-card-image src="assets/images/card2.jpg" alt="On-sale card" />
             <mat-card-content>
               <div class="brand-mono meta-line">CRE · 201/214 · MP</div>
               <div class="card-name">Greninja &amp; Zoroark GX</div>
-              <div class="price">₡97,500</div>
+              <div class="price">
+                <span class="price--sale">₡78,000</span>
+                <span class="price--original">₡97,500</span>
+              </div>
             </mat-card-content>
           </mat-card>
 
@@ -607,8 +611,8 @@
         <div class="util-block">
           <div class="brand-mono">.price--sale + .price--original</div>
           <div class="sample-sale">
-            <span class="price--original">₡88,200</span>
             <span class="price--sale">₡66,500</span>
+            <span class="price--original">₡88,200</span>
           </div>
         </div>
       </section>

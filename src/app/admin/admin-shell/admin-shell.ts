@@ -46,6 +46,7 @@ export class AdminShell {
     { label: 'Dashboard',        icon: 'dashboard',            path: '/admin',              exact: true },
     { label: 'Agregar producto', icon: 'add_box',              path: '/admin/products/new', exact: true },
     { label: 'Productos',        icon: 'inventory_2',          path: '/admin/products',     exact: true },
+    { label: 'Rifas', icon: 'confirmation_number', path: '/admin/raffles' },
     { label: 'Categorías', icon: 'category', path: '/admin/categories' },
     { label: 'Tipos de carta', icon: 'local_offer', path: '/admin/card-types' },
     { label: 'Cupones', icon: 'redeem', path: '/admin/coupons' },
@@ -54,6 +55,7 @@ export class AdminShell {
     { label: 'Pedidos', icon: 'receipt_long', path: '/admin/orders' },
     { label: 'Clientes', icon: 'group', path: '/admin/customers' },
     { label: 'Páginas', icon: 'article', path: '/admin/pages' },
+    { label: 'Library', icon: 'palette', path: '/library', exact: true },
     { label: 'Configuración', icon: 'settings', path: '/admin/config' },
   ];
 

@@ -1,4 +1,4 @@
-import { Component, inject, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -24,7 +24,11 @@ import type { ProductCardItem } from '../../core/catalog/catalog.types';
 })
 export class ProductCard {
   readonly card = input.required<ProductCardItem>();
-  readonly featured = input<boolean>(false);
+
+  protected readonly isOnSale = computed(() => {
+    const c = this.card();
+    return c.sale_price != null && c.sale_price < c.price;
+  });
 
   private readonly cart = inject(CartService);
   private readonly snack = inject(MatSnackBar);

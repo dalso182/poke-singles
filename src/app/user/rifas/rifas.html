@@ -1,0 +1,38 @@
+<header class="rifas-header">
+  <span class="brand-eyebrow">Sorteos</span>
+  <h1>Rifas</h1>
+  <p class="lead">
+    Participá por cartas y productos exclusivos. Comprá tus números y esperá el
+    sorteo en la fecha indicada.
+  </p>
+</header>
+
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<mat-tab-group mat-stretch-tabs="false" animationDuration="0ms">
+  <mat-tab label="Activas">
+    @if (!loading() && activeRaffles().length === 0) {
+      <p class="rifas-empty">No hay rifas activas en este momento. Vuelve pronto.</p>
+    } @else {
+      <div class="cards-grid">
+        @for (raffle of activeRaffles(); track raffle.id) {
+          <app-raffle-card [raffle]="raffle" />
+        }
+      </div>
+    }
+  </mat-tab>
+
+  <mat-tab label="Completadas">
+    @if (!loading() && completedRaffles().length === 0) {
+      <p class="rifas-empty">Todavía no hay rifas finalizadas.</p>
+    } @else {
+      <div class="cards-grid">
+        @for (raffle of completedRaffles(); track raffle.id) {
+          <app-raffle-card [raffle]="raffle" />
+        }
+      </div>
+    }
+  </mat-tab>
+</mat-tab-group>

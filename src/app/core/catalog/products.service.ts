@@ -1,11 +1,13 @@
 import { Injectable, inject } from '@angular/core';
 import { SupabaseService } from '../supabase/supabase.service';
+import { CategoriesService } from './categories.service';
 import type {
   ProductInsert,
   ProductListRow,
   ProductRow,
   ProductSearchRow,
   ProductUpdate,
+  RaffleCardItem,
   SortKey,
 } from './catalog.types';
 
@@ -18,6 +20,10 @@ export interface ProductListParams {
   setIds?: string[];
   featured?: boolean;
   includeInactive?: boolean;
+  /** Exclude raffle products (category slug = 'rifas') from the result. Used by
+   *  the home rails so raffles only ever surface on /rifas. No-op if the Rifas
+   *  category doesn't exist. */
+  excludeRaffles?: boolean;
   page?: number;
   pageSize?: number;
 }
@@ -52,12 +58,28 @@ export interface ProductSearchResult {
 @Injectable({ providedIn: 'root' })
 export class ProductsService {
   private readonly supabase = inject(SupabaseService);
+  private readonly categories = inject(CategoriesService);
+
+  /** Memoised id of the 'rifas' category (or null if it doesn't exist).
+   *  Resolved from the cached-on-first-call categories list. `undefined` =
+   *  not yet resolved, `null` = resolved-but-absent. */
+  private _raffleCategoryId: string | null | undefined;
+
+  /** Lazily resolve + cache the Rifas category id. Used to include raffles on
+   *  /rifas and exclude them from the home rails. */
+  async raffleCategoryId(): Promise<string | null> {
+    if (this._raffleCategoryId !== undefined) return this._raffleCategoryId;
+    const cats = await this.categories.list();
+    this._raffleCategoryId = cats.find((c) => c.slug === 'rifas')?.id ?? null;
+    return this._raffleCategoryId;
+  }
 
   async list(params: ProductListParams = {}): Promise<ProductListResult> {
     const page = Math.max(1, params.page ?? 1);
     const pageSize = Math.max(1, Math.min(200, params.pageSize ?? 25));
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
+    const raffleId = params.excludeRaffles ? await this.raffleCategoryId() : null;
 
     let query = (this.supabase.client as any)
       .from('products')
@@ -68,6 +90,9 @@ export class ProductsService {
 
     if (!params.includeInactive) {
       query = query.eq('active', true);
+    }
+    if (raffleId) {
+      query = query.neq('category_id', raffleId);
     }
     if (params.categoryId) {
       query = query.eq('category_id', params.categoryId);
@@ -102,6 +127,20 @@ export class ProductsService {
       set_printed_total: sets?.printed_total ?? null,
     }));
     return { rows, total: count ?? 0, page, pageSize };
+  }
+
+  /**
+   * Public raffle listing for /rifas — reads the `rifas_listing` view (products
+   * ⨝ raffles ⨝ sets), already filtered to active Rifas-category products and
+   * ordered by draw date. Carries draw_at / status / winner_name so the page can
+   * split into Activas vs Completadas tabs.
+   */
+  async listRaffles(): Promise<RaffleCardItem[]> {
+    const { data, error } = await (this.supabase.client as any)
+      .from('rifas_listing')
+      .select('*');
+    if (error) throw error;
+    return (data ?? []) as RaffleCardItem[];
   }
 
   async get(id: string): Promise<ProductRow | null> {

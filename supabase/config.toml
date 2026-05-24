@@ -57,3 +57,9 @@ verify_jwt = false
 # by id via service-role.
 [functions.send-signup-email]
 verify_jwt = false
+
+# Raffle-result emails. Fired by the raffles notify_raffle_result() trigger via
+# pg_net when a raffle is drawn. No JWT (the trigger has no session); the
+# function reads the raffle + participants via service-role.
+[functions.send-raffle-result]
+verify_jwt = false

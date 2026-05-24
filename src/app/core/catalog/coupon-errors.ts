@@ -21,5 +21,7 @@ export function mapCouponError(error: CouponErrorCode, gap?: number): string {
       });
       return `Agrega ₡${formatted} más a tu carrito para usar este cupón.`;
     }
+    case 'NO_ELIGIBLE_ITEMS':
+      return 'Este cupón no aplica a los productos de tu carrito.';
   }
 }

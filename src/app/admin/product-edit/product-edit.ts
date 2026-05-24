@@ -1,5 +1,19 @@
-import { Component, OnInit, inject, input, signal } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  Component,
+  OnInit,
+  computed,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
+import {
+  AbstractControl,
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -22,6 +36,7 @@ import { ImageBrowserService } from '../../core/images/image-browser.service';
 import { CategoriesService } from '../../core/catalog/categories.service';
 import { CardTypesService } from '../../core/catalog/card-types.service';
 import { ProductsService } from '../../core/catalog/products.service';
+import { RafflesService } from '../../core/catalog/raffles.service';
 import {
   CONDITION_OPTIONS,
   LANGUAGE_OPTIONS,
@@ -58,6 +73,7 @@ export class ProductEdit implements OnInit {
 
   private readonly fb = inject(FormBuilder);
   private readonly products = inject(ProductsService);
+  private readonly raffles = inject(RafflesService);
   private readonly categories = inject(CategoriesService);
   private readonly cardTypes = inject(CardTypesService);
   private readonly snack = inject(MatSnackBar);
@@ -78,24 +94,41 @@ export class ProductEdit implements OnInit {
   protected readonly saving = signal(false);
   protected readonly notFound = signal(false);
 
-  protected readonly form: FormGroup = this.fb.nonNullable.group({
-    name: ['', Validators.required],
-    pokemon_name: [''],
-    slug: ['', [Validators.required, Validators.pattern(/^[a-z0-9-]+$/)]],
-    description: [''],
-    rarity: [''],
-    card_number: [''],
-    image_url: [''],
-    set_id: [null as string | null],
-    category_id: ['', Validators.required],
-    condition: [''],
-    language: ['EN', Validators.required],
-    variant: [''],
-    price: [0, [Validators.required, Validators.min(0)]],
-    quantity: [0, [Validators.required, Validators.min(0)]],
-    active: [true],
-    featured: [false],
+  /** Mirrors the category_id control so `isRaffle` reacts to selection. */
+  protected readonly selectedCategoryId = signal<string>('');
+  /** True when the chosen category is the "Rifas" bucket — reveals the raffle
+   *  fields (draw date + notes). */
+  protected readonly isRaffle = computed(() => {
+    const id = this.selectedCategoryId();
+    if (!id) return false;
+    return this.categoriesList().find((c) => c.slug === 'rifas')?.id === id;
   });
+
+  protected readonly form: FormGroup = this.fb.nonNullable.group(
+    {
+      name: ['', Validators.required],
+      pokemon_name: [''],
+      slug: ['', [Validators.required, Validators.pattern(/^[a-z0-9-]+$/)]],
+      description: [''],
+      rarity: [''],
+      card_number: [''],
+      image_url: [''],
+      set_id: [null as string | null],
+      category_id: ['', Validators.required],
+      condition: [''],
+      language: ['EN', Validators.required],
+      variant: [''],
+      price: [0, [Validators.required, Validators.min(0)]],
+      sale_price: [null as number | null, [Validators.min(0.01)]],
+      quantity: [0, [Validators.required, Validators.min(0)]],
+      active: [true],
+      featured: [false],
+      // Raffle draw date (native date input → 'YYYY-MM-DD'), persisted to the
+      // raffles table. Only shown when category is "Rifas"; notes reuse description.
+      draw_at: [null as string | null],
+    },
+    { validators: salePriceBelowPrice },
+  );
 
   ngOnInit(): void {
     // Required input bindings (`id`) aren't set until after construction when
@@ -106,11 +139,12 @@ export class ProductEdit implements OnInit {
   private async bootstrap(): Promise<void> {
     this.loading.set(true);
     try {
-      const [cats, types, product, assignedTypeIds] = await Promise.all([
+      const [cats, types, product, assignedTypeIds, raffleRow] = await Promise.all([
         this.categories.list(),
         this.cardTypes.list({ activeOnly: true }),
         this.products.get(this.id()),
         this.products.getCardTypeIds(this.id()),
+        this.raffles.get(this.id()),
       ]);
       this.categoriesList.set(cats);
       this.cardTypesList.set(types);
@@ -120,6 +154,7 @@ export class ProductEdit implements OnInit {
         return;
       }
       this.product.set(product);
+      this.selectedCategoryId.set(product.category_id);
       this.form.patchValue({
         name: product.name,
         pokemon_name: product.pokemon_name ?? '',
@@ -134,9 +169,12 @@ export class ProductEdit implements OnInit {
         language: product.language,
         variant: product.variant ?? '',
         price: product.price,
+        sale_price: product.sale_price,
         quantity: product.quantity,
         active: product.active,
         featured: product.featured,
+        // From the raffles row; stored at UTC midnight, take the date portion.
+        draw_at: raffleRow?.draw_at ? raffleRow.draw_at.slice(0, 10) : null,
       });
     } catch (err) {
       this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
@@ -200,10 +238,14 @@ export class ProductEdit implements OnInit {
         language: raw.language,
         variant: raw.variant || null,
         price: Number(raw.price),
+        sale_price: toNullableNumber(raw.sale_price),
         quantity: Number(raw.quantity),
         active: raw.active,
         featured: raw.featured,
       });
+      if (this.isRaffle()) {
+        await this.raffles.upsert(product.id, { draw_at: raw.draw_at || null });
+      }
       await this.products.setCardTypes(product.id, [...this.selectedCardTypeIds()]);
       this.product.set(updated);
       this.form.markAsPristine();
@@ -243,4 +285,17 @@ export class ProductEdit implements OnInit {
     }
     return 'Error desconocido';
   }
+}
+
+function salePriceBelowPrice(group: AbstractControl): ValidationErrors | null {
+  const price = Number(group.get('price')?.value);
+  const sale = group.get('sale_price')?.value;
+  if (sale === null || sale === undefined || sale === '') return null;
+  return Number(sale) < price ? null : { saleNotBelowPrice: true };
+}
+
+function toNullableNumber(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
 }

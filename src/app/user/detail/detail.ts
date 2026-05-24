@@ -95,6 +95,11 @@ export class Detail implements OnInit {
         this.notFound.set(true);
         return;
       }
+      // Raffles have no detail page — bounce a raffle slug to /rifas.
+      if (product.category_id === (await this.products.raffleCategoryId())) {
+        void this.router.navigate(['/rifas']);
+        return;
+      }
       this.product.set(product);
 
       // Run the four supporting fetches in parallel. SetsService.list() and

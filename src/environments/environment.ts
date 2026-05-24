@@ -21,11 +21,12 @@ export const environment = {
       endpoint: 'https://api.tcgdex.net/v2',
   },
   images: {
-    // Absolute URL to the read-only PHP listing endpoint that powers the
+    // Root-relative URL to the read-only PHP listing endpoint that powers the
     // admin image picker. Empty string disables the picker (the URL field
     // becomes manual-only). The PHP file lives at server/list-images.php in
     // the repo and must be uploaded once to the root of the images folder
-    // on SiteGround.
-    listUrl: 'https://new.poke-singles.com/card-images/list-images.php',
+    // on SiteGround. Relative so it's same-origin in production AND rides the
+    // /card-images dev proxy (proxy.conf.mjs) on localhost.
+    listUrl: '/card-images/list-images.php',
   },
 };

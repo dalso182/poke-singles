@@ -36,14 +36,16 @@ Implementation:
   M3 mixins (`mat.button-overrides`, `mat.card-overrides`) — 4px button radius, 8px card
   radius, uppercase 12px tracked button labels.
 - **`src/styles/_brand-utilities.scss`** — utility classes: `.brand-bar`, `.brand-eyebrow`,
-  `.brand-mono`, `.product-card--featured`, `.product-card--sold-out`, `.price--sale`,
+  `.brand-mono`, `.product-card--on-sale`, `.product-card--sold-out`, `.price--sale`,
   `.price--original`.
 
-**Hard rule:** brand red (`#CE1126`) is restricted to three uses:
+**Hard rule:** brand red (`#CE1126`) is restricted to two uses:
 
 1. The brand-bar gradient (`.brand-bar`).
-2. Sale prices (`.price--sale`).
-3. The AGOTADA / sold-out badge (`.product-card--sold-out::after`).
+2. The AGOTADA / sold-out badge (`.product-card--sold-out::after`).
+
+Sale prices (`.price--sale`) and discount lines use Amber Glow (`--accent-amber`)
+instead, so red is reserved for "out of stock" and the brand bar only.
 
 It is **not** wired into Material's palette. Material's `error` slot uses Danger
 (`#B91C1C`), a different red, so form-field errors / snackbars / chips never bleed brand
@@ -138,9 +140,11 @@ prod build with empty env values can't accidentally ship. `<dev-ref>` placeholde
 
 - Prod Supabase project + filled-in `environment.prod.ts` + replacing the four
   `<prod-ref>` placeholders in `package.json`.
-- Edge functions if/when needed; folder is empty.
-- Orders + checkout (`orders`, `coupon_redemptions`, `place_order` RPC). The
-  cart and coupon validation are live but redemption needs a commitment event.
+- Edge functions: `send-order-email`, `send-signup-email`, and
+  `send-raffle-result` are live; folder can grow as new flows need server-side
+  hooks. DB triggers invoke them via `net.http_post` — pg_net lives in the
+  **`net`** schema on this project, NOT `extensions` — plus Vault secrets for the
+  function URL + `supabase_anon_key`.
 
 ## Customer auth
 
@@ -224,11 +228,60 @@ Admin CRUD lives at `/admin/coupons` (list with active/inactive/expired/
 deleted filters + search + soft-delete-with-undo) and `/admin/coupons/new` /
 `/admin/coupons/:id/edit` (shared form with type-reactive validators).
 
-**Redemption is intentionally NOT wired yet.** `max_uses_per_user` is captured
-on the row but unenforced — a TODO in `validate_coupon` marks the spot. The
-redemption call belongs in the orders/checkout plan, atomically inside the
-`place_order` transaction. Until that ships, customers can preview the
-discount but no `coupon_redemptions` rows are written.
+**Redemption is wired.** `place_order` (currently `place_order_v4`) atomically
+inserts a `coupon_redemptions` row after creating the order and decrementing
+stock. `validate_coupon` (currently `_v2`) enforces `max_uses_per_user` by
+counting prior redemptions for the authenticated `user_id`; `place_order`
+additionally matches `guest_email` so the cap applies to guests too. When an
+order is cancelled, `cancel_order` deletes the matching `coupon_redemptions`
+row inside the same atomic txn that restores stock — the order keeps its
+`coupon_id` / `coupon_code` / `discount_amount` for audit, but the customer's
+per-user counter goes back down so the coupon can be re-used.
+
+## Raffles (Rifas)
+
+A raffle is a **product in the "Rifas" category** (`categories.slug = 'rifas'`,
+resolved cheaply via the `raffle_category_id()` stable helper) sold as entries:
+`quantity` = entries remaining, `price` = per-entry price, the entry count rides
+in the product name, notes reuse `products.description`. Entries are bought
+through the normal cart → `order_items` pipeline, so cart / checkout /
+`place_order` / stock all work unchanged.
+
+Raffle lifecycle lives in a 1:1 **`raffles`** table (PK `product_id`): `draw_at`
+(scheduled date), `status` (`scheduled` / `drawn` / `void`), the winner snapshot
+(`winner_order_id` / `winner_name` / `winner_email` / `winning_entry` /
+`total_entries`), `drawn_by` / `drawn_at` / `notified_at`. Admin-only RLS. The
+draw date is set on the admin product form and saved via `RafflesService.upsert`.
+
+**Excluded from the normal catalog:** the `products_search` view filters
+`category_id <> raffle_category_id()` (covers `/products`, `/buscar`, and the
+view-based facet counts); the global count fns (`set_product_counts`,
+`card_type_product_counts`) and `ProductsService.list({ excludeRaffles })` (home
+rails) apply the same exclusion. Public-read RLS keeps raffles visible while
+`active` (no quantity/date gate) so they stay listed through the draw.
+
+**Customer `/rifas`** reads the definer view **`rifas_listing`** (products ⨝
+raffles ⨝ sets, safe columns only — no `winner_email`) and splits into
+**Activas** (`scheduled`) / **Completadas** (`drawn`/`void`, shows the winner)
+tabs. Tile: `shared/raffle-card/` (status-aware — buy mode vs. winner banner).
+
+**The draw is admin-triggered (no scheduler).** `draw_raffle(product_id)`
+(security definer, `is_admin`, idempotent) raises **`UNPAID_ENTRIES`** if any
+non-cancelled entry order is still `pending`, then picks a uniform winner
+**weighted by paid entries** (`order by random()` over per-entry rows; pool =
+`paid` / `shipped` / `completed`). An `after update of status` trigger fires
+`net.http_post` → the `send-raffle-result` Edge Function (Resend), which emails
+every paid participant (winner gets a congrats variant) + admin recipients, then
+stamps `notified_at`. Vault secret `raffle_result_url` (+ shared
+`supabase_anon_key`), set once per environment.
+
+**Admin** lives at `/admin/raffles` (list with an Activas/Completadas toggle +
+"Agregar rifa" → add-product with `?category=rifas` preselected) and
+`/admin/raffles/:id` (detail: raffle info, per-order participants with a
+Pagado/Pendiente chip, the "Sortear ganador" button disabled until every entry
+is paid, copy-names-for-the-wheel, winner banner). List data comes from the
+`admin_raffles_summary()` RPC (admin-only, per-raffle sold/pending/participant
+counts). `RafflesService` wraps `get` / `upsert` / `draw` / `listSummary`.
 
 ## Customer search
 
@@ -290,25 +343,43 @@ fetches.
 ## Image picker (admin)
 
 The admin product forms have a folder-icon suffix on the **URL de la imagen**
-field that opens a Windows-Explorer-style modal to pick an image from a folder
-on SiteGround. The modal lists subfolders and image files via a small read-only
-PHP endpoint.
+field that opens a Windows-Explorer-style modal to browse the `/card-images/`
+tree on SiteGround, **create folders**, **upload** images into the current folder,
+and pick one. Three small PHP endpoints back it (no Node on SiteGround). Uploading
+does NOT auto-select — the new file appears in the listing (briefly highlighted) and
+the admin clicks it to choose it, like any other image.
 
-- **Endpoint script:** `server/list-images.php` in the repo. Drop it once at the
-  ROOT of the images folder on each subdomain that needs the picker
-  (e.g. `new.poke-singles.com/public_html/images/list-images.php` and the
-  equivalent on dev / prod). It is location-aware (uses `__DIR__`) so it
-  serves whatever folder it's placed in.
-- **Bound check:** the endpoint resolves `?path=` against `realpath()` and
-  refuses anything outside its own directory, so `..` traversal can't escape.
-- **No auth.** The image URLs themselves are already public assets, so the
-  listing is exposed too. If that ever needs changing, gate via a shared
-  secret stored in `app_settings` and verify in PHP.
-- **Configured per env** in `src/environments/environment*.ts`:
-  `images.listUrl` is the absolute URL to the PHP endpoint. Empty string =
-  picker disabled (folder-icon button is hidden, manual URL entry only).
-- **Service / dialog:** `src/app/core/images/image-browser.service.ts` +
-  `src/app/shared/image-picker/image-picker-dialog.{ts,html,scss}`.
+- **Endpoint scripts:** `server/list-images.php` (read-only listing),
+  `server/upload-image.php` (multipart POST upload), and `server/create-folder.php`
+  (POST mkdir). All live at the ROOT of the `card-images/` folder on each host;
+  `scripts/upload-images.mjs` pushes **every `server/*.php`** there (globbed) on a
+  full `npm run images:upload` or via `npm run images:upload:endpoints` (no image
+  tree). Location-aware (`__DIR__`) — move the folder, no edits.
+- **Bound check:** all resolve `path` against `realpath()` and refuse anything
+  outside their own directory, so `..` traversal can't escape; folder names are
+  slugified to a single safe segment.
+- **Upload safety:** `upload-image.php` validates the real MIME (`finfo`), accepts
+  only `image/{webp,png,jpeg,gif,avif}`, and **derives the saved extension from the
+  detected type** — a disguised `.php` payload can't be written as executable. The
+  filename is slugified + de-duplicated (never overwrites). Returns the new file in
+  the same `{name,path,url,size,mtime}` shape the listing uses.
+- **Admin-gated.** All three endpoints `require __DIR__.'/_supabase-auth.php'` and call
+  `require_admin()`: the SPA sends the admin's Supabase token in the `X-Supabase-Token`
+  header (custom — `Authorization` is taken by the dev proxy's Basic auth), and the PHP
+  validates it via Supabase token introspection (`GET /auth/v1/user`, requires
+  `app_metadata.role === 'admin'`). No server-side secret — `server/auth-config.php` holds
+  only the public URL + publishable key. The images themselves are static files (no PHP),
+  so they stay public for the storefront. The dev subdomain's HTTP Basic Auth remains as an
+  extra outer layer.
+- **Configured per env** in `src/environments/environment*.ts`: `images.listUrl`
+  is **root-relative** (`/card-images/list-images.php`) so it's same-origin in
+  production AND rides the `/card-images` dev proxy (`proxy.conf.mjs`) on localhost,
+  which forwards to the password-protected host with creds from `.env.local`
+  (`IMAGES_HTTP_USER` / `IMAGES_HTTP_PASSWORD`). The upload endpoint URL is derived
+  from `listUrl` (`…/upload-image.php`, `…/create-folder.php`). Empty `listUrl` = picker disabled.
+- **Service / dialog:** `src/app/core/images/image-browser.service.ts`
+  (`list()` + `upload()` + `createFolder()`) + `src/app/shared/image-picker/image-picker-dialog.{ts,html,scss}`.
+  The dialog returns + stores **relative** URLs (cutover-safe).
 
 ## TCGdex wiring
 
@@ -414,7 +485,11 @@ src/
 scripts/deploy.mjs                   SiteGround SFTP deploy (see Deploy section)
 scripts/seed-products.mjs            TCGdex → Supabase catalog seeder (dev only)
 scripts/tcgdex-smoke.mjs             SDK smoke test
-server/list-images.php               Image-picker endpoint (deploy to image roots)
+server/list-images.php               Image-picker listing endpoint (deploy to card-images root)
+server/upload-image.php              Image-picker upload endpoint (deploy to card-images root)
+server/create-folder.php             Image-picker folder-create endpoint (deploy to card-images root)
+server/_supabase-auth.php            Admin gate (token introspection) for the picker endpoints
+server/auth-config.php               Public Supabase URL + anon key for the gate
 supabase/migrations/                 Catalog, app_settings, card_types, TCGdex
                                      metadata cache, search RPCs, profiles, cart,
                                      coupons. Re-run db:types:dev after changes.
@@ -438,6 +513,8 @@ UserShell wrapper** — Angular's router needs that ordering or it tries to matc
   /coupons              → Coupons (list + filters)
   /coupons/new          → CouponEdit (create)
   /coupons/:id/edit     → CouponEdit (update)
+  /raffles              → Raffles (list, Activas/Completadas toggle)
+  /raffles/:id          → RaffleDetail (participants, payment, draw)
   /sets                 → Sets (with detail dialog)
   /config               → AdminConfig (exchange rate, maintenance flag)
 /library                → Library (lazy, no shell wrapper)
@@ -446,6 +523,7 @@ UserShell wrapper** — Angular's router needs that ordering or it tries to matc
   /products             → CardList (DB-backed grid with hover preview)
   /products/:slug       → Detail (slug bound via input.required<string>())
   /buscar               → SearchResults (q + sort URL params)
+  /rifas                → Rifas (raffles, Activas/Completadas tabs)
   /cart                 → CartPage (list/grid view toggle)
   /account              → Account (canActivate: [customerGuard])
 ```
@@ -467,11 +545,6 @@ unsigned users to /, shows LoginDialog; redirects non-admins to / with snackbar)
 These are deliberately deferred and will each get their own plan when picked up:
 
 - Prod Supabase project + cutover wiring (environment.prod.ts, `<prod-ref>` npm script placeholders)
-- **Checkout / orders.** `orders` + `coupon_redemptions` tables, `place_order`
-  RPC (atomically creates the order + redeems the coupon + decrements stock),
-  buyer-info form, SINPE-instructions page. Cart and coupon application are
-  live but redemption is gated on this.
-- Payments: **SINPE Móvil** + bank transfer (matching the existing OpenCart flow)
 - Customer order history + invoice download
 - OpenCart 3.0 data export → Supabase import (products, categories, customers,
   orders, URL aliases)

@@ -202,6 +202,14 @@
             }
           </mat-form-field>
           <mat-form-field appearance="outline">
+            <mat-label>Precio rebajado (opcional)</mat-label>
+            <input matInput type="number" formControlName="sale_price" min="0" step="0.01" placeholder="—" />
+            <mat-hint>Vacío = sin descuento. Debe ser menor al precio normal.</mat-hint>
+            @if (form.hasError('saleNotBelowPrice')) {
+              <mat-error>Debe ser menor al precio normal.</mat-error>
+            }
+          </mat-form-field>
+          <mat-form-field appearance="outline">
             <mat-label>Cantidad inicial</mat-label>
             <input matInput type="number" formControlName="quantity" min="0" />
           </mat-form-field>
@@ -212,6 +220,34 @@
           </div>
         </mat-card-content>
       </mat-card>
+
+      @if (isRaffle()) {
+        <mat-card class="add-product__panel">
+          <mat-card-header>
+            <mat-card-title>Datos de la rifa</mat-card-title>
+            <mat-card-subtitle>
+              La cantidad es el número de entradas; el precio es por entrada.
+              Incluye la cantidad en el nombre (ej. "Pikachu EX – 10 entradas").
+            </mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content class="add-product__grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Fecha del sorteo</mat-label>
+              <input matInput type="date" formControlName="draw_at" />
+              <mat-hint>Opcional — vacío = por definir.</mat-hint>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="add-product__full">
+              <mat-label>Notas de la rifa</mat-label>
+              <textarea
+                matInput
+                formControlName="description"
+                rows="3"
+                placeholder="Reglas, cómo se anuncia el ganador, etc."
+              ></textarea>
+            </mat-form-field>
+          </mat-card-content>
+        </mat-card>
+      }
 
       @if (cardTypesList().length > 0) {
         <mat-card class="add-product__panel">

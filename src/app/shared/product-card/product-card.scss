@@ -69,11 +69,20 @@
 
 .card-price {
   font-family: var(--font-brand);
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 800;
   letter-spacing: -0.5px;
   color: var(--text-primary);
   margin-top: 2px;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  row-gap: 2px;
+
+  .price--original {
+    font-size: 15px;
+    font-weight: 600;
+  }
 }
 
 .add-btn {

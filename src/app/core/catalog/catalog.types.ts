@@ -75,6 +75,7 @@ export interface ProductRow {
   condition: string | null;
   variant: string | null;
   price: number;
+  sale_price: number | null;
   quantity: number;
   image_url: string | null;
   active: boolean;
@@ -107,6 +108,7 @@ export interface ProductInsert {
   condition?: string | null;
   variant?: string | null;
   price: number;
+  sale_price?: number | null;
   quantity?: number;
   image_url?: string | null;
   active?: boolean;
@@ -140,6 +142,7 @@ export interface ProductCardItem {
   image_url: string | null;
   illustrator: string | null;
   price: number;
+  sale_price: number | null;
   quantity: number;
   card_number: string | null;
   set_name: string | null;
@@ -147,6 +150,61 @@ export interface ProductCardItem {
   condition: string | null;
   type1: string | null;
   type2: string | null;
+}
+
+export type RaffleStatus = 'scheduled' | 'drawn' | 'void';
+
+/** Shape the <app-raffle-card> tile needs — matches the `rifas_listing` view
+ *  (products ⨝ raffles) returned by ProductsService.listRaffles(). `notes`
+ *  comes from products.description; draw/winner come from the raffles table. */
+export interface RaffleCardItem {
+  id: string;
+  name: string;
+  image_url: string | null;
+  price: number;
+  sale_price: number | null;
+  quantity: number;
+  notes: string | null;
+  draw_at: string | null;
+  status: RaffleStatus;
+  winner_name: string | null;
+  total_entries: number;
+}
+
+/** Admin raffle list row from the admin_raffles_summary() RPC: product fields +
+ *  draw status + entry counts. */
+export interface RaffleSummaryRow {
+  product_id: string;
+  name: string;
+  image_url: string | null;
+  slug: string;
+  price: number;
+  quantity: number;
+  active: boolean;
+  draw_at: string | null;
+  status: RaffleStatus;
+  winner_name: string | null;
+  drawn_at: string | null;
+  entries_sold: number;
+  entries_pending: number;
+  participants: number;
+}
+
+/** A row of the `raffles` table (admin-read). 1:1 with a Rifas-category product. */
+export interface RaffleRow {
+  product_id: string;
+  draw_at: string | null;
+  status: RaffleStatus;
+  winner_order_id: string | null;
+  winner_name: string | null;
+  winner_email: string | null;
+  winning_entry: number | null;
+  total_entries: number;
+  drawn_by: string | null;
+  drawn_at: string | null;
+  notified_at: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface TcgdexCardRow {
@@ -192,6 +250,8 @@ export interface CartLine {
   type1: string | null;
   type2: string | null;
   set_name: string | null;
+  /** Drives category-scoped coupon discounts (see AppliedCoupon.category_ids). */
+  category_id: string;
 }
 
 /** localStorage shape — same as the DB row minus `user_id`. */
@@ -211,7 +271,9 @@ export type CouponErrorCode =
   | 'INACTIVE'
   | 'EXPIRED'
   | 'LIMIT_REACHED'
-  | 'BELOW_MINIMUM';
+  | 'BELOW_MINIMUM'
+  /** Targeted coupon, but the cart has no item in its categories. */
+  | 'NO_ELIGIBLE_ITEMS';
 
 /** Result returned by the validate_coupon RPC. */
 export type ValidateCouponResult =
@@ -221,6 +283,8 @@ export type ValidateCouponResult =
       type: CouponType;
       discount_value: number;
       min_purchase_amount: number | null;
+      /** Allow-list of category ids the coupon applies to; null = all. */
+      category_ids: string[] | null;
       expires_at: string;
     }
   | { ok: false; error: CouponErrorCode; gap?: number };
@@ -233,6 +297,9 @@ export interface AppliedCoupon {
   type: CouponType;
   discount_value: number;
   min_purchase_amount: number | null;
+  /** Allow-list of category ids the coupon applies to; null/empty = all.
+   *  Drives the client-side eligible-subtotal scoping. */
+  category_ids: string[] | null;
 }
 
 /** Admin row for the coupons table. Mirrors the DB shape. */
@@ -245,6 +312,8 @@ export interface CouponRow {
   expires_at: string;
   max_uses_per_user: number;
   is_active: boolean;
+  /** Allow-list of category ids the coupon applies to; null = all categories. */
+  category_ids: string[] | null;
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
@@ -258,6 +327,7 @@ export interface CouponInsert {
   expires_at: string;
   max_uses_per_user?: number;
   is_active?: boolean;
+  category_ids?: string[] | null;
 }
 
 export type CouponUpdate = Partial<Omit<CouponInsert, 'code'>> & {
@@ -383,6 +453,19 @@ export interface OrderItemRow {
   created_at: string;
 }
 
+/** One order that bought entries for a raffle product. Joined from order_items
+ *  (quantity = entries in that order) to its parent order. Admin-only read. */
+export interface RaffleBuyerRow {
+  order_id: string;
+  order_number: number;
+  customer_name: string;
+  customer_phone: string;
+  customer_email: string;
+  status: OrderStatus;
+  quantity: number;
+  created_at: string;
+}
+
 /** Input shape for the place_order RPC. */
 export interface PlaceOrderInput {
   items: { product_id: string; quantity: number }[];
@@ -431,6 +514,7 @@ export interface ProductSearchRow {
   condition: string | null;
   variant: string | null;
   price: number;
+  sale_price: number | null;
   quantity: number;
   image_url: string | null;
   set_id: string | null;

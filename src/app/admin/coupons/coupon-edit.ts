@@ -28,7 +28,13 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ActivatedRoute } from '@angular/router';
 import { CouponsService } from '../../core/catalog/coupons.service';
-import type { CouponInsert, CouponRow, CouponType } from '../../core/catalog/catalog.types';
+import { CategoriesService } from '../../core/catalog/categories.service';
+import type {
+  CategoryRow,
+  CouponInsert,
+  CouponRow,
+  CouponType,
+} from '../../core/catalog/catalog.types';
 
 @Component({
   selector: 'app-admin-coupon-edit',
@@ -53,6 +59,7 @@ import type { CouponInsert, CouponRow, CouponType } from '../../core/catalog/cat
 export class CouponEdit implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(CouponsService);
+  private readonly categoriesService = inject(CategoriesService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly snack = inject(MatSnackBar);
@@ -63,6 +70,8 @@ export class CouponEdit implements OnInit {
   );
   protected readonly loading = signal(false);
   protected readonly saving = signal(false);
+  /** Options for the category-targeting multi-select. Empty selection = all. */
+  protected readonly categories = signal<CategoryRow[]>([]);
 
   protected readonly form: FormGroup = this.fb.nonNullable.group({
     code: [
@@ -79,6 +88,8 @@ export class CouponEdit implements OnInit {
     expires_at: [defaultExpiry(30), Validators.required],
     max_uses_per_user: [1, [Validators.required, Validators.min(1)]],
     is_active: [true],
+    // Allow-list of category ids; empty = applies to all categories.
+    category_ids: [[] as string[]],
   });
 
   constructor() {
@@ -101,10 +112,19 @@ export class CouponEdit implements OnInit {
   }
 
   ngOnInit(): void {
+    void this.loadCategories();
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.id.set(id);
       void this.loadExisting(id);
+    }
+  }
+
+  private async loadCategories(): Promise<void> {
+    try {
+      this.categories.set(await this.categoriesService.list());
+    } catch (err) {
+      this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
     }
   }
 
@@ -125,6 +145,7 @@ export class CouponEdit implements OnInit {
         expires_at: new Date(row.expires_at),
         max_uses_per_user: row.max_uses_per_user,
         is_active: row.is_active,
+        category_ids: row.category_ids ?? [],
       });
       this.form.markAsPristine();
     } catch (err) {
@@ -168,6 +189,7 @@ export class CouponEdit implements OnInit {
         expires_at: toIsoDate(raw.expires_at),
         max_uses_per_user: Number(raw.max_uses_per_user),
         is_active: raw.is_active,
+        category_ids: raw.category_ids.length ? raw.category_ids : null,
       };
 
       const id = this.id();

@@ -91,7 +91,14 @@
 
       <ng-container matColumnDef="price">
         <th mat-header-cell *matHeaderCellDef>Precio</th>
-        <td mat-cell *matCellDef="let row">{{ formatPrice(row.price) }}</td>
+        <td mat-cell *matCellDef="let row">
+          @if (row.sale_price != null && row.sale_price < row.price) {
+            <span class="price--sale">{{ formatPrice(row.sale_price) }}</span>
+            <span class="price--original">{{ formatPrice(row.price) }}</span>
+          } @else {
+            {{ formatPrice(row.price) }}
+          }
+        </td>
       </ng-container>
 
       <ng-container matColumnDef="quantity">

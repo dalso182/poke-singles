@@ -1,4 +1,4 @@
-<div class="product-card" [class.product-card--featured]="featured()">
+<div class="product-card" [class.product-card--on-sale]="isOnSale()">
   <a
     [routerLink]="['/products', card().slug]"
     class="card-image"
@@ -14,7 +14,14 @@
     <div class="card-stock">
       {{ card().quantity }} disponible{{ card().quantity > 1 ? 's' : '' }}
     </div>
-    <div class="card-price">₡{{ card().price | number: '1.0-0' }}</div>
+    @if (card().sale_price != null && card().sale_price! < card().price) {
+      <div class="card-price">
+        <span class="price--sale">₡{{ card().sale_price! | number: '1.0-0' }}</span>
+        <span class="price--original">₡{{ card().price | number: '1.0-0' }}</span>
+      </div>
+    } @else {
+      <div class="card-price">₡{{ card().price | number: '1.0-0' }}</div>
+    }
     <button
       mat-flat-button
       class="add-btn"

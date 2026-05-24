@@ -3,11 +3,11 @@
 // Anything here is brand-only and intentionally not part of the Material palette.
 
 :root {
-  // Tico Red — RESTRICTED to three uses ONLY:
+  // Tico Red — RESTRICTED to two uses ONLY:
   //   1. Brand bar gradient
-  //   2. Sale prices (.price--sale)
-  //   3. AGOTADA / sold-out badges
-  // NEVER use as a button background, link color, focus ring, or generic accent.
+  //   2. AGOTADA / sold-out badges
+  // Sale prices moved to --accent-amber. NEVER use as a button background,
+  // link color, focus ring, or generic accent.
   --brand-red: #ce1126;
   --brand-red-dark: #a50e1f;
   --brand-red-soft: #fdeef0;

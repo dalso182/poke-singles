@@ -51,6 +51,18 @@
   flex: 0 0 auto;
 }
 
+.image-picker__new-folder {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 24px 8px;
+}
+
+.image-picker__new-folder-field {
+  flex: 1 1 auto;
+  max-width: 320px;
+}
+
 .image-picker__content {
   min-height: 320px;
   max-height: 65vh;
@@ -125,6 +137,12 @@
     color: var(--mat-sys-primary);
     flex: 0 0 auto;
   }
+}
+
+// Just-uploaded file: ring it so the user can spot what they added.
+.image-picker__cell--recent {
+  border-color: var(--mat-sys-primary);
+  box-shadow: 0 0 0 2px var(--mat-sys-primary-container);
 }
 
 .image-picker__thumb {

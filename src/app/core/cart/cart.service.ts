@@ -59,17 +59,32 @@ export class CartService {
 
   /** Discount calculated client-side; mirrors the SQL formula in
    *  calculate_coupon_discount so we don't need an RPC round-trip every
-   *  time the subtotal changes. The server is still the source of truth
-   *  at apply-time (validate_coupon) and redemption-time. */
+   *  time the subtotal changes. Scoped to the coupon's eligible categories.
+   *  The server is still the source of truth at apply-time (validate_coupon)
+   *  and redemption-time. */
   readonly discount = computed(() => {
     const c = this._appliedCoupon();
     if (!c) return 0;
-    return computeDiscountClientSide(c, this.subtotal());
+    return computeDiscountClientSide(c, this.eligibleSubtotal(c));
   });
 
   readonly total = computed(() =>
     Math.max(0, this.subtotal() - this.discount()),
   );
+
+  /** Portion of the cart a coupon's discount applies to. When the coupon has
+   *  no category targeting (null/empty), that's the whole subtotal; otherwise
+   *  it's the sum over lines whose category is in the allow-list. Line prices
+   *  are already the effective price (sale_price ?? price) set at hydrate. */
+  private eligibleSubtotal(coupon: AppliedCoupon): number {
+    const cats = coupon.category_ids;
+    if (!cats || cats.length === 0) return this.subtotal();
+    const allow = new Set(cats);
+    return this._items().reduce(
+      (s, l) => (allow.has(l.category_id) ? s + l.price * l.quantity : s),
+      0,
+    );
+  }
 
   /** Last-seen user id; lets the auth effect detect transitions
    *  (anon→authed, authed→anon, switched user, simple refresh). */
@@ -138,6 +153,7 @@ export class CartService {
         type1: product.type1,
         type2: product.type2,
         set_name: product.set_name,
+        category_id: product.category_id,
       },
       ...lines,
     ]);
@@ -243,6 +259,7 @@ export class CartService {
       type: result.type,
       discount_value: result.discount_value,
       min_purchase_amount: result.min_purchase_amount,
+      category_ids: result.category_ids,
     });
     const { error: upErr } = await (this.supabase.client as any)
       .from('carts')
@@ -286,6 +303,7 @@ export class CartService {
       type: AppliedCoupon['type'];
       discount_value: number;
       min_purchase_amount: number | null;
+      category_ids: string[] | null;
     };
     this._appliedCoupon.set({
       coupon_id: c.coupon_id,
@@ -293,6 +311,7 @@ export class CartService {
       type: c.type,
       discount_value: c.discount_value,
       min_purchase_amount: c.min_purchase_amount,
+      category_ids: c.category_ids,
     });
   }
 
@@ -359,7 +378,7 @@ export class CartService {
     const { data, error } = await (this.supabase.client as any)
       .from('cart_items')
       .select(
-        'product_id, quantity, added_at, products!inner(id, name, slug, image_url, price, quantity, condition, card_number, type1, type2, sets(name))',
+        'product_id, quantity, added_at, products!inner(id, name, slug, image_url, price, sale_price, quantity, condition, card_number, type1, type2, category_id, sets(name))',
       )
       .eq('user_id', userId)
       .order('added_at', { ascending: false });
@@ -379,11 +398,13 @@ export class CartService {
         | 'slug'
         | 'image_url'
         | 'price'
+        | 'sale_price'
         | 'quantity'
         | 'condition'
         | 'card_number'
         | 'type1'
         | 'type2'
+        | 'category_id'
       > & { sets: Pick<SetRow, 'name'> | null };
     };
     const lines: CartLine[] = ((data ?? []) as DbRow[]).map((row) => ({
@@ -393,13 +414,14 @@ export class CartService {
       name: row.products.name,
       slug: row.products.slug,
       image_url: row.products.image_url,
-      price: row.products.price,
+      price: row.products.sale_price ?? row.products.price,
       stock: row.products.quantity,
       condition: row.products.condition,
       card_number: row.products.card_number,
       type1: row.products.type1,
       type2: row.products.type2,
       set_name: row.products.sets?.name ?? null,
+      category_id: row.products.category_id,
     }));
     this._items.set(lines);
   }
@@ -414,7 +436,7 @@ export class CartService {
     const { data, error } = await (this.supabase.client as any)
       .from('products')
       .select(
-        'id, name, slug, image_url, price, quantity, condition, card_number, type1, type2, sets(name)',
+        'id, name, slug, image_url, price, sale_price, quantity, condition, card_number, type1, type2, category_id, sets(name)',
       )
       .in('id', ids);
     if (error) {
@@ -429,11 +451,13 @@ export class CartService {
       | 'slug'
       | 'image_url'
       | 'price'
+      | 'sale_price'
       | 'quantity'
       | 'condition'
       | 'card_number'
       | 'type1'
       | 'type2'
+      | 'category_id'
     > & { sets: Pick<SetRow, 'name'> | null };
     const byId = new Map<string, Row>(((data ?? []) as Row[]).map((r) => [r.id, r]));
     const lines: CartLine[] = items
@@ -447,13 +471,14 @@ export class CartService {
           name: p.name,
           slug: p.slug,
           image_url: p.image_url,
-          price: p.price,
+          price: p.sale_price ?? p.price,
           stock: p.quantity,
           condition: p.condition,
           card_number: p.card_number,
           type1: p.type1,
           type2: p.type2,
           set_name: p.sets?.name ?? null,
+          category_id: p.category_id,
         } as CartLine;
       })
       .filter((l): l is CartLine => l !== null)
@@ -539,11 +564,12 @@ export class CartService {
     type1: string | null;
     type2: string | null;
     set_name: string | null;
+    category_id: string;
   } | null> {
     const { data, error } = await (this.supabase.client as any)
       .from('products')
       .select(
-        'id, name, slug, image_url, price, quantity, condition, card_number, type1, type2, sets(name)',
+        'id, name, slug, image_url, price, sale_price, quantity, condition, card_number, type1, type2, category_id, sets(name)',
       )
       .eq('id', productId)
       .maybeSingle();
@@ -554,7 +580,7 @@ export class CartService {
     if (!data) return null;
     type Row = Pick<
       ProductRow,
-      'id' | 'name' | 'slug' | 'image_url' | 'price' | 'quantity' | 'condition' | 'card_number' | 'type1' | 'type2'
+      'id' | 'name' | 'slug' | 'image_url' | 'price' | 'sale_price' | 'quantity' | 'condition' | 'card_number' | 'type1' | 'type2' | 'category_id'
     > & { sets: Pick<SetRow, 'name'> | null };
     const p = data as Row;
     return {
@@ -562,13 +588,14 @@ export class CartService {
       name: p.name,
       slug: p.slug,
       image_url: p.image_url,
-      price: p.price,
+      price: p.sale_price ?? p.price,
       stock: p.quantity,
       condition: p.condition,
       card_number: p.card_number,
       type1: p.type1,
       type2: p.type2,
       set_name: p.sets?.name ?? null,
+      category_id: p.category_id,
     };
   }
 
@@ -601,20 +628,22 @@ export class CartService {
 }
 
 /** Mirrors `public.calculate_coupon_discount` so we can render the discount
- *  line without an RPC round-trip on every cart change. The server is still
- *  the source of truth at apply-time and (eventually) at redemption-time. */
-function computeDiscountClientSide(coupon: AppliedCoupon, subtotal: number): number {
-  if (subtotal <= 0) return 0;
+ *  line without an RPC round-trip on every cart change. `base` is the eligible
+ *  subtotal (whole cart, or just the coupon's categories) — the threshold,
+ *  discount, and cap all apply to it. The server is still the source of truth
+ *  at apply-time and redemption-time. */
+function computeDiscountClientSide(coupon: AppliedCoupon, base: number): number {
+  if (base <= 0) return 0;
   let amount = 0;
   if (coupon.type === 'PERCENTAGE') {
-    amount = round2(subtotal * coupon.discount_value / 100);
+    amount = round2(base * coupon.discount_value / 100);
   } else if (coupon.type === 'FIXED_ON_THRESHOLD') {
-    if (coupon.min_purchase_amount == null || subtotal < coupon.min_purchase_amount) {
+    if (coupon.min_purchase_amount == null || base < coupon.min_purchase_amount) {
       return 0;
     }
     amount = coupon.discount_value;
   }
-  return Math.min(amount, subtotal);
+  return Math.min(amount, base);
 }
 
 function round2(n: number): number {

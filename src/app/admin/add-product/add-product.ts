@@ -7,8 +7,15 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import {
+  AbstractControl,
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import type { Card } from '@tcgdex/sdk';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -34,6 +41,7 @@ import { resolveHostedSrc, tcgdexImageToHostedPath } from '../../core/images/car
 import { CategoriesService } from '../../core/catalog/categories.service';
 import { CardTypesService } from '../../core/catalog/card-types.service';
 import { ProductsService } from '../../core/catalog/products.service';
+import { RafflesService } from '../../core/catalog/raffles.service';
 import { SetsService } from '../../core/catalog/sets.service';
 import { TcgdexCardsService } from '../../core/catalog/tcgdex-cards.service';
 import { AppSettingsService } from '../../core/settings/app-settings.service';
@@ -73,6 +81,7 @@ const PICKER_SET_STORAGE_KEY = 'admin:add-product:picker-set-id';
 export class AddProduct {
   private readonly fb = inject(FormBuilder);
   private readonly products = inject(ProductsService);
+  private readonly raffles = inject(RafflesService);
   private readonly categories = inject(CategoriesService);
   private readonly cardTypes = inject(CardTypesService);
   private readonly sets = inject(SetsService);
@@ -80,6 +89,7 @@ export class AddProduct {
   private readonly settings = inject(AppSettingsService);
   private readonly snack = inject(MatSnackBar);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly dialog = inject(MatDialog);
   private readonly imageBrowser = inject(ImageBrowserService);
   private readonly destroyRef = inject(DestroyRef);
@@ -107,6 +117,16 @@ export class AddProduct {
   protected readonly manualMode = signal(false);
   protected readonly saving = signal(false);
   protected readonly hasCategories = computed(() => this.categoriesList().length > 0);
+
+  /** Mirrors the category_id control so `isRaffle` can react to selection. */
+  protected readonly selectedCategoryId = signal<string>('');
+  /** True when the chosen category is the "Rifas" bucket — reveals the raffle
+   *  fields (draw date + notes). */
+  protected readonly isRaffle = computed(() => {
+    const id = this.selectedCategoryId();
+    if (!id) return false;
+    return this.categoriesList().find((c) => c.slug === 'rifas')?.id === id;
+  });
 
   // Optional set filter for the TCGdex card picker. Holds a Supabase set_id (UUID);
   // we resolve its TCGdex code through `setsById` to feed `card-typeahead`.
@@ -148,8 +168,14 @@ export class AddProduct {
     language: ['EN', Validators.required],
     variant: [''],
     price: [0, [Validators.required, Validators.min(0)]],
+    sale_price: [null as number | null, [Validators.min(0.01)]],
     quantity: [1, [Validators.required, Validators.min(0)]],
     featured: [false],
+    // Raffle-only fields, shown when the selected category is "Rifas".
+    // `description` is the raffle notes (stays on the product); `draw_at` is the
+    // scheduled draw date, persisted to the raffles table on submit.
+    description: [''],
+    draw_at: [null as string | null],
     // TCGdex-derived metadata. Not rendered as form inputs — patched by
     // `onCardSelected` and serialised on submit. Manual mode leaves them null.
     tcgdex_id: [null as string | null],
@@ -161,13 +187,16 @@ export class AddProduct {
     type2: [null as string | null],
     legal_standard: [null as boolean | null],
     legal_expanded: [null as boolean | null],
-  });
+  }, { validators: salePriceBelowPrice });
 
   constructor() {
     this.bootstrap();
     this.form.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.refreshSlug());
+      .subscribe(() => {
+        this.refreshSlug();
+        this.selectedCategoryId.set(this.form.get('category_id')!.value ?? '');
+      });
     effect(() => this.storage.set(PICKER_SET_STORAGE_KEY, this.pickerSetId()));
   }
 
@@ -181,6 +210,12 @@ export class AddProduct {
       this.categoriesList.set(cats);
       this.setsById.set(new Map(sets.map((s) => [s.id, s])));
       this.cardTypesList.set(types);
+      // "Agregar rifa" deep-links here with ?category=rifas — preselect the
+      // Rifas category so the Datos de la rifa section is revealed.
+      if (this.route.snapshot.queryParamMap.get('category') === 'rifas') {
+        const rifas = cats.find((c) => c.slug === 'rifas');
+        if (rifas) this.form.patchValue({ category_id: rifas.id });
+      }
       this.refreshSlug();
     } catch (err) {
       this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
@@ -331,8 +366,11 @@ export class AddProduct {
       language: 'EN',
       variant: '',
       price: 0,
+      sale_price: null,
       quantity: 1,
       featured: false,
+      description: '',
+      draw_at: null,
       tcgdex_id: null,
       illustrator: null,
       regulation_mark: null,
@@ -399,8 +437,10 @@ export class AddProduct {
         language: raw.language,
         variant: raw.variant || null,
         price: Number(raw.price),
+        sale_price: toNullableNumber(raw.sale_price),
         quantity: Number(raw.quantity),
         featured: raw.featured,
+        description: raw.description || null,
         tcgdex_id: raw.tcgdex_id || null,
         illustrator: raw.illustrator || null,
         regulation_mark: raw.regulation_mark || null,
@@ -412,6 +452,9 @@ export class AddProduct {
         legal_expanded: raw.legal_expanded,
       });
       await this.products.setCardTypes(created.id, [...this.selectedCardTypeIds()]);
+      if (this.isRaffle()) {
+        await this.raffles.upsert(created.id, { draw_at: raw.draw_at || null });
+      }
       this.snack.open('Producto creado', 'Editar', { duration: 5000 })
         .onAction()
         .subscribe(() => this.router.navigate(['/admin/products', created.id, 'edit']));
@@ -438,8 +481,11 @@ export class AddProduct {
       language: this.form.get('language')!.value, // keep last language
       variant: '',
       price: 0,
+      sale_price: null,
       quantity: 1,
       featured: false,
+      description: '',
+      draw_at: null,
       tcgdex_id: null,
       illustrator: null,
       regulation_mark: null,
@@ -459,4 +505,17 @@ export class AddProduct {
     }
     return 'Error desconocido';
   }
+}
+
+function salePriceBelowPrice(group: AbstractControl): ValidationErrors | null {
+  const price = Number(group.get('price')?.value);
+  const sale = group.get('sale_price')?.value;
+  if (sale === null || sale === undefined || sale === '') return null;
+  return Number(sale) < price ? null : { saleNotBelowPrice: true };
+}
+
+function toNullableNumber(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
 }

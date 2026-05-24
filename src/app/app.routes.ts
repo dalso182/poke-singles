@@ -33,6 +33,17 @@ export const routes: Routes = [
           import('./admin/product-edit/product-edit').then((m) => m.ProductEdit),
       },
       {
+        path: 'raffles',
+        pathMatch: 'full',
+        loadComponent: () =>
+          import('./admin/raffles/raffles').then((m) => m.Raffles),
+      },
+      {
+        path: 'raffles/:id',
+        loadComponent: () =>
+          import('./admin/raffles/raffle-detail').then((m) => m.RaffleDetail),
+      },
+      {
         path: 'categories',
         loadComponent: () =>
           import('./admin/categories/categories').then((m) => m.Categories),
@@ -124,6 +135,10 @@ export const routes: Routes = [
         path: 'buscar',
         loadComponent: () =>
           import('./user/search-results/search-results').then((m) => m.SearchResults),
+      },
+      {
+        path: 'rifas',
+        loadComponent: () => import('./user/rifas/rifas').then((m) => m.Rifas),
       },
       {
         path: 'products/:slug',

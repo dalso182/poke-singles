@@ -16,8 +16,8 @@ export const environment = {
     endpoint: 'https://api.tcgdex.net/v2',
   },
   images: {
-    // Absolute URL to the read-only PHP listing endpoint. Empty string =
-    // picker disabled. See environment.ts for setup.
-    listUrl: 'https://new.poke-singles.com/card-images/list-images.php',
+    // Root-relative URL to the read-only PHP listing endpoint (same-origin in
+    // production). Empty string = picker disabled. See environment.ts for setup.
+    listUrl: '/card-images/list-images.php',
   },
 };

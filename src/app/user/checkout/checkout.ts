@@ -272,6 +272,7 @@ export class Checkout implements OnInit {
       case 'INSUFFICIENT_STOCK':   return 'Una de tus cartas se agotó mientras pagabas. Ajusta el carrito.';
       case 'COUPON_INVALID':
       case 'COUPON_BELOW_MINIMUM':
+      case 'COUPON_NO_ELIGIBLE':
       case 'COUPON_LIMIT':         return 'Tu cupón ya no es válido. Quítalo y vuelve a intentar.';
       default:                     return 'No se pudo procesar el pedido. Intenta de nuevo.';
     }

@@ -41,6 +41,13 @@
                 <mat-label>Precio (CRC)</mat-label>
                 <input matInput type="number" formControlName="price" min="0" step="0.01" />
               </mat-form-field>
+              <mat-form-field appearance="outline" class="product-edit__quick-price">
+                <mat-label>Precio rebajado</mat-label>
+                <input matInput type="number" formControlName="sale_price" min="0" step="0.01" placeholder="—" />
+                @if (form.hasError('saleNotBelowPrice')) {
+                  <mat-error>Debe ser menor al precio normal.</mat-error>
+                }
+              </mat-form-field>
               <mat-form-field appearance="outline" class="product-edit__quick-qty">
                 <mat-label>Cantidad</mat-label>
                 <input matInput type="number" formControlName="quantity" min="0" />
@@ -130,7 +137,10 @@
         <mat-card-content class="product-edit__grid">
           <mat-form-field appearance="outline">
             <mat-label>Categoría</mat-label>
-            <mat-select formControlName="category_id">
+            <mat-select
+              formControlName="category_id"
+              (selectionChange)="selectedCategoryId.set($event.value)"
+            >
               @for (c of categoriesList(); track c.id) {
                 <mat-option [value]="c.id">{{ c.name }}</mat-option>
               }
@@ -167,6 +177,14 @@
             <input matInput type="number" formControlName="price" min="0" step="0.01" />
           </mat-form-field>
           <mat-form-field appearance="outline">
+            <mat-label>Precio rebajado (opcional)</mat-label>
+            <input matInput type="number" formControlName="sale_price" min="0" step="0.01" placeholder="—" />
+            <mat-hint>Vacío = sin descuento. Debe ser menor al precio normal.</mat-hint>
+            @if (form.hasError('saleNotBelowPrice')) {
+              <mat-error>Debe ser menor al precio normal.</mat-error>
+            }
+          </mat-form-field>
+          <mat-form-field appearance="outline">
             <mat-label>Cantidad</mat-label>
             <input matInput type="number" formControlName="quantity" min="0" />
           </mat-form-field>
@@ -176,6 +194,25 @@
           </div>
         </mat-card-content>
       </mat-card>
+
+      @if (isRaffle()) {
+        <mat-card class="product-edit__panel">
+          <mat-card-header>
+            <mat-card-title>Datos de la rifa</mat-card-title>
+            <mat-card-subtitle>
+              La cantidad es el número de entradas; el precio es por entrada.
+              Las notas se toman del campo "Descripción" de arriba.
+            </mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content class="product-edit__grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Fecha del sorteo</mat-label>
+              <input matInput type="date" formControlName="draw_at" />
+              <mat-hint>Opcional — vacío = por definir.</mat-hint>
+            </mat-form-field>
+          </mat-card-content>
+        </mat-card>
+      }
 
       @if (cardTypesList().length > 0) {
         <mat-card class="product-edit__panel">

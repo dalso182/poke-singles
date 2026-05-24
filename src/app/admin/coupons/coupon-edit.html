@@ -47,6 +47,16 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline">
+          <mat-label>Categorías aplicables</mat-label>
+          <mat-select formControlName="category_ids" multiple>
+            @for (c of categories(); track c.id) {
+              <mat-option [value]="c.id">{{ c.name }}</mat-option>
+            }
+          </mat-select>
+          <mat-hint>Vacío = aplica a todas las categorías.</mat-hint>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
           <mat-label>
             {{ form.controls['type'].value === 'PERCENTAGE' ? 'Porcentaje (%)' : 'Monto del descuento (CRC)' }}
           </mat-label>

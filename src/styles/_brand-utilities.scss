@@ -32,21 +32,25 @@
   text-transform: uppercase;
 }
 
-// Featured card: amber box-shadow ring + glow + ★ DESTACADA badge.
-.product-card--featured {
+// On-sale card: amber box-shadow ring + glow + $ badge.
+// Applied automatically when sale_price is set; signals a discounted product
+// at a glance to pair with the strikethrough price in the body.
+.product-card--on-sale {
   box-shadow:
     0 0 0 1px var(--accent-amber),
     0 12px 32px -8px rgba(212, 148, 28, 0.25);
   position: relative;
 }
 
-.product-card--featured::after {
-  content: '★';
+.product-card--on-sale::after {
+  content: '$';
   position: absolute;
-  top: 8px;
+  top: 6px;
   right: 8px;
   z-index: 2;
-  font-size: 14px;
+  font-family: var(--font-brand);
+  font-size: 16px;
+  font-weight: 800;
   color: var(--accent-amber);
 }
 
@@ -76,9 +80,11 @@
   opacity: 0.6;
 }
 
-// Sale price: Tico Red. Pair with .price--original (strikethrough grey).
+// Sale price: Amber Glow. Pair with .price--original (strikethrough grey).
+// Sale price comes FIRST in the markup (it's what the customer pays);
+// the original sits to its right with margin-left for spacing.
 .price--sale {
-  color: var(--brand-red);
+  color: var(--accent-amber);
   font-weight: 700;
 }
 
@@ -86,7 +92,7 @@
   color: var(--text-tertiary);
   text-decoration: line-through;
   font-weight: 500;
-  margin-right: 8px;
+  margin-left: 8px;
 }
 
 // Condition pill: small inline badge that signals card grade at a glance.
