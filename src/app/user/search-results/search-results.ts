@@ -1,13 +1,12 @@
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ProductsService } from '../../core/catalog/products.service';
 import { SetsService } from '../../core/catalog/sets.service';
 import { CardTypesService } from '../../core/catalog/card-types.service';
+import { normalizeSort } from '../../core/catalog/catalog.types';
 import type {
   CardTypeRow,
   ProductSearchRow,
@@ -17,20 +16,20 @@ import type {
 import { FiltersBar } from '../../shared/filters-bar/filters-bar';
 import { SetFilter } from '../../shared/filters-bar/set-filter/set-filter';
 import { CardTypeFilter } from '../../shared/filters-bar/card-type-filter/card-type-filter';
+import { SortSelect } from '../../shared/sort-select/sort-select';
 import { ProductCard } from '../../shared/product-card/product-card';
 
 @Component({
   selector: 'app-search-results',
   imports: [
     RouterLink,
-    MatFormFieldModule,
     MatIconModule,
     MatProgressBarModule,
-    MatSelectModule,
     MatSnackBarModule,
     FiltersBar,
     SetFilter,
     CardTypeFilter,
+    SortSelect,
     ProductCard,
   ],
   templateUrl: './search-results.html',
@@ -69,13 +68,9 @@ export class SearchResults {
 
   /** Resolves the URL's raw `sort` param to a known SortKey, falling back to
    *  the per-context default (relevance with a query, recent without). */
-  protected readonly normalizedSort = computed<SortKey>(() => {
-    const v = this.sort();
-    if (v === 'price-asc' || v === 'price-desc' || v === 'recent' || v === 'relevance') {
-      return v;
-    }
-    return this.q().trim() ? 'relevance' : 'recent';
-  });
+  protected readonly normalizedSort = computed<SortKey>(() =>
+    normalizeSort(this.sort(), this.q().trim().length > 0),
+  );
 
   protected readonly hasQuery = computed(() => this.q().trim().length > 0);
 

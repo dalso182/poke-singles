@@ -1,10 +1,14 @@
 <div class="filters-bar">
-  <ng-content />
+  <div class="filters-bar__filters">
+    <ng-content />
 
-  @if (anyActive()) {
-    <button mat-button type="button" class="filters-bar__clear" (click)="onClearAll()">
-      <mat-icon>close</mat-icon>
-      Limpiar filtros
-    </button>
-  }
+    @if (anyActive()) {
+      <button mat-button type="button" class="filters-bar__clear" (click)="onClearAll()">
+        <mat-icon>close</mat-icon>
+        Limpiar filtros
+      </button>
+    }
+  </div>
+
+  <ng-content select="[bar-end]" />
 </div>

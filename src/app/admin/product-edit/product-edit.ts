@@ -126,6 +126,7 @@ export class ProductEdit implements OnInit {
       // Raffle draw date (native date input → 'YYYY-MM-DD'), persisted to the
       // raffles table. Only shown when category is "Rifas"; notes reuse description.
       draw_at: [null as string | null],
+      market_price: [null as number | null, [Validators.min(0)]],
     },
     { validators: salePriceBelowPrice },
   );
@@ -175,6 +176,7 @@ export class ProductEdit implements OnInit {
         featured: product.featured,
         // From the raffles row; stored at UTC midnight, take the date portion.
         draw_at: raffleRow?.draw_at ? raffleRow.draw_at.slice(0, 10) : null,
+        market_price: raffleRow?.market_price ?? null,
       });
     } catch (err) {
       this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
@@ -244,7 +246,10 @@ export class ProductEdit implements OnInit {
         featured: raw.featured,
       });
       if (this.isRaffle()) {
-        await this.raffles.upsert(product.id, { draw_at: raw.draw_at || null });
+        await this.raffles.upsert(product.id, {
+          draw_at: raw.draw_at || null,
+          market_price: toNullableNumber(raw.market_price),
+        });
       }
       await this.products.setCardTypes(product.id, [...this.selectedCardTypeIds()]);
       this.product.set(updated);

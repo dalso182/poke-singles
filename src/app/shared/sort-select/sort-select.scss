@@ -1,0 +1,8 @@
+// Right-align within the filters-bar flex row (sits next to "Limpiar filtros").
+:host {
+  margin-left: auto;
+}
+
+.sort-select__field {
+  width: 220px;
+}

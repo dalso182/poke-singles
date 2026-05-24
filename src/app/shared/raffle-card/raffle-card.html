@@ -17,6 +17,9 @@
 
   <div class="card-info">
     <h3 class="card-name">{{ raffle().name }}</h3>
+    @if (metaLine()) {
+      <div class="card-meta">{{ metaLine() }}</div>
+    }
 
     @switch (raffle().status) {
       @case ('drawn') {
@@ -48,6 +51,17 @@
           <mat-icon>event</mat-icon>
           @if (raffle().draw_at) {
             <span>Sorteo: {{ raffle().draw_at | date: 'd/MM/yyyy' : 'UTC' }}</span>
+            @if (countdown(); as c) {
+              <span
+                class="raffle-countdown"
+                [class.raffle-countdown--soon]="c.soon"
+              >
+                @if (c.soon) {
+                  <mat-icon>bolt</mat-icon>
+                }
+                {{ c.label }}
+              </span>
+            }
           } @else {
             <span>Fecha por definir</span>
           }
@@ -57,12 +71,19 @@
           <div class="card-price">
             <span class="price--sale">₡{{ raffle().sale_price! | number: '1.0-0' }}</span>
             <span class="price--original">₡{{ raffle().price | number: '1.0-0' }}</span>
-            <span class="price-unit">por número</span>
+            <span class="price-unit">por espacio</span>
           </div>
         } @else {
           <div class="card-price">
             ₡{{ raffle().price | number: '1.0-0' }}
-            <span class="price-unit">por número</span>
+            <span class="price-unit">por espacio</span>
+          </div>
+        }
+
+        @if (raffle().market_price != null) {
+          <div class="market-price">
+            Precio de mercado: <strong>₡{{ raffle().market_price! | number: '1.0-0' }}</strong>
+            <span class="market-price__note">Valor de referencia de la carta</span>
           </div>
         }
 
@@ -70,8 +91,9 @@
           @if (soldOut()) {
             Rifa completa
           } @else {
-            {{ raffle().quantity }} número{{ raffle().quantity > 1 ? 's' : '' }}
-            disponible{{ raffle().quantity > 1 ? 's' : '' }}
+            <img src="assets/images/raffle-ticket.png" alt="" class="ticket-icon" />
+            <span class="ticket-count">×{{ raffle().quantity }}/{{ totalSpaces() }}</span>
+            <span class="ticket-label">disponibles</span>
           }
         </div>
 
@@ -110,7 +132,7 @@
             [disabled]="soldOut()"
             (click)="onAddToCart()"
           >
-            {{ soldOut() ? 'AGOTADA' : 'Añadir' }}
+            {{ soldOut() ? 'AGOTADA' : (qty() === 1 ? 'Agregar ticket' : 'Agregar tickets') }}
           </button>
         </div>
       }

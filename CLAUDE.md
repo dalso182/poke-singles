@@ -228,7 +228,9 @@ Admin CRUD lives at `/admin/coupons` (list with active/inactive/expired/
 deleted filters + search + soft-delete-with-undo) and `/admin/coupons/new` /
 `/admin/coupons/:id/edit` (shared form with type-reactive validators).
 
-**Redemption is wired.** `place_order` (currently `place_order_v4`) atomically
+**Redemption is wired.** `place_order` (currently `place_order_v7` — sale-price,
+category-scoped coupons, and a deterministic ascending-`product_id` lock order to
+avoid concurrent-checkout deadlocks) atomically
 inserts a `coupon_redemptions` row after creating the order and decrementing
 stock. `validate_coupon` (currently `_v2`) enforces `max_uses_per_user` by
 counting prior redemptions for the authenticated `user_id`; `place_order`
@@ -264,6 +266,11 @@ rails) apply the same exclusion. Public-read RLS keeps raffles visible while
 raffles ⨝ sets, safe columns only — no `winner_email`) and splits into
 **Activas** (`scheduled`) / **Completadas** (`drawn`/`void`, shows the winner)
 tabs. Tile: `shared/raffle-card/` (status-aware — buy mode vs. winner banner).
+The card shows a ticket-icon space count (`remaining/total`, where total =
+`quantity + entries_sold`), a day countdown (gold "coming soon" under 3 days),
+the set + card-number meta line, and **`market_price`** (the card's real value,
+to show the raffle isn't profiteering). `rifas_listing` exposes `entries_sold`,
+`card_number`, `set_printed_total`, and `market_price` for these.
 
 **The draw is admin-triggered (no scheduler).** `draw_raffle(product_id)`
 (security definer, `is_admin`, idempotent) raises **`UNPAID_ENTRIES`** if any
@@ -322,9 +329,15 @@ Pass `[featured]="true"` to apply the `.product-card--featured` modifier
 
 The `.cards-grid` wrapper stays on each page — listings use
 `minmax(400px, 1fr)`, home rails use `minmax(320px, 1fr)` for denser tiles.
-Filter chrome (`<app-filters-bar>` + `<app-set-filter>` + `<app-card-type-filter>`)
-also stays on each page since `/products` and `/buscar` share a filter
-contract but home doesn't.
+Filter chrome (`<app-filters-bar>` + `<app-set-filter>` + `<app-card-type-filter>`
++ `<app-sort-select>`) also stays on each page since `/products` and `/buscar`
+share a filter contract but home doesn't. `<app-sort-select>`
+(`src/app/shared/sort-select/`) is the reusable "Ordenar por" control, projected
+into `<app-filters-bar>` (right-aligned on the same row as the filters) on both
+pages; `showRelevance` is on only when there's a query. Both pages bind it to the
+URL `sort` param and resolve it through `normalizeSort()` (`catalog.types.ts`).
+`/products` (`card-list`) routes the same `search_products` RPC as `/buscar`, so it
+already honored `sort` server-side — it just gained the UI.
 
 The public-read RLS predicate on `products` was tightened to also require
 `price > 0` (matching `active = true` and `quantity > 0`), so $0 listings are

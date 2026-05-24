@@ -176,6 +176,7 @@ export class AddProduct {
     // scheduled draw date, persisted to the raffles table on submit.
     description: [''],
     draw_at: [null as string | null],
+    market_price: [null as number | null, [Validators.min(0)]],
     // TCGdex-derived metadata. Not rendered as form inputs — patched by
     // `onCardSelected` and serialised on submit. Manual mode leaves them null.
     tcgdex_id: [null as string | null],
@@ -371,6 +372,7 @@ export class AddProduct {
       featured: false,
       description: '',
       draw_at: null,
+      market_price: null,
       tcgdex_id: null,
       illustrator: null,
       regulation_mark: null,
@@ -453,7 +455,10 @@ export class AddProduct {
       });
       await this.products.setCardTypes(created.id, [...this.selectedCardTypeIds()]);
       if (this.isRaffle()) {
-        await this.raffles.upsert(created.id, { draw_at: raw.draw_at || null });
+        await this.raffles.upsert(created.id, {
+          draw_at: raw.draw_at || null,
+          market_price: toNullableNumber(raw.market_price),
+        });
       }
       this.snack.open('Producto creado', 'Editar', { duration: 5000 })
         .onAction()
@@ -486,6 +491,7 @@ export class AddProduct {
       featured: false,
       description: '',
       draw_at: null,
+      market_price: null,
       tcgdex_id: null,
       illustrator: null,
       regulation_mark: null,

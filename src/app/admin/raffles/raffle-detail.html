@@ -40,6 +40,14 @@
             </dd>
             <dt>Precio por entrada</dt>
             <dd>₡{{ p.price | number: '1.0-0' }}</dd>
+            <dt>Precio de mercado</dt>
+            <dd>
+              @if (raffle()?.market_price != null) {
+                ₡{{ raffle()!.market_price! | number: '1.0-0' }}
+              } @else {
+                —
+              }
+            </dd>
             <dt>Entradas restantes</dt>
             <dd>{{ p.quantity }}</dd>
             <dt>Entradas vendidas</dt>

@@ -169,6 +169,13 @@ export interface RaffleCardItem {
   status: RaffleStatus;
   winner_name: string | null;
   total_entries: number;
+  /** Non-cancelled entries already bought. Total spaces = quantity + entries_sold. */
+  entries_sold: number;
+  card_number: string | null;
+  set_name: string | null;
+  set_printed_total: number | null;
+  /** The card's real market value (CRC), shown to justify the raffle. */
+  market_price: number | null;
 }
 
 /** Admin raffle list row from the admin_raffles_summary() RPC: product fields +
@@ -194,6 +201,7 @@ export interface RaffleSummaryRow {
 export interface RaffleRow {
   product_id: string;
   draw_at: string | null;
+  market_price: number | null;
   status: RaffleStatus;
   winner_order_id: string | null;
   winner_name: string | null;
@@ -534,6 +542,17 @@ export type SortKey = 'relevance' | 'price-asc' | 'price-desc' | 'recent';
 
 export const DEFAULT_SORT_WITH_QUERY: SortKey = 'relevance';
 export const DEFAULT_SORT_NO_QUERY: SortKey = 'recent';
+
+/**
+ * Resolve a raw URL `sort` param to a valid SortKey. `'relevance'` only survives
+ * when there's a query (it's meaningless while browsing), otherwise the
+ * per-context default applies. Shared by /products and /buscar.
+ */
+export function normalizeSort(raw: string | null | undefined, hasQuery: boolean): SortKey {
+  if (raw === 'price-asc' || raw === 'price-desc' || raw === 'recent') return raw;
+  if (raw === 'relevance' && hasQuery) return 'relevance';
+  return hasQuery ? DEFAULT_SORT_WITH_QUERY : DEFAULT_SORT_NO_QUERY;
+}
 
 export type ProductUpdate = Partial<Omit<ProductInsert, 'category_id'>> & {
   category_id?: string;

@@ -1,0 +1,11 @@
+<mat-form-field appearance="outline" subscriptSizing="dynamic" class="sort-select__field">
+  <mat-label>Ordenar por</mat-label>
+  <mat-select [value]="value()" (selectionChange)="sortChange.emit($event.value)">
+    @if (showRelevance()) {
+      <mat-option value="relevance">Relevancia</mat-option>
+    }
+    <mat-option value="price-asc">Precio (Menor a Mayor)</mat-option>
+    <mat-option value="price-desc">Precio (Mayor a Menor)</mat-option>
+    <mat-option value="recent">Más recientes</mat-option>
+  </mat-select>
+</mat-form-field>

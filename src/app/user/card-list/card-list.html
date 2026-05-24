@@ -31,6 +31,11 @@
     [hideZero]="false"
     (selectionChange)="onCardTypesChange($event)"
   />
+  <app-sort-select
+    bar-end
+    [value]="normalizedSort()"
+    (sortChange)="onSortChange($event)"
+  />
 </app-filters-bar>
 
 @if (loading()) {

@@ -24,20 +24,6 @@
     <span class="search-count">
       {{ results().length }} resultado{{ results().length !== 1 ? 's' : '' }}
     </span>
-    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="sort-field">
-      <mat-label>Ordenar por</mat-label>
-      <mat-select
-        [value]="normalizedSort()"
-        (selectionChange)="onSortChange($event.value)"
-      >
-        @if (hasQuery()) {
-          <mat-option value="relevance">Relevancia</mat-option>
-        }
-        <mat-option value="price-asc">Precio (Menor a Mayor)</mat-option>
-        <mat-option value="price-desc">Precio (Mayor a Menor)</mat-option>
-        <mat-option value="recent">Más recientes</mat-option>
-      </mat-select>
-    </mat-form-field>
   </div>
 </header>
 
@@ -56,6 +42,12 @@
     [counts]="cardTypeCounts()"
     [selected]="selectedCardTypeIds()"
     (selectionChange)="onCardTypesChange($event)"
+  />
+  <app-sort-select
+    bar-end
+    [value]="normalizedSort()"
+    [showRelevance]="hasQuery()"
+    (sortChange)="onSortChange($event)"
   />
 </app-filters-bar>
 

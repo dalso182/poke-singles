@@ -16,6 +16,7 @@ interface VisibleSet {
   code: string;
   symbolUrl: string | null;
   count: number;
+  releaseDate: string | null;
 }
 
 @Component({
@@ -62,12 +63,22 @@ export class SetFilter {
         code: s.code,
         symbolUrl: s.symbol_image_url || null,
         count: counts.get(s.id) ?? 0,
+        releaseDate: s.release_date,
       }))
       // Keep selected rows visible even if their count is 0 (so the user
       // can still uncheck them after admin changes availability).
       .filter((s) => (hide ? s.count > 0 || sel.has(s.id) : true))
       .filter((s) => (q ? s.name.toLowerCase().includes(q) : true))
-      .sort((a, b) => a.name.localeCompare(b.name));
+      // Newest sets first; ISO date strings sort chronologically. Sets with no
+      // date sink to the bottom, name breaks ties.
+      .sort((a, b) => {
+        if (a.releaseDate !== b.releaseDate) {
+          if (!a.releaseDate) return 1;
+          if (!b.releaseDate) return -1;
+          return b.releaseDate.localeCompare(a.releaseDate);
+        }
+        return a.name.localeCompare(b.name);
+      });
   });
 
   protected readonly selectedCount = computed<number>(() => this.selected().length);

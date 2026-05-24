@@ -30,5 +30,47 @@
         </span>
       }
     </a>
+
+    <a
+      class="dashboard__tile"
+      [class.dashboard__tile--alert]="todayRaffle()"
+      routerLink="/admin/raffles"
+    >
+      <span class="brand-eyebrow">Rifas</span>
+      <span class="dashboard__metric">
+        @if (raffleRows() === null) {
+          —
+        } @else {
+          {{ activeCount() }}
+        }
+      </span>
+      <span class="dashboard__caption">
+        @if (activeCount() === 1) {
+          Rifa activa
+        } @else {
+          Rifas activas
+        }
+      </span>
+
+      @if (todayRaffle(); as t) {
+        <span class="dashboard__alert">
+          <mat-icon>celebration</mat-icon>
+          ¡Sorteo hoy: {{ t.name }}!
+        </span>
+      } @else if (nextRaffle(); as n) {
+        <span class="dashboard__caption">
+          Próximo sorteo: {{ n.draw_at | date: 'd/MM/yyyy' : 'UTC' }} · {{ n.name }}
+        </span>
+      } @else if (activeCount() > 0) {
+        <span class="dashboard__caption">Sin fecha de sorteo definida</span>
+      }
+
+      @if (activeCount() > 0) {
+        <span class="dashboard__cta">
+          Ver rifas
+          <mat-icon>arrow_forward</mat-icon>
+        </span>
+      }
+    </a>
   </div>
 </section>

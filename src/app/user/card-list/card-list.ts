@@ -6,14 +6,17 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ProductsService } from '../../core/catalog/products.service';
 import { SetsService } from '../../core/catalog/sets.service';
 import { CardTypesService } from '../../core/catalog/card-types.service';
+import { normalizeSort } from '../../core/catalog/catalog.types';
 import type {
   CardTypeRow,
   ProductSearchRow,
   SetRow,
+  SortKey,
 } from '../../core/catalog/catalog.types';
 import { FiltersBar } from '../../shared/filters-bar/filters-bar';
 import { SetFilter } from '../../shared/filters-bar/set-filter/set-filter';
 import { CardTypeFilter } from '../../shared/filters-bar/card-type-filter/card-type-filter';
+import { SortSelect } from '../../shared/sort-select/sort-select';
 import { ProductCard } from '../../shared/product-card/product-card';
 
 @Component({
@@ -26,6 +29,7 @@ import { ProductCard } from '../../shared/product-card/product-card';
     FiltersBar,
     SetFilter,
     CardTypeFilter,
+    SortSelect,
     ProductCard,
   ],
   templateUrl: './card-list.html',
@@ -36,6 +40,8 @@ export class CardList {
   readonly sets = input<string | undefined>(undefined);
   /** Comma-separated card-type ids. */
   readonly types = input<string | undefined>(undefined);
+  /** URL `sort` param. No query here, so 'relevance' is never offered. */
+  readonly sort = input<string>('recent');
 
   private readonly products = inject(ProductsService);
   private readonly setsService = inject(SetsService);
@@ -61,15 +67,20 @@ export class CardList {
     () => this.selectedSetIds().length > 0 || this.selectedCardTypeIds().length > 0,
   );
 
+  protected readonly normalizedSort = computed<SortKey>(() =>
+    normalizeSort(this.sort(), false),
+  );
+
   constructor() {
     void this.bootstrapMeta();
 
-    // Refetch whenever either filter selection changes (initial render
+    // Refetch whenever the filter selection or sort changes (initial render
     // included).
     effect(() => {
       const setIds = this.selectedSetIds();
       const cardTypeIds = this.selectedCardTypeIds();
-      void this.fetchProducts(setIds, cardTypeIds);
+      const sort = this.normalizedSort();
+      void this.fetchProducts(setIds, cardTypeIds, sort);
     });
   }
 
@@ -90,14 +101,18 @@ export class CardList {
     }
   }
 
-  private async fetchProducts(setIds: string[], cardTypeIds: string[]): Promise<void> {
+  private async fetchProducts(
+    setIds: string[],
+    cardTypeIds: string[],
+    sort: SortKey,
+  ): Promise<void> {
     this.loading.set(true);
     try {
       // Route through the search RPC even with q='' so we get one row
       // shape + one filter pipeline shared with /buscar.
       const { rows } = await this.products.search({
         q: '',
-        sort: 'recent',
+        sort,
         pageSize: 60,
         setIds: setIds.length > 0 ? setIds : undefined,
         cardTypeIds: cardTypeIds.length > 0 ? cardTypeIds : undefined,
@@ -108,6 +123,13 @@ export class CardList {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  protected onSortChange(next: SortKey): void {
+    void this.router.navigate(['/products'], {
+      queryParams: { sort: next },
+      queryParamsHandling: 'merge',
+    });
   }
 
   protected onSetsChange(ids: string[]): void {

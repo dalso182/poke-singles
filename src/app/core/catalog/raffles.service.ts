@@ -34,13 +34,21 @@ export class RafflesService {
     return (data as RaffleRow | null) ?? null;
   }
 
-  /** Create or update only the scheduled draw date. Winner/status are owned by
-   *  draw_raffle, so the upsert intentionally touches just product_id + draw_at. */
-  async upsert(productId: string, patch: { draw_at: string | null }): Promise<RaffleRow> {
+  /** Create or update the admin-editable raffle fields (draw date + market
+   *  price). Winner/status are owned by draw_raffle, so the upsert intentionally
+   *  touches only these columns. */
+  async upsert(
+    productId: string,
+    patch: { draw_at: string | null; market_price: number | null },
+  ): Promise<RaffleRow> {
     const { data, error } = await (this.supabase.client as any)
       .from('raffles')
       .upsert(
-        { product_id: productId, draw_at: patch.draw_at },
+        {
+          product_id: productId,
+          draw_at: patch.draw_at,
+          market_price: patch.market_price,
+        },
         { onConflict: 'product_id' },
       )
       .select('*')

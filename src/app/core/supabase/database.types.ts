@@ -655,6 +655,7 @@ export type Database = {
           draw_at: string | null
           drawn_at: string | null
           drawn_by: string | null
+          market_price: number | null
           notified_at: string | null
           product_id: string
           status: string
@@ -670,6 +671,7 @@ export type Database = {
           draw_at?: string | null
           drawn_at?: string | null
           drawn_by?: string | null
+          market_price?: number | null
           notified_at?: string | null
           product_id: string
           status?: string
@@ -685,6 +687,7 @@ export type Database = {
           draw_at?: string | null
           drawn_at?: string | null
           drawn_by?: string | null
+          market_price?: number | null
           notified_at?: string | null
           product_id?: string
           status?: string
@@ -1043,15 +1046,19 @@ export type Database = {
       }
       rifas_listing: {
         Row: {
+          card_number: string | null
           draw_at: string | null
+          entries_sold: number | null
           id: string | null
           image_url: string | null
+          market_price: number | null
           name: string | null
           notes: string | null
           price: number | null
           quantity: number | null
           sale_price: number | null
           set_name: string | null
+          set_printed_total: number | null
           slug: string | null
           status: string | null
           total_entries: number | null
@@ -1106,6 +1113,7 @@ export type Database = {
           draw_at: string | null
           drawn_at: string | null
           drawn_by: string | null
+          market_price: number | null
           notified_at: string | null
           product_id: string
           status: string

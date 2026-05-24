@@ -8,6 +8,11 @@
   border-bottom: 1px solid var(--border-subtle);
 }
 
-.filters-bar__clear {
-  margin-left: auto;
+// Filters + "Limpiar filtros" sit together on the left; the bar-end slot
+// (sort control) is pushed to the right via its own margin-left:auto.
+.filters-bar__filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }

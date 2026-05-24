@@ -59,7 +59,8 @@
 }
 
 .dashboard__cta {
-  margin-top: 8px;
+  margin-top: auto;
+  align-self: flex-end;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -71,5 +72,30 @@
     font-size: 16px;
     width: 16px;
     height: 16px;
+  }
+}
+
+// A raffle drawing today — amber ring + glow to pull the eye (amber is the
+// brand's attention color; brand red stays reserved for sold-out/brand-bar).
+.dashboard__tile--alert {
+  border-color: var(--accent-amber);
+  box-shadow:
+    0 0 0 1px var(--accent-amber),
+    0 8px 24px -8px rgba(212, 148, 28, 0.35);
+}
+
+.dashboard__alert {
+  margin-top: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--accent-amber);
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
   }
 }
