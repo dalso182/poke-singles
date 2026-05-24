@@ -5,6 +5,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -32,6 +33,7 @@ import type {
     RouterLink,
     MatButtonModule,
     MatCardModule,
+    MatCheckboxModule,
     MatChipsModule,
     MatFormFieldModule,
     MatIconModule,
@@ -58,6 +60,7 @@ export class ProductsList {
   protected readonly categoryControl = new FormControl<string | ''>('', { nonNullable: true });
   protected readonly setControl = new FormControl<string | ''>('', { nonNullable: true });
   protected readonly includeInactiveControl = new FormControl(false, { nonNullable: true });
+  protected readonly featuredOnlyControl = new FormControl(false, { nonNullable: true });
 
   protected readonly categoriesList = signal<CategoryRow[]>([]);
   protected readonly setsList = signal<SetRow[]>([]);
@@ -86,6 +89,7 @@ export class ProductsList {
     'price',
     'quantity',
     'restocked',
+    'featured',
     'active',
     'actions',
   ];
@@ -99,6 +103,9 @@ export class ProductsList {
   private readonly includeInactiveValue = toSignal(this.includeInactiveControl.valueChanges, {
     initialValue: false,
   });
+  private readonly featuredOnlyValue = toSignal(this.featuredOnlyControl.valueChanges, {
+    initialValue: false,
+  });
 
   constructor() {
     this.bootstrap();
@@ -110,6 +117,7 @@ export class ProductsList {
       this.categoryValue();
       this.setValue();
       this.includeInactiveValue();
+      this.featuredOnlyValue();
       if (firstRun) {
         firstRun = false;
         return;
@@ -138,6 +146,7 @@ export class ProductsList {
         categoryId: this.categoryValue() || undefined,
         setId: this.setValue() || undefined,
         includeInactive: this.includeInactiveValue(),
+        featured: this.featuredOnlyValue() || undefined,
         page: this.page(),
         pageSize: this.pageSize(),
       });
@@ -166,6 +175,23 @@ export class ProductsList {
       );
       ref.onAction().subscribe(() => {
         this.products.setActive(row.id, !active).then(() => this.refresh());
+      });
+      await this.refresh();
+    } catch (err) {
+      this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
+    }
+  }
+
+  protected async onToggleFeatured(row: ProductRow, featured: boolean): Promise<void> {
+    try {
+      await this.products.setFeatured(row.id, featured);
+      const ref = this.snack.open(
+        featured ? 'Producto destacado' : 'Destacado quitado',
+        'Deshacer',
+        { duration: 5000 },
+      );
+      ref.onAction().subscribe(() => {
+        this.products.setFeatured(row.id, !featured).then(() => this.refresh());
       });
       await this.refresh();
     } catch (err) {

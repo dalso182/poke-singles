@@ -43,6 +43,10 @@
         <mat-slide-toggle [formControl]="includeInactiveControl">
           Mostrar inactivos
         </mat-slide-toggle>
+
+        <mat-slide-toggle [formControl]="featuredOnlyControl">
+          Solo destacados
+        </mat-slide-toggle>
       </div>
     </mat-card-content>
   </mat-card>
@@ -116,6 +120,16 @@
         <th mat-header-cell *matHeaderCellDef>Reabastecido</th>
         <td mat-cell *matCellDef="let row" class="muted brand-mono">
           {{ formatRestocked(row.last_restocked_at) }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="featured">
+        <th mat-header-cell *matHeaderCellDef>Destacado</th>
+        <td mat-cell *matCellDef="let row" (click)="$event.stopPropagation()">
+          <mat-checkbox
+            [checked]="row.featured"
+            (change)="onToggleFeatured(row, $event.checked)"
+          />
         </td>
       </ng-container>
 

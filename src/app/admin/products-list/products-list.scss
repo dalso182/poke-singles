@@ -23,7 +23,7 @@
 
 .products-list__filter-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1.5fr auto;
+  grid-template-columns: 2fr 1fr 1.5fr auto auto;
   gap: 16px;
   align-items: center;
 }

@@ -188,6 +188,10 @@ export class ProductsService {
     return this.update(id, { active });
   }
 
+  async setFeatured(id: string, featured: boolean): Promise<ProductRow> {
+    return this.update(id, { featured });
+  }
+
   /**
    * Customer-facing search. Calls the `search_products` RPC which encapsulates
    * the four sort modes (relevance, price-asc, price-desc, recent) and the
