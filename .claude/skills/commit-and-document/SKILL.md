@@ -1,22 +1,37 @@
 ---
 name: commit-and-document
 model: haiku
-description: Use when the user asks to "commit work and update readme/claude file if necessary", "wrap up", "save progress", or any phrasing that implies "I'm done with this batch of changes — commit them and refresh docs if they're stale". Reviews the working tree, updates README.md / CLAUDE.md only where the diff actually changes user-facing or architecturally-relevant behavior, stages explicit paths (never `git add -A`), composes a thematic commit message in the project's style, and creates the commit. Skips when the user only asks for a docs update without a commit, or wants to commit without docs review.
+description: Use when the user asks to "commit work and update docs if necessary", "wrap up", "save progress", or any phrasing that implies "I'm done with this batch of changes — commit them and refresh docs if they're stale". Reviews the working tree, routes each doc update to its correct home (a domain skill under `.claude/skills/`, the slim `CLAUDE.md`, or `README.md`) and updates only where the diff actually changes behavior, stages explicit paths (never `git add -A`), composes a thematic commit message in the project's style, and creates the commit. Skips when the user only asks for a docs update without a commit, or wants to commit without docs review.
 ---
 
 # commit-and-document
 
 Wrap-up routine for "I'm done with this slice of work — commit it cleanly." Two halves:
 
-1. **Doc refresh.** Read the diff, decide what (if anything) in `README.md` and `CLAUDE.md` is now stale, and update *only* those bits. Skip docs that don't change because of this batch.
-2. **Targeted commit.** Stage explicit paths to keep `.env.local`, build artifacts, IDE config, and other clutter out. Compose a 1-line title in the project's existing style, plus a short bulleted body explaining the *why*.
+1. **Doc refresh.** Read the diff and update *only* the docs this batch made stale. Docs now
+   live in three places — route each change to the right one (see step 3). Skip everything the
+   batch didn't touch.
+2. **Targeted commit.** Stage explicit paths to keep `.env.local`, build artifacts, IDE config,
+   and other clutter out. Compose a 1-line title in the project's existing style, plus a short
+   bulleted body explaining the *why*.
+
+## Doc layout (read this first)
+
+The project docs were split for context efficiency. Know where things live before refreshing:
+
+- **`CLAUDE.md`** (repo root) — **slim, always-on.** Stack, conventions, the two hard
+  guardrails, a high-level directory + route map, the "Out of scope" list, and a skill index.
+  It is loaded on *every* turn, so keep it lean. Most feature work does **not** belong here.
+- **`.claude/skills/<name>/SKILL.md`** — domain detail, loaded on demand. Six skills:
+  `database`, `storefront`, `admin`, `theme`, `deploy`, `migration`. This is where nearly all
+  "this is now stale" updates land.
+- **`README.md`** — for humans (setup, status, command/route reference, user-facing capability).
+- **`.claude/skills/README.md`** — index of the skills themselves.
 
 ## When to invoke
 
-- "commit work, also update README and CLAUDE.md if necessary"
-- "save the work"
-- "commit"
-- "wrap this up and commit"
+- "commit work, also update docs if necessary"
+- "save the work" / "commit" / "wrap this up and commit"
 - "commit and clean up the docs"
 - "ok push that out" *(but stop at commit — never push unless the user explicitly asks)*
 
@@ -36,72 +51,94 @@ git diff --stat
 git log -5 --oneline
 ```
 
-Read the diff stat to identify which files changed. Read the recent log to learn the project's commit-message style — tend to be 1-line titles in the form `Theme1, theme2, theme3` (comma-separated phrase per concern; lowercase or sentence-case depending on existing style).
+Read the diff stat to identify which files changed. Read the recent log to learn the project's
+commit-message style — typically 1-line titles in the form `Theme1, theme2, theme3`
+(comma-separated phrase per concern; match the existing case style).
 
-If the working tree is clean (no staged, modified, or untracked files), tell the user "Nothing to commit." and stop.
+If the working tree is clean, tell the user "Nothing to commit." and stop.
 
 ### 2. Decide what's been worked on
 
-Group the diff into themes. Each theme corresponds to a coherent piece of work:
+Group the diff into themes — each a coherent piece of work: a new feature, a bug fix, a
+refactor, a migration, or a doc-only change. The commit title strings the themes together with
+commas. Aim for 5–80 characters; under 70 is ideal, but the project tolerates longer when
+several themes ship together.
 
-- A new feature (e.g., "image upload on school logo").
-- A bug fix (e.g., "fix matter-create silent-bail").
-- A refactor (e.g., "extract sticker grid into shared component").
-- A migration (e.g., "teacher role RLS").
-- A doc-only change.
+### 3. Route each doc update to its correct home
 
-The commit title strings the themes together with commas. Aim for 5–80 characters; under 70 is ideal but the project tolerates longer when several themes ship together.
+This is the part that changed with the doc split. **Default to the domain skill.** Touch
+`CLAUDE.md` only for genuinely always-on facts — re-bloating it defeats the whole point.
 
-### 3. Refresh `CLAUDE.md` only where the diff changes architecture
+For each diff theme, route by what changed:
 
-Walk through each diff theme and ask: *does CLAUDE.md still describe this accurately for a future Claude that's never seen this codebase?* Refresh **only** these:
+| What changed | Where it's documented |
+|---|---|
+| RPC, schema, RLS, trigger, edge function, TCGdex cache, coupon/raffle **data** logic, type regen | `database` skill |
+| Customer screen, product tile/grid, search UI, cart UX, `/account`, `/rifas`, login dialog | `storefront` skill |
+| Admin screen, add-product flow, image picker / PHP endpoint, coupons/raffles **admin** UI, config | `admin` skill |
+| Brand utility class, palette/font/density change, Material override, the brand-red rule | `theme` skill |
+| Deploy flow/flags, env tier, `.htaccess`, self-hosted images, the deploy guard | `deploy` skill |
+| OpenCart import pipeline, category map, cutover steps, URL/301 strategy | `migration` skill |
+| A **new domain skill** was created this session | add a row to `.claude/skills/README.md` **and** the skill index in `CLAUDE.md` |
 
-- A new RPC was added → add it to the RPC list with its security model + powering UI.
-- A new screen / route was added → add it to the route map.
-- A capability was added or a role's set changed → update the Roles + capabilities section.
-- A new SQL helper / RLS pattern landed → update the Role helpers bullet.
-- Trigger renames or behavior changes → reflect in the trigger bullet.
-- An existing flow's user-facing language changed → keep the description in sync.
+Update **`CLAUDE.md` itself only** when the batch changes something always-on:
 
-**Don't update CLAUDE.md** for purely cosmetic SCSS tweaks, internal refactors that don't change behavior, or one-off bug fixes that don't change the mental model.
+- A new project-wide **convention** (→ Conventions section).
+- A new hard **guardrail** (and mirror it into the relevant skill — guardrails are intentionally
+  duplicated).
+- A new top-level route **category** or directory worth the high-level map.
+- A **stack** change (new framework or major dependency).
+- An item moving **on/off the "Out of scope" list** (e.g. checkout ships → drop it from the list).
+
+Within whichever file you pick, refresh *only* the stale bits — describe it accurately for a
+future Claude that's never seen this codebase, nothing more. Ask of a skill: does its body still
+describe this domain correctly? If a `SKILL.md` body is creeping past ~500 lines, that's the
+signal to split detail into a `references/` subfolder, **not** to cram more in.
+
+**Don't update anything** for purely cosmetic tweaks, internal refactors that don't change
+behavior, or one-off bug fixes that don't change the mental model. If no doc is stale after this
+pass, that's a valid outcome — say "docs already match" in the summary and move on.
 
 ### 4. Refresh `README.md` only where the diff changes user-facing capability
 
-The README documents user-facing concerns ("what a student can do", "what an admin can do"). Walk through diff themes and ask: *does the README still describe what the user sees?* Refresh **only** these:
+The README documents what a user sees ("what a shopper can do", "what an admin can do") plus the
+status checklist and command/route reference. Walk the themes and refresh **only**:
 
-- A new admin button / flow → mention it in the relevant `**Section** —` bullet.
-- A new role with admin access → mention what they can/can't do.
-- A new content concept (reward set, capability) → add to the appropriate section.
-- A deploy / setup step changed → update `## Running locally` or `## Deploying`.
+- A new customer-facing flow → mention it in the relevant section + flip its status line
+  (⬜ → ✅) if it was tracked as pending.
+- A new admin button / flow → mention it in the admin section.
+- A new command, route, or env step → update the relevant table / `## Running` / `## Deploying`.
 
-**Don't update README.md** for internal refactors, RLS migrations the user doesn't see, capability-cap renames if behavior is unchanged, or back-end-only optimizations.
-
-If both files are unchanged after this pass, that's a perfectly valid outcome — say "docs already match" in the commit summary and move on.
+**Don't update README.md** for internal refactors, RLS migrations the user doesn't see, or
+back-end-only optimizations. Some overlap with the skills is fine — README is for humans.
 
 ### 5. Stage explicit paths
 
-Use `git status -s` output to drive `git add` calls with **specific filenames**, not `git add -A` or `git add .`. Always exclude (unless the user asks otherwise):
+Drive `git add` from `git status -s` with **specific filenames**, never `git add -A` / `git add .`.
+Always exclude (unless the user asks otherwise):
 
 - `.env*` files (could contain credentials)
-- `.agents/`, `.claude/settings.local.json`, `.vscode/`, `.mcp.json`, `.idea/` (local tooling)
-- `*.zip`, `*.tar.gz` (backup archives)
-- `supabase/.temp/`, `node_modules/`, `dist/`, `.next/`, `out/` (tooling state and build artifacts)
-- `web/`, untracked top-level paths whose purpose is unclear
-- Any binary that wasn't part of the session's work
+- `.claude/settings.local.json`, `.vscode/`, `.mcp.json`, `.idea/` (local tooling)
+- `*.zip`, `*.tar.gz` (backup archives — including any doc-restructure bundle)
+- `supabase/.temp/`, `node_modules/`, `dist/`, `card-images/` (tooling state, build output, the
+  gitignored image cache)
+- Untracked top-level paths whose purpose is unclear, and any binary not part of the session's work
 
-For tracked-modified files, prefer `git add -u <path>` per file or just listing them; for new files, `git add <path>` explicitly.
+**Include** project docs the session changed: the slim `CLAUDE.md`, any edited
+`.claude/skills/<name>/SKILL.md`, `.claude/skills/README.md`, and `README.md` — these are tracked,
+shared project files. New skills the session created at `.claude/skills/<feature>/SKILL.md` get
+committed too. Downloaded marketplace skills can stay untracked unless the user wants them shared.
 
-If the user has untracked files in `.claude/skills/<feature>/SKILL.md` that the session created, **include** them — they're project-level reusable skills, not local config. Existing `.claude/skills/<downloaded>/` (e.g., from the Anthropic skill marketplace) can be left untracked unless the user has signaled they want them shared.
-
-After staging, run `git status -s` again to verify the staged set is what you intended. Show the user the staged list before committing.
+For tracked-modified files use `git add -u <path>` or list them; for new files, `git add <path>`
+explicitly. After staging, run `git status -s` again and show the user the staged list before
+committing.
 
 ### 6. Compose the commit message
 
-Title: comma-separated themes, in the project's existing case style. Read recent commits with `git log -5 --oneline` to match — typically Title-cased or sentence-case.
+Title: comma-separated themes in the project's case style (match `git log -5 --oneline`).
 
-Body: short bullets explaining the *why* of each theme, not the *what*. The diff already shows what; the message should preserve context the diff doesn't (motivation, follow-up steps, why this approach over alternatives if it's interesting).
-
-Use a HEREDOC for the body (multi-line):
+Body: short bullets explaining the *why* of each theme, not the *what* — preserve context the
+diff doesn't show (motivation, follow-ups, why this approach). Use a HEREDOC:
 
 ```
 git commit -m "$(cat <<'EOF'
@@ -109,36 +146,49 @@ git commit -m "$(cat <<'EOF'
 
 - <theme 1>: <why> + <key files or shape>
 - <theme 2>: <why>
-- <theme 3>: <why>
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
 EOF
 )"
 ```
 
-Always include the `Co-Authored-By` trailer when Claude wrote significant amounts of the diff.
+Include the `Co-Authored-By` trailer when Claude wrote significant amounts of the diff.
 
 ### 7. Run the commit
 
-Don't skip hooks (`--no-verify`) and don't bypass signing unless the user explicitly asked. If a pre-commit hook fails, the commit didn't happen — fix the underlying issue, re-stage if needed, and run a fresh commit. **Never** use `--amend` after a hook failure (it would clobber the previous commit).
+Don't skip hooks (`--no-verify`) or bypass signing unless asked. If a pre-commit hook fails, the
+commit didn't happen — fix the issue, re-stage if needed, run a fresh commit. **Never** `--amend`
+after a hook failure (it would clobber the previous commit). On success, run
+`git log -1 --stat | head -8` and report:
 
-After commit succeeds, run `git log -1 --stat | head -8` to confirm and report:
-
-> Committed as `<short-sha>` on `<branch>` — `<files-changed-count>` files, `+<insertions>/−<deletions>`.
+> Committed as `<short-sha>` on `<branch>` — `<files-changed-count>` files, `+<ins>/−<del>`.
 
 ### 8. Don't push
 
-Even if the user said "ok push that out", stop at commit unless they explicitly typed `push` or said "push to remote". Pushing is visible to others and can't be undone for force-pushes; require explicit authorization per the project's safety protocol.
+Even if the user said "ok push that out", stop at commit unless they explicitly typed `push` or
+said "push to remote". Pushing is visible to others and force-pushes can't be undone — require
+explicit authorization.
 
-## Worked example
+## Worked example (post-split)
 
-User: "commit work, also update README and CLAUDE.md if necessary"
+User: "wrap this up and commit"
 
-1. `git status -s` shows 30 modified + 15 new files spanning a teacher-role RLS migration, a new image-upload flow, a new user-detail tab, and the danger-zone refactor.
-2. Themes: teacher caps + RLS, image upload (question + logo), sticker progress tab, user delete + reset reorg, Luigi/Yoshi seed.
-3. CLAUDE.md needs: new RPC entries (`reset_user_data`, `admin_user_owned_stickers`, `admin_user_owned_stickers`), Roles + capabilities (teacher slice + `users.delete`), upload-bucket paragraph in Reward pipeline section.
-4. README.md needs: Users bullet (mention Eliminar + Recompensas tab; remove the row-level Reset reference), Schools bullet (mention Subir for logo).
-5. Stage list excludes `supabase/.temp/cli-latest`, `.claude/settings.local.json`, `web/`, and any unrelated `.png` icon files; includes the new skill at `.claude/skills/add-stickers-from-folder/SKILL.md`.
-6. Title: `Teacher role, image upload, user delete + reset, sticker tab, Nintendo +Luigi/Yoshi`. Body: 5 bullets, one per theme, explaining the why.
-7. `git commit -m "$(cat <<'EOF' … EOF)"` succeeds. Commit shipped.
-8. Don't push.
+1. `git status -s` shows: a new migration adding the `orders` table + a `place_order_v8` tweak,
+   a new `src/app/user/checkout/` component with a buyer-info form, SINPE Móvil instructions copy,
+   and a small cart-page summary edit.
+2. Themes: orders schema + place_order redemption, checkout screen + buyer form, SINPE instructions.
+3. Route the docs:
+   - **`database` skill** → add the `orders` table to the schema overview; bump the `place_order`
+     version note (it already documents that RPC).
+   - **`storefront` skill** → add the `/checkout` screen + buyer-info form + where SINPE
+     instructions render; note the cart-page summary tweak.
+   - **`CLAUDE.md`** → remove "Checkout" from the *Out of scope* list (it shipped). Nothing else
+     in CLAUDE.md changes — resist touching it further.
+   - **`README.md`** → add a shopper-facing checkout bullet; flip the ⬜ Checkout status line to ✅.
+   - `theme` / `admin` / `deploy` / `migration` skills → untouched; the diff doesn't affect them.
+4. Stage explicit paths: the migration, the checkout component files, the edited `database` +
+   `storefront` SKILL.md, `CLAUDE.md`, `README.md`. Exclude `.env.local`, `supabase/.temp/`, etc.
+5. Title (project style): `Checkout: orders + place_order redemption, buyer form, SINPE instructions`.
+   Body: 3 bullets on the why.
+6. `git commit -m "$(cat <<'EOF' … EOF)"` succeeds.
+7. Report the sha / stat. Don't push.
