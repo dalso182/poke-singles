@@ -30,10 +30,12 @@ hosted on SiteGround. The OpenCart site stays live until the new one ships.
   customer apply / remove with auto-revalidate on cart mutations
   (redemption deferred to the checkout plan)
 - ✅ TCGdex endpoint configurable per environment + `npm run seed:dev` populates the dev catalog
+- ✅ OpenCart → Supabase data import (`scripts/prepare-for-prod.mjs` — wipes
+  transactional data and re-imports the active+in-stock OC catalog with TCGdex
+  enrichment + OC's original list dates preserved)
 - ⬜ Prod Supabase project + cutover
 - ⬜ Checkout: `orders` + `coupon_redemptions` + `place_order` RPC + buyer info form + SINPE Móvil instructions
 - ⬜ Customer order history
-- ⬜ OpenCart → Supabase data import
 - ⬜ 301 redirect map for old OpenCart URLs
 
 ## Stack
@@ -215,6 +217,92 @@ node scripts/upload-images.mjs --sets=ME05
 - Requires `tar` on PATH (built into Windows 10/11, macOS, Linux) for the default
   transport, and SSH access to SiteGround (already used by deploy).
 
+## Cutover prep — OpenCart import
+
+`scripts/prepare-for-prod.mjs` is the **single command** that prepares the
+database for go-live: it wipes transactional data, then re-imports the
+active+in-stock OpenCart catalog into the new schema with TCGdex enrichment
+(attacks, abilities, illustrator, types, etc.) and OC's original listing
+dates preserved.
+
+Designed to be run repeatedly during development for iteration, and once on
+cutover day. Targets the dev project via `SUPABASE_DEV_*` env vars (same
+ones `seed-products.mjs` uses); the service-role key bypasses RLS so the
+script is **dev-only** in its current form.
+
+### Run it
+
+```bash
+# 1. Pull the OC dump from SiteGround phpMyAdmin → ./tmp/opencart-export.sql
+#    (you want oc_product, oc_product_description, oc_product_to_category,
+#     oc_category, oc_category_description — no filter; the script does its own)
+
+# 2. Dry-run first — reports matches + unmatched, no DB writes
+node scripts/prepare-for-prod.mjs --dry-run
+
+# 3. Real run — wipes transactional tables, imports ~5k products
+node scripts/prepare-for-prod.mjs
+```
+
+### What gets wiped vs. preserved
+
+| Wiped (transactional / replaced) | Preserved (admin-curated) |
+|---|---|
+| `orders`, `order_items`, `coupon_redemptions` | `auth.users`, `profiles` |
+| `carts`, `cart_items` | `categories`, `card_types`, `sets` |
+| `products`, `product_card_types` | `coupons`, `shipping_methods`, `static_pages` |
+| `tcgdex_cards` (re-populated by the importer) | `app_settings` |
+| `raffles` (cascades from products) | |
+
+Wipe order is dependency-safe (`orders` first → cascades `order_items` and
+`coupon_redemptions`; `products` cascades `product_card_types`, `cart_items`,
+and `raffles`).
+
+### Pipeline per OC product
+
+1. **Filter** to `status = 1 AND quantity > 0` (matches OC's storefront visibility).
+2. **Parse title** for pokemon name + card number (`Pikachu V - 043/185 - Ultra Rare`).
+3. **Resolve set + card-types from categories** via `scripts/_data/oc-category-map.json`
+   (OC category ID → TCGdex set code + `card_types` names). Pick the leaf-most
+   set tag when a product is in both a parent group and a specific set.
+4. **Match TCGdex card** by `localId` in the resolved set, then fetch the full
+   Card payload for attacks / illustrator / regulation mark / types / legal status.
+5. **Build product row** — TCGdex enrichment + OC's price (rounded to ₡100),
+   quantity, `first_listed_at` from `oc_product.date_added`, `variant`
+   derived from any Reverse-Holo / Holográficas card-type.
+6. **In-process slug claim** — synchronous `Set<slug>` claim prevents the
+   8-parallel batches from racing on duplicate inserts when OC has two
+   listings for the same TCGdex card.
+7. **Insert + attach card-types** — `tcgdex_cards` upsert (cache),
+   `products` insert, `product_card_types` junction inserts.
+8. **Unmatched** → `.tmp/opencart-unmatched.csv` with reason
+   (`not-a-single` / `no-set-category` / `title-unparseable` /
+   `no-card-in-set`). Triage by hand via `/admin/products/new` or by
+   extending the category map.
+
+Expected match rate on the current OC dump: **~95 %** of active+in-stock rows.
+Leftovers are mostly sealed products, accessories, Topps, energies without
+a card number, and a long tail of typo'd titles.
+
+### Flags
+
+| Flag | Effect |
+|---|---|
+| _(default)_ | Wipe transactional tables → import (full prod-prep cycle) |
+| `--dry-run` | Report only; no wipe, no DB writes, no TCGdex card fetches |
+| `--no-wipe` | Skip the wipe; import-only (incremental adds, skip-on-existing-slug) |
+| `--limit=N` | Cap at N active+in-stock rows (useful with `--no-wipe` for testing) |
+| `--input=...` | Alternate dump path (default `.tmp/opencart-export.sql`) |
+
+### Files
+
+| Path | Role |
+|---|---|
+| `scripts/prepare-for-prod.mjs` | The importer + wipe driver |
+| `scripts/_data/oc-category-map.json` | OC category ID → TCGdex set code / `card_types` name / skip list (built from the dump; keyed by ID so OC label edits don't break it) |
+| `.tmp/opencart-export.sql` | Your phpMyAdmin dump (gitignored) |
+| `.tmp/opencart-unmatched.csv` | Written each run; rows that couldn't be matched, with reason |
+
 ## Brand theme
 
 The Vault Light system is implemented across these files:
@@ -315,6 +403,8 @@ across the latest SwSh + SV sets) — see `npm run seed:dev{,:clean}`.
 src/                          Angular app (see CLAUDE.md → Project layout)
 scripts/deploy.mjs            SiteGround SFTP deploy
 scripts/seed-products.mjs     Seed the dev catalog from TCGdex
+scripts/prepare-for-prod.mjs  Wipe transactional data + import OC catalog (cutover prep)
+scripts/_data/                Static lookup tables (OC category → TCGdex set/card-type map)
 scripts/fetch-card-images.mjs Download TCGdex card images → ./card-images/
 scripts/upload-images.mjs     Upload ./card-images/ to SiteGround
 supabase/                     Scaffolded; migrations + functions empty
