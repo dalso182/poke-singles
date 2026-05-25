@@ -55,6 +55,10 @@ import type { CardTypeRow, CategoryRow, SetRow, VariantCode } from '../../core/c
 
 const PICKER_SET_STORAGE_KEY = 'admin:add-product:picker-set-id';
 
+/** Card types only describe individual cards, so the panel is shown only for
+ *  these category slugs (graded cards are still single cards). */
+const CARD_TYPE_CATEGORY_SLUGS = ['singles', 'graded'];
+
 @Component({
   selector: 'app-add-product',
   imports: [
@@ -126,6 +130,15 @@ export class AddProduct {
     const id = this.selectedCategoryId();
     if (!id) return false;
     return this.categoriesList().find((c) => c.slug === 'rifas')?.id === id;
+  });
+  /** True when there are card types to assign AND the chosen category is one
+   *  where they make sense (Singles / Graded) — gates the "Tipos de carta" panel. */
+  protected readonly showCardTypes = computed(() => {
+    if (this.cardTypesList().length === 0) return false;
+    const id = this.selectedCategoryId();
+    if (!id) return false;
+    const slug = this.categoriesList().find((c) => c.id === id)?.slug;
+    return slug !== undefined && CARD_TYPE_CATEGORY_SLUGS.includes(slug);
   });
 
   // Optional set filter for the TCGdex card picker. Holds a Supabase set_id (UUID);

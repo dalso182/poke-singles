@@ -48,6 +48,10 @@ import type {
   ProductRow,
 } from '../../core/catalog/catalog.types';
 
+/** Card types only describe individual cards, so the panel is shown only for
+ *  these category slugs (graded cards are still single cards). */
+const CARD_TYPE_CATEGORY_SLUGS = ['singles', 'graded'];
+
 @Component({
   selector: 'app-admin-product-edit',
   imports: [
@@ -103,6 +107,15 @@ export class ProductEdit implements OnInit {
     if (!id) return false;
     return this.categoriesList().find((c) => c.slug === 'rifas')?.id === id;
   });
+  /** True when there are card types to assign AND the chosen category is one
+   *  where they make sense (Singles / Graded) — gates the "Tipos de carta" panel. */
+  protected readonly showCardTypes = computed(() => {
+    if (this.cardTypesList().length === 0) return false;
+    const id = this.selectedCategoryId();
+    if (!id) return false;
+    const slug = this.categoriesList().find((c) => c.id === id)?.slug;
+    return slug !== undefined && CARD_TYPE_CATEGORY_SLUGS.includes(slug);
+  });
 
   protected readonly form: FormGroup = this.fb.nonNullable.group(
     {
@@ -156,24 +169,8 @@ export class ProductEdit implements OnInit {
       }
       this.product.set(product);
       this.selectedCategoryId.set(product.category_id);
+      this.patchFormFromProduct(product);
       this.form.patchValue({
-        name: product.name,
-        pokemon_name: product.pokemon_name ?? '',
-        slug: product.slug,
-        description: product.description ?? '',
-        rarity: product.rarity ?? '',
-        card_number: product.card_number ?? '',
-        image_url: product.image_url ?? '',
-        set_id: product.set_id,
-        category_id: product.category_id,
-        condition: product.condition ?? '',
-        language: product.language,
-        variant: product.variant ?? '',
-        price: product.price,
-        sale_price: product.sale_price,
-        quantity: product.quantity,
-        active: product.active,
-        featured: product.featured,
         // From the raffles row; stored at UTC midnight, take the date portion.
         draw_at: raffleRow?.draw_at ? raffleRow.draw_at.slice(0, 10) : null,
         market_price: raffleRow?.market_price ?? null,
@@ -183,6 +180,31 @@ export class ProductEdit implements OnInit {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  /** Patch the form's product-derived controls from a ProductRow. Raffle-only
+   *  fields (draw_at / market_price) live in the raffles table and are patched
+   *  separately, so they're intentionally excluded here. */
+  private patchFormFromProduct(p: ProductRow): void {
+    this.form.patchValue({
+      name: p.name,
+      pokemon_name: p.pokemon_name ?? '',
+      slug: p.slug,
+      description: p.description ?? '',
+      rarity: p.rarity ?? '',
+      card_number: p.card_number ?? '',
+      image_url: p.image_url ?? '',
+      set_id: p.set_id,
+      category_id: p.category_id,
+      condition: p.condition ?? '',
+      language: p.language,
+      variant: p.variant ?? '',
+      price: p.price,
+      sale_price: p.sale_price,
+      quantity: p.quantity,
+      active: p.active,
+      featured: p.featured,
+    });
   }
 
   protected isCardTypeSelected(id: string): boolean {
@@ -253,6 +275,11 @@ export class ProductEdit implements OnInit {
       }
       await this.products.setCardTypes(product.id, [...this.selectedCardTypeIds()]);
       this.product.set(updated);
+      // Repaint the form from the canonical saved row. Price/sale_price/quantity
+      // each have two inputs bound to the same control (quick-update card + the
+      // Comercio card); without this patch the non-edited input keeps its stale
+      // view after save. Also surfaces server normalization (e.g. pokemon_name).
+      this.patchFormFromProduct(updated);
       this.form.markAsPristine();
       this.snack.open('Producto actualizado', 'Volver', { duration: 5000 })
         .onAction()
