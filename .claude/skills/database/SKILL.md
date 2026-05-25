@@ -4,7 +4,8 @@ description: >-
   The Supabase / Postgres data layer for Poke-Singles. Use this whenever you touch
   anything below the UI: writing or running migrations, RLS policies, the `is_admin()`
   pattern, RPCs (search_products, validate_coupon, calculate_coupon_discount,
-  get_my_applied_coupon, place_order, cancel_order, draw_raffle), edge functions, the
+  get_my_applied_coupon, place_order, cancel_order, draw_raffle, admin_dashboard_stats,
+  admin_customers), edge functions, the
   schema (products, categories, sets, card_types, profiles, cart_items, carts, coupons,
   coupon_redemptions, raffles, tcgdex_cards, app_settings), regenerating database.types.ts,
   the SupabaseService client, the TCGdex SDK wrapper, or the coupon/raffle business logic.
@@ -128,6 +129,37 @@ if any entry is unpaid, then picks a weighted winner and writes the snapshot. Cu
 reads the definer view `rifas_listing` (products ⨝ raffles ⨝ sets, safe columns only — no
 `winner_email`; exposes `entries_sold`, `card_number`, `set_printed_total`, `market_price`).
 (Admin draw UI + customer view → `admin` / `storefront` skills.)
+
+## Admin dashboard & customers (data side)
+
+Three admin RPCs (all `security definer` + `is_admin()` guard, granted to `authenticated`)
+back the back-office reporting screens. The customer ones read **`auth.users`** for email —
+which isn't exposed over PostgREST — so they must be RPCs, not view/REST reads.
+
+- `admin_dashboard_stats()` → `jsonb`: `total_orders`, `total_sales`, `total_customers`,
+  `pending_orders`, and a gap-filled 30-day `series` of `{d, orders, sales}`. "Sales" =
+  realized revenue (paid/shipped/completed); counts exclude cancelled. Day buckets use the
+  `America/Costa_Rica` calendar so they line up with the store's local "today".
+- `admin_customers(p_search, p_limit, p_offset)` → table of registered accounts (`profiles` ⨝
+  `auth.users`) with `order_count` (non-cancelled), `total_spent` (realized), `last_order_at`,
+  plus `count(*) over()` as `total_count` for client-side pagination. A customer's orders
+  attach by `user_id` OR case-insensitive `customer_email` (so guest checkouts still count).
+- `admin_customer(p_id)` → `jsonb`: one customer's profile + email + `default_shipping_address`
+  + the same stats + their 100 most recent orders. Null when no profile matches.
+
+Migrations: `20260525002200_admin_dashboard_stats.sql`, `20260525002300_admin_customers.sql`.
+These return `jsonb`/`table`, so the Angular side hand-types the shapes in `catalog.types.ts`
+(`DashboardStats`, `CustomerRow`/`CustomerDetail`) and calls them via `(client as any).rpc(...)`
+— a `db:types:dev` regen isn't required for them. UI homes → `admin` skill.
+
+## Realtime presence ("people online")
+
+The admin dashboard's live visitor count uses **Supabase Realtime presence** — no table, anon
+key, nothing in `migrations/`. `PresenceService` (`src/app/core/presence/`) joins one shared
+channel (`online`): the storefront `UserShell` calls `joinAsVisitor()` →
+`track({ role: 'visitor' })`; the dashboard calls `watchOnlineCount()`, which subscribes
+**without** tracking (so the admin isn't counted) and tears the channel down on destroy.
+Browser-guarded via `isPlatformBrowser`. UI homes → `admin` / `storefront` skills.
 
 ## TCGdex wiring
 

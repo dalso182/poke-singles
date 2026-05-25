@@ -15,7 +15,9 @@ description: >-
 
 Everything under `src/app/user/` plus shared customer components, wrapped by **UserShell**
 (`src/app/user/user-shell/`): Header + Navigation + Footer + `<router-outlet>` + cart drawer
-(`mat-sidenav position="end"`) + the single card-preview overlay.
+(`mat-sidenav position="end"`) + the single card-preview overlay. On init it also calls
+`PresenceService.joinAsVisitor()` to announce the shopper on the shared Realtime presence
+channel that feeds the admin dashboard's "people online" tile (→ `database` / `admin` skills).
 
 ## Customer routes
 
