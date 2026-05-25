@@ -79,7 +79,7 @@ Each skill describes its own subtree in detail.
 ## Routes (compact)
 
 `/admin/*` → AdminShell (lazy, `adminGuard`): dashboard, products(+new/:id/edit),
-categories, card-types, coupons(+new/:id/edit), raffles(+:id), sets, config.
+categories, card-types, coupons(+new/:id/edit), raffles(+:id), sets, reports, config.
 `/library` → designer reference (no shell). `/` → UserShell: home, products,
 products/:slug, buscar, rifas, cart, account(`customerGuard`). **Specific paths must come
 before the empty-path UserShell** or the router mis-matches `/admin` and `/library`.
@@ -101,7 +101,7 @@ Full route table + component notes → `admin` and `storefront` skills.
 |---|---|
 | Supabase schema, RLS/`is_admin`, migrations, RPCs, edge functions, coupon/raffle data logic, TCGdex cache, customer-auth DB, type regen | `database` |
 | Customer UI: home rails, product card + grids, `/buscar` search UI, hover preview, cart drawer/page, `/account`, `/rifas` view, login dialog | `storefront` |
-| `/admin` shell, product CRUD + add-product TCGdex flow, image picker, categories/card-types/sets, coupons admin, raffles admin + draw, config | `admin` |
+| `/admin` shell, product CRUD + add-product TCGdex flow, image picker, categories/card-types/sets, coupons admin, raffles admin + draw, reports (orders/activity/searches/coupons), config | `admin` |
 | Vault Light theme — SCSS files, tokens, Material overrides, the red rule, `/library` | `theme` |
 | SiteGround SFTP deploy, env tiers, `.htaccess`, self-hosted card images, deploy guard | `deploy` |
 | OpenCart 3.0 → Supabase data import, category map, cutover prep, URL/301 strategy | `migration` |

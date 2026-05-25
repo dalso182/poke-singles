@@ -319,6 +319,8 @@ export interface AppliedCoupon {
 export interface CouponRow {
   id: string;
   code: string;
+  /** Optional friendly label shown in the admin list + Coupons report. */
+  name: string | null;
   type: CouponType;
   discount_value: number;
   min_purchase_amount: number | null;
@@ -334,6 +336,7 @@ export interface CouponRow {
 
 export interface CouponInsert {
   code: string;
+  name?: string | null;
   type: CouponType;
   discount_value: number;
   min_purchase_amount?: number | null;
@@ -571,6 +574,138 @@ export interface AdminCustomerListParams {
 
 export interface AdminCustomerListResult {
   rows: CustomerRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+// ---- Admin reports ----
+
+/** One row of admin_customer_orders_report(): a customer with order activity in
+ *  scope. `order_count` excludes cancelled; `total_spent` is realized revenue;
+ *  `no_products` is total units bought across non-cancelled orders. */
+export interface CustomerOrdersReportRow {
+  id: string;
+  full_name: string | null;
+  email: string;
+  order_count: number;
+  no_products: number;
+  total_spent: number;
+}
+
+export interface CustomerOrdersReportParams {
+  search?: string;
+  /** Inclusive ISO date (YYYY-MM-DD), filtering orders by CR-local created_at. */
+  dateStart?: string | null;
+  dateEnd?: string | null;
+  page?: number;
+  pageSize?: number;
+  /** 'total' (spent, default) | 'orders' (count) | 'created' (signup date). */
+  sort?: 'total' | 'orders' | 'created';
+}
+
+export interface CustomerOrdersReportResult {
+  rows: CustomerOrdersReportRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export type CustomerActivityEvent = 'login' | 'order_created' | 'registered';
+
+/** One row of admin_customer_activity(): a recorded customer event with the
+ *  client IP (text form, may be null) and timestamp. */
+export interface CustomerActivityRow {
+  id: string;
+  user_id: string | null;
+  customer_name: string | null;
+  customer_email: string | null;
+  event_type: CustomerActivityEvent;
+  order_id: string | null;
+  ip: string | null;
+  created_at: string;
+}
+
+export interface CustomerActivityParams {
+  /** Matches customer name or email (ilike contains). */
+  search?: string;
+  dateStart?: string | null;
+  dateEnd?: string | null;
+  /** IP prefix match (e.g. "190.171"). */
+  ip?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface CustomerActivityResult {
+  rows: CustomerActivityRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export type SearchCustomerType = 'all' | 'registered' | 'guest';
+
+/** One row of admin_customer_searches(): a committed storefront search with its
+ *  match count and who searched (customer_name/email null = guest). */
+export interface CustomerSearchRow {
+  id: string;
+  user_id: string | null;
+  customer_name: string | null;
+  customer_email: string | null;
+  keyword: string;
+  found_count: number;
+  category_name: string | null;
+  ip: string | null;
+  created_at: string;
+}
+
+export interface CustomerSearchParams {
+  /** Matches customer name or email (ilike contains). */
+  search?: string;
+  /** Matches the searched keyword (ilike contains). */
+  keyword?: string;
+  /** IP prefix match (e.g. "190.171"). */
+  ip?: string;
+  dateStart?: string | null;
+  dateEnd?: string | null;
+  customerType?: SearchCustomerType;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface CustomerSearchResult {
+  rows: CustomerSearchRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+/** One row of admin_coupons_report(): a coupon with its usage. `total_discount`
+ *  is the discount given through it; `total_revenue` is the orders' total — both
+ *  over the same non-cancelled orders that used the coupon. */
+export interface CouponReportRow {
+  id: string;
+  name: string | null;
+  code: string;
+  order_count: number;
+  total_discount: number;
+  total_revenue: number;
+}
+
+export interface CouponReportParams {
+  /** Matches coupon code or name (ilike contains). */
+  search?: string;
+  dateStart?: string | null;
+  dateEnd?: string | null;
+  /** 'discount' (given, default) | 'revenue' (orders' total) | 'orders' (count). */
+  sort?: 'discount' | 'revenue' | 'orders';
+  page?: number;
+  pageSize?: number;
+}
+
+export interface CouponReportResult {
+  rows: CouponReportRow[];
   total: number;
   page: number;
   pageSize: number;

@@ -82,6 +82,7 @@ export class CouponEdit implements OnInit {
         Validators.pattern(/^[A-Z0-9-]+$/),
       ],
     ],
+    name: [''],
     type: ['PERCENTAGE' as CouponType, Validators.required],
     discount_value: [0, [Validators.required, Validators.min(0.01)]],
     min_purchase_amount: [null as number | null],
@@ -139,6 +140,7 @@ export class CouponEdit implements OnInit {
       }
       this.form.patchValue({
         code: row.code,
+        name: row.name ?? '',
         type: row.type,
         discount_value: row.discount_value,
         min_purchase_amount: row.min_purchase_amount,
@@ -185,6 +187,7 @@ export class CouponEdit implements OnInit {
 
       const payload: CouponInsert = {
         code,
+        name: raw.name?.trim() || null,
         type: raw.type,
         discount_value: Number(raw.discount_value),
         min_purchase_amount: raw.min_purchase_amount != null

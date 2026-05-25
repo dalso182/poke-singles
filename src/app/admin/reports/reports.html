@@ -1,0 +1,24 @@
+<app-page-header
+  kicker="Operaciones"
+  title="Reportes"
+  sub="Actividad de clientes y pedidos"
+/>
+
+<div class="reports__tabs">
+  <app-pill-tabs [tabs]="tabs" [(value)]="tab" />
+</div>
+
+@switch (tab()) {
+  @case ('orders') {
+    <app-customer-orders-report />
+  }
+  @case ('activity') {
+    <app-customer-activity-report />
+  }
+  @case ('searches') {
+    <app-customer-searches-report />
+  }
+  @case ('coupons') {
+    <app-coupons-report />
+  }
+}

@@ -266,6 +266,7 @@ export type Database = {
           is_active: boolean
           max_uses_per_user: number
           min_purchase_amount: number | null
+          name: string | null
           type: string
           updated_at: string
         }
@@ -280,6 +281,7 @@ export type Database = {
           is_active?: boolean
           max_uses_per_user?: number
           min_purchase_amount?: number | null
+          name?: string | null
           type: string
           updated_at?: string
         }
@@ -294,10 +296,52 @@ export type Database = {
           is_active?: boolean
           max_uses_per_user?: number
           min_purchase_amount?: number | null
+          name?: string | null
           type?: string
           updated_at?: string
         }
         Relationships: []
+      }
+      customer_activity: {
+        Row: {
+          created_at: string
+          customer_email: string | null
+          customer_name: string | null
+          event_type: string
+          id: string
+          ip: unknown
+          order_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          event_type: string
+          id?: string
+          ip?: unknown
+          order_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          event_type?: string
+          id?: string
+          ip?: unknown
+          order_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_activity_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       order_items: {
         Row: {
@@ -765,6 +809,47 @@ export type Database = {
           },
         ]
       }
+      search_log: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          customer_name: string | null
+          found_count: number
+          id: string
+          ip: unknown
+          keyword: string
+          user_id: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          customer_name?: string | null
+          found_count?: number
+          id?: string
+          ip?: unknown
+          keyword: string
+          user_id?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          customer_name?: string | null
+          found_count?: number
+          id?: string
+          ip?: unknown
+          keyword?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "search_log_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sets: {
         Row: {
           code: string
@@ -1079,7 +1164,90 @@ export type Database = {
       }
     }
     Functions: {
+      admin_coupons_report: {
+        Args: {
+          p_date_end?: string
+          p_date_start?: string
+          p_limit?: number
+          p_offset?: number
+          p_search?: string
+          p_sort?: string
+        }
+        Returns: {
+          code: string
+          id: string
+          name: string
+          order_count: number
+          total_count: number
+          total_discount: number
+          total_revenue: number
+        }[]
+      }
       admin_customer: { Args: { p_id: string }; Returns: Json }
+      admin_customer_activity: {
+        Args: {
+          p_date_end?: string
+          p_date_start?: string
+          p_ip?: string
+          p_limit?: number
+          p_offset?: number
+          p_search?: string
+        }
+        Returns: {
+          created_at: string
+          customer_email: string
+          customer_name: string
+          event_type: string
+          id: string
+          ip: string
+          order_id: string
+          total_count: number
+          user_id: string
+        }[]
+      }
+      admin_customer_orders_report: {
+        Args: {
+          p_date_end?: string
+          p_date_start?: string
+          p_limit?: number
+          p_offset?: number
+          p_search?: string
+          p_sort?: string
+        }
+        Returns: {
+          email: string
+          full_name: string
+          id: string
+          no_products: number
+          order_count: number
+          total_count: number
+          total_spent: number
+        }[]
+      }
+      admin_customer_searches: {
+        Args: {
+          p_customer_type?: string
+          p_date_end?: string
+          p_date_start?: string
+          p_ip?: string
+          p_keyword?: string
+          p_limit?: number
+          p_offset?: number
+          p_search?: string
+        }
+        Returns: {
+          category_name: string
+          created_at: string
+          customer_email: string
+          customer_name: string
+          found_count: number
+          id: string
+          ip: string
+          keyword: string
+          total_count: number
+          user_id: string
+        }[]
+      }
       admin_customers: {
         Args: {
           p_limit?: number
@@ -1140,6 +1308,11 @@ export type Database = {
         }[]
       }
       category_id_by_slug: { Args: { p_slug: string }; Returns: string }
+      client_ip: { Args: never; Returns: unknown }
+      count_search_products: {
+        Args: { p_category_slug?: string; q: string }
+        Returns: number
+      }
       draw_raffle: {
         Args: { p_product_id: string }
         Returns: {
@@ -1171,6 +1344,11 @@ export type Database = {
       }
       get_my_applied_coupon: { Args: never; Returns: Json }
       is_admin: { Args: never; Returns: boolean }
+      log_activity: { Args: { p_event_type: string }; Returns: undefined }
+      log_search: {
+        Args: { p_category_slug?: string; p_found?: number; p_term: string }
+        Returns: undefined
+      }
       place_order: { Args: { p_input: Json }; Returns: Json }
       raffle_category_id: { Args: never; Returns: string }
       search_card_type_counts: {

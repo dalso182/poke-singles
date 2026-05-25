@@ -54,8 +54,11 @@ stock listings are never visible to anon clients on any query path).
   `app_settings`.
 - **Customer:** `profiles` (1:1 with `auth.users`), `cart_items` (PK `(user_id, product_id)`),
   `carts` (1 row/user; holds `coupon_id`).
-- **Coupons:** `coupons` (soft-delete via `deleted_at`), `coupon_redemptions`.
+- **Coupons:** `coupons` (soft-delete via `deleted_at`, optional `name` label), `coupon_redemptions`.
 - **Raffles:** `raffles` (1:1 with a Rifas-category product).
+- **Reporting/analytics:** `customer_activity` (login / order_created / registered events with
+  IP), `search_log` (storefront searches: keyword + match count + IP). Both **RLS-enabled with
+  no policies** — written only by security-definer fns, read only by admin report RPCs.
 - Triggers: `updated_at`, `first_listed_at`, restock tracking, `pokemon_name` normalization.
 
 ## Customer auth (DB side)
@@ -93,6 +96,13 @@ a plain view runs as its owner (`postgres`) and bypasses RLS, leaking inactive /
 cards into search (fixed in `20260525002400`). Any new customer-facing view needs the same
 option, or Supabase's `security_definer_view` advisor will flag it.
 
+**Search logging.** Committed searches from the header box feed the admin Búsquedas report.
+`count_search_products(q, p_category_slug)` (`security invoker` — counts visible matches in the
+*caller's* RLS context, so the number matches what the shopper sees) gives the match count, then
+`log_search(p_term, p_found)` (`security definer`) writes a `search_log` row with `client_ip()`.
+Hook: `header.onSearch` → `SearchLogService`; both granted to `anon` + `authenticated` (guests
+search too). → Reports section below.
+
 ## Coupons (business logic)
 
 Two types: `PERCENTAGE` (capped 100%) and `FIXED_ON_THRESHOLD` (needs `min_purchase_amount`).
@@ -109,8 +119,10 @@ policy) — they go through three RPCs:
   deleted refs).
 
 The chosen coupon id rides on `carts.coupon_id`; the cart re-validates after every mutation.
-**Redemption is wired:** `place_order` (currently `place_order_v7` — sale-price + category-
-scoped coupons + ascending-`product_id` lock order to avoid concurrent-checkout deadlocks)
+The `coupons` table also has an optional `name` label (set on the admin form; shown in the
+coupons list + the Cupones report). **Redemption is wired:** `place_order` (currently
+`place_order_v8` — sale-price + category-scoped coupons + ascending-`product_id` lock order to
+avoid concurrent-checkout deadlocks, **+ logs an `order_created` row to `customer_activity`**)
 atomically inserts a `coupon_redemptions` row after creating the order and decrementing stock;
 it also matches `guest_email` so the per-user cap applies to guests. `cancel_order` deletes
 the matching redemption inside the same atomic txn that restores stock — the order keeps
@@ -165,6 +177,35 @@ so the existing 3-named-arg call still resolves).
 These return `jsonb`/`table`, so the Angular side hand-types the shapes in `catalog.types.ts`
 (`DashboardStats`, `CustomerRow`/`CustomerDetail`) and calls them via `(client as any).rpc(...)`
 — a `db:types:dev` regen isn't required for them. UI homes → `admin` skill.
+
+## Reports (data side)
+
+The admin **Reportes** hub (`/admin/reports`, 4 tabs) is backed by four `security definer` +
+`is_admin()` RPCs (granted to `authenticated`), each returning a `table` with `count(*) over()`
+as `total_count` and optional `America/Costa_Rica`-day date filters, hand-typed in
+`catalog.types.ts` and called via `(client as any).rpc(...)`:
+
+- `admin_customer_orders_report(p_search, p_date_start, p_date_end, p_limit, p_offset, p_sort)`
+  — per-customer order totals (orders ⨝ order_items): `order_count`, `no_products`,
+  `total_spent`. Same customer-match (`user_id` OR email) + realized-revenue semantics as
+  `admin_customers`; only customers with orders in range, sort `total`/`orders`/`created`.
+- `admin_customer_activity(p_search, p_date_start, p_date_end, p_ip, p_limit, p_offset)` — reads
+  `customer_activity`; `p_ip` is a prefix match via `host(ip)`.
+- `admin_customer_searches(p_search, p_keyword, p_date_start, p_date_end, p_ip, p_customer_type,
+  p_limit, p_offset)` — reads `search_log`; `p_customer_type` = `all`/`guest`/`registered`.
+- `admin_coupons_report(p_search, p_date_start, p_date_end, p_limit, p_offset, p_sort)` —
+  per-coupon usage over **non-cancelled** orders (`coupons` ⨝ `orders` on `coupon_id`):
+  `order_count`, `total_discount` (discount given), `total_revenue` (orders' total) — all over
+  the same set so the row reconciles; only coupons used in range.
+
+**Data collection + server-side IP.** `client_ip()` reads the client IP from PostgREST's
+forwarded `request.headers` (`x-forwarded-for`, first hop), null-safe — only meaningful through
+PostgREST, not a direct DB connection. `customer_activity` is written by
+`log_activity(p_event_type)` (`login`/`registered`; login deduped within 10 min; fired
+fire-and-forget from `AuthService` on `SIGNED_IN` and after `signUp`) and by `place_order`
+(`order_created`). `search_log` is written by `log_search` (see Search). Both event tables have
+RLS **enabled with no policies** (definer writers + admin readers only). Migrations
+`20260525002600`–`20260525003300`. UI homes → `admin` skill.
 
 ## Realtime presence ("people online")
 

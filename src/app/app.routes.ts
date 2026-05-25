@@ -97,6 +97,12 @@ export const routes: Routes = [
           import('./admin/customers/customer-detail').then((m) => m.CustomerDetail),
       },
       {
+        path: 'reports',
+        pathMatch: 'full',
+        loadComponent: () =>
+          import('./admin/reports/reports').then((m) => m.Reports),
+      },
+      {
         path: 'sets',
         loadComponent: () => import('./admin/sets/sets').then((m) => m.Sets),
       },

@@ -11,6 +11,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../core/auth/auth.service';
 import { CartService } from '../../core/cart/cart.service';
+import { SearchLogService } from '../../core/search-log/search-log.service';
 import { SocialIcons } from '../../shared/social-icons/social-icons';
 
 @Component({
@@ -35,6 +36,7 @@ export class Header {
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
   private readonly cart = inject(CartService);
+  private readonly searchLog = inject(SearchLogService);
   private readonly dialog = inject(MatDialog);
   private readonly snack = inject(MatSnackBar);
 
@@ -53,6 +55,7 @@ export class Header {
   protected onSearch(query: string): void {
     const q = query.trim();
     if (q) {
+      void this.searchLog.logSearch(q);
       this.router.navigate(['/buscar'], { queryParams: { q } });
     }
   }

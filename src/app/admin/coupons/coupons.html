@@ -23,7 +23,12 @@
     <table mat-table [dataSource]="visibleRows()" class="app-table app-table--comfy">
       <ng-container matColumnDef="code">
         <th mat-header-cell *matHeaderCellDef>Código</th>
-        <td mat-cell *matCellDef="let row" class="is-mono">{{ row.code }}</td>
+        <td mat-cell *matCellDef="let row">
+          <span class="is-mono">{{ row.code }}</span>
+          @if (row.name) {
+            <div class="coupons__name">{{ row.name }}</div>
+          }
+        </td>
       </ng-container>
 
       <ng-container matColumnDef="type">

@@ -100,6 +100,7 @@ export class AdminShell implements OnInit {
     { label: 'Sets', icon: 'collections_bookmark', path: '/admin/sets', count: this.setCount },
     { label: 'Pedidos', icon: 'receipt_long', path: '/admin/orders', count: this.pendingOrderCount, badgeTone: 'amber' },
     { label: 'Clientes', icon: 'groups', path: '/admin/customers' },
+    { label: 'Reportes', icon: 'analytics', path: '/admin/reports' },
     { label: 'Páginas', icon: 'description', path: '/admin/pages' },
     { label: 'Library', icon: 'palette', path: '/library', exact: true },
     { label: 'Configuración', icon: 'settings', path: '/admin/config' },

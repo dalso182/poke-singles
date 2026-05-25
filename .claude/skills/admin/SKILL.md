@@ -38,6 +38,7 @@ Admin status = `app_metadata.role === 'admin'` (→ `database` skill for `is_adm
 | `/admin/raffles/:id` | RaffleDetail | participants + payment, draw winner |
 | `/admin/customers` | Customers | list: search (name/email/phone) + pagination, order_count / total_spent / last_order |
 | `/admin/customers/:id` | CustomerDetail | profile + saved address + stats + order history (rows → `/admin/orders/:id`) |
+| `/admin/reports` | Reports | 4-tab hub: Pedidos por cliente, Actividad de clientes, Búsquedas, Cupones (see Reports below) |
 | `/admin/config` | AdminConfig | exchange rate, maintenance flag |
 
 ## Shared table system
@@ -48,7 +49,8 @@ markup.** The engine stays `mat-table`, styled by the global `.app-table` class 
 60px / `--cozy` 76px rows) in `src/styles/_admin-table.scss`. Primitives: `app-page-header`,
 `app-filter-bar`, `app-table-card`, `app-pill-tabs` / `app-underline-tabs` (tabs with optional
 count badges), `app-pagination-footer` (restyled mat-paginator behaviour, **1-based** page),
-`app-search-input`, `app-dropdown`, `app-labeled-toggle`, `app-toggle`, `app-checkbox`,
+`app-search-input`, `app-dropdown`, `app-date-range` (flat date-range filter built on native
+`<input type="date">`, ISO `[(start)]`/`[(end)]`), `app-labeled-toggle`, `app-toggle`, `app-checkbox`,
 `app-editable-input`, `app-icon-btn`, `app-btn`, and cells `app-pill` / `app-money` /
 `app-stock` / `app-thumb`. Cell modifier classes `.is-mono / .is-dim / .is-right / .is-center`;
 slug chips use global `.app-slug-chip`. Tokens + the brand-red rule for these → `theme` skill.
@@ -126,8 +128,9 @@ plus the full form. Catalog services live in `src/app/core/catalog/` (`ProductsS
 
 CRUD at `/admin/coupons` (list with filters + search + soft-delete-with-undo) and the shared
 add/edit form with type-reactive validators (`FIXED_ON_THRESHOLD` requires
-`min_purchase_amount`). The coupon **logic** (validation, discount calc, redemption) is in
-Postgres RPCs — see the `database` skill. Admin CRUD just writes the `coupons` rows.
+`min_purchase_amount`) plus an optional **Nombre** label (shown in the list under the code + in
+the Cupones report). The coupon **logic** (validation, discount calc, redemption) is in Postgres
+RPCs — see the `database` skill. Admin CRUD just writes the `coupons` rows.
 
 ## Raffles admin
 
@@ -150,6 +153,26 @@ same stats, and full order history (rows link to `/admin/orders/:id`). `Customer
 
 The Clientes nav item pointed here before the screen existed (a dead link); it now resolves.
 Guests who checked out without an account don't appear here — they live in the Pedidos screen.
+
+## Reports
+
+`/admin/reports` (Reports) is a tabbed hub — a `app-page-header` + `app-pill-tabs` switcher over
+four self-contained read-only report components, each reusing the shared table system +
+`app-date-range` filter and backed by `ReportsService` (`src/app/core/reports/`):
+
+- **Pedidos por cliente** — per-customer order totals (# orders, # products, total spent);
+  customer search + date range; sort by spend / orders / recency.
+- **Actividad de clientes** — login / order / registration events with IP + timestamp; filter
+  by customer, date, IP.
+- **Búsquedas** — storefront search terms with match count + customer (or *Invitado*) + IP;
+  filter by customer type (Todos / Registrados / Invitados), keyword, customer, date, IP.
+- **Cupones** — per-coupon usage (# orders, total **discount given**, total **order revenue**)
+  with an **Editar** action → that coupon's edit page.
+
+Mirrors the `customers`/`orders` screen patterns (signals + debounce + effect → refresh). The
+data collection (event tables, `log_activity`/`log_search`/`client_ip`, `place_order_v8`) and
+the report RPCs live in the `database` skill. Search logging is fired from the storefront header
+box; login/registration logging from `AuthService` — both → `database` (Reports) / `storefront`.
 
 ## Image picker (admin)
 

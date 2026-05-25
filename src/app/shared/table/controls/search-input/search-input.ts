@@ -42,6 +42,7 @@ import { MatIconModule } from '@angular/material/icon';
         display: flex;
         align-items: center;
         gap: 8px;
+        box-sizing: border-box;
         width: 100%;
         height: 38px;
         padding: 0 12px;

@@ -1,0 +1,68 @@
+<app-filter-bar>
+  <app-pill-tabs [tabs]="typeTabs" [(value)]="customerType" />
+  <app-search-input [(value)]="keywordText" placeholder="Buscar palabra clave" />
+  <app-search-input [(value)]="searchText" placeholder="Cliente" [width]="180" />
+  <app-search-input [(value)]="ipText" placeholder="IP" [width]="150" />
+  <app-date-range [(start)]="dateStart" [(end)]="dateEnd" />
+</app-filter-bar>
+
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<app-table-card>
+  <div class="report__scroll">
+    <table mat-table [dataSource]="rows()" class="app-table app-table--comfy">
+      <ng-container matColumnDef="keyword">
+        <th mat-header-cell *matHeaderCellDef>Palabra clave</th>
+        <td mat-cell *matCellDef="let row">
+          <strong class="report__keyword">{{ row.keyword }}</strong>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="found">
+        <th mat-header-cell *matHeaderCellDef class="is-right">Productos</th>
+        <td mat-cell *matCellDef="let row" class="is-right is-mono">{{ row.found_count }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="customer">
+        <th mat-header-cell *matHeaderCellDef>Cliente</th>
+        <td mat-cell *matCellDef="let row">
+          @if (row.user_id) {
+            {{ customerLabel(row) }}
+          } @else {
+            <span class="is-dim">Invitado</span>
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="ip">
+        <th mat-header-cell *matHeaderCellDef>IP</th>
+        <td mat-cell *matCellDef="let row" class="is-mono is-dim">{{ row.ip || '—' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="date">
+        <th mat-header-cell *matHeaderCellDef>Fecha</th>
+        <td mat-cell *matCellDef="let row" class="is-mono is-dim">
+          {{ row.created_at | date: 'short' }}
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+  </div>
+
+  @if (!loading() && rows().length === 0) {
+    <p class="report__empty">Sin búsquedas en este filtro.</p>
+  }
+
+  <app-pagination-footer
+    [page]="page()"
+    [perPage]="pageSize()"
+    [total]="total()"
+    [perPageOptions]="[25, 50, 100, 200]"
+    (pageChange)="onPage($event)"
+    (perPageChange)="onPerPage($event)"
+  />
+</app-table-card>

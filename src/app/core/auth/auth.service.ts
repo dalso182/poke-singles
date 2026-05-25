@@ -36,8 +36,16 @@ export class AuthService {
 
   constructor() {
     this.ready = this.hydrateInitialSession();
-    this.supabase.client.auth.onAuthStateChange((_event, session) => {
+    this.supabase.client.auth.onAuthStateChange((event, session) => {
       this._currentUser.set(session?.user ?? null);
+      // Record logins for the admin Customer Activity Report. SIGNED_IN also
+      // fires on token refresh / multi-tab / OAuth+magic-link callbacks, but the
+      // log_activity RPC dedupes logins within a 10-minute window, so firing
+      // liberally here is safe (and catches passwordless/OAuth logins that never
+      // touch signInWith* directly).
+      if (event === 'SIGNED_IN') {
+        void this.logActivity('login');
+      }
     });
   }
 
@@ -56,6 +64,12 @@ export class AuthService {
       password,
       options: { data: { full_name: displayName } },
     });
+    // Record the signup for the activity report. No-op if email confirmation is
+    // on (no session yet → auth.uid() null in the RPC); those users surface as a
+    // 'login' once they confirm.
+    if (!error) {
+      void this.logActivity('registered');
+    }
     return { error: this.mapError(error) };
   }
 
@@ -95,6 +109,17 @@ export class AuthService {
       redirectTo,
     });
     return { error: this.mapError(error) };
+  }
+
+  /** Fire-and-forget customer-activity log (login / registered). Best-effort:
+   *  the RPC resolves the user from the session and captures IP server-side, so
+   *  a failure here just means a missing log line, never a blocked auth flow. */
+  private async logActivity(eventType: 'login' | 'registered'): Promise<void> {
+    try {
+      await (this.supabase.client as any).rpc('log_activity', { p_event_type: eventType });
+    } catch (err) {
+      console.error('[auth] log_activity', err);
+    }
   }
 
   private getAppBaseUrl(): string | undefined {

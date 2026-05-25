@@ -1,0 +1,32 @@
+// Report-specific bits only. Table look comes from `.app-table` + primitives.
+
+.report__scroll {
+  overflow-x: auto;
+}
+
+.report__name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.report__verb {
+  color: var(--text-secondary);
+}
+
+.report__link {
+  color: var(--brand-blue);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.report__empty {
+  padding: 32px 24px;
+  text-align: center;
+  color: var(--text-secondary);
+}

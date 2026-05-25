@@ -1,0 +1,64 @@
+<app-filter-bar>
+  <app-search-input [(value)]="searchText" placeholder="Buscar nombre o email" />
+  <app-date-range [(start)]="dateStart" [(end)]="dateEnd" />
+  <app-search-input [(value)]="ipText" placeholder="IP" [width]="160" />
+</app-filter-bar>
+
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<app-table-card>
+  <div class="report__scroll">
+    <table mat-table [dataSource]="rows()" class="app-table app-table--comfy">
+      <ng-container matColumnDef="comment">
+        <th mat-header-cell *matHeaderCellDef>Comentario</th>
+        <td mat-cell *matCellDef="let row">
+          <strong class="report__name">{{ displayName(row) }}</strong>
+          @switch (row.event_type) {
+            @case ('login') { <span class="report__verb">inició sesión</span> }
+            @case ('registered') { <span class="report__verb">creó una cuenta</span> }
+            @case ('order_created') {
+              <span class="report__verb">creó</span>
+              @if (row.order_id) {
+                <a class="report__link" [routerLink]="['/admin/orders', row.order_id]">un nuevo pedido</a>
+              } @else {
+                <span class="report__verb">un nuevo pedido</span>
+              }
+            }
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="ip">
+        <th mat-header-cell *matHeaderCellDef>IP</th>
+        <td mat-cell *matCellDef="let row" class="is-mono is-dim">
+          {{ row.ip || '—' }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="date">
+        <th mat-header-cell *matHeaderCellDef>Fecha</th>
+        <td mat-cell *matCellDef="let row" class="is-mono is-dim">
+          {{ row.created_at | date: 'short' }}
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+  </div>
+
+  @if (!loading() && rows().length === 0) {
+    <p class="report__empty">Sin actividad en este filtro.</p>
+  }
+
+  <app-pagination-footer
+    [page]="page()"
+    [perPage]="pageSize()"
+    [total]="total()"
+    [perPageOptions]="[25, 50, 100, 200]"
+    (pageChange)="onPage($event)"
+    (perPageChange)="onPerPage($event)"
+  />
+</app-table-card>
