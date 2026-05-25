@@ -50,6 +50,24 @@ export type Database = {
         }
         Relationships: []
       }
+      card_details: {
+        Row: {
+          card_ref: string
+          data: Json
+          fetched_at: string
+        }
+        Insert: {
+          card_ref: string
+          data: Json
+          fetched_at?: string
+        }
+        Update: {
+          card_ref?: string
+          data?: Json
+          fetched_at?: string
+        }
+        Relationships: []
+      }
       card_types: {
         Row: {
           active: boolean
@@ -502,6 +520,7 @@ export type Database = {
         Row: {
           active: boolean
           card_number: string | null
+          card_ref: string | null
           category: string | null
           category_id: string
           condition: string | null
@@ -526,7 +545,6 @@ export type Database = {
           set_id: string | null
           slug: string
           stage: string | null
-          tcgdex_id: string | null
           type1: string | null
           type2: string | null
           updated_at: string
@@ -535,6 +553,7 @@ export type Database = {
         Insert: {
           active?: boolean
           card_number?: string | null
+          card_ref?: string | null
           category?: string | null
           category_id: string
           condition?: string | null
@@ -559,7 +578,6 @@ export type Database = {
           set_id?: string | null
           slug: string
           stage?: string | null
-          tcgdex_id?: string | null
           type1?: string | null
           type2?: string | null
           updated_at?: string
@@ -568,6 +586,7 @@ export type Database = {
         Update: {
           active?: boolean
           card_number?: string | null
+          card_ref?: string | null
           category?: string | null
           category_id?: string
           condition?: string | null
@@ -592,13 +611,19 @@ export type Database = {
           set_id?: string | null
           slug?: string
           stage?: string | null
-          tcgdex_id?: string | null
           type1?: string | null
           type2?: string | null
           updated_at?: string
           variant?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "products_card_ref_fkey"
+            columns: ["card_ref"]
+            isOneToOne: false
+            referencedRelation: "card_details"
+            referencedColumns: ["card_ref"]
+          },
           {
             foreignKeyName: "products_category_id_fkey"
             columns: ["category_id"]
@@ -612,13 +637,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sets"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "products_tcgdex_id_fkey"
-            columns: ["tcgdex_id"]
-            isOneToOne: false
-            referencedRelation: "tcgdex_cards"
-            referencedColumns: ["tcgdex_id"]
           },
         ]
       }
@@ -847,30 +865,13 @@ export type Database = {
         }
         Relationships: []
       }
-      tcgdex_cards: {
-        Row: {
-          data: Json
-          fetched_at: string
-          tcgdex_id: string
-        }
-        Insert: {
-          data: Json
-          fetched_at?: string
-          tcgdex_id: string
-        }
-        Update: {
-          data?: Json
-          fetched_at?: string
-          tcgdex_id?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       available_products: {
         Row: {
           active: boolean | null
           card_number: string | null
+          card_ref: string | null
           category: string | null
           category_id: string | null
           condition: string | null
@@ -893,7 +894,6 @@ export type Database = {
           set_id: string | null
           slug: string | null
           stage: string | null
-          tcgdex_id: string | null
           type1: string | null
           type2: string | null
           updated_at: string | null
@@ -902,6 +902,7 @@ export type Database = {
         Insert: {
           active?: boolean | null
           card_number?: string | null
+          card_ref?: string | null
           category?: string | null
           category_id?: string | null
           condition?: string | null
@@ -924,7 +925,6 @@ export type Database = {
           set_id?: string | null
           slug?: string | null
           stage?: string | null
-          tcgdex_id?: string | null
           type1?: string | null
           type2?: string | null
           updated_at?: string | null
@@ -933,6 +933,7 @@ export type Database = {
         Update: {
           active?: boolean | null
           card_number?: string | null
+          card_ref?: string | null
           category?: string | null
           category_id?: string | null
           condition?: string | null
@@ -955,13 +956,19 @@ export type Database = {
           set_id?: string | null
           slug?: string | null
           stage?: string | null
-          tcgdex_id?: string | null
           type1?: string | null
           type2?: string | null
           updated_at?: string | null
           variant?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "products_card_ref_fkey"
+            columns: ["card_ref"]
+            isOneToOne: false
+            referencedRelation: "card_details"
+            referencedColumns: ["card_ref"]
+          },
           {
             foreignKeyName: "products_category_id_fkey"
             columns: ["category_id"]
@@ -976,18 +983,12 @@ export type Database = {
             referencedRelation: "sets"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "products_tcgdex_id_fkey"
-            columns: ["tcgdex_id"]
-            isOneToOne: false
-            referencedRelation: "tcgdex_cards"
-            referencedColumns: ["tcgdex_id"]
-          },
         ]
       }
       products_search: {
         Row: {
           card_number: string | null
+          card_ref: string | null
           card_type_ids: string[] | null
           card_type_names: string | null
           category: string | null
@@ -1015,12 +1016,18 @@ export type Database = {
           set_printed_total: number | null
           slug: string | null
           stage: string | null
-          tcgdex_id: string | null
           type1: string | null
           type2: string | null
           variant: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "products_card_ref_fkey"
+            columns: ["card_ref"]
+            isOneToOne: false
+            referencedRelation: "card_details"
+            referencedColumns: ["card_ref"]
+          },
           {
             foreignKeyName: "products_category_id_fkey"
             columns: ["category_id"]
@@ -1034,13 +1041,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sets"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "products_tcgdex_id_fkey"
-            columns: ["tcgdex_id"]
-            isOneToOne: false
-            referencedRelation: "tcgdex_cards"
-            referencedColumns: ["tcgdex_id"]
           },
         ]
       }
@@ -1106,6 +1106,7 @@ export type Database = {
           in_stock_count: number
         }[]
       }
+      category_id_by_slug: { Args: { p_slug: string }; Returns: string }
       draw_raffle: {
         Args: { p_product_id: string }
         Returns: {
@@ -1140,9 +1141,16 @@ export type Database = {
       place_order: { Args: { p_input: Json }; Returns: Json }
       raffle_category_id: { Args: never; Returns: string }
       search_card_type_counts: {
-        Args: { q: string }
+        Args: { p_category_slug?: string; p_on_sale_only?: boolean; q: string }
         Returns: {
           card_type_id: string
+          in_stock_count: number
+        }[]
+      }
+      search_category_counts: {
+        Args: { p_on_sale_only?: boolean; q: string }
+        Returns: {
+          category_id: string
           in_stock_count: number
         }[]
       }
@@ -1151,12 +1159,15 @@ export type Database = {
           limit_n?: number
           offset_n?: number
           p_card_type_ids?: string[]
+          p_category_slug?: string
+          p_on_sale_only?: boolean
           q: string
           set_ids?: string[]
           sort?: string
         }
         Returns: {
           card_number: string | null
+          card_ref: string | null
           card_type_ids: string[] | null
           card_type_names: string | null
           category: string | null
@@ -1184,7 +1195,6 @@ export type Database = {
           set_printed_total: number | null
           slug: string | null
           stage: string | null
-          tcgdex_id: string | null
           type1: string | null
           type2: string | null
           variant: string | null
@@ -1197,7 +1207,7 @@ export type Database = {
         }
       }
       search_set_counts: {
-        Args: { q: string }
+        Args: { p_category_slug?: string; p_on_sale_only?: boolean; q: string }
         Returns: {
           in_stock_count: number
           set_id: string

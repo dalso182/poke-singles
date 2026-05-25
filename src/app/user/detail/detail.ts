@@ -106,8 +106,8 @@ export class Detail implements OnInit {
       // CardTypesService.list() both hit cached signals on subsequent
       // navigations, so this is cheap on repeat visits.
       const [tcgdexRow, sets, types, assignedIds] = await Promise.all([
-        product.tcgdex_id
-          ? this.tcgdexCards.get(product.tcgdex_id)
+        product.card_ref
+          ? this.tcgdexCards.get(product.card_ref)
           : Promise.resolve(null),
         this.sets.list(),
         this.cardTypes.list({ activeOnly: true }),

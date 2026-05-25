@@ -2,11 +2,11 @@
 //
 // Usage:
 //   npm run seed:dev               — auto-detect latest 4 physical TCG sets, insert ~500 products
-//   npm run seed:dev:clean         — wipe products + tcgdex_cards first, then seed
+//   npm run seed:dev:clean         — wipe products + card_details first, then seed
 //
 // Direct flags (without npm aliases):
 //   node scripts/seed-products.mjs
-//   ... --clean              — DELETE FROM products + tcgdex_cards before seeding
+//   ... --clean              — DELETE FROM products + card_details before seeding
 //   ... --sets=sv09,sv08     — override auto-detection (comma-separated TCGdex set codes)
 //   ... --limit=500          — hard cap on inserts (default 500)
 //   ... --dry-run            — log what would happen, no DB writes
@@ -127,7 +127,7 @@ async function getSinglesCategoryId() {
 }
 
 async function cleanSlate() {
-  console.log('[seed] cleaning products + tcgdex_cards…');
+  console.log('[seed] cleaning products + card_details…');
   // Use a never-matching predicate so PostgREST allows the bulk delete.
   const r1 = await supabase
     .from('products')
@@ -135,10 +135,10 @@ async function cleanSlate() {
     .neq('id', '00000000-0000-0000-0000-000000000000');
   if (r1.error) abort(`Failed to clean products: ${r1.error.message}`);
   const r2 = await supabase
-    .from('tcgdex_cards')
+    .from('card_details')
     .delete()
-    .neq('tcgdex_id', '__never__');
-  if (r2.error) abort(`Failed to clean tcgdex_cards: ${r2.error.message}`);
+    .neq('card_ref', '__never__');
+  if (r2.error) abort(`Failed to clean card_details: ${r2.error.message}`);
   console.log('[seed] cleaned.');
 }
 
@@ -250,18 +250,18 @@ async function processCard(card, setRow, singlesId, stats) {
   }
 
   const { error: cacheErr } = await supabase
-    .from('tcgdex_cards')
+    .from('card_details')
     .upsert(
       {
-        tcgdex_id: card.id,
+        card_ref: card.id,
         data: card,
         fetched_at: new Date().toISOString(),
       },
-      { onConflict: 'tcgdex_id' }
+      { onConflict: 'card_ref' }
     );
   if (cacheErr) {
     stats.failed++;
-    console.warn(`[seed] tcgdex_cards upsert failed for ${card.id}: ${cacheErr.message}`);
+    console.warn(`[seed] card_details upsert failed for ${card.id}: ${cacheErr.message}`);
     return;
   }
 
@@ -279,7 +279,7 @@ async function processCard(card, setRow, singlesId, stats) {
     variant: 'normal',
     price: priceForRarity(card.rarity),
     quantity: randomQuantity(),
-    tcgdex_id: card.id,
+    card_ref: card.id,
     illustrator: card.illustrator ?? null,
     regulation_mark: card.regulationMark ?? null,
     category: card.category ?? null,

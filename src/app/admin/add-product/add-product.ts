@@ -192,7 +192,7 @@ export class AddProduct {
     market_price: [null as number | null, [Validators.min(0)]],
     // TCGdex-derived metadata. Not rendered as form inputs — patched by
     // `onCardSelected` and serialised on submit. Manual mode leaves them null.
-    tcgdex_id: [null as string | null],
+    card_ref: [null as string | null],
     illustrator: [null as string | null],
     regulation_mark: [null as string | null],
     category: [null as string | null],
@@ -258,7 +258,7 @@ export class AddProduct {
       // Point at our self-hosted copy (relative path), not the TCGdex CDN.
       image_url: tcgdexImageToHostedPath(card.image),
       variant: this.defaultVariantFor(card),
-      tcgdex_id: card.id,
+      card_ref: card.id,
       illustrator: card.illustrator ?? null,
       regulation_mark: card.regulationMark ?? null,
       category: card.category ?? null,
@@ -291,7 +291,7 @@ export class AddProduct {
     }
     // Cache the full TCGdex payload so the detail page can read attacks /
     // abilities / weaknesses without round-tripping to TCGdex on every view.
-    // The `tcgdex_id` FK on `products` references this row, so we upsert
+    // The `card_ref` FK on `products` references this row, so we upsert
     // before submit to satisfy the constraint.
     try {
       await this.tcgdexCards.upsert(card.id, card);
@@ -386,7 +386,7 @@ export class AddProduct {
       description: '',
       draw_at: null,
       market_price: null,
-      tcgdex_id: null,
+      card_ref: null,
       illustrator: null,
       regulation_mark: null,
       category: null,
@@ -456,7 +456,7 @@ export class AddProduct {
         quantity: Number(raw.quantity),
         featured: raw.featured,
         description: raw.description || null,
-        tcgdex_id: raw.tcgdex_id || null,
+        card_ref: raw.card_ref || null,
         illustrator: raw.illustrator || null,
         regulation_mark: raw.regulation_mark || null,
         category: raw.category || null,
@@ -505,7 +505,7 @@ export class AddProduct {
       description: '',
       draw_at: null,
       market_price: null,
-      tcgdex_id: null,
+      card_ref: null,
       illustrator: null,
       regulation_mark: null,
       category: null,

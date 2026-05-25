@@ -83,7 +83,7 @@ export interface ProductRow {
   last_restocked_at: string | null;
   created_at: string;
   updated_at: string;
-  tcgdex_id: string | null;
+  card_ref: string | null;
   illustrator: string | null;
   regulation_mark: string | null;
   category: string | null;
@@ -112,7 +112,7 @@ export interface ProductInsert {
   quantity?: number;
   image_url?: string | null;
   active?: boolean;
-  tcgdex_id?: string | null;
+  card_ref?: string | null;
   illustrator?: string | null;
   regulation_mark?: string | null;
   category?: string | null;
@@ -216,7 +216,7 @@ export interface RaffleRow {
 }
 
 export interface TcgdexCardRow {
-  tcgdex_id: string;
+  card_ref: string;
   data: unknown;
   fetched_at: string;
 }
@@ -527,7 +527,7 @@ export interface ProductSearchRow {
   image_url: string | null;
   set_id: string | null;
   category_id: string;
-  tcgdex_id: string | null;
+  card_ref: string | null;
   last_restocked_at: string | null;
   created_at: string;
   set_name: string | null;

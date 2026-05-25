@@ -10,7 +10,7 @@
 //   - orders, order_items, coupon_redemptions  (test order data)
 //   - carts, cart_items                        (in-progress shopping)
 //   - products, product_card_types, raffles    (raffles cascades on products.id)
-//   - tcgdex_cards                             (re-populated by importer)
+//   - card_details                             (re-populated by importer)
 //
 // Preserved:
 //   - auth.users + profiles                    (admin login lives here)
@@ -401,10 +401,10 @@ async function cleanSlate() {
   await wipeTable('carts', 'user_id', '00000000-0000-0000-0000-000000000000');
   // 3. products — product_card_types cascades.
   await wipeTable('products', 'id', '00000000-0000-0000-0000-000000000000');
-  // 4. tcgdex_cards — safe now that no products reference it.
+  // 4. card_details — safe now that no products reference it.
   // (raffles already cascaded away via ON DELETE CASCADE on raffles.product_id
   // when products were wiped above — no explicit step needed.)
-  await wipeTable('tcgdex_cards', 'tcgdex_id', '__never__');
+  await wipeTable('card_details', 'card_ref', '__never__');
   console.log('[prep] wipe complete.');
 }
 
@@ -563,14 +563,14 @@ async function main() {
 
     // Cache the full TCGdex payload so detail pages can read attacks etc.
     const { error: cacheErr } = await supabase
-      .from('tcgdex_cards')
+      .from('card_details')
       .upsert(
-        { tcgdex_id: card.id, data: sanitizeCard(card), fetched_at: new Date().toISOString() },
-        { onConflict: 'tcgdex_id' },
+        { card_ref: card.id, data: sanitizeCard(card), fetched_at: new Date().toISOString() },
+        { onConflict: 'card_ref' },
       );
     if (cacheErr) {
       stats.failed++;
-      console.warn(`[prep] tcgdex_cards upsert failed for ${card.id}: ${cacheErr.message}`);
+      console.warn(`[prep] card_details upsert failed for ${card.id}: ${cacheErr.message}`);
       return;
     }
 
@@ -589,7 +589,7 @@ async function main() {
       // Round to nearest ₡100 (most OC prices already are).
       price: Math.max(0, Math.round(p.price / 100) * 100),
       quantity: p.quantity,
-      tcgdex_id: card.id,
+      card_ref: card.id,
       illustrator: card.illustrator ?? null,
       regulation_mark: card.regulationMark ?? null,
       category: card.category ?? null,
