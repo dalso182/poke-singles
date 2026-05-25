@@ -56,6 +56,7 @@ export class Checkout implements OnInit {
   private readonly shippingMethodsService = inject(ShippingMethodsService);
 
   protected readonly items = this.cart.items;
+  protected readonly itemCount = this.cart.itemCount;
   protected readonly subtotal = this.cart.subtotal;
   protected readonly appliedCoupon = this.cart.appliedCoupon;
   protected readonly discount = this.cart.discount;
@@ -67,6 +68,10 @@ export class Checkout implements OnInit {
   /** Tracks the radio-group value so computed signals react to changes
    *  (form `valueChanges` is hooked in the constructor below). */
   protected readonly selectedShippingMethodId = signal<string>('');
+
+  /** Mirrors the payment radio-group value into a signal so the active
+   *  radio-card styling reacts (FormControl.value isn't reactive). */
+  protected readonly selectedPaymentMethod = signal<PaymentMethod>('sinpe_or_transfer');
 
   /** Profile snapshot used to render the "Enviar a:" summary. Set by
    *  prefillFromProfile after the auth session is ready. */
@@ -97,6 +102,20 @@ export class Checkout implements OnInit {
     return this.shippingMethods().find((s) => s.id === id)?.price ?? 0;
   });
 
+  /** Name of the selected method — suffixes the "Envío" totals row. */
+  protected readonly selectedShippingMethodName = computed<string>(() => {
+    const id = this.selectedShippingMethodId();
+    if (!id) return '';
+    return this.shippingMethods().find((s) => s.id === id)?.name ?? '';
+  });
+
+  /** Human-readable label for the selected payment method. */
+  protected readonly selectedPaymentLabel = computed<string>(() =>
+    this.selectedPaymentMethod() === 'payment_link'
+      ? 'Pago por enlace'
+      : 'SINPE Móvil / Transferencia bancaria',
+  );
+
   protected readonly selectedMethodRequiresAddress = computed<boolean>(() => {
     const id = this.selectedShippingMethodId();
     const m = this.shippingMethods().find((x) => x.id === id);
@@ -120,6 +139,11 @@ export class Checkout implements OnInit {
       this.selectedShippingMethodId.set(typeof v === 'string' ? v : '');
     });
 
+    // Mirror the payment value so the active radio-card style reacts too.
+    this.form.controls['payment_method'].valueChanges.subscribe((v) => {
+      this.selectedPaymentMethod.set(v as PaymentMethod);
+    });
+
     // Toggle address-field validators based on whether the editable form
     // is actually rendered. The form is shown when either (a) the user
     // explicitly switched to 'custom' mode, or (b) they have no saved
@@ -141,6 +165,19 @@ export class Checkout implements OnInit {
 
   ngOnInit(): void {
     void this.bootstrap();
+  }
+
+  /** Maps a condition grade to its traffic-light pill class — mirrors the
+   *  shared product-card helper so the summary pill matches the catalog. */
+  protected conditionClass(condition: string | null): string {
+    if (!condition) return '';
+    const code = condition.toUpperCase();
+    let modifier = '';
+    if (code === 'NM') modifier = 'condition-pill--nm';
+    else if (code === 'LP') modifier = 'condition-pill--lp';
+    else if (code === 'MP') modifier = 'condition-pill--mp';
+    else if (code === 'HP' || code === 'DMG') modifier = 'condition-pill--hp';
+    return `condition-pill ${modifier}`;
   }
 
   /** Re-patches the address controls from the saved profile so toggling

@@ -19,88 +19,90 @@
   <form [formGroup]="form" (ngSubmit)="onSubmit()" class="checkout__layout">
     <div class="checkout__main">
 
-      <mat-card class="checkout__panel">
-        <mat-card-header>
-          <mat-card-title>Contacto</mat-card-title>
-          <mat-card-subtitle>Te avisaremos por estos medios.</mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="checkout__grid">
-            <mat-form-field appearance="outline" class="checkout__full">
-              <mat-label>Correo</mat-label>
-              <input matInput type="email" formControlName="email" autocomplete="email" />
-              @if (form.controls['email'].touched && form.controls['email'].invalid) {
-                <mat-error>Ingresa un correo válido.</mat-error>
-              }
-            </mat-form-field>
-            <mat-form-field appearance="outline">
-              <mat-label>Nombre completo</mat-label>
-              <input matInput type="text" formControlName="name" autocomplete="name" />
-            </mat-form-field>
-            <mat-form-field appearance="outline">
-              <mat-label>Teléfono</mat-label>
-              <input matInput type="tel" formControlName="phone" autocomplete="tel" />
-              <mat-hint>Para coordinar el SINPE / WhatsApp.</mat-hint>
-            </mat-form-field>
-          </div>
-        </mat-card-content>
-      </mat-card>
+      <section class="co-panel">
+        <header class="co-panel-head">
+          <div class="co-eyebrow">Contacto</div>
+        </header>
+        <div class="checkout__grid">
+          <mat-form-field appearance="outline" class="checkout__full">
+            <mat-label>Correo</mat-label>
+            <input matInput type="email" formControlName="email" autocomplete="email" />
+            @if (form.controls['email'].touched && form.controls['email'].invalid) {
+              <mat-error>Ingresa un correo válido.</mat-error>
+            }
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre completo</mat-label>
+            <input matInput type="text" formControlName="name" autocomplete="name" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Teléfono</mat-label>
+            <input matInput type="tel" formControlName="phone" autocomplete="tel" />
+            <mat-hint>Para coordinar el SINPE / WhatsApp.</mat-hint>
+          </mat-form-field>
+        </div>
+      </section>
 
-      <mat-card class="checkout__panel">
-        <mat-card-header>
-          <mat-card-title>Envío</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          @if (shippingMethods().length === 0) {
-            <p class="muted">No hay métodos de envío configurados. Contáctanos.</p>
-          } @else {
-            <mat-radio-group formControlName="shipping_method_id" class="checkout__shipping">
-              @for (method of shippingMethods(); track method.id) {
-                <mat-radio-button [value]="method.id" class="checkout__shipping-option">
-                  <div class="checkout__shipping-row">
-                    <div>
-                      <strong>{{ method.name }}</strong>
-                      @if (method.description) {
-                        <p class="muted checkout__shipping-desc">{{ method.description }}</p>
-                      }
-                    </div>
-                    <span class="checkout__shipping-price">
-                      @if (method.price === 0) { Gratis }
-                      @else { ₡{{ method.price | number: '1.0-0' }} }
-                    </span>
+      <section class="co-panel">
+        <header class="co-panel-head">
+          <div class="co-eyebrow">Envío</div>
+        </header>
+        @if (shippingMethods().length === 0) {
+          <p class="muted">No hay métodos de envío configurados. Contáctanos.</p>
+        } @else {
+          <mat-radio-group formControlName="shipping_method_id" class="co-options">
+            @for (method of shippingMethods(); track method.id) {
+              <mat-radio-button
+                [value]="method.id"
+                class="co-option"
+                [class.co-option--active]="selectedShippingMethodId() === method.id"
+              >
+                <div class="co-option-row">
+                  <div class="co-option-text">
+                    <span class="co-option-title">{{ method.name }}</span>
+                    @if (method.description) {
+                      <span class="co-option-desc">{{ method.description }}</span>
+                    }
                   </div>
-                </mat-radio-button>
-              }
-            </mat-radio-group>
-          }
-
-          @if (selectedMethodRequiresAddress()) {
-            @if (addressMode() === 'saved' && hasSavedAddress()) {
-              <div class="checkout__address-summary">
-                <div class="checkout__address-summary-body">
-                  <p class="checkout__address-summary-label">Enviar a:</p>
-                  <p>
-                    {{ savedProfile()?.default_shipping_address?.line1 }}@if (savedProfile()?.default_shipping_address?.line2) {, {{ savedProfile()?.default_shipping_address?.line2 }}}
-                  </p>
-                  <p>
-                    {{ savedProfile()?.default_shipping_address?.city }}, {{ savedProfile()?.default_shipping_address?.province }}
-                  </p>
-                  @if (savedProfile()?.default_shipping_address?.notes) {
-                    <p class="muted">{{ savedProfile()?.default_shipping_address?.notes }}</p>
-                  }
+                  <span class="co-option-price" [class.is-free]="method.price === 0">
+                    @if (method.price === 0) { Gratis }
+                    @else { ₡{{ method.price | number: '1.0-0' }} }
+                  </span>
                 </div>
-                <button
-                  mat-button
-                  color="primary"
-                  type="button"
-                  class="checkout__address-change"
-                  (click)="addressMode.set('custom')"
-                >
-                  Cambiar dirección
-                </button>
+              </mat-radio-button>
+            }
+          </mat-radio-group>
+        }
+
+        @if (selectedMethodRequiresAddress()) {
+          @if (addressMode() === 'saved' && hasSavedAddress()) {
+            <div class="co-subpanel checkout__address-summary">
+              <div class="checkout__address-summary-body">
+                <p class="checkout__address-summary-label">Enviar a:</p>
+                <p>
+                  {{ savedProfile()?.default_shipping_address?.line1 }}@if (savedProfile()?.default_shipping_address?.line2) {, {{ savedProfile()?.default_shipping_address?.line2 }}}
+                </p>
+                <p>
+                  {{ savedProfile()?.default_shipping_address?.city }}, {{ savedProfile()?.default_shipping_address?.province }}
+                </p>
+                @if (savedProfile()?.default_shipping_address?.notes) {
+                  <p class="muted">{{ savedProfile()?.default_shipping_address?.notes }}</p>
+                }
               </div>
-            } @else {
-              <div class="checkout__grid checkout__address">
+              <button
+                mat-button
+                color="primary"
+                type="button"
+                class="checkout__address-change"
+                (click)="addressMode.set('custom')"
+              >
+                Cambiar dirección
+              </button>
+            </div>
+          } @else {
+            <div class="co-subpanel">
+              <div class="co-subpanel-label">Dirección de entrega</div>
+              <div class="checkout__grid">
                 <mat-form-field appearance="outline" class="checkout__full">
                   <mat-label>Dirección (línea 1)</mat-label>
                   <input matInput type="text" formControlName="line1" autocomplete="address-line1" />
@@ -132,111 +134,169 @@
                   Usar la dirección guardada
                 </button>
               }
-            }
+            </div>
           }
-        </mat-card-content>
-      </mat-card>
+        }
+      </section>
 
-      <mat-card class="checkout__panel">
-        <mat-card-header>
-          <mat-card-title>Pago</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <mat-radio-group formControlName="payment_method" class="checkout__payment">
-            <mat-radio-button value="sinpe_or_transfer">
-              <div>
-                <strong>SINPE Móvil / Transferencia bancaria</strong>
-                <p class="muted">
-                  Te mostramos los datos en la siguiente pantalla. Puedes adjuntar el
-                  comprobante o enviarlo por WhatsApp.
-                </p>
-              </div>
-            </mat-radio-button>
-            <mat-radio-button value="payment_link">
-              <div>
-                <strong>Pago por enlace</strong>
-                <p class="muted">
-                  Te contactaremos por teléfono con un enlace de pago.
-                </p>
-              </div>
-            </mat-radio-button>
-          </mat-radio-group>
-        </mat-card-content>
-      </mat-card>
+      <section class="co-panel">
+        <header class="co-panel-head">
+          <div class="co-eyebrow">Pago</div>
+        </header>
+        <mat-radio-group formControlName="payment_method" class="co-options">
+          <mat-radio-button
+            value="sinpe_or_transfer"
+            class="co-option"
+            [class.co-option--active]="selectedPaymentMethod() === 'sinpe_or_transfer'"
+          >
+            <div class="co-option-text">
+              <span class="co-option-title">SINPE Móvil / Transferencia bancaria</span>
+              <span class="co-option-desc">
+                Te mostramos los datos en la siguiente pantalla. Puedes adjuntar el
+                comprobante o enviarlo por WhatsApp.
+              </span>
+            </div>
+          </mat-radio-button>
+          <mat-radio-button
+            value="payment_link"
+            class="co-option"
+            [class.co-option--active]="selectedPaymentMethod() === 'payment_link'"
+          >
+            <div class="co-option-text">
+              <span class="co-option-title">Pago por enlace</span>
+              <span class="co-option-desc">
+                Te contactaremos por teléfono con un enlace de pago.
+              </span>
+            </div>
+          </mat-radio-button>
+        </mat-radio-group>
+      </section>
 
-      <mat-card class="checkout__panel">
-        <mat-card-header>
-          <mat-card-title>Notas (opcional)</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="checkout__grid">
-            <mat-form-field appearance="outline" class="checkout__full">
-              <mat-label>Algo que debamos saber</mat-label>
-              <textarea matInput rows="3" formControlName="customer_notes"></textarea>
-            </mat-form-field>
-          </div>
-        </mat-card-content>
-      </mat-card>
+      <section class="co-panel">
+        <header class="co-panel-head">
+          <div class="co-eyebrow">Notas</div>
+        </header>
+        <div class="checkout__grid">
+          <mat-form-field appearance="outline" class="checkout__full">
+            <mat-label>Algo que debamos saber</mat-label>
+            <textarea matInput rows="3" formControlName="customer_notes"></textarea>
+          </mat-form-field>
+        </div>
+      </section>
 
     </div>
 
     <aside class="checkout__summary">
-      <div class="checkout__summary-card">
-        <h2>Tu pedido</h2>
-        <ul class="checkout__items">
+      <div class="co-summary-card">
+        <span class="co-tick"></span>
+
+        <div class="co-summary-head">
+          <div>
+            <div class="co-eyebrow">Resumen —</div>
+            <h2 class="co-summary-title">Tu pedido</h2>
+          </div>
+          <span class="co-summary-count">{{ itemCount() }} cartas</span>
+        </div>
+
+        <ul class="co-lines">
           @for (line of items(); track line.product_id) {
-            <li class="checkout__item">
-              @if (line.image_url) {
-                <img [src]="line.image_url" [alt]="line.name" loading="lazy" />
-              }
-              <div class="checkout__item-body">
-                <span class="checkout__item-name">{{ line.name }}</span>
-                <span class="muted checkout__item-meta">x{{ line.quantity }}</span>
+            <li class="co-line">
+              <div class="co-line-thumb">
+                @if (line.image_url) {
+                  <img [src]="line.image_url" [alt]="line.name" loading="lazy" />
+                } @else {
+                  <div class="co-line-thumb-ph"></div>
+                }
+                <span class="co-line-qty">{{ line.quantity }}</span>
               </div>
-              <span class="checkout__item-price">
-                ₡{{ line.price * line.quantity | number: '1.0-0' }}
-              </span>
+              <div class="co-line-body">
+                <span class="co-line-name">{{ line.name }}</span>
+                @if (line.set_name || line.card_number) {
+                  <span class="co-line-meta">
+                    {{ line.set_name }}@if (line.set_name && line.card_number) {<span> · </span>}@if (line.card_number) {#{{ line.card_number }}}
+                  </span>
+                }
+                @if (line.condition) {
+                  <span class="co-line-cond">
+                    <span [class]="conditionClass(line.condition)">{{ line.condition }}</span>
+                  </span>
+                }
+              </div>
+              <div class="co-line-price">
+                <span class="co-line-total">₡{{ line.price * line.quantity | number: '1.0-0' }}</span>
+                @if (line.quantity > 1) {
+                  <span class="co-line-unit">{{ line.quantity }} × ₡{{ line.price | number: '1.0-0' }}</span>
+                }
+              </div>
             </li>
           }
         </ul>
 
-        <dl class="checkout__summary-row">
-          <dt>Subtotal</dt>
-          <dd>₡{{ subtotal() | number: '1.0-0' }}</dd>
-        </dl>
-        @if (appliedCoupon(); as coupon) {
-          <dl class="checkout__summary-row">
+        <div class="co-totals">
+          <dl class="co-row">
+            <dt>Subtotal</dt>
+            <dd>₡{{ subtotal() | number: '1.0-0' }}</dd>
+          </dl>
+          @if (appliedCoupon(); as coupon) {
+            <dl class="co-row">
+              <dt>
+                @if (coupon.type === 'PERCENTAGE') {
+                  {{ coupon.code }} ({{ coupon.discount_value }}%)
+                } @else {
+                  Descuento ({{ coupon.code }})
+                }
+              </dt>
+              <dd class="price--sale">−₡{{ discount() | number: '1.0-0' }}</dd>
+            </dl>
+          }
+          <dl class="co-row">
             <dt>
-              @if (coupon.type === 'PERCENTAGE') {
-                {{ coupon.code }} ({{ coupon.discount_value }}%)
-              } @else {
-                Descuento ({{ coupon.code }})
+              Envío
+              @if (selectedShippingMethodName()) {
+                <span class="co-row-suffix">· {{ selectedShippingMethodName() }}</span>
               }
             </dt>
-            <dd class="price--sale">−₡{{ discount() | number: '1.0-0' }}</dd>
+            <dd>
+              @if (selectedShippingPrice() === 0) {
+                <span class="co-free">Gratis</span>
+              } @else {
+                ₡{{ selectedShippingPrice() | number: '1.0-0' }}
+              }
+            </dd>
           </dl>
-        }
-        <dl class="checkout__summary-row">
-          <dt>Envío</dt>
-          <dd>₡{{ selectedShippingPrice() | number: '1.0-0' }}</dd>
-        </dl>
-        <dl class="checkout__summary-row checkout__summary-row--total">
-          <dt>Total</dt>
-          <dd>₡{{ total() | number: '1.0-0' }}</dd>
-        </dl>
+        </div>
 
-        <button
-          mat-flat-button
-          color="primary"
-          type="submit"
-          class="checkout__place"
-          [disabled]="form.invalid || placing()"
-        >
-          {{ placing() ? 'Procesando…' : 'Confirmar pedido' }}
-        </button>
-        <p class="muted checkout__legal">
-          Al confirmar, recibirás las instrucciones de pago en la siguiente pantalla.
-        </p>
+        <div class="co-slab">
+          <div class="co-total">
+            <span class="co-total-label">Total</span>
+            <span class="co-total-value">₡{{ total() | number: '1.0-0' }}</span>
+          </div>
+
+          <dl class="co-meta-lines">
+            <div class="co-meta-line">
+              <dt>Pago:</dt>
+              <dd>{{ selectedPaymentLabel() }}</dd>
+            </div>
+            @if (selectedShippingMethodName()) {
+              <div class="co-meta-line">
+                <dt>Envío:</dt>
+                <dd>{{ selectedShippingMethodName() }}</dd>
+              </div>
+            }
+          </dl>
+
+          <button
+            type="submit"
+            class="co-confirm"
+            [disabled]="form.invalid || placing()"
+          >
+            <span>{{ placing() ? 'Procesando…' : 'Confirmar pedido' }}</span>
+            <mat-icon>arrow_forward</mat-icon>
+          </button>
+          <p class="co-legal">
+            Al confirmar, recibirás las instrucciones de pago en la siguiente pantalla.
+          </p>
+        </div>
       </div>
     </aside>
   </form>
