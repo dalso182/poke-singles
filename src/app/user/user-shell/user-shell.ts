@@ -28,6 +28,7 @@ import { CartDrawer } from '../cart-drawer/cart-drawer';
 import { CartService } from '../../core/cart/cart.service';
 import { LocalStorageService } from '../../core/storage/local-storage.service';
 import { WelcomeDialogService } from '../../core/preview/welcome-dialog.service';
+import { PresenceService } from '../../core/presence/presence.service';
 
 /** Below this width the rail is dropped for a slide-over drawer. */
 const HANDSET_QUERY = '(max-width: 719.98px)';
@@ -120,6 +121,10 @@ export class UserShell {
     // gating (localStorage flag + page-content check); no-op for repeat
     // visitors and when the admin hasn't written copy yet.
     void inject(WelcomeDialogService).maybeOpen();
+
+    // Announce this shopper on the presence channel so the admin dashboard's
+    // "people online" tile can count them. Browser-guarded inside the service.
+    inject(PresenceService).joinAsVisitor();
   }
 
   protected toggleSidenav(): void {

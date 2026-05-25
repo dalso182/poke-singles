@@ -1,4 +1,5 @@
-import { Injectable, signal } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
+import { NavigationStart, Router } from '@angular/router';
 
 export interface CardPreview {
   imageUrl: string;
@@ -22,6 +23,15 @@ export class CardPreviewService {
 
   readonly current = signal<CardPreview | null>(null);
   private pendingTimer: ReturnType<typeof setTimeout> | null = null;
+
+  constructor() {
+    // Clicking a card navigates away, tearing down the listing before its
+    // `mouseleave` fires — so the overlay (which lives in the persistent
+    // UserShell) would otherwise stay on screen. Dismiss on any route change.
+    inject(Router).events.subscribe((e) => {
+      if (e instanceof NavigationStart) this.hide();
+    });
+  }
 
   show(next: CardPreview): void {
     if (this.pendingTimer !== null) clearTimeout(this.pendingTimer);

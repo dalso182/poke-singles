@@ -1,23 +1,65 @@
 <mat-toolbar class="admin-toolbar">
-  <button mat-icon-button (click)="toggleSidenav()" aria-label="Toggle navigation">
-    <mat-icon>menu</mat-icon>
-  </button>
-  <a routerLink="/admin" class="brand" aria-label="Poke-Singles Admin">
-    <img src="assets/images/poke-singles-logo.png" alt="" class="brand-logo" />
-    <span class="brand-eyebrow brand-eyebrow--inline">Poke-Singles · Admin</span>
-  </a>
-  <span class="spacer"></span>
-  <a mat-button routerLink="/">
-    <mat-icon>storefront</mat-icon>
-    Ir a la tienda
-  </a>
+  <div class="brand-bar admin-top-stripe" aria-hidden="true"></div>
+
   <button
     mat-icon-button
-    [matMenuTriggerFor]="adminProfileMenu"
-    [attr.aria-label]="isSignedIn() ? 'Cuenta' : 'Iniciar sesión'"
+    class="hamburger"
+    (click)="toggleSidenav()"
+    aria-label="Alternar menú"
+    [attr.aria-expanded]="sidenavOpen()"
   >
-    <mat-icon>{{ isSignedIn() ? 'account_circle' : 'person' }}</mat-icon>
+    <mat-icon>menu</mat-icon>
   </button>
+
+  <a routerLink="/admin" class="brand" aria-label="Poke-Singles Admin">
+    <img src="assets/images/poke-singles-logo.png" alt="" class="brand-logo" />
+    <span class="brand-wordmark">
+      POKE-SINGLES · <span class="brand-wordmark__admin">ADMIN</span>
+    </span>
+  </a>
+
+  <div class="topbar-search-wrap">
+    <div class="topbar-search">
+      <mat-icon class="topbar-search__icon">search</mat-icon>
+      <input
+        #searchInput
+        type="search"
+        class="topbar-search__input"
+        placeholder="Buscar pedido, cliente, SKU…"
+        aria-label="Buscar"
+      />
+      <span class="topbar-search__kbd" aria-hidden="true">⌘K</span>
+    </div>
+  </div>
+
+  <div class="topbar-actions">
+    <a class="go-to-store" routerLink="/" target="_blank" rel="noopener">
+      <mat-icon>storefront</mat-icon>
+      <span>Ir a la tienda</span>
+    </a>
+
+    <button
+      mat-icon-button
+      class="topbar-icon-btn"
+      (click)="openNotifications()"
+      [attr.aria-label]="notificationsAriaLabel()"
+    >
+      <mat-icon>notifications</mat-icon>
+      @if (unreadNotifications() > 0) {
+        <span class="notif-badge">{{ unreadNotifications() }}</span>
+      }
+    </button>
+
+    <button
+      mat-icon-button
+      class="topbar-icon-btn"
+      [matMenuTriggerFor]="adminProfileMenu"
+      [attr.aria-label]="isSignedIn() ? 'Cuenta' : 'Iniciar sesión'"
+    >
+      <mat-icon>{{ isSignedIn() ? 'account_circle' : 'person' }}</mat-icon>
+    </button>
+  </div>
+
   <mat-menu #adminProfileMenu="matMenu" xPosition="before">
     @if (!isSignedIn()) {
       <button mat-menu-item (click)="openLogin()">
@@ -42,21 +84,55 @@
 </mat-toolbar>
 
 <mat-sidenav-container class="admin-container">
-  <mat-sidenav mode="side" [opened]="sidenavOpen()">
-    <mat-nav-list>
+  <mat-sidenav mode="side" [opened]="sidenavOpen()" class="admin-sidenav">
+    <nav class="admin-nav" aria-label="Administración">
       @for (item of items; track item.path) {
         <a
-          mat-list-item
+          class="nav-row"
           [routerLink]="item.path"
-          routerLinkActive="active-link"
+          routerLinkActive="nav-row--active"
+          #rla="routerLinkActive"
           [routerLinkActiveOptions]="{ exact: !!item.exact }"
+          [attr.aria-current]="rla.isActive ? 'page' : null"
         >
-          <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
-          <span matListItemTitle>{{ item.label }}</span>
+          <mat-icon class="nav-row__icon">{{ item.icon }}</mat-icon>
+          <span class="nav-row__label">{{ item.label }}</span>
+          @if (item.count && item.count() !== null) {
+            <span
+              class="nav-badge"
+              [class.nav-badge--amber]="item.badgeTone === 'amber'"
+            >
+              {{ item.count() | number }}
+            </span>
+          }
         </a>
       }
-    </mat-nav-list>
+    </nav>
+
+    <div class="store-status">
+      <div class="store-status__card">
+        <div class="store-status__header">
+          <span class="store-status__dot" aria-hidden="true"></span>
+          <span class="store-status__label">Tienda en línea</span>
+        </div>
+        @if (onlineVisitors() !== null && cartsActive() !== null) {
+          <div class="store-status__body">
+            {{ onlineVisitors() }} visitantes ahora · {{ cartsActive() }} con carrito activo
+          </div>
+        } @else {
+          <a
+            class="store-status__body store-status__link"
+            routerLink="/"
+            target="_blank"
+            rel="noopener"
+          >
+            Ver tienda en vivo →
+          </a>
+        }
+      </div>
+    </div>
   </mat-sidenav>
+
   <mat-sidenav-content class="admin-content">
     <router-outlet />
   </mat-sidenav-content>

@@ -2,16 +2,47 @@
   display: flex;
   flex-direction: column;
   min-height: 100%;
+
+  // Nav-specific surfaces — intentionally NOT generic Material tints.
+  // The pale warm lavender is the system's chosen "selected" surface for nav.
+  --nav-active-bg: #ece7f4;
+  --nav-active-text: #1b1530;
+  --nav-hover-bg: #f4f2ee;
 }
 
+/* ─────────── Top bar ─────────── */
 .admin-toolbar {
   position: sticky;
   top: 0;
-  z-index: 2;
-  height: 80px;
+  z-index: 3;
+  height: 68px;
+  min-height: 68px;
+  --mat-toolbar-standard-height: 68px;
+  padding: 0 20px;
   background: var(--surface-card);
   color: var(--text-primary);
   border-bottom: 1px solid var(--border-subtle);
+}
+
+// 2px decorative brand stripe flush to the very top of the bar.
+// Reuses the global .brand-bar gradient (the only sanctioned brand-red use).
+.brand-bar.admin-top-stripe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+}
+
+.hamburger {
+  color: var(--text-secondary);
+
+  mat-icon {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+    line-height: 22px;
+  }
 }
 
 .brand {
@@ -21,48 +52,324 @@
   margin-left: 8px;
   text-decoration: none;
   color: inherit;
-  height: 100%;
 }
 
 .brand-logo {
   display: block;
-  height: 65px;
-  width: 65px;
+  height: 40px;
+  width: 40px;
   object-fit: contain;
 }
 
-.brand-eyebrow--inline {
-  font-size: 10px;
-  letter-spacing: 1.8px;
-  color: var(--text-tertiary);
+.brand-wordmark {
+  font-family: var(--font-brand);
+  font-weight: 700;
+  font-size: 12.5px;
+  letter-spacing: 1.4px;
+  color: var(--text-secondary);
+  white-space: nowrap;
 }
 
-.spacer {
+.brand-wordmark__admin {
+  color: var(--accent-amber);
+}
+
+/* Centered global search */
+.topbar-search-wrap {
   flex: 1 1 auto;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+  padding: 0 24px;
 }
 
+.topbar-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 440px;
+  height: 38px;
+  padding: 0 14px;
+  background: var(--surface-page);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+}
+
+.topbar-search__icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.topbar-search__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--font-brand);
+  font-size: 13.5px;
+  color: var(--text-primary);
+
+  &::placeholder {
+    color: var(--text-tertiary);
+  }
+
+  &::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+  }
+}
+
+.topbar-search__kbd {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-tertiary);
+  padding: 2px 6px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  background: var(--surface-card);
+}
+
+/* Right-side actions */
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.go-to-store {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  background: var(--surface-card);
+  color: var(--text-primary);
+  text-decoration: none;
+  font-family: var(--font-brand);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
+    color: var(--text-secondary);
+  }
+
+  &:hover {
+    background: var(--surface-tonal);
+  }
+}
+
+.topbar-icon-btn {
+  color: var(--text-secondary);
+  position: relative;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+  }
+}
+
+// Unread badge. Uses --danger (Material error red), NOT --brand-red:
+// an alert count is exactly the kind of generic accent the brand-red rule
+// forbids. Hidden while the count is 0 (the current, un-wired state).
+.notif-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--danger);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  border-radius: 999px;
+  border: 1.5px solid #fff;
+}
+
+/* ─────────── Shell body ─────────── */
 .admin-container {
   flex: 1 1 auto;
-  min-height: calc(100vh - 80px);
+  min-height: calc(100vh - 68px);
+}
 
-  mat-sidenav {
-    width: 260px;
+.admin-sidenav {
+  width: 248px;
+  background: var(--surface-card);
+
+  // Make the drawer a flex column so the nav scrolls and the status card
+  // pins to the bottom.
+  ::ng-deep .mat-drawer-inner-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
   }
 }
 
 .admin-content {
   padding: 24px 24px 64px;
+  background: var(--surface-page);
 
   ::ng-deep .mat-mdc-card-header {
     margin-bottom: 16px;
   }
 }
 
-.admin-page-header {
-  margin-bottom: 20px;
+/* ─────────── Side-nav rows ─────────── */
+.admin-nav {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 14px 12px;
 }
 
-.active-link {
-  background-color: var(--mat-sys-secondary-container);
-  color: var(--mat-sys-on-secondary-container);
+.nav-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 10px;
+  color: var(--text-primary);
+  text-decoration: none;
+  font-family: var(--font-brand);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.1px;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--nav-hover-bg);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--mat-sys-primary);
+    outline-offset: -2px;
+  }
+}
+
+.nav-row__icon {
+  flex-shrink: 0;
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+  color: var(--text-secondary);
+}
+
+.nav-row__label {
+  flex: 1 1 auto;
+  white-space: nowrap;
+}
+
+.nav-row--active {
+  background: var(--nav-active-bg);
+  color: var(--nav-active-text);
+  font-weight: 700;
+
+  .nav-row__icon {
+    color: var(--text-primary);
+  }
+}
+
+.nav-badge {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  line-height: 1.4;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--surface-tonal);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+}
+
+// Neutral badge flips to a white fill when its row is active.
+.nav-row--active .nav-badge:not(.nav-badge--amber) {
+  background: var(--surface-card);
+}
+
+// Actionable backlog (Pedidos) — the only "alert" tone in the nav.
+.nav-badge--amber {
+  background: var(--accent-amber);
+  color: #fff;
+  border-color: transparent;
+}
+
+/* ─────────── "Tienda en línea" status card ─────────── */
+.store-status {
+  padding: 12px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.store-status__card {
+  background: var(--surface-tonal);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.store-status__header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.store-status__dot {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--success);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--success) 18%, white);
+}
+
+.store-status__label {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--success);
+}
+
+.store-status__body {
+  margin-top: 6px;
+  font-family: var(--font-brand);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.store-status__link {
+  display: inline-block;
+  text-decoration: none;
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: var(--text-primary);
+  }
 }

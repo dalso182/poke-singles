@@ -4,6 +4,43 @@
     <p class="muted">Resumen del estado de la tienda.</p>
   </header>
 
+  <!-- Headline KPIs (OpenCart-style). Colored icon chips, not full-bleed tiles,
+       to stay within the Vault Light palette — brand red stays reserved. -->
+  <div class="dashboard__kpis">
+    <a class="kpi kpi--orders" routerLink="/admin/orders">
+      <span class="kpi__icon"><mat-icon>receipt_long</mat-icon></span>
+      <span class="kpi__body">
+        <span class="kpi__label">Pedidos totales</span>
+        <span class="kpi__metric">{{ stats() ? compact(stats()!.total_orders) : '—' }}</span>
+      </span>
+    </a>
+
+    <a class="kpi kpi--sales" routerLink="/admin/orders">
+      <span class="kpi__icon"><mat-icon>payments</mat-icon></span>
+      <span class="kpi__body">
+        <span class="kpi__label">Ventas totales</span>
+        <span class="kpi__metric">{{ stats() ? '₡' + compact(stats()!.total_sales) : '—' }}</span>
+      </span>
+    </a>
+
+    <div class="kpi kpi--customers">
+      <span class="kpi__icon"><mat-icon>group</mat-icon></span>
+      <span class="kpi__body">
+        <span class="kpi__label">Clientes</span>
+        <span class="kpi__metric">{{ stats() ? compact(stats()!.total_customers) : '—' }}</span>
+      </span>
+    </div>
+
+    <div class="kpi kpi--online">
+      <span class="kpi__icon"><mat-icon>visibility</mat-icon></span>
+      <span class="kpi__body">
+        <span class="kpi__label"><span class="kpi__live"></span> En línea ahora</span>
+        <span class="kpi__metric">{{ onlineCount() }}</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- Operational tiles (kept from the original dashboard). -->
   <div class="dashboard__tiles">
     <a class="dashboard__tile" routerLink="/admin/orders" [queryParams]="{ status: 'pending' }">
       <span class="brand-eyebrow">Pedidos</span>
@@ -72,5 +109,57 @@
         </span>
       }
     </a>
+  </div>
+
+  <!-- Trend + recent activity -->
+  <div class="dashboard__panels">
+    <section class="panel panel--trend">
+      <header class="panel__head">
+        <span class="brand-eyebrow">Últimos 30 días</span>
+      </header>
+      <div class="trend">
+        <div class="trend__row">
+          <div class="trend__meta">
+            <span class="trend__label">Ventas</span>
+            <span class="trend__value">₡{{ salesLast30() | number: '1.0-0' }}</span>
+          </div>
+          <app-sparkline class="trend__chart" [values]="salesSeries()" stroke="var(--success)" />
+        </div>
+        <div class="trend__row">
+          <div class="trend__meta">
+            <span class="trend__label">Pedidos</span>
+            <span class="trend__value">{{ ordersLast30() }}</span>
+          </div>
+          <app-sparkline class="trend__chart" [values]="ordersSeries()" />
+        </div>
+      </div>
+    </section>
+
+    <section class="panel panel--orders">
+      <header class="panel__head">
+        <span class="brand-eyebrow">Pedidos recientes</span>
+        <a routerLink="/admin/orders" class="panel__link">Ver todos</a>
+      </header>
+
+      @if (recentOrders() === null) {
+        <p class="muted panel__empty">Cargando…</p>
+      } @else if (recentOrders()!.length === 0) {
+        <p class="muted panel__empty">Aún no hay pedidos.</p>
+      } @else {
+        <div class="recent">
+          @for (o of recentOrders(); track o.id) {
+            <a class="recent__row" [routerLink]="['/admin/orders', o.id]">
+              <span class="recent__ref brand-mono">#{{ o.order_number }}</span>
+              <span class="recent__customer">{{ o.customer_name }}</span>
+              <span class="recent__total">₡{{ o.total | number: '1.0-0' }}</span>
+              <span class="order-status order-status--{{ o.status }}">
+                {{ statusLabel(o.status) }}
+              </span>
+              <span class="recent__date muted">{{ o.created_at | date: 'd/MM HH:mm' }}</span>
+            </a>
+          }
+        </div>
+      }
+    </section>
   </div>
 </section>

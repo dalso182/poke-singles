@@ -1,24 +1,56 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { OrdersService } from '../../core/orders/orders.service';
 import { RafflesService } from '../../core/catalog/raffles.service';
-import type { RaffleSummaryRow } from '../../core/catalog/catalog.types';
+import { DashboardService } from '../../core/dashboard/dashboard.service';
+import { PresenceService } from '../../core/presence/presence.service';
+import { Sparkline } from '../../shared/sparkline/sparkline';
+import type {
+  DashboardStats,
+  OrderRow,
+  OrderStatus,
+  RaffleSummaryRow,
+} from '../../core/catalog/catalog.types';
 
 @Component({
   selector: 'app-admin-dashboard',
-  imports: [DatePipe, RouterLink, MatButtonModule, MatIconModule],
+  imports: [DatePipe, DecimalPipe, RouterLink, MatIconModule, Sparkline],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.scss',
 })
-export class AdminDashboard implements OnInit {
+export class AdminDashboard implements OnInit, OnDestroy {
   private readonly orders = inject(OrdersService);
   private readonly raffles = inject(RafflesService);
+  private readonly dashboard = inject(DashboardService);
+  private readonly presence = inject(PresenceService);
 
-  protected readonly pendingCount = signal<number | null>(null);
+  protected readonly stats = signal<DashboardStats | null>(null);
+  protected readonly recentOrders = signal<OrderRow[] | null>(null);
   protected readonly raffleRows = signal<RaffleSummaryRow[] | null>(null);
+
+  /** Live storefront visitor count (Realtime presence). */
+  protected readonly onlineCount = this.presence.watchOnlineCount();
+
+  /** Pending-orders count for the operational tile, from the same stats RPC. */
+  protected readonly pendingCount = computed<number | null>(
+    () => this.stats()?.pending_orders ?? null,
+  );
+
+  // 30-day trend split into the two sparkline series + their period totals.
+  protected readonly salesSeries = computed(() =>
+    (this.stats()?.series ?? []).map((b) => b.sales),
+  );
+  protected readonly ordersSeries = computed(() =>
+    (this.stats()?.series ?? []).map((b) => b.orders),
+  );
+  protected readonly salesLast30 = computed(() =>
+    (this.stats()?.series ?? []).reduce((sum, b) => sum + b.sales, 0),
+  );
+  protected readonly ordersLast30 = computed(() =>
+    (this.stats()?.series ?? []).reduce((sum, b) => sum + b.orders, 0),
+  );
 
   /** Local (Costa Rica) today as YYYY-MM-DD — compared against draw_at's UTC
    *  date portion, which is the date the admin picked. */
@@ -50,10 +82,40 @@ export class AdminDashboard implements OnInit {
   );
 
   ngOnInit(): void {
-    void this.orders.countPendingOrders().then((n) => this.pendingCount.set(n));
+    void this.dashboard.getStats().then((s) => this.stats.set(s));
+    void this.orders
+      .listOrders({ pageSize: 8 })
+      .then((r) => this.recentOrders.set(r.rows))
+      .catch(() => this.recentOrders.set([]));
     void this.raffles
       .listSummary()
       .then((rows) => this.raffleRows.set(rows))
       .catch(() => this.raffleRows.set([]));
+  }
+
+  ngOnDestroy(): void {
+    this.presence.teardown();
+  }
+
+  /** Abbreviate large headline numbers OpenCart-style (1.2K, 62.6M); exact
+   *  below 1,000. Currency tiles prefix ₡ in the template. */
+  protected compact(n: number): string {
+    if (n >= 1_000_000) return this.trim(n / 1_000_000) + 'M';
+    if (n >= 1_000) return this.trim(n / 1_000) + 'K';
+    return String(Math.round(n));
+  }
+
+  private trim(n: number): string {
+    return (Math.round(n * 10) / 10).toString();
+  }
+
+  protected statusLabel(s: OrderStatus): string {
+    switch (s) {
+      case 'pending':   return 'Pendiente';
+      case 'paid':      return 'Pagado';
+      case 'shipped':   return 'Enviado';
+      case 'completed': return 'Completado';
+      case 'cancelled': return 'Cancelado';
+    }
   }
 }

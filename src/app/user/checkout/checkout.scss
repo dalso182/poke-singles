@@ -119,6 +119,17 @@
   border-radius: 8px;
   padding: 8px 12px;
   display: block;
+  width: 100%;
+  cursor: pointer;
+
+  ::ng-deep .mdc-form-field {
+    width: 100%;
+  }
+
+  ::ng-deep .mdc-label {
+    display: block;
+    width: 100%;
+  }
 }
 
 .checkout__shipping-row {
