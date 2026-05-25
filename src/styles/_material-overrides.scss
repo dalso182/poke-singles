@@ -102,9 +102,16 @@ html {
   font-size: 12px;
 }
 
-// Global card header: breathing room between title/subtitle and card content.
+// Global card header: breathing room between title/subtitle and card content,
+// plus a readable gap + line-height for subtitles (Material's default crams the
+// subtitle against the title and wraps multi-line subtitles too tightly).
 .mat-mdc-card-header {
   margin-bottom: 16px;
+
+  .mat-mdc-card-subtitle {
+    margin-top: 6px;
+    line-height: 1.5;
+  }
 }
 
 // Wider tooltip for the multi-line search help text. Material tooltips are
