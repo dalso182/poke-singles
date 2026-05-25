@@ -3,7 +3,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
-import { MatFormFieldModule } from '@angular/material/form-field';
+import { MAT_FORM_FIELD_DEFAULT_OPTIONS, MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -29,6 +29,12 @@ import type { AppSettingsRow } from '../../core/catalog/catalog.types';
   ],
   templateUrl: './config.html',
   styleUrl: './config.scss',
+  // Zoneless app: async patchValue() doesn't notify CD, so Material's outline
+  // labels can stay resting (covering prefilled values) until focused. Always
+  // floating the labels keeps the saved values visible on load.
+  providers: [
+    { provide: MAT_FORM_FIELD_DEFAULT_OPTIONS, useValue: { floatLabel: 'always' } },
+  ],
 })
 export class AdminConfig {
   private readonly fb = inject(FormBuilder);
