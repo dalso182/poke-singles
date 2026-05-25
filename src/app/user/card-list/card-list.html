@@ -30,9 +30,10 @@
     [hideZero]="onSaleOnly() || !!effectiveCategorySlug()"
     (selectionChange)="onSetsChange($event)"
   />
-  @if (showRareza()) {
+  @if (showCardTypeFilter()) {
     <app-card-type-filter
-      [cardTypes]="allCardTypes()"
+      [label]="cardTypeFilterLabel()"
+      [cardTypes]="cardTypeFilterTypes()"
       [counts]="cardTypeCounts()"
       [selected]="selectedCardTypeIds()"
       [hideZero]="onSaleOnly() || !!effectiveCategorySlug()"

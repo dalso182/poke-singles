@@ -72,4 +72,12 @@ describe('CardList', () => {
     expect(c.effectiveCategorySlug()).toBe('graded');
     expect(c.showRareza()).toBe(true);
   });
+
+  it('labels the card-type filter Rareza for singles and Tipo for sealed', () => {
+    const c = component as unknown as { cardTypeFilterLabel(): string };
+    fixture.componentRef.setInput('categorySlug', 'singles');
+    expect(c.cardTypeFilterLabel()).toBe('Rareza');
+    fixture.componentRef.setInput('categorySlug', 'sellado');
+    expect(c.cardTypeFilterLabel()).toBe('Tipo');
+  });
 });

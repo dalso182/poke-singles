@@ -89,6 +89,38 @@ export class CardList {
     return slug === 'singles' || slug === 'graded';
   });
 
+  /** Resolve the active category slug to its id (for scoping card types). */
+  protected readonly effectiveCategoryId = computed<string | null>(() => {
+    const slug = this.effectiveCategorySlug();
+    return slug ? this.categories().find((c) => c.slug === slug)?.id ?? null : null;
+  });
+  /** Global Rareza tags (category_id NULL) — singles/graded. */
+  protected readonly globalCardTypes = computed<CardTypeRow[]>(() =>
+    this.allCardTypes().filter((t) => t.category_id === null),
+  );
+  /** Sub-types scoped to the active category — sealed/accessories. */
+  protected readonly subtypeCardTypes = computed<CardTypeRow[]>(() => {
+    const id = this.effectiveCategoryId();
+    return id ? this.allCardTypes().filter((t) => t.category_id === id) : [];
+  });
+  /** Sealed/accessories use a sub-type filter (same multi-select facet as Rareza,
+   *  scoped to that category's sub-types). */
+  protected readonly showSubtypeFilter = computed<boolean>(() => {
+    const slug = this.effectiveCategorySlug();
+    return (slug === 'sellado' || slug === 'accesorios') && this.subtypeCardTypes().length > 0;
+  });
+  /** One card-type facet drives both: Rareza for singles/graded, sub-types for
+   *  sealed/accessories (they never show together). */
+  protected readonly showCardTypeFilter = computed<boolean>(
+    () => this.showRareza() || this.showSubtypeFilter(),
+  );
+  protected readonly cardTypeFilterTypes = computed<CardTypeRow[]>(() =>
+    this.showRareza() ? this.globalCardTypes() : this.subtypeCardTypes(),
+  );
+  protected readonly cardTypeFilterLabel = computed<string>(() =>
+    this.showRareza() ? 'Rareza' : 'Tipo',
+  );
+
   /** The Categoría facet appears only on the all-products page. */
   protected readonly showCategoryFilter = computed<boolean>(
     () => !this.categorySlug() && !this.onSaleOnly(),
@@ -128,7 +160,7 @@ export class CardList {
   protected readonly anyFilterActive = computed<boolean>(
     () =>
       this.selectedSetIds().length > 0 ||
-      (this.showRareza() && this.selectedCardTypeIds().length > 0) ||
+      (this.showCardTypeFilter() && this.selectedCardTypeIds().length > 0) ||
       (this.showCategoryFilter() && !!this.categoria()),
   );
 
@@ -171,8 +203,9 @@ export class CardList {
     // Refetch the grid whenever the selection, sort, or scope changes.
     effect(() => {
       const setIds = this.selectedSetIds();
-      // Ignore a stale `types` selection outside singles/graded.
-      const cardTypeIds = this.showRareza() ? this.selectedCardTypeIds() : [];
+      // Apply the `types` selection only where a card-type filter is shown
+      // (Rareza for singles/graded, sub-types for sealed/accessories).
+      const cardTypeIds = this.showCardTypeFilter() ? this.selectedCardTypeIds() : [];
       const sort = this.normalizedSort();
       const onSaleOnly = this.onSaleOnly();
       const categorySlug = this.effectiveCategorySlug();

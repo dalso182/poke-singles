@@ -5,7 +5,7 @@
   [class.card-type-filter__trigger--active]="selectedCount() > 0"
   [matMenuTriggerFor]="panel"
 >
-  <span class="card-type-filter__label">Rareza</span>
+  <span class="card-type-filter__label">{{ label() }}</span>
   @if (selectedCount() > 0) {
     <span class="card-type-filter__count">{{ selectedCount() }}</span>
   }
@@ -15,7 +15,7 @@
 <mat-menu #panel="matMenu" class="card-type-filter__menu" xPosition="after">
   <div class="card-type-filter__panel" (click)="$event.stopPropagation()">
     <div class="card-type-filter__header">
-      <span class="card-type-filter__header-label">Rareza</span>
+      <span class="card-type-filter__header-label">{{ label() }}</span>
     </div>
 
     @if (visibleTypes().length === 0) {

@@ -27,6 +27,9 @@ export class CardTypeFilter {
   readonly counts = input<Map<string, number>>(new Map());
   readonly selected = input.required<string[]>();
   readonly hideZero = input<boolean>(true);
+  /** Trigger + menu heading. 'Rareza' for singles' global tags; e.g. 'Tipo' for
+   *  a category's sub-types. */
+  readonly label = input<string>('Rareza');
 
   readonly selectionChange = output<string[]>();
 
