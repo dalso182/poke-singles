@@ -63,6 +63,10 @@
                   <span class="child-label">{{ child.label }}</span>
                 </a>
               }
+              <a class="see-all" [routerLink]="item.path">
+                Ver todo en {{ item.label }}
+                <mat-icon svgIcon="nav-chevron" />
+              </a>
             </div>
           }
 

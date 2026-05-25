@@ -98,10 +98,14 @@ const ICONS: Record<string, string> = {
     '<path d="M10 2.6l6.5 3.4v8L10 17.4 3.5 14V6L10 2.6z" />' +
       '<path d="M3.6 6.1L10 9.5l6.4-3.4" /><path d="M10 9.5v7.9" />',
   ),
-  // Accesorios: a tote bag.
-  'nav-bag': SVG(
-    '<path d="M4.5 6.5h11l-.8 9.2a1.4 1.4 0 0 1-1.4 1.3H6.7a1.4 1.4 0 0 1-1.4-1.3L4.5 6.5z" />' +
-      '<path d="M7.3 6.5V5.4a2.7 2.7 0 0 1 5.4 0v1.1" />',
+  // Accesorios: a die (dice / counters — a TCG accessory).
+  'nav-dice': SVG(
+    '<rect x="4" y="4" width="12" height="12" rx="2.6" />' +
+      '<circle cx="7.3" cy="7.3" r="0.9" fill="currentColor" stroke="none" />' +
+      '<circle cx="12.7" cy="7.3" r="0.9" fill="currentColor" stroke="none" />' +
+      '<circle cx="10" cy="10" r="0.9" fill="currentColor" stroke="none" />' +
+      '<circle cx="7.3" cy="12.7" r="0.9" fill="currentColor" stroke="none" />' +
+      '<circle cx="12.7" cy="12.7" r="0.9" fill="currentColor" stroke="none" />',
   ),
   // Sobre nosotros: info circle.
   'nav-info': SVG(
@@ -208,7 +212,7 @@ export class Navigation {
           {
             key: 'accesorios',
             label: 'Accesorios',
-            icon: 'nav-bag',
+            icon: 'nav-dice',
             path: '/categoria/accesorios',
             children: childrenFor('accesorios'),
           },
