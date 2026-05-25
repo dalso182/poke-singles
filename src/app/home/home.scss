@@ -64,10 +64,17 @@
   padding: 24px 0;
 }
 
-// The tile itself lives in <app-product-card>. Home rails use a denser
-// 320px minmax than the listings' 400px on purpose — keep that here.
+// The tile itself lives in <app-product-card>. Keep this grid in sync with the
+// listings (card-list / search-results) so home cards are the same width.
 .cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  justify-content: start;
   gap: 12px;
+}
+
+@media (max-width: 599px) {
+  .cards-grid {
+    grid-template-columns: 1fr;
+  }
 }
