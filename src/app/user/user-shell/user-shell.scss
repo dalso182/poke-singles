@@ -9,7 +9,22 @@
   height: calc(100vh - 80px);
 }
 
+// mat-sidenav-content already carries height:100% (of the container's
+// calc(100vh - 80px)); restate it so .user-shell-main's percentage min-height
+// has a definite parent to resolve against.
 .user-shell-content {
+  height: 100%;
+}
+
+.user-shell-main {
+  // Fill the scroll viewport so the (tall) footer is pushed fully below the
+  // fold. The initial view then looks the same whether the page's data has
+  // loaded or not, so the footer no longer visibly jumps when products arrive.
+  // Padding lives here (not on the content) so it doesn't eat into the 100%;
+  // a side effect is the footer now spans edge-to-edge, matching its
+  // full-width brand-bar.
+  box-sizing: border-box;
+  min-height: 100%;
   padding: 24px;
 }
 
