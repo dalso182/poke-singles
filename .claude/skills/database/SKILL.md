@@ -85,6 +85,14 @@ column (**`description` is omitted** to avoid flavor-text false positives). Quer
 - `/products` routes the same RPC with `q=''`, `sort='recent'` so listings and `/buscar`
   share one data path and row shape (`ProductSearchRow`).
 
+**Active/in-stock filtering is RLS-only.** Neither the view nor `search_products` (which is
+`security invoker`) has a WHERE on `active`/`quantity` — they lean entirely on the
+`products_public_read` policy (`active AND price>0 AND quantity>0`, raffle exception). For
+that to apply through the view, `products_search` **must** be `WITH (security_invoker = on)`;
+a plain view runs as its owner (`postgres`) and bypasses RLS, leaking inactive / sold-out
+cards into search (fixed in `20260525002400`). Any new customer-facing view needs the same
+option, or Supabase's `security_definer_view` advisor will flag it.
+
 ## Coupons (business logic)
 
 Two types: `PERCENTAGE` (capped 100%) and `FIXED_ON_THRESHOLD` (needs `min_purchase_amount`).
