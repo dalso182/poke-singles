@@ -1,15 +1,38 @@
-import { Component, DestroyRef, ViewChild, inject, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  HostListener,
+  NgZone,
+  PLATFORM_ID,
+  ViewChild,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { Router, RouterOutlet, Scroll } from '@angular/router';
-import { filter } from 'rxjs';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatSidenavContent, MatSidenavModule } from '@angular/material/sidenav';
+import { filter, map } from 'rxjs';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { BreakpointObserver } from '@angular/cdk/layout';
+import {
+  MatSidenavContainer,
+  MatSidenavContent,
+  MatSidenavModule,
+} from '@angular/material/sidenav';
 import { Header } from '../header/header';
 import { Navigation } from '../navigation/navigation';
 import { Footer } from '../footer/footer';
 import { CardPreviewOverlay } from '../../shared/card-preview/card-preview-overlay';
 import { CartDrawer } from '../cart-drawer/cart-drawer';
 import { CartService } from '../../core/cart/cart.service';
+import { LocalStorageService } from '../../core/storage/local-storage.service';
 import { WelcomeDialogService } from '../../core/preview/welcome-dialog.service';
+
+/** Below this width the rail is dropped for a slide-over drawer. */
+const HANDSET_QUERY = '(max-width: 719.98px)';
+/** Persisted desktop rail state (expanded panel vs icon rail). */
+const NAV_EXPANDED_KEY = 'pokesingles.nav.expanded';
 
 @Component({
   selector: 'app-user-shell',
@@ -29,8 +52,33 @@ export class UserShell {
   private readonly cart = inject(CartService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly storage = inject(LocalStorageService);
+  private readonly zone = inject(NgZone);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
-  protected readonly sidenavOpen = signal(true);
+  /** Handset = nav becomes an `over` drawer (no rail). */
+  protected readonly isHandset = toSignal(
+    inject(BreakpointObserver)
+      .observe(HANDSET_QUERY)
+      .pipe(map((r) => r.matches)),
+    { initialValue: false },
+  );
+
+  /** Desktop rail: expanded (264px) vs collapsed (76px). Persisted; default collapsed. */
+  private readonly railExpanded = signal(this.storage.get(NAV_EXPANDED_KEY) === '1');
+  /** Handset overlay open/closed. */
+  private readonly mobileOpen = signal(false);
+
+  protected readonly navMode = computed(() => (this.isHandset() ? 'over' : 'side'));
+  // Desktop rail is always visible (it changes width); on handset it opens/closes.
+  protected readonly navOpened = computed(() =>
+    this.isHandset() ? this.mobileOpen() : true,
+  );
+  // The mobile drawer always shows the full labeled panel.
+  protected readonly navExpanded = computed(() =>
+    this.isHandset() ? true : this.railExpanded(),
+  );
+
   protected readonly cartDrawerOpen = this.cart.drawerOpen;
 
   // The actual scroll region lives inside <mat-sidenav-content> (the user-shell
@@ -39,16 +87,28 @@ export class UserShell {
   // forward navigation. Anchor scrolling and back/forward restoration aren't
   // wired here — they can be added later if needed.
   @ViewChild(MatSidenavContent) private content?: MatSidenavContent;
+  @ViewChild(MatSidenavContainer) private sidenavContainer?: MatSidenavContainer;
 
   constructor() {
+    // The rail width is animated by CSS (260ms). Material only recomputes the
+    // content's left margin on change detection, which doesn't fire per-frame
+    // during a pure CSS transition — so the content would lag/overlap. Drive
+    // `updateContentMargins()` every frame for the duration so the page reflows
+    // in lockstep with the animating rail. Runs whenever the expanded state
+    // (toggle or responsive mode switch) changes.
+    effect(() => {
+      this.navExpanded();
+      this.animateContentReflow();
+    });
+
     this.router.events
       .pipe(
-        filter(
-          (e): e is Scroll => e instanceof Scroll,
-        ),
+        filter((e): e is Scroll => e instanceof Scroll),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((e) => {
+        // Close the mobile drawer after navigating (it overlays content).
+        if (this.isHandset()) this.mobileOpen.set(false);
         // Only scroll to top on a fresh navigation (no anchor / no
         // back-forward position to restore).
         if (!e.position && !e.anchor) {
@@ -63,10 +123,49 @@ export class UserShell {
   }
 
   protected toggleSidenav(): void {
-    this.sidenavOpen.update((open) => !open);
+    if (this.isHandset()) {
+      this.mobileOpen.update((open) => !open);
+    } else {
+      this.railExpanded.update((open) => {
+        const next = !open;
+        this.storage.set(NAV_EXPANDED_KEY, next ? '1' : '0');
+        return next;
+      });
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  protected onEscape(): void {
+    if (this.isHandset()) {
+      this.mobileOpen.set(false);
+    } else if (this.railExpanded()) {
+      this.railExpanded.set(false);
+      this.storage.set(NAV_EXPANDED_KEY, '0');
+    }
+  }
+
+  // Keep the signal in sync when Material closes the drawer itself (backdrop
+  // tap / Esc in `over` mode). No-op on desktop where the rail is always open.
+  protected onNavOpenedChange(open: boolean): void {
+    if (this.isHandset()) this.mobileOpen.set(open);
   }
 
   protected onCartDrawerClosed(): void {
     this.cart.closeDrawer();
+  }
+
+  /** Re-measure the content margin each frame while the rail width animates. */
+  private animateContentReflow(): void {
+    if (!this.isBrowser) return;
+    const container = this.sidenavContainer;
+    if (!container) return; // not yet rendered (first effect run) — Material sets the initial margin
+    this.zone.runOutsideAngular(() => {
+      const start = performance.now();
+      const step = (now: number): void => {
+        container.updateContentMargins();
+        if (now - start < 300) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    });
   }
 }

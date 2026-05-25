@@ -1,14 +1,113 @@
-<mat-nav-list>
-  @for (item of items(); track item.path) {
-    <a
-      mat-list-item
-      [routerLink]="item.path"
-      routerLinkActive="active-link"
-      [routerLinkActiveOptions]="{ exact: !!item.exact }"
-    >
-      <span matListItemTitle>{{ item.label }}</span>
-    </a>
-  }
-</mat-nav-list>
+<nav class="nav-body">
+  @for (section of sections(); track section.key) {
+    <div class="nav-section">
+      @if (section.label) {
+        <div class="nav-section-label">{{ expanded() ? section.label : '·' }}</div>
+      }
+      @for (item of section.items; track item.key) {
+        <div
+          class="nav-item-block"
+          (mouseenter)="onParentEnter(item, $event)"
+          (mouseleave)="onParentLeave()"
+        >
+          @if (item.children?.length) {
+            <!-- Disclosure parent: accordion (expanded) / flyout trigger (collapsed). -->
+            <button
+              type="button"
+              class="nav-item has-children"
+              [class.active]="isParentActive(item)"
+              [class.accordion-open]="expanded() && isOpen(item.key)"
+              (click)="onParentClick(item)"
+              [matTooltip]="expanded() ? '' : item.label"
+              matTooltipPosition="right"
+            >
+              <mat-icon class="nav-icon" [svgIcon]="item.icon" />
+              @if (expanded()) {
+                <span class="nav-label">{{ item.label }}</span>
+                <mat-icon class="nav-chev" svgIcon="nav-chevron" />
+              }
+            </button>
+          } @else {
+            <!-- Plain link (unchanged behaviour). -->
+            <a
+              class="nav-item"
+              [routerLink]="item.path"
+              routerLinkActive="active"
+              [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
+              [matTooltip]="expanded() ? '' : item.label"
+              matTooltipPosition="right"
+            >
+              <mat-icon class="nav-icon" [svgIcon]="item.icon" />
+              @if (expanded()) {
+                <span class="nav-label">{{ item.label }}</span>
+                @if (item.key === 'carrito' && cartCount() > 0) {
+                  <span class="nav-meta">{{ cartCount() }}</span>
+                }
+              } @else if (item.key === 'carrito' && cartCount() > 0) {
+                <span class="nav-badge">{{ cartCount() }}</span>
+              }
+            </a>
+          }
 
-<app-social-icons class="nav-social" />
+          <!-- Expanded: inline accordion children. -->
+          @if (expanded() && item.children?.length && isOpen(item.key)) {
+            <div class="children-accordion">
+              @for (child of item.children; track child.key) {
+                <a
+                  class="child"
+                  [routerLink]="child.path"
+                  [queryParams]="child.queryParams"
+                  routerLinkActive="active"
+                  [routerLinkActiveOptions]="childActiveOptions"
+                >
+                  <span class="child-label">{{ child.label }}</span>
+                </a>
+              }
+            </div>
+          }
+
+          <!-- Collapsed: hover flyout. -->
+          @if (!expanded() && item.children?.length && hoveredKey() === item.key) {
+            <div
+              class="flyout"
+              [style.top.px]="flyoutTop()"
+              [style.left.px]="flyoutLeft()"
+              (mouseenter)="onFlyoutEnter()"
+              (mouseleave)="onParentLeave()"
+              role="menu"
+            >
+              <div class="flyout-card">
+                <span class="flyout-tick"></span>
+                <div class="flyout-header">
+                  <mat-icon [svgIcon]="item.icon" />
+                  <div class="title">{{ item.label }}</div>
+                </div>
+                @for (child of item.children; track child.key) {
+                  <a
+                    class="child"
+                    role="menuitem"
+                    [routerLink]="child.path"
+                    [queryParams]="child.queryParams"
+                    routerLinkActive="active"
+                    [routerLinkActiveOptions]="childActiveOptions"
+                    (click)="closeFlyout()"
+                  >
+                    <span class="child-label">{{ child.label }}</span>
+                  </a>
+                }
+                <a class="see-all" [routerLink]="item.path" (click)="closeFlyout()">
+                  Ver todo en {{ item.label }}
+                  <mat-icon svgIcon="nav-chevron" />
+                </a>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</nav>
+
+<div class="nav-footer">
+  <app-social-icons class="nav-social" />
+</div>

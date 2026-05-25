@@ -1,8 +1,14 @@
 <app-header (toggleNav)="toggleSidenav()" />
 
-<mat-sidenav-container class="user-shell-container">
-  <mat-sidenav mode="side" [opened]="sidenavOpen()">
-    <app-navigation />
+<mat-sidenav-container class="user-shell-container" autosize>
+  <mat-sidenav
+    [mode]="navMode()"
+    [opened]="navOpened()"
+    (openedChange)="onNavOpenedChange($event)"
+    [class.nav-expanded]="navExpanded()"
+    [class.nav-collapsed]="!navExpanded()"
+  >
+    <app-navigation [expanded]="navExpanded()" />
   </mat-sidenav>
   <mat-sidenav
     position="end"

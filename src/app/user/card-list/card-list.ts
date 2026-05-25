@@ -43,8 +43,12 @@ export class CardList {
   // URL-bound via withComponentInputBinding(). Query params:
   /** Comma-separated set ids; parsed into selectedSetIds. */
   readonly sets = input<string | undefined>(undefined);
-  /** Comma-separated card-type ids; parsed into selectedCardTypeIds. */
+  /** Comma-separated card-type ids — the Rareza filter on singles/graded. */
   readonly types = input<string | undefined>(undefined);
+  /** Comma-separated sub-type slugs (clean URLs) — the sub-type filter on
+   *  sealed/accesorios, e.g. `?tipo=booster-box`. Resolved to card-type ids
+   *  client-side (see subtypeIdBySlug). */
+  readonly tipo = input<string | undefined>(undefined);
   /** URL `sort` param. No query here, so 'relevance' is never offered. */
   readonly sort = input<string>('recent');
   /** `?categoria=` facet selection on the all-products page. Ignored on
@@ -103,6 +107,15 @@ export class CardList {
     const id = this.effectiveCategoryId();
     return id ? this.allCardTypes().filter((t) => t.category_id === id) : [];
   });
+  /** Clean URL slug ↔ card-type id, within the active category. The clean slug
+   *  is the card_type slug minus its category prefix (`sellado-booster-box` →
+   *  `booster-box`). Used so the nav children + filter use `?tipo=booster-box`. */
+  private readonly subtypeIdBySlug = computed<Map<string, string>>(
+    () => new Map(this.subtypeCardTypes().map((t) => [subtypeSlug(t.slug), t.id])),
+  );
+  private readonly subtypeSlugById = computed<Map<string, string>>(
+    () => new Map(this.subtypeCardTypes().map((t) => [t.id, subtypeSlug(t.slug)])),
+  );
   /** Sealed/accessories use a sub-type filter (same multi-select facet as Rareza,
    *  scoped to that category's sub-types). */
   protected readonly showSubtypeFilter = computed<boolean>(() => {
@@ -153,9 +166,18 @@ export class CardList {
   protected readonly selectedSetIds = computed<string[]>(() =>
     parseIdList(this.sets()),
   );
-  protected readonly selectedCardTypeIds = computed<string[]>(() =>
-    parseIdList(this.types()),
-  );
+  /** The active card-type selection as ids. On sealed/accesorios it resolves the
+   *  `?tipo=` clean slugs; elsewhere it reads `?types=` ids (Rareza). The grid +
+   *  search always work in ids. */
+  protected readonly selectedCardTypeIds = computed<string[]>(() => {
+    if (this.showSubtypeFilter()) {
+      const map = this.subtypeIdBySlug();
+      return parseIdList(this.tipo())
+        .map((slug) => map.get(slug))
+        .filter((id): id is string => !!id);
+    }
+    return parseIdList(this.types());
+  });
 
   protected readonly anyFilterActive = computed<boolean>(
     () =>
@@ -298,6 +320,16 @@ export class CardList {
   }
 
   protected onCardTypesChange(ids: string[]): void {
+    // Sealed/accesorios write clean `?tipo=` slugs; singles/graded write `?types=` ids.
+    if (this.showSubtypeFilter()) {
+      const map = this.subtypeSlugById();
+      const slugs = ids.map((id) => map.get(id)).filter((s): s is string => !!s);
+      void this.router.navigate([this.effectiveBasePath()], {
+        queryParams: { tipo: slugs.length > 0 ? slugs.join(',') : null },
+        queryParamsHandling: 'merge',
+      });
+      return;
+    }
     void this.router.navigate([this.effectiveBasePath()], {
       queryParams: { types: ids.length > 0 ? ids.join(',') : null },
       queryParamsHandling: 'merge',
@@ -305,20 +337,16 @@ export class CardList {
   }
 
   protected onCategoryChange(slug: string | null): void {
-    const queryParams: Record<string, string | null> = { categoria: slug };
-    // Leaving singles/graded hides Rareza, so drop any lingering type selection.
-    if (slug !== 'singles' && slug !== 'graded') {
-      queryParams['types'] = null;
-    }
+    // Switching category invalidates both card-type filters (they're scoped).
     void this.router.navigate([this.effectiveBasePath()], {
-      queryParams,
+      queryParams: { categoria: slug, types: null, tipo: null },
       queryParamsHandling: 'merge',
     });
   }
 
   protected onClearAllFilters(): void {
     void this.router.navigate([this.effectiveBasePath()], {
-      queryParams: { sets: null, types: null, categoria: null },
+      queryParams: { sets: null, types: null, tipo: null, categoria: null },
       queryParamsHandling: 'merge',
     });
   }
@@ -335,4 +363,13 @@ function parseIdList(raw: string | undefined): string[] {
   const s = (raw ?? '').trim();
   if (!s) return [];
   return s.split(',').map((x) => x.trim()).filter(Boolean);
+}
+
+/** Clean URL slug for a sub-type: the card_type slug without its category
+ *  prefix (`sellado-booster-box` → `booster-box`, `acc-protectores` →
+ *  `protectores`). Admin seeds/creates sub-type slugs prefixed, so the first
+ *  dash-segment is always the category prefix. */
+function subtypeSlug(slug: string): string {
+  const dash = slug.indexOf('-');
+  return dash === -1 ? slug : slug.slice(dash + 1);
 }

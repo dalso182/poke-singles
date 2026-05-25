@@ -30,9 +30,17 @@
 
 // Left navigation sidenav. Excluded from the right-side cart drawer via the
 // `:not(.user-shell-cart-drawer)` predicate so each panel can have its own
-// width.
+// width. The rail animates between a 76px icon rail and a 264px labeled panel;
+// the inner <app-navigation> swaps its layout to match.
 ::ng-deep .user-shell-container mat-sidenav:not(.user-shell-cart-drawer) {
-  width: 260px;
+  overflow: hidden;
+  transition: width 260ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+::ng-deep .user-shell-container mat-sidenav.nav-collapsed:not(.user-shell-cart-drawer) {
+  width: 76px;
+}
+::ng-deep .user-shell-container mat-sidenav.nav-expanded:not(.user-shell-cart-drawer) {
+  width: 264px;
 }
 
 ::ng-deep .user-shell-container mat-sidenav.user-shell-cart-drawer {
