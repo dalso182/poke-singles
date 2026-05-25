@@ -6,8 +6,10 @@ import { OrdersService } from '../../core/orders/orders.service';
 import { RafflesService } from '../../core/catalog/raffles.service';
 import { DashboardService } from '../../core/dashboard/dashboard.service';
 import { PresenceService } from '../../core/presence/presence.service';
+import { CustomersService } from '../../core/customers/customers.service';
 import { Sparkline } from '../../shared/sparkline/sparkline';
 import type {
+  CustomerRow,
   DashboardStats,
   OrderRow,
   OrderStatus,
@@ -25,9 +27,12 @@ export class AdminDashboard implements OnInit, OnDestroy {
   private readonly raffles = inject(RafflesService);
   private readonly dashboard = inject(DashboardService);
   private readonly presence = inject(PresenceService);
+  private readonly customers = inject(CustomersService);
 
   protected readonly stats = signal<DashboardStats | null>(null);
   protected readonly recentOrders = signal<OrderRow[] | null>(null);
+  protected readonly recentCustomers = signal<CustomerRow[] | null>(null);
+  protected readonly activeCustomers = signal<CustomerRow[] | null>(null);
   protected readonly raffleRows = signal<RaffleSummaryRow[] | null>(null);
 
   /** Live storefront visitor count (Realtime presence). */
@@ -87,6 +92,14 @@ export class AdminDashboard implements OnInit, OnDestroy {
       .listOrders({ pageSize: 8 })
       .then((r) => this.recentOrders.set(r.rows))
       .catch(() => this.recentOrders.set([]));
+    void this.customers
+      .listCustomers({ pageSize: 8 })
+      .then((r) => this.recentCustomers.set(r.rows))
+      .catch(() => this.recentCustomers.set([]));
+    void this.customers
+      .listCustomers({ pageSize: 8, sort: 'active' })
+      .then((r) => this.activeCustomers.set(r.rows))
+      .catch(() => this.activeCustomers.set([]));
     void this.raffles
       .listSummary()
       .then((rows) => this.raffleRows.set(rows))

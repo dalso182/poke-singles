@@ -30,6 +30,7 @@ export class CustomersService {
       p_search: params.search?.trim() ?? '',
       p_limit: pageSize,
       p_offset: (page - 1) * pageSize,
+      p_sort: params.sort ?? 'created',
     });
     if (error) {
       console.error('[customers] admin_customers', error);
@@ -42,6 +43,7 @@ export class CustomersService {
       email: r.email,
       phone: r.phone,
       created_at: r.created_at,
+      last_sign_in_at: r.last_sign_in_at,
       last_order_at: r.last_order_at,
       order_count: Number(r.order_count) || 0,
       total_spent: Number(r.total_spent) || 0,

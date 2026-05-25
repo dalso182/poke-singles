@@ -1079,6 +1079,28 @@ export type Database = {
       }
     }
     Functions: {
+      admin_customer: { Args: { p_id: string }; Returns: Json }
+      admin_customers: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_search?: string
+          p_sort?: string
+        }
+        Returns: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          last_order_at: string
+          last_sign_in_at: string
+          order_count: number
+          phone: string
+          total_count: number
+          total_spent: number
+        }[]
+      }
+      admin_dashboard_stats: { Args: never; Returns: Json }
       admin_raffles_summary: {
         Args: never
         Returns: {

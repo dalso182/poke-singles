@@ -161,5 +161,61 @@
         </div>
       }
     </section>
+
+    <section class="panel panel--customers">
+      <header class="panel__head">
+        <span class="brand-eyebrow">Últimos registros</span>
+        <a routerLink="/admin/customers" class="panel__link">Ver todos</a>
+      </header>
+
+      @if (recentCustomers() === null) {
+        <p class="muted panel__empty">Cargando…</p>
+      } @else if (recentCustomers()!.length === 0) {
+        <p class="muted panel__empty">Aún no hay usuarios registrados.</p>
+      } @else {
+        <div class="recent">
+          @for (c of recentCustomers(); track c.id) {
+            <a class="recent-user__row" [routerLink]="['/admin/customers', c.id]">
+              <span class="recent-user__id">
+                <span class="recent-user__name">{{ c.full_name || 'Sin nombre' }}</span>
+                <span class="recent-user__email">{{ c.email }}</span>
+              </span>
+              <span class="recent-user__date muted">{{ c.created_at | date: 'd/MM/yy' }}</span>
+            </a>
+          }
+        </div>
+      }
+    </section>
+
+    <section class="panel panel--customers">
+      <header class="panel__head">
+        <span class="brand-eyebrow">Actividad reciente</span>
+        <a routerLink="/admin/customers" class="panel__link">Ver todos</a>
+      </header>
+
+      @if (activeCustomers() === null) {
+        <p class="muted panel__empty">Cargando…</p>
+      } @else if (activeCustomers()!.length === 0) {
+        <p class="muted panel__empty">Aún no hay actividad.</p>
+      } @else {
+        <div class="recent">
+          @for (c of activeCustomers(); track c.id) {
+            <a class="recent-user__row" [routerLink]="['/admin/customers', c.id]">
+              <span class="recent-user__id">
+                <span class="recent-user__name">{{ c.full_name || 'Sin nombre' }}</span>
+                <span class="recent-user__email">{{ c.email }}</span>
+              </span>
+              <span class="recent-user__date muted">
+                @if (c.last_sign_in_at) {
+                  {{ c.last_sign_in_at | date: 'd/MM HH:mm' }}
+                } @else {
+                  Nunca
+                }
+              </span>
+            </a>
+          }
+        </div>
+      }
+    </section>
   </div>
 </section>

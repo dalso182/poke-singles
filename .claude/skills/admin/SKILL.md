@@ -25,7 +25,7 @@ Admin status = `app_metadata.role === 'admin'` (→ `database` skill for `is_adm
 
 | Path | Component | Notes |
 |---|---|---|
-| `/admin/` | Dashboard | KPI tiles (orders/sales/customers + live visitors), 30-day trend sparklines, recent orders, pending-orders + raffle tiles |
+| `/admin/` | Dashboard | KPI tiles (orders/sales/customers + live visitors), 30-day trend sparklines, recent orders, latest-registrations + recent-activity panels, pending-orders + raffle tiles |
 | `/admin/products` | ProductsList | paginated table, search + filters |
 | `/admin/products/new` | AddProduct | TCGdex typeahead + set filter, image picker |
 | `/admin/products/:id/edit` | ProductEdit | quick-update card + full form |
@@ -94,10 +94,13 @@ KPI cards, monogram avatar) + the `.app-table` order history — no new componen
 ## Dashboard
 
 `/admin/` (AdminDashboard) leads with four KPI tiles — **Total Orders, Total Sales, Total
-Customers, People Online** — then 30-day **sales/orders trend** sparklines and a
-**recent-orders** panel, with the original operational tiles (pending orders, active raffles
-incl. a "¡Sorteo hoy!" amber alert) kept below. Tiles use the allowed palette
-(blue/green/amber/teal) — **never brand red** (→ `theme` skill).
+Customers, People Online** — then a 2-up panel grid: 30-day **sales/orders trend**
+sparklines, a **recent-orders** panel, and two customer panels — **Últimos registros**
+(newest sign-ups, by `created_at`, shows registration date) and **Actividad reciente**
+(most recently active, by `last_sign_in_at`, shows last-login `d/MM HH:mm` or "Nunca").
+The original operational tiles (pending orders, active raffles incl. a "¡Sorteo hoy!"
+amber alert) sit below. Tiles use the allowed palette (blue/green/amber/teal) —
+**never brand red** (→ `theme` skill).
 
 - **Headline data** comes from one RPC, `admin_dashboard_stats()` (totals + 30-day series),
   via `DashboardService` (`src/app/core/dashboard/`). → `database` skill.
@@ -107,6 +110,9 @@ incl. a "¡Sorteo hoy!" amber alert) kept below. Tiles use the allowed palette
 - **Sparklines** are a dependency-free inline-SVG component, `src/app/shared/sparkline/`
   (responsive, non-scaling line stroke + an HTML end-dot).
 - Recent orders reuse `OrdersService.listOrders({ pageSize: 8 })`.
+- Both customer panels reuse `CustomersService.listCustomers({ pageSize: 8 })`; "Actividad
+  reciente" passes `sort: 'active'` (→ the RPC's `p_sort` param). Rows link to
+  `/admin/customers/:id`. Panels share `.recent-user__*` styles.
 
 ## Add / edit product
 

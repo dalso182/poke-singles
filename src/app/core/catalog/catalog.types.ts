@@ -538,6 +538,7 @@ export interface CustomerRow {
   email: string;
   phone: string | null;
   created_at: string;
+  last_sign_in_at: string | null;
   order_count: number;
   total_spent: number;
   last_order_at: string | null;
@@ -564,6 +565,8 @@ export interface AdminCustomerListParams {
   search?: string;
   page?: number;
   pageSize?: number;
+  /** Row ordering: 'created' (newest sign-ups, default) or 'active' (last login). */
+  sort?: 'created' | 'active';
 }
 
 export interface AdminCustomerListResult {

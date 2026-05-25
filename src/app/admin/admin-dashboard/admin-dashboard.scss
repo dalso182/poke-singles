@@ -199,8 +199,15 @@ a.kpi:hover {
 
 .dashboard__panels {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
+}
+
+// Two panels per row; the third (recent users) flows to a new row below.
+@media (max-width: 720px) {
+  .dashboard__panels {
+    grid-template-columns: 1fr;
+  }
 }
 
 .panel {
@@ -315,6 +322,51 @@ a.kpi:hover {
 }
 
 .recent__date {
+  font-size: 12px;
+}
+
+// Recent-users panel rows (mirrors .recent, two-line identity + join date).
+.recent-user__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 6px;
+  border-top: 1px solid var(--border-subtle);
+  text-decoration: none;
+  color: inherit;
+
+  &:first-child {
+    border-top: none;
+  }
+
+  &:hover {
+    background: var(--surface-tonal);
+  }
+}
+
+.recent-user__id {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.recent-user__name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-user__email {
+  font-size: 12px;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-user__date {
   font-size: 12px;
 }
 

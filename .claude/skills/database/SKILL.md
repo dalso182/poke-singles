@@ -148,14 +148,20 @@ which isn't exposed over PostgREST — so they must be RPCs, not view/REST reads
   `pending_orders`, and a gap-filled 30-day `series` of `{d, orders, sales}`. "Sales" =
   realized revenue (paid/shipped/completed); counts exclude cancelled. Day buckets use the
   `America/Costa_Rica` calendar so they line up with the store's local "today".
-- `admin_customers(p_search, p_limit, p_offset)` → table of registered accounts (`profiles` ⨝
-  `auth.users`) with `order_count` (non-cancelled), `total_spent` (realized), `last_order_at`,
-  plus `count(*) over()` as `total_count` for client-side pagination. A customer's orders
-  attach by `user_id` OR case-insensitive `customer_email` (so guest checkouts still count).
-- `admin_customer(p_id)` → `jsonb`: one customer's profile + email + `default_shipping_address`
-  + the same stats + their 100 most recent orders. Null when no profile matches.
+- `admin_customers(p_search, p_limit, p_offset, p_sort)` → table of registered accounts
+  (`profiles` ⨝ `auth.users`) with `last_sign_in_at` (Auth's last-login), `order_count`
+  (non-cancelled), `total_spent` (realized), `last_order_at`, plus `count(*) over()` as
+  `total_count` for client-side pagination. `p_sort` is `'created'` (default, newest sign-ups)
+  or `'active'` (newest `last_sign_in_at`, nulls last). A customer's orders attach by `user_id`
+  OR case-insensitive `customer_email` (so guest checkouts still count).
+- `admin_customer(p_id)` → `jsonb`: one customer's profile + email + `last_sign_in_at`
+  + `default_shipping_address` + the same stats + their 100 most recent orders. Null when no
+  profile matches.
 
-Migrations: `20260525002200_admin_dashboard_stats.sql`, `20260525002300_admin_customers.sql`.
+Migrations: `20260525002200_admin_dashboard_stats.sql`, `20260525002300_admin_customers.sql`,
+`20260525002500_admin_customers_last_sign_in.sql` (adds `last_sign_in_at` + `p_sort`; adding a
+`RETURNS TABLE` column forced a drop+recreate of `admin_customers`, recreated 4-arg-with-default
+so the existing 3-named-arg call still resolves).
 These return `jsonb`/`table`, so the Angular side hand-types the shapes in `catalog.types.ts`
 (`DashboardStats`, `CustomerRow`/`CustomerDetail`) and calls them via `(client as any).rpc(...)`
 — a `db:types:dev` regen isn't required for them. UI homes → `admin` skill.
