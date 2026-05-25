@@ -15,20 +15,30 @@
   [anyActive]="anyFilterActive()"
   (clearAll)="onClearAllFilters()"
 >
+  @if (showCategoryFilter()) {
+    <app-category-filter
+      [categories]="categoriesForFilter()"
+      [counts]="categoryCounts()"
+      [selected]="categoria() ?? null"
+      (selectionChange)="onCategoryChange($event)"
+    />
+  }
   <app-set-filter
     [sets]="allSets()"
     [counts]="setCounts()"
     [selected]="selectedSetIds()"
-    [hideZero]="onSaleOnly()"
+    [hideZero]="onSaleOnly() || !!effectiveCategorySlug()"
     (selectionChange)="onSetsChange($event)"
   />
-  <app-card-type-filter
-    [cardTypes]="allCardTypes()"
-    [counts]="cardTypeCounts()"
-    [selected]="selectedCardTypeIds()"
-    [hideZero]="onSaleOnly()"
-    (selectionChange)="onCardTypesChange($event)"
-  />
+  @if (showRareza()) {
+    <app-card-type-filter
+      [cardTypes]="allCardTypes()"
+      [counts]="cardTypeCounts()"
+      [selected]="selectedCardTypeIds()"
+      [hideZero]="onSaleOnly() || !!effectiveCategorySlug()"
+      (selectionChange)="onCardTypesChange($event)"
+    />
+  }
   <app-sort-select
     bar-end
     [value]="normalizedSort()"

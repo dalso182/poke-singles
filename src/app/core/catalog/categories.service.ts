@@ -24,6 +24,25 @@ export class CategoriesService {
     return (data ?? []) as CategoryRow[];
   }
 
+  /** Per-category in-stock product counts for the storefront "Categoría" facet.
+   *  Returns a Map keyed by category_id. Mirrors SetsService.countsForQuery. */
+  async countsForQuery(
+    q = '',
+    opts: { onSaleOnly?: boolean } = {},
+  ): Promise<Map<string, number>> {
+    const { data, error } = await (this.supabase.client as any).rpc('search_category_counts', {
+      q,
+      p_on_sale_only: opts.onSaleOnly ?? false,
+    });
+    if (error) throw error;
+    return new Map<string, number>(
+      ((data ?? []) as { category_id: string; in_stock_count: number | string }[]).map((r) => [
+        r.category_id,
+        Number(r.in_stock_count),
+      ]),
+    );
+  }
+
   async create(input: CategoryInsert): Promise<CategoryRow> {
     const { data, error } = await (this.supabase.client as any)
       .from('categories')

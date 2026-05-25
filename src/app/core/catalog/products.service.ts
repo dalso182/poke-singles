@@ -48,6 +48,10 @@ export interface ProductSearchParams {
   /** When true, restrict results to discounted products (sale_price is not
    *  null). Drives the /ofertas listing. Default false. */
   onSaleOnly?: boolean;
+  /** Restrict results to a single category by slug (resolved server-side via
+   *  category_id_by_slug). Drives the /categoria/:slug listing. Undefined =
+   *  no category filter (the full catalog). */
+  categorySlug?: string;
   page?: number;
   pageSize?: number;
 }
@@ -217,6 +221,7 @@ export class ProductsService {
       p_card_type_ids:
         params.cardTypeIds && params.cardTypeIds.length > 0 ? params.cardTypeIds : null,
       p_on_sale_only: params.onSaleOnly ?? false,
+      p_category_slug: params.categorySlug ?? null,
     });
     if (error) throw error;
     return { rows: (data ?? []) as ProductSearchRow[], page, pageSize };

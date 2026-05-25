@@ -1,0 +1,44 @@
+<button
+  type="button"
+  mat-stroked-button
+  class="category-filter__trigger"
+  [class.category-filter__trigger--active]="selected() !== null"
+  [matMenuTriggerFor]="panel"
+>
+  <span class="category-filter__label">Categoría</span>
+  @if (selectedName(); as name) {
+    <span class="category-filter__count">{{ name }}</span>
+  }
+  <mat-icon class="category-filter__chevron">expand_more</mat-icon>
+</button>
+
+<mat-menu #panel="matMenu" class="category-filter__menu" xPosition="after">
+  <div class="category-filter__panel" (click)="$event.stopPropagation()">
+    <div class="category-filter__header">
+      <span class="category-filter__header-label">Categoría</span>
+    </div>
+
+    <div class="category-filter__list">
+      @for (c of visibleCategories(); track c.slug) {
+        <button
+          type="button"
+          class="category-filter__item"
+          [class.category-filter__item--checked]="isSelected(c.slug)"
+          (click)="choose(c.slug)"
+        >
+          <mat-icon class="category-filter__radio">
+            {{ isSelected(c.slug) ? 'radio_button_checked' : 'radio_button_unchecked' }}
+          </mat-icon>
+          <span class="category-filter__item-name">{{ c.name }}</span>
+          <span class="category-filter__item-count">({{ c.count }})</span>
+        </button>
+      }
+    </div>
+
+    @if (selected() !== null) {
+      <div class="category-filter__footer">
+        <button mat-button type="button" (click)="clear()">Limpiar selección</button>
+      </div>
+    }
+  </div>
+</mat-menu>

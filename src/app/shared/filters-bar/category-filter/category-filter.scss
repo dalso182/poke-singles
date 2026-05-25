@@ -1,0 +1,133 @@
+// Trigger button — same chrome as the set / card-type filters so the bar reads
+// as one consistent control row.
+.category-filter__trigger {
+  padding: 0 14px !important;
+
+  ::ng-deep .mdc-button__label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &--active {
+    border-color: var(--mat-sys-primary);
+    color: var(--mat-sys-primary);
+  }
+}
+
+.category-filter__label {
+  font-weight: 600;
+}
+
+// Shows the selected category name (single-select) rather than a count.
+.category-filter__count {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.category-filter__chevron {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+::ng-deep .category-filter__menu .mat-mdc-menu-content {
+  padding: 0;
+}
+
+.category-filter__panel {
+  width: 260px;
+  max-width: 90vw;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.category-filter__header {
+  padding: 12px 14px 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: #ffffff;
+}
+
+.category-filter__header-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.category-filter__list {
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+}
+
+.category-filter__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  transition: background 0.1s ease;
+
+  &:hover {
+    background: var(--surface-tonal);
+  }
+
+  &--checked {
+    background: color-mix(in srgb, var(--mat-sys-primary) 6%, transparent);
+  }
+}
+
+.category-filter__radio {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+
+  .category-filter__item--checked & {
+    color: var(--mat-sys-primary);
+  }
+}
+
+.category-filter__item-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.category-filter__item-count {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono, ui-monospace, monospace);
+}
+
+.category-filter__footer {
+  padding: 4px 8px 8px;
+  border-top: 1px solid var(--border-subtle);
+  background: #ffffff;
+}

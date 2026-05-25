@@ -65,11 +65,12 @@ export class CardTypesService {
    *  scope the counts to discounted products (the /ofertas facet). */
   async countsForQuery(
     q: string,
-    opts: { onSaleOnly?: boolean } = {},
+    opts: { onSaleOnly?: boolean; categorySlug?: string } = {},
   ): Promise<Map<string, number>> {
     const { data, error } = await (this.supabase.client as any).rpc('search_card_type_counts', {
       q,
       p_on_sale_only: opts.onSaleOnly ?? false,
+      p_category_slug: opts.categorySlug ?? null,
     });
     if (error) throw error;
     return new Map<string, number>(

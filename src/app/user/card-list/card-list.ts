@@ -6,9 +6,11 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ProductsService } from '../../core/catalog/products.service';
 import { SetsService } from '../../core/catalog/sets.service';
 import { CardTypesService } from '../../core/catalog/card-types.service';
+import { CategoriesService } from '../../core/catalog/categories.service';
 import { normalizeSort } from '../../core/catalog/catalog.types';
 import type {
   CardTypeRow,
+  CategoryRow,
   ProductSearchRow,
   SetRow,
   SortKey,
@@ -16,6 +18,7 @@ import type {
 import { FiltersBar } from '../../shared/filters-bar/filters-bar';
 import { SetFilter } from '../../shared/filters-bar/set-filter/set-filter';
 import { CardTypeFilter } from '../../shared/filters-bar/card-type-filter/card-type-filter';
+import { CategoryFilter } from '../../shared/filters-bar/category-filter/category-filter';
 import { SortSelect } from '../../shared/sort-select/sort-select';
 import { ProductCard } from '../../shared/product-card/product-card';
 
@@ -29,6 +32,7 @@ import { ProductCard } from '../../shared/product-card/product-card';
     FiltersBar,
     SetFilter,
     CardTypeFilter,
+    CategoryFilter,
     SortSelect,
     ProductCard,
   ],
@@ -36,22 +40,30 @@ import { ProductCard } from '../../shared/product-card/product-card';
   styleUrl: './card-list.scss',
 })
 export class CardList {
-  /** URL-bound via withComponentInputBinding(). Comma-separated set ids. */
+  // URL-bound via withComponentInputBinding(). Query params:
+  /** Comma-separated set ids; parsed into selectedSetIds. */
   readonly sets = input<string | undefined>(undefined);
-  /** Comma-separated card-type ids. */
+  /** Comma-separated card-type ids; parsed into selectedCardTypeIds. */
   readonly types = input<string | undefined>(undefined);
   /** URL `sort` param. No query here, so 'relevance' is never offered. */
   readonly sort = input<string>('recent');
+  /** `?categoria=` facet selection on the all-products page. Ignored on
+   *  dedicated category routes — the route param wins in effectiveCategorySlug. */
+  readonly categoria = input<string | undefined>(undefined);
   /** Route-data bound. When true the grid lists only discounted products and
    *  the page presents as /ofertas. Default false = the full /products grid. */
   readonly onSaleOnly = input<boolean>(false);
-  /** Route-data bound. Base path used for filter/sort navigation so the same
-   *  component keeps you on /products or /ofertas as appropriate. */
+  /** Route-data bound. Base path for filter/sort navigation. NOTE: can arrive
+   *  `undefined` despite the default — see effectiveBasePath's guard. */
   readonly basePath = input<string>('/products');
+  /** Route-param bound (from `categoria/:categorySlug`). When set, the grid is
+   *  scoped to that category and the page presents as the category page. */
+  readonly categorySlug = input<string | undefined>(undefined);
 
   private readonly products = inject(ProductsService);
   private readonly setsService = inject(SetsService);
   private readonly cardTypesService = inject(CardTypesService);
+  private readonly categoriesService = inject(CategoriesService);
   private readonly snack = inject(MatSnackBar);
   private readonly router = inject(Router);
 
@@ -60,7 +72,51 @@ export class CardList {
   protected readonly setCounts = signal<Map<string, number>>(new Map());
   protected readonly allCardTypes = signal<CardTypeRow[]>([]);
   protected readonly cardTypeCounts = signal<Map<string, number>>(new Map());
+  protected readonly categories = signal<CategoryRow[]>([]);
+  protected readonly categoryCounts = signal<Map<string, number>>(new Map());
   protected readonly loading = signal(true);
+
+  /** Active category: the route param (category page) wins; otherwise the
+   *  `?categoria=` facet selection on the all-products page. Drives the grid,
+   *  the scoped facet counts, and which filters are shown. */
+  protected readonly effectiveCategorySlug = computed<string | undefined>(
+    () => this.categorySlug() ?? this.categoria(),
+  );
+
+  /** Rareza (card-type variants) only makes sense for singles/graded. */
+  protected readonly showRareza = computed<boolean>(() => {
+    const slug = this.effectiveCategorySlug();
+    return slug === 'singles' || slug === 'graded';
+  });
+
+  /** The Categoría facet appears only on the all-products page. */
+  protected readonly showCategoryFilter = computed<boolean>(
+    () => !this.categorySlug() && !this.onSaleOnly(),
+  );
+
+  /** Active categories for the facet (rifas has its own /rifas page). */
+  protected readonly categoriesForFilter = computed<CategoryRow[]>(() =>
+    this.categories().filter((c) => c.slug !== 'rifas'),
+  );
+
+  /** Display name for the active category (falls back to the raw slug until
+   *  the categories list has loaded). Empty when not on a category page. */
+  protected readonly categoryName = computed<string>(() => {
+    const slug = this.categorySlug();
+    if (!slug) return '';
+    return this.categories().find((c) => c.slug === slug)?.name ?? slug;
+  });
+
+  /** Where filter/sort navigation lands: the category page when scoped,
+   *  otherwise the route-data basePath (/products or /ofertas).
+   *  NOTE: `basePath()` can be `undefined` even though the input declares a
+   *  default — withComponentInputBinding() overrides the default with undefined
+   *  on routes (like /products) that don't supply `basePath` in their data. The
+   *  `?? '/products'` guard prevents navigate(['undefined', …]) → NG04008, which
+   *  was silently breaking every filter on /products. */
+  protected readonly effectiveBasePath = computed<string>(() =>
+    this.categorySlug() ? '/categoria/' + this.categorySlug() : (this.basePath() ?? '/products'),
+  );
 
   protected readonly selectedSetIds = computed<string[]>(() =>
     parseIdList(this.sets()),
@@ -70,77 +126,121 @@ export class CardList {
   );
 
   protected readonly anyFilterActive = computed<boolean>(
-    () => this.selectedSetIds().length > 0 || this.selectedCardTypeIds().length > 0,
+    () =>
+      this.selectedSetIds().length > 0 ||
+      (this.showRareza() && this.selectedCardTypeIds().length > 0) ||
+      (this.showCategoryFilter() && !!this.categoria()),
   );
 
   protected readonly normalizedSort = computed<SortKey>(() =>
     normalizeSort(this.sort(), false),
   );
 
-  // Page chrome switches between the full catalog grid and the offers grid.
-  protected readonly pageTitle = computed(() => (this.onSaleOnly() ? 'Ofertas' : 'Cartas'));
+  // Page chrome switches between the full catalog, a category page, and offers.
+  protected readonly pageTitle = computed(() => {
+    if (this.categorySlug()) return this.categoryName();
+    if (this.onSaleOnly()) return 'Ofertas';
+    return 'Productos';
+  });
   protected readonly pageLead = computed(() =>
     this.onSaleOnly()
-      ? 'Cartas con precio rebajado. Stock limitado — aprovecha antes de que se agoten.'
-      : 'Singles auténticas, condición verificada, envío seguro a todo Costa Rica.',
+      ? 'Productos con precio rebajado. Stock limitado — aprovecha antes de que se agoten.'
+      : 'Productos auténticos, condición verificada, envío seguro a todo Costa Rica.',
   );
-  protected readonly emptyText = computed(() =>
-    this.onSaleOnly()
-      ? 'No hay ofertas en este momento. Vuelve pronto.'
-      : 'Aún no hay cartas en stock. Vuelve pronto.',
-  );
+  protected readonly emptyText = computed(() => {
+    if (this.categorySlug()) return 'No hay productos en esta categoría todavía.';
+    if (this.onSaleOnly()) return 'No hay ofertas en este momento. Vuelve pronto.';
+    return 'Aún no hay productos en stock. Vuelve pronto.';
+  });
 
   constructor() {
-    void this.bootstrapMeta();
+    // Input-independent lists + the (q='') category facet counts: load once.
+    void this.loadLists();
 
-    // Refetch whenever the filter selection or sort changes (initial render
-    // included).
+    // Facet counts must react to the scope (category + on-sale). The route
+    // param / data inputs aren't bound yet in the constructor, so this has to
+    // run in an effect rather than a one-shot — otherwise the counts fall back
+    // to the global cached values (the bug that showed singles counts on a
+    // sealed-category page).
+    effect(() => {
+      const onSaleOnly = this.onSaleOnly();
+      const categorySlug = this.effectiveCategorySlug();
+      void this.loadScopedCounts(onSaleOnly, categorySlug);
+    });
+
+    // Refetch the grid whenever the selection, sort, or scope changes.
     effect(() => {
       const setIds = this.selectedSetIds();
-      const cardTypeIds = this.selectedCardTypeIds();
+      // Ignore a stale `types` selection outside singles/graded.
+      const cardTypeIds = this.showRareza() ? this.selectedCardTypeIds() : [];
       const sort = this.normalizedSort();
-      void this.fetchProducts(setIds, cardTypeIds, sort);
+      const onSaleOnly = this.onSaleOnly();
+      const categorySlug = this.effectiveCategorySlug();
+      void this.fetchProducts({ setIds, cardTypeIds, sort, onSaleOnly, categorySlug });
     });
   }
 
-  private async bootstrapMeta(): Promise<void> {
+  /** Filter chrome that doesn't depend on the route scope: the full set /
+   *  card-type lists, the category list, and the per-category facet counts. */
+  private async loadLists(): Promise<void> {
     try {
-      // Offers mode scopes the facet counts to discounted products via the
-      // query-aware count fns (q=''); the full grid uses the cached globals.
-      const onSale = this.onSaleOnly();
-      const [sets, setCounts, cardTypes, cardTypeCounts] = await Promise.all([
+      const [categories, sets, cardTypes, categoryCounts] = await Promise.all([
+        this.categoriesService.list({ activeOnly: true }),
         this.setsService.list(),
-        onSale ? this.setsService.countsForQuery('', { onSaleOnly: true }) : this.setsService.counts(),
         this.cardTypesService.list({ activeOnly: true }),
-        onSale
-          ? this.cardTypesService.countsForQuery('', { onSaleOnly: true })
-          : this.cardTypesService.counts(),
+        this.categoriesService.countsForQuery('', {}),
       ]);
+      this.categories.set(categories);
       this.allSets.set(sets);
-      this.setCounts.set(setCounts);
       this.allCardTypes.set(cardTypes);
-      this.cardTypeCounts.set(cardTypeCounts);
+      this.categoryCounts.set(categoryCounts);
     } catch (err) {
       this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
     }
   }
 
-  private async fetchProducts(
-    setIds: string[],
-    cardTypeIds: string[],
-    sort: SortKey,
+  /** Set / card-type facet counts scoped to the current category + on-sale
+   *  view. The unscoped all-products view uses the cached global counts. */
+  private async loadScopedCounts(
+    onSaleOnly: boolean,
+    categorySlug: string | undefined,
   ): Promise<void> {
+    try {
+      const scoped = onSaleOnly || !!categorySlug;
+      const [setCounts, cardTypeCounts] = await Promise.all([
+        scoped
+          ? this.setsService.countsForQuery('', { onSaleOnly, categorySlug })
+          : this.setsService.counts(),
+        scoped
+          ? this.cardTypesService.countsForQuery('', { onSaleOnly, categorySlug })
+          : this.cardTypesService.counts(),
+      ]);
+      this.setCounts.set(setCounts);
+      this.cardTypeCounts.set(cardTypeCounts);
+    } catch {
+      // Leave the previous counts in place on a transient failure.
+    }
+  }
+
+  private async fetchProducts(opts: {
+    setIds: string[];
+    cardTypeIds: string[];
+    sort: SortKey;
+    onSaleOnly: boolean;
+    categorySlug: string | undefined;
+  }): Promise<void> {
     this.loading.set(true);
     try {
       // Route through the search RPC even with q='' so we get one row
       // shape + one filter pipeline shared with /buscar.
       const { rows } = await this.products.search({
         q: '',
-        sort,
+        sort: opts.sort,
         pageSize: 60,
-        setIds: setIds.length > 0 ? setIds : undefined,
-        cardTypeIds: cardTypeIds.length > 0 ? cardTypeIds : undefined,
-        onSaleOnly: this.onSaleOnly(),
+        setIds: opts.setIds.length > 0 ? opts.setIds : undefined,
+        cardTypeIds: opts.cardTypeIds.length > 0 ? opts.cardTypeIds : undefined,
+        onSaleOnly: opts.onSaleOnly,
+        categorySlug: opts.categorySlug,
       });
       this.cards.set(rows);
     } catch (err) {
@@ -151,29 +251,41 @@ export class CardList {
   }
 
   protected onSortChange(next: SortKey): void {
-    void this.router.navigate([this.basePath()], {
+    void this.router.navigate([this.effectiveBasePath()], {
       queryParams: { sort: next },
       queryParamsHandling: 'merge',
     });
   }
 
   protected onSetsChange(ids: string[]): void {
-    void this.router.navigate([this.basePath()], {
+    void this.router.navigate([this.effectiveBasePath()], {
       queryParams: { sets: ids.length > 0 ? ids.join(',') : null },
       queryParamsHandling: 'merge',
     });
   }
 
   protected onCardTypesChange(ids: string[]): void {
-    void this.router.navigate([this.basePath()], {
+    void this.router.navigate([this.effectiveBasePath()], {
       queryParams: { types: ids.length > 0 ? ids.join(',') : null },
       queryParamsHandling: 'merge',
     });
   }
 
+  protected onCategoryChange(slug: string | null): void {
+    const queryParams: Record<string, string | null> = { categoria: slug };
+    // Leaving singles/graded hides Rareza, so drop any lingering type selection.
+    if (slug !== 'singles' && slug !== 'graded') {
+      queryParams['types'] = null;
+    }
+    void this.router.navigate([this.effectiveBasePath()], {
+      queryParams,
+      queryParamsHandling: 'merge',
+    });
+  }
+
   protected onClearAllFilters(): void {
-    void this.router.navigate([this.basePath()], {
-      queryParams: { sets: null, types: null },
+    void this.router.navigate([this.effectiveBasePath()], {
+      queryParams: { sets: null, types: null, categoria: null },
       queryParamsHandling: 'merge',
     });
   }
