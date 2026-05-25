@@ -55,9 +55,10 @@ import type { CardTypeRow, CategoryRow, SetRow, VariantCode } from '../../core/c
 
 const PICKER_SET_STORAGE_KEY = 'admin:add-product:picker-set-id';
 
-/** Card types only describe individual cards, so the panel is shown only for
- *  these category slugs (graded cards are still single cards). */
-const CARD_TYPE_CATEGORY_SLUGS = ['singles', 'graded'];
+/** Card-only fields (Pokémon, rareza, número, condición, variante, tipos de carta)
+ *  describe individual cards, so they're shown only for these category slugs
+ *  (graded cards are still single cards). */
+const CARD_CATEGORY_SLUGS = ['singles', 'graded'];
 
 @Component({
   selector: 'app-add-product',
@@ -131,15 +132,19 @@ export class AddProduct {
     if (!id) return false;
     return this.categoriesList().find((c) => c.slug === 'rifas')?.id === id;
   });
-  /** True when there are card types to assign AND the chosen category is one
-   *  where they make sense (Singles / Graded) — gates the "Tipos de carta" panel. */
-  protected readonly showCardTypes = computed(() => {
-    if (this.cardTypesList().length === 0) return false;
+  /** True when the chosen category is one where card-only fields make sense
+   *  (Singles / Graded) — gates Pokémon, rareza, número, condición, variante. */
+  protected readonly isCardCategory = computed(() => {
     const id = this.selectedCategoryId();
     if (!id) return false;
     const slug = this.categoriesList().find((c) => c.id === id)?.slug;
-    return slug !== undefined && CARD_TYPE_CATEGORY_SLUGS.includes(slug);
+    return slug !== undefined && CARD_CATEGORY_SLUGS.includes(slug);
   });
+  /** True when there are card types to assign AND the category is a card one —
+   *  gates the "Tipos de carta" panel. */
+  protected readonly showCardTypes = computed(
+    () => this.cardTypesList().length > 0 && this.isCardCategory(),
+  );
 
   // Optional set filter for the TCGdex card picker. Holds a Supabase set_id (UUID);
   // we resolve its TCGdex code through `setsById` to feed `card-typeahead`.
@@ -411,14 +416,16 @@ export class AddProduct {
     const setCode = raw.set_id ? this.setsById().get(raw.set_id)?.code ?? '' : '';
     // English is the default — only suffix when the listing is non-EN.
     const langSuffix = raw.language && raw.language !== 'EN' ? raw.language : '';
-    const parts = [
-      raw.name ?? '',
-      raw.card_number ?? '',
-      setCode,
-      raw.variant ?? '',
-      raw.condition ?? '',
-      langSuffix,
-    ].filter(Boolean);
+    // Derive card-ness from the current value (not the signal) so the slug
+    // tracks the category within the same valueChanges cycle. Non-card products
+    // drop card_number/variant/condition so defaults like 'NM' don't leak in.
+    const slug = this.categoriesList().find((c) => c.id === raw.category_id)?.slug;
+    const isCard = slug !== undefined && CARD_CATEGORY_SLUGS.includes(slug);
+    const parts = (
+      isCard
+        ? [raw.name ?? '', raw.card_number ?? '', setCode, raw.variant ?? '', raw.condition ?? '', langSuffix]
+        : [raw.name ?? '', setCode, langSuffix]
+    ).filter(Boolean);
     return parts
       .join('-')
       .toLowerCase()
@@ -439,34 +446,37 @@ export class AddProduct {
         this.snack.open('Ese slug ya está en uso. Edítalo y reintenta.', 'OK', { duration: 5000 });
         return;
       }
+      // Non-card categories (Sellado, Accesorios…) hide the card-only fields, so
+      // don't persist their leftover values — clear every card-derived column.
+      const isCard = this.isCardCategory();
       const created = await this.products.create({
         name: raw.name,
-        pokemon_name: raw.pokemon_name || null,
+        pokemon_name: isCard ? raw.pokemon_name || null : null,
         slug: raw.slug,
-        rarity: raw.rarity || null,
-        card_number: raw.card_number || null,
+        rarity: isCard ? raw.rarity || null : null,
+        card_number: isCard ? raw.card_number || null : null,
         image_url: raw.image_url || null,
         category_id: raw.category_id,
         set_id: raw.set_id || null,
-        condition: raw.condition || null,
+        condition: isCard ? raw.condition || null : null,
         language: raw.language,
-        variant: raw.variant || null,
+        variant: isCard ? raw.variant || null : null,
         price: Number(raw.price),
         sale_price: toNullableNumber(raw.sale_price),
         quantity: Number(raw.quantity),
         featured: raw.featured,
         description: raw.description || null,
-        card_ref: raw.card_ref || null,
-        illustrator: raw.illustrator || null,
-        regulation_mark: raw.regulation_mark || null,
-        category: raw.category || null,
-        stage: raw.stage || null,
-        type1: raw.type1 || null,
-        type2: raw.type2 || null,
-        legal_standard: raw.legal_standard,
-        legal_expanded: raw.legal_expanded,
+        card_ref: isCard ? raw.card_ref || null : null,
+        illustrator: isCard ? raw.illustrator || null : null,
+        regulation_mark: isCard ? raw.regulation_mark || null : null,
+        category: isCard ? raw.category || null : null,
+        stage: isCard ? raw.stage || null : null,
+        type1: isCard ? raw.type1 || null : null,
+        type2: isCard ? raw.type2 || null : null,
+        legal_standard: isCard ? raw.legal_standard : null,
+        legal_expanded: isCard ? raw.legal_expanded : null,
       });
-      await this.products.setCardTypes(created.id, [...this.selectedCardTypeIds()]);
+      await this.products.setCardTypes(created.id, isCard ? [...this.selectedCardTypeIds()] : []);
       if (this.isRaffle()) {
         await this.raffles.upsert(created.id, {
           draw_at: raw.draw_at || null,

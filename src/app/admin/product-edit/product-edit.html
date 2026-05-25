@@ -73,13 +73,19 @@
         </mat-card-header>
         <mat-card-content class="product-edit__grid">
           <mat-form-field appearance="outline">
-            <mat-label>Nombre</mat-label>
-            <input matInput formControlName="name" />
+            <mat-label>Categoría</mat-label>
+            <mat-select
+              formControlName="category_id"
+              (selectionChange)="selectedCategoryId.set($event.value)"
+            >
+              @for (c of categoriesList(); track c.id) {
+                <mat-option [value]="c.id">{{ c.name }}</mat-option>
+              }
+            </mat-select>
           </mat-form-field>
           <mat-form-field appearance="outline">
-            <mat-label>Pokémon</mat-label>
-            <input matInput formControlName="pokemon_name" />
-            <mat-hint>Se normaliza a minúsculas en el servidor.</mat-hint>
+            <mat-label>Nombre</mat-label>
+            <input matInput formControlName="name" />
           </mat-form-field>
           <mat-form-field appearance="outline">
             <mat-label>Slug</mat-label>
@@ -92,20 +98,28 @@
               <mat-error>Sólo minúsculas, números y guiones.</mat-error>
             }
           </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Rareza</mat-label>
-            <input matInput formControlName="rarity" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Número en set</mat-label>
-            <input matInput formControlName="card_number" />
-          </mat-form-field>
           <app-set-typeahead
             label="Set"
             placeholder="Buscar set por código, nombre o serie…"
             [value]="form.controls['set_id'].value"
             (valueChange)="form.controls['set_id'].setValue($event); form.controls['set_id'].markAsDirty()"
           />
+
+          @if (isCardCategory()) {
+            <mat-form-field appearance="outline">
+              <mat-label>Pokémon</mat-label>
+              <input matInput formControlName="pokemon_name" />
+              <mat-hint>Se normaliza a minúsculas en el servidor.</mat-hint>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Rareza</mat-label>
+              <input matInput formControlName="rarity" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Número en set</mat-label>
+              <input matInput formControlName="card_number" />
+            </mat-form-field>
+          }
 
           <mat-form-field appearance="outline" class="product-edit__full">
             <mat-label>URL de la imagen</mat-label>
@@ -135,35 +149,26 @@
           <mat-card-title>Comercio</mat-card-title>
         </mat-card-header>
         <mat-card-content class="product-edit__grid">
-          <mat-form-field appearance="outline">
-            <mat-label>Categoría</mat-label>
-            <mat-select
-              formControlName="category_id"
-              (selectionChange)="selectedCategoryId.set($event.value)"
-            >
-              @for (c of categoriesList(); track c.id) {
-                <mat-option [value]="c.id">{{ c.name }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Condición</mat-label>
-            <mat-select formControlName="condition">
-              <mat-option value="">—</mat-option>
-              @for (c of conditions; track c.value) {
-                <mat-option [value]="c.value">{{ c.label }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Variante</mat-label>
-            <mat-select formControlName="variant">
-              <mat-option value="">—</mat-option>
-              @for (v of variants; track v.value) {
-                <mat-option [value]="v.value">{{ v.label }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
+          @if (isCardCategory()) {
+            <mat-form-field appearance="outline">
+              <mat-label>Condición</mat-label>
+              <mat-select formControlName="condition">
+                <mat-option value="">—</mat-option>
+                @for (c of conditions; track c.value) {
+                  <mat-option [value]="c.value">{{ c.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Variante</mat-label>
+              <mat-select formControlName="variant">
+                <mat-option value="">—</mat-option>
+                @for (v of variants; track v.value) {
+                  <mat-option [value]="v.value">{{ v.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          }
           <mat-form-field appearance="outline">
             <mat-label>Idioma</mat-label>
             <mat-select formControlName="language">
