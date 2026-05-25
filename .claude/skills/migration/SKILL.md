@@ -41,11 +41,31 @@ enrichment, preserving OC's original list dates. Pipeline:
 7. **Insert + attach card-types** — `tcgdex_cards` upsert (cache), `products` insert,
    `product_card_types` junction inserts.
 8. **Unmatched** → `.tmp/opencart-unmatched.csv` with a reason (`not-a-single` /
-   `no-set-category` / `title-unparseable` / `no-card-in-set`). Triage by hand via
-   `/admin/products/new` or by extending the category map.
+   `no-set-category` / `title-unparseable` / `no-card-in-set` / `sealed-no-subtype`). Triage by
+   hand via `/admin/products/new` or by extending the category map.
 
-Expected match rate on the current OC dump: **~95%** of active+in-stock rows. Leftovers are
-mostly sealed products, accessories, Topps, energies without a card number, and typo'd titles.
+### Non-singles branch (accessories + sealed)
+
+Checked **before** the singles path (step 2 onward) so a product also tagged in a set category
+(e.g. an ETB's sleeves) isn't mis-imported as a single. Driven by the `nonSingles` block in
+`oc-category-map.json` (OC category ID → `{ category, subtype? }`):
+
+- **Route** to the `accesorios` / `sellado` category; ignore any set tag.
+- **Sub-type** = one `card_types` row scoped to that category (via `category_id`), attached
+  through the same `product_card_types` junction the singles use. Accessory sub-type comes from
+  the OC sub-category; **sealed sub-type is parsed from the title** (`sealedSubtypeFromTitle` —
+  ETB / Booster Box / UPC / Collection / Deck / Booster, longest-match first, bare "Box"→Collection).
+- **Image**: the OC product image is downloaded from `OC_IMAGE_BASE` (default
+  `https://poke-singles.com/image/`) into `card-images/<accesorios|sellado>/<ocProductId>.<ext>`
+  and stored as a **relative** `/card-images/...` path (survives the domain cutover). Best-effort:
+  a failed/missing download just leaves `image_url` null. Ship the files with `npm run images:upload`.
+- **No TCGdex / card columns**: `set_id`, `card_number`, `condition`, `rarity`, etc. stay null.
+- **Dedup**: same slug-claim + skip-on-existing as singles, so duplicate OC listings collapse and
+  re-runs are idempotent.
+
+Expected match rate on the current OC dump: **~95%** of active+in-stock rows as singles, plus
+~77 accessories/sealed via the non-singles branch. Remaining leftovers are Topps, energies
+without a card number, and typo'd titles.
 
 ## Flags
 
@@ -54,6 +74,7 @@ mostly sealed products, accessories, Topps, energies without a card number, and 
 | _(default)_ | Wipe transactional tables → import (full prod-prep cycle) |
 | `--dry-run` | Report only; no wipe, no DB writes, no TCGdex fetches |
 | `--no-wipe` | Skip the wipe; import-only (incremental adds, skip-on-existing-slug) |
+| `--no-singles` | Import only accessories/sealed (skip the singles path); pair with `--no-wipe` to (re)import just that slice |
 | `--limit=N` | Cap at N active+in-stock rows (pairs well with `--no-wipe` for testing) |
 | `--input=...` | Alternate dump path (default `.tmp/opencart-export.sql`) |
 
@@ -62,9 +83,10 @@ mostly sealed products, accessories, Topps, energies without a card number, and 
 | Path | Role |
 |---|---|
 | `scripts/prepare-for-prod.mjs` | Importer + wipe driver |
-| `scripts/_data/oc-category-map.json` | OC category ID → TCGdex set code / `card_types` name / skip list (keyed by ID so OC label edits don't break it) |
+| `scripts/_data/oc-category-map.json` | OC category ID → TCGdex set code / `card_types` name / `nonSingles` (accesorios·sellado route + sub-type) / skip list (keyed by ID so OC label edits don't break it) |
 | `.tmp/opencart-export.sql` | phpMyAdmin dump (gitignored) |
 | `.tmp/opencart-unmatched.csv` | Written each run; unmatched rows + reason |
+| `card-images/<accesorios\|sellado>/` | Downloaded OC product images for non-singles (relative paths; shipped via `images:upload`) |
 
 ## URL / 301 strategy
 

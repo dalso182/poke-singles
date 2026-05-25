@@ -187,9 +187,23 @@
     "268": "Reverse-Holo"
   },
 
+  "nonSingles": {
+    "_comment": "OC category id → non-singles target. Accessory sub-type comes from the OC sub-category (names match card_types under the `accesorios` category). Sealed products sit in one flat OC category, so their sub-type is derived from the title at import time. These ids used to live in `skip`.",
+    "170": { "category": "accesorios" },
+    "198": { "category": "accesorios", "subtype": "Sleeves" },
+    "199": { "category": "accesorios", "subtype": "Dados" },
+    "200": { "category": "accesorios", "subtype": "Monedas" },
+    "201": { "category": "accesorios", "subtype": "Pines" },
+    "202": { "category": "accesorios", "subtype": "Figuras" },
+    "203": { "category": "accesorios", "subtype": "Deckboxes" },
+    "204": { "category": "accesorios", "subtype": "Otros" },
+    "205": { "category": "accesorios", "subtype": "Playmats" },
+    "218": { "category": "accesorios", "subtype": "Protectores" },
+    "206": { "category": "sellado" },
+    "214": { "category": "sellado" }
+  },
+
   "skip": [
-    206, 214,
-    170, 198, 199, 200, 201, 202, 203, 204, 205, 218,
     181,
     106, 209,
     160, 163,
