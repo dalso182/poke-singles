@@ -546,7 +546,9 @@ export interface ProductSearchRow {
 export type SortKey = 'relevance' | 'price-asc' | 'price-desc' | 'recent';
 
 export const DEFAULT_SORT_WITH_QUERY: SortKey = 'relevance';
-export const DEFAULT_SORT_NO_QUERY: SortKey = 'recent';
+// Browse listings (/products, /categoria, /ofertas, query-less /buscar) default
+// to highest price first.
+export const DEFAULT_SORT_NO_QUERY: SortKey = 'price-desc';
 
 /**
  * Resolve a raw URL `sort` param to a valid SortKey. `'relevance'` only survives
