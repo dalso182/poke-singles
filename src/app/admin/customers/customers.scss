@@ -1,0 +1,51 @@
+.customers {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 1200px;
+}
+
+.customers__header {
+  h1 { margin: 4px 0 8px; }
+}
+
+.muted {
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.customers__search {
+  width: 100%;
+  max-width: 420px;
+}
+
+.customers__table-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.customers__table {
+  width: 100%;
+
+  td { padding-block: 8px; }
+}
+
+.customers__num {
+  text-align: right;
+}
+
+.customers__customer {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.2;
+
+  small {
+    font-size: 11px;
+  }
+}
+
+.customers__empty {
+  padding: 24px;
+  text-align: center;
+}

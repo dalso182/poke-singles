@@ -505,6 +505,74 @@ export type PlaceOrderResult =
       available?: number;
     };
 
+// ---- Admin dashboard ----
+
+/** One day in the dashboard 30-day trend (Costa Rica calendar). `orders` and
+ *  `sales` exclude cancelled orders; `sales` further counts only realized
+ *  revenue (paid/shipped/completed). */
+export interface DashboardDailyBucket {
+  /** ISO date, YYYY-MM-DD. */
+  d: string;
+  orders: number;
+  sales: number;
+}
+
+/** Payload of the admin_dashboard_stats() RPC — headline KPIs plus the
+ *  30-day series that drives the trend sparklines. */
+export interface DashboardStats {
+  total_orders: number;
+  total_sales: number;
+  total_customers: number;
+  pending_orders: number;
+  series: DashboardDailyBucket[];
+}
+
+// ---- Admin customers ----
+
+/** One row of the admin_customers() RPC: a registered account (profile +
+ *  auth.users email) with order activity. `total_spent` is realized revenue and
+ *  `order_count` excludes cancelled orders (matching the dashboard semantics). */
+export interface CustomerRow {
+  id: string;
+  full_name: string | null;
+  email: string;
+  phone: string | null;
+  created_at: string;
+  order_count: number;
+  total_spent: number;
+  last_order_at: string | null;
+}
+
+/** A customer's order as embedded in the detail RPC payload (lightweight — not
+ *  the full OrderRow). */
+export interface CustomerOrderRow {
+  id: string;
+  order_number: number;
+  status: OrderStatus;
+  total: number;
+  payment_method: PaymentMethod;
+  created_at: string;
+}
+
+/** Payload of the admin_customer() RPC — full profile + stats + recent orders. */
+export interface CustomerDetail extends CustomerRow {
+  default_shipping_address: ShippingAddress | null;
+  orders: CustomerOrderRow[];
+}
+
+export interface AdminCustomerListParams {
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface AdminCustomerListResult {
+  rows: CustomerRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 // Row shape returned by the `products_search` view / `search_products` RPC.
 // Mirrors `ProductRow` minus a few admin-only columns and adds the joined
 // set fields plus `search_text` / `card_type_names`.

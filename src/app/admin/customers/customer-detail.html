@@ -1,0 +1,136 @@
+<section class="customer-detail">
+  <header class="customer-detail__header admin-page-header">
+    <button mat-icon-button (click)="goBack()" aria-label="Volver">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <div class="customer-detail__title">
+      <span class="brand-eyebrow">Cliente</span>
+      <h1>{{ customer()?.full_name || 'Cliente' }}</h1>
+    </div>
+  </header>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  @if (notFound()) {
+    <mat-card class="customer-detail__not-found">
+      <mat-card-content>
+        <p>No encontramos este cliente.</p>
+        <a mat-stroked-button routerLink="/admin/customers">Volver al listado</a>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  @if (customer(); as c) {
+    <div class="customer-detail__grid">
+      <mat-card class="customer-detail__panel">
+        <mat-card-content>
+          <dl class="kv">
+            <div>
+              <dt>Email</dt>
+              <dd>{{ c.email }}</dd>
+            </div>
+            <div>
+              <dt>Teléfono</dt>
+              <dd>
+                @if (c.phone) {
+                  {{ c.phone }}
+                } @else {
+                  <span class="muted">—</span>
+                }
+              </dd>
+            </div>
+            <div>
+              <dt>Registrado</dt>
+              <dd>{{ c.created_at | date: 'mediumDate' }}</dd>
+            </div>
+          </dl>
+
+          <div class="customer-detail__address">
+            <h3>Dirección guardada</h3>
+            @if (c.default_shipping_address; as addr) {
+              <p>
+                {{ addr.line1 }}@if (addr.line2) {, {{ addr.line2 }}}<br />
+                {{ addr.city }}, {{ addr.province }}
+                @if (addr.notes) {
+                  <br /><span class="muted">{{ addr.notes }}</span>
+                }
+              </p>
+            } @else {
+              <p class="muted">Sin dirección guardada.</p>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="customer-detail__panel">
+        <mat-card-content class="customer-detail__stats-row">
+          <div class="stat">
+            <span class="stat__label">Pedidos</span>
+            <span class="stat__value">{{ c.order_count }}</span>
+          </div>
+          <div class="stat">
+            <span class="stat__label">Total gastado</span>
+            <span class="stat__value">₡{{ c.total_spent | number: '1.0-0' }}</span>
+          </div>
+          <div class="stat">
+            <span class="stat__label">Último pedido</span>
+            <span class="stat__value">
+              @if (c.last_order_at) {
+                {{ c.last_order_at | date: 'd/MM/yy' }}
+              } @else {
+                —
+              }
+            </span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <mat-card class="customer-detail__panel">
+      <mat-card-header>
+        <mat-card-title>Historial de pedidos</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if (c.orders.length === 0) {
+          <p class="muted">Este cliente aún no tiene pedidos.</p>
+        } @else {
+          <table mat-table [dataSource]="c.orders" class="customer-detail__table">
+            <ng-container matColumnDef="ref">
+              <th mat-header-cell *matHeaderCellDef>Pedido</th>
+              <td mat-cell *matCellDef="let o" class="brand-mono">#{{ o.order_number }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="total">
+              <th mat-header-cell *matHeaderCellDef class="num">Total</th>
+              <td mat-cell *matCellDef="let o" class="num">₡{{ o.total | number: '1.0-0' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>Estado</th>
+              <td mat-cell *matCellDef="let o">
+                <span class="order-status order-status--{{ o.status }}">
+                  {{ statusLabel(o.status) }}
+                </span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="date">
+              <th mat-header-cell *matHeaderCellDef>Fecha</th>
+              <td mat-cell *matCellDef="let o">{{ o.created_at | date: 'short' }}</td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="orderColumns"></tr>
+            <tr
+              mat-row
+              *matRowDef="let o; columns: orderColumns"
+              class="customer-detail__row"
+              [routerLink]="['/admin/orders', o.id]"
+            ></tr>
+          </table>
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+</section>
