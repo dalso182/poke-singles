@@ -1,30 +1,34 @@
-import { Component, effect, inject, input, signal } from '@angular/core';
+import { Component, effect, inject, input, output, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { CardTypesService } from '../../core/catalog/card-types.service';
 import type { CardTypeRow } from '../../core/catalog/catalog.types';
+import { TableCard } from '../../shared/table/table-card/table-card';
+import { EditableInput } from '../../shared/table/controls/editable-input/editable-input';
+import { ToggleSwitch } from '../../shared/table/controls/toggle-switch/toggle-switch';
+import { Btn } from '../../shared/table/controls/btn/btn';
 
 @Component({
   selector: 'app-admin-card-types',
   imports: [
     ReactiveFormsModule,
-    MatButtonModule,
     MatCardModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
     MatProgressBarModule,
-    MatSlideToggleModule,
     MatSnackBarModule,
     MatTableModule,
+    TableCard,
+    EditableInput,
+    ToggleSwitch,
+    Btn,
   ],
   templateUrl: './card-types.html',
   styleUrl: './card-types.scss',
@@ -35,6 +39,8 @@ export class CardTypes {
   readonly categoryId = input<string | null>(null);
   /** Prepended to new slugs (slug is globally unique), e.g. 'sellado-'. */
   readonly slugPrefix = input<string>('');
+  /** Emitted when the row set changes (add), so the parent can refresh counts. */
+  readonly changed = output<void>();
 
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(CardTypesService);
@@ -89,6 +95,20 @@ export class CardTypes {
     return this.editForms.get(id)!;
   }
 
+  protected val(id: string, name: string): string {
+    return String(this.formFor(id).get(name)!.value ?? '');
+  }
+  protected setText(id: string, name: string, value: string): void {
+    const c = this.formFor(id).get(name)!;
+    c.setValue(value);
+    c.markAsDirty();
+  }
+  protected setNum(id: string, name: string, value: string): void {
+    const c = this.formFor(id).get(name)!;
+    c.setValue(Number(value) || 0);
+    c.markAsDirty();
+  }
+
   protected async onAdd(): Promise<void> {
     if (this.addForm.invalid) return;
     this.saving.set('__new__');
@@ -100,6 +120,7 @@ export class CardTypes {
       this.addForm.reset({ slug: '', name: '', sort_order: 0 });
       this.addOpen.set(false);
       await this.refresh();
+      this.changed.emit();
       this.snack.open('Tipo creado', 'OK', { duration: 3000 });
     } catch (err) {
       this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });

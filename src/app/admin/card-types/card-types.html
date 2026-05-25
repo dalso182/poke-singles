@@ -1,15 +1,15 @@
 <section class="card-types">
-  <header class="card-types__header">
-    <button mat-flat-button color="primary" (click)="addOpen.set(!addOpen())">
+  <div class="card-types__add-row">
+    <app-btn variant="primary" (click)="addOpen.set(!addOpen())">
       <mat-icon>{{ addOpen() ? 'close' : 'add' }}</mat-icon>
       {{ addOpen() ? 'Cancelar' : 'Agregar' }}
-    </button>
-  </header>
+    </app-btn>
+  </div>
 
   @if (addOpen()) {
     <mat-card class="card-types__add">
       <mat-card-content>
-        <form [formGroup]="addForm" (ngSubmit)="onAdd()" class="card-types__add-form">
+        <form [formGroup]="addForm" class="card-types__add-form">
           <mat-form-field appearance="outline">
             <mat-label>Slug</mat-label>
             <input matInput formControlName="slug" placeholder="full-art-pokemon" />
@@ -23,14 +23,9 @@
             <mat-label>Orden</mat-label>
             <input matInput type="number" formControlName="sort_order" min="0" />
           </mat-form-field>
-          <button
-            mat-flat-button
-            color="primary"
-            type="submit"
-            [disabled]="addForm.invalid || saving() === '__new__'"
-          >
+          <app-btn variant="primary" [disabled]="addForm.invalid || saving() === '__new__'" (click)="onAdd()">
             Crear
-          </button>
+          </app-btn>
         </form>
       </mat-card-content>
     </mat-card>
@@ -40,63 +35,71 @@
     <mat-progress-bar mode="indeterminate" />
   }
 
-  <mat-card class="card-types__table-card">
-    <table mat-table [dataSource]="rows()" class="card-types__table">
-      <ng-container matColumnDef="slug">
-        <th mat-header-cell *matHeaderCellDef>Slug</th>
-        <td mat-cell *matCellDef="let row" class="brand-mono">{{ row.slug }}</td>
-      </ng-container>
+  <app-table-card>
+    <div class="card-types__scroll">
+      <table mat-table [dataSource]="rows()" class="app-table app-table--cozy">
+        <ng-container matColumnDef="slug">
+          <th mat-header-cell *matHeaderCellDef>Slug</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="app-slug-chip">{{ row.slug }}</span>
+          </td>
+        </ng-container>
 
-      <ng-container matColumnDef="name">
-        <th mat-header-cell *matHeaderCellDef>Nombre</th>
-        <td mat-cell *matCellDef="let row">
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <input matInput [formControl]="$any(formFor(row.id).get('name'))" />
-          </mat-form-field>
-        </td>
-      </ng-container>
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef>Nombre</th>
+          <td mat-cell *matCellDef="let row">
+            <app-editable-input
+              [value]="val(row.id, 'name')"
+              (valueChange)="setText(row.id, 'name', $event)"
+            />
+          </td>
+        </ng-container>
 
-      <ng-container matColumnDef="sort_order">
-        <th mat-header-cell *matHeaderCellDef>Orden</th>
-        <td mat-cell *matCellDef="let row">
-          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="card-types__sort-field">
-            <input matInput type="number" [formControl]="$any(formFor(row.id).get('sort_order'))" min="0" />
-          </mat-form-field>
-        </td>
-      </ng-container>
+        <ng-container matColumnDef="sort_order">
+          <th mat-header-cell *matHeaderCellDef class="is-right">Orden</th>
+          <td mat-cell *matCellDef="let row" class="is-right">
+            <app-editable-input
+              [mono]="true"
+              align="right"
+              [width]="70"
+              [value]="val(row.id, 'sort_order')"
+              (valueChange)="setNum(row.id, 'sort_order', $event)"
+            />
+          </td>
+        </ng-container>
 
-      <ng-container matColumnDef="active">
-        <th mat-header-cell *matHeaderCellDef>Activo</th>
-        <td mat-cell *matCellDef="let row">
-          <mat-slide-toggle
-            [checked]="row.active"
-            [disabled]="saving() === row.id"
-            (change)="onToggleActive(row, $event.checked)"
-          />
-        </td>
-      </ng-container>
+        <ng-container matColumnDef="active">
+          <th mat-header-cell *matHeaderCellDef class="is-center">Activo</th>
+          <td mat-cell *matCellDef="let row" class="is-center">
+            <app-toggle
+              [on]="row.active"
+              (change)="onToggleActive(row, $event)"
+              [disabled]="saving() === row.id"
+            />
+          </td>
+        </ng-container>
 
-      <ng-container matColumnDef="actions">
-        <th mat-header-cell *matHeaderCellDef></th>
-        <td mat-cell *matCellDef="let row">
-          <button
-            mat-stroked-button
-            (click)="onSave(row)"
-            [disabled]="formFor(row.id).invalid || formFor(row.id).pristine || saving() === row.id"
-          >
-            Guardar
-          </button>
-        </td>
-      </ng-container>
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let row" class="is-right">
+            <app-btn
+              variant="ghost"
+              size="sm"
+              [disabled]="formFor(row.id).invalid || formFor(row.id).pristine || saving() === row.id"
+              (click)="onSave(row)"
+            >
+              Guardar
+            </app-btn>
+          </td>
+        </ng-container>
 
-      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-    </table>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      </table>
+    </div>
 
     @if (!loading() && rows().length === 0) {
-      <p class="card-types__empty muted">
-        Aún no hay tipos. Crea el primero con el botón de arriba.
-      </p>
+      <p class="card-types__empty">Aún no hay tipos. Crea el primero con el botón de arriba.</p>
     }
-  </mat-card>
+  </app-table-card>
 </section>

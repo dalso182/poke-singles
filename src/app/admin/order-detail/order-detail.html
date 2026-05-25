@@ -189,55 +189,60 @@
               </mat-card-subtitle>
             </mat-card-header>
             <mat-card-content>
-              <table mat-table [dataSource]="items()" class="order-detail__items-table">
-                <ng-container matColumnDef="image">
-                  <th mat-header-cell *matHeaderCellDef></th>
-                  <td mat-cell *matCellDef="let item">
-                    @if (item.product_image_url) {
-                      <img [src]="item.product_image_url" [alt]="item.product_name" class="order-detail__item-thumb" />
-                    }
-                  </td>
-                </ng-container>
-                <ng-container matColumnDef="name">
-                  <th mat-header-cell *matHeaderCellDef>Carta</th>
-                  <td mat-cell *matCellDef="let item">
-                    <a [routerLink]="['/products', item.product_slug]" target="_blank" rel="noopener">
-                      {{ item.product_name }}
-                    </a>
-                  </td>
-                </ng-container>
-                <ng-container matColumnDef="condition">
-                  <th mat-header-cell *matHeaderCellDef>Condición</th>
-                  <td mat-cell *matCellDef="let item">
-                    @if (item.product_condition) {
-                      <span [class]="conditionClass(item.product_condition)">
-                        {{ item.product_condition }}
-                      </span>
-                    } @else {
-                      <span class="muted">—</span>
-                    }
-                  </td>
-                </ng-container>
-                <ng-container matColumnDef="qty">
-                  <th mat-header-cell *matHeaderCellDef>Cant.</th>
-                  <td mat-cell *matCellDef="let item">{{ item.quantity }}</td>
-                </ng-container>
-                <ng-container matColumnDef="unit">
-                  <th mat-header-cell *matHeaderCellDef class="order-detail__num">Precio</th>
-                  <td mat-cell *matCellDef="let item" class="order-detail__num">
-                    ₡{{ item.unit_price | number: '1.0-0' }}
-                  </td>
-                </ng-container>
-                <ng-container matColumnDef="total">
-                  <th mat-header-cell *matHeaderCellDef class="order-detail__num">Total</th>
-                  <td mat-cell *matCellDef="let item" class="order-detail__num">
-                    ₡{{ item.line_total | number: '1.0-0' }}
-                  </td>
-                </ng-container>
+              <div class="order-detail__items-scroll">
+                <table mat-table [dataSource]="items()" class="app-table app-table--comfy">
+                  <ng-container matColumnDef="image">
+                    <th mat-header-cell *matHeaderCellDef></th>
+                    <td mat-cell *matCellDef="let item">
+                      <app-thumb [src]="item.product_image_url" [size]="36" />
+                    </td>
+                  </ng-container>
+                  <ng-container matColumnDef="name">
+                    <th mat-header-cell *matHeaderCellDef>Carta</th>
+                    <td mat-cell *matCellDef="let item">
+                      <a
+                        [routerLink]="['/products', item.product_slug]"
+                        target="_blank"
+                        rel="noopener"
+                        class="order-detail__item-link"
+                      >
+                        {{ item.product_name }}
+                      </a>
+                    </td>
+                  </ng-container>
+                  <ng-container matColumnDef="condition">
+                    <th mat-header-cell *matHeaderCellDef>Condición</th>
+                    <td mat-cell *matCellDef="let item">
+                      @if (item.product_condition) {
+                        <span [class]="conditionClass(item.product_condition)">
+                          {{ item.product_condition }}
+                        </span>
+                      } @else {
+                        <span class="is-mono is-dim">—</span>
+                      }
+                    </td>
+                  </ng-container>
+                  <ng-container matColumnDef="qty">
+                    <th mat-header-cell *matHeaderCellDef class="is-right">Cant.</th>
+                    <td mat-cell *matCellDef="let item" class="is-right is-mono">{{ item.quantity }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="unit">
+                    <th mat-header-cell *matHeaderCellDef class="is-right">Precio</th>
+                    <td mat-cell *matCellDef="let item" class="is-right">
+                      <app-money [value]="item.unit_price" />
+                    </td>
+                  </ng-container>
+                  <ng-container matColumnDef="total">
+                    <th mat-header-cell *matHeaderCellDef class="is-right">Total</th>
+                    <td mat-cell *matCellDef="let item" class="is-right">
+                      <app-money [value]="item.line_total" />
+                    </td>
+                  </ng-container>
 
-                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-                <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-              </table>
+                  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                  <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+                </table>
+              </div>
             </mat-card-content>
           </mat-card>
 

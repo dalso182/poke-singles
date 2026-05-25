@@ -1,30 +1,36 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { CategoriesService } from '../../core/catalog/categories.service';
 import type { CategoryRow } from '../../core/catalog/catalog.types';
+import { PageHeader } from '../../shared/table/page-header/page-header';
+import { TableCard } from '../../shared/table/table-card/table-card';
+import { EditableInput } from '../../shared/table/controls/editable-input/editable-input';
+import { ToggleSwitch } from '../../shared/table/controls/toggle-switch/toggle-switch';
+import { Btn } from '../../shared/table/controls/btn/btn';
 
 @Component({
   selector: 'app-admin-categories',
   imports: [
     ReactiveFormsModule,
-    MatButtonModule,
     MatCardModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
     MatProgressBarModule,
-    MatSlideToggleModule,
     MatSnackBarModule,
     MatTableModule,
+    PageHeader,
+    TableCard,
+    EditableInput,
+    ToggleSwitch,
+    Btn,
   ],
   templateUrl: './categories.html',
   styleUrl: './categories.scss',
@@ -76,6 +82,20 @@ export class Categories {
 
   protected formFor(id: string): FormGroup {
     return this.editForms.get(id)!;
+  }
+
+  protected val(id: string, name: string): string {
+    return String(this.formFor(id).get(name)!.value ?? '');
+  }
+  protected setText(id: string, name: string, value: string): void {
+    const c = this.formFor(id).get(name)!;
+    c.setValue(value);
+    c.markAsDirty();
+  }
+  protected setNum(id: string, name: string, value: string): void {
+    const c = this.formFor(id).get(name)!;
+    c.setValue(Number(value) || 0);
+    c.markAsDirty();
   }
 
   protected async onAdd(): Promise<void> {

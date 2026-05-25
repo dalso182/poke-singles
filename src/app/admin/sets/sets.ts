@@ -1,6 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatExpansionModule } from '@angular/material/expansion';
@@ -15,6 +14,8 @@ import {
   SetDetailDialog,
   type SetDetailDialogResult,
 } from './set-detail-dialog';
+import { PageHeader } from '../../shared/table/page-header/page-header';
+import { Btn } from '../../shared/table/controls/btn/btn';
 
 interface SeriesGroup {
   readonly series: string | null;
@@ -28,7 +29,6 @@ const NO_SERIES_LABEL = 'Sin serie';
   selector: 'app-admin-sets',
   imports: [
     ReactiveFormsModule,
-    MatButtonModule,
     MatCardModule,
     MatDialogModule,
     MatExpansionModule,
@@ -37,6 +37,8 @@ const NO_SERIES_LABEL = 'Sin serie';
     MatInputModule,
     MatProgressBarModule,
     MatSnackBarModule,
+    PageHeader,
+    Btn,
   ],
   templateUrl: './sets.html',
   styleUrl: './sets.scss',

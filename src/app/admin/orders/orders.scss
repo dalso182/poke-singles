@@ -1,75 +1,45 @@
-.orders {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  max-width: 1200px;
+// Pedidos-specific bits only. Table look comes from `.app-table` + primitives.
+
+.orders__scroll {
+  overflow-x: auto;
 }
 
-.orders__header {
-  h1 { margin: 4px 0 8px; }
+.spacer {
+  flex: 1 1 auto;
 }
 
-.muted {
-  color: var(--text-secondary);
-  margin: 0;
-}
-
-.orders__filters-row {
-  display: grid;
-  grid-template-columns: auto 1fr 220px;
-  gap: 12px;
-  align-items: center;
-}
-
-@media (max-width: 880px) {
-  .orders__filters-row {
-    grid-template-columns: 1fr;
-  }
-}
-
-.orders__search {
-  width: 100%;
-}
-
-.orders__table-card {
-  padding: 0;
-  overflow: hidden;
-}
-
-.orders__table {
-  width: 100%;
-
-  td { padding-block: 8px; }
-}
-
-.orders__num {
-  text-align: right;
+.orders__hash {
+  color: var(--text-tertiary);
 }
 
 .orders__customer {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  line-height: 1.2;
 
-  small {
-    font-size: 11px;
+  strong {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--text-primary);
   }
 }
 
-.orders__whatsapp {
-  display: inline-flex;
-  align-items: center;
-  color: #25d366; // WhatsApp green — visual cue only, not a brand red.
+.orders__email {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-tertiary);
+}
 
-  mat-icon {
-    font-size: 20px;
-    width: 20px;
-    height: 20px;
-  }
+// "Recibido" pill doubles as the open-proof trigger — strip button chrome.
+.orders__proof-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
 }
 
 .orders__empty {
-  padding: 24px;
+  padding: 32px 24px;
   text-align: center;
+  color: var(--text-secondary);
 }

@@ -40,6 +40,36 @@ Admin status = `app_metadata.role === 'admin'` (→ `database` skill for `is_adm
 | `/admin/customers/:id` | CustomerDetail | profile + saved address + stats + order history (rows → `/admin/orders/:id`) |
 | `/admin/config` | AdminConfig | exchange rate, maintenance flag |
 
+## Shared table system
+
+Every admin list/table screen composes one shared primitive library at
+`src/app/shared/table/` (selectors `app-*`) — **never per-screen table CSS or one-off cell
+markup.** The engine stays `mat-table`, styled by the global `.app-table` class (`+ --comfy`
+60px / `--cozy` 76px rows) in `src/styles/_admin-table.scss`. Primitives: `app-page-header`,
+`app-filter-bar`, `app-table-card`, `app-pill-tabs` / `app-underline-tabs` (tabs with optional
+count badges), `app-pagination-footer` (restyled mat-paginator behaviour, **1-based** page),
+`app-search-input`, `app-dropdown`, `app-labeled-toggle`, `app-toggle`, `app-checkbox`,
+`app-editable-input`, `app-icon-btn`, `app-btn`, and cells `app-pill` / `app-money` /
+`app-stock` / `app-thumb`. Cell modifier classes `.is-mono / .is-dim / .is-right / .is-center`;
+slug chips use global `.app-slug-chip`. Tokens + the brand-red rule for these → `theme` skill.
+
+**Rule:** need a new cell type? add it to the library so every table gets it — don't style
+locally. Inline-edit screens (Categorías, card-types, Métodos de envío) bridge their per-row
+`FormGroup`s to `app-editable-input`/`app-toggle` with small `val()`/`setText()`/`setNum()`
+helpers (keeps validation + dirty tracking). Detail-page inner tables (RaffleDetail
+participants, OrderDetail items) apply `.app-table` directly — **no** `app-table-card`, since
+they already sit in a `mat-card` panel. **Sets** is the lone exception: a series-grouped
+accordion (not a flat table), so it got chrome alignment only (page-header + `app-btn` +
+restyled cards); its edit dialog stays Material like every other admin dialog.
+
+**Toggles:** the admin uses `app-toggle` everywhere, **never `mat-slide-toggle`.** In tables
+bind `[on]` + `(change)` (or `[(on)]`); in reactive forms use `app-labeled-toggle` — it's a
+`ControlValueAccessor`, so `<app-labeled-toggle formControlName="x">` is a drop-in. Productos
+"Destacado" stays `app-checkbox` (a checkbox, not a toggle). The migration's **only**
+behavioural addition was **tab count badges** — Pedidos via `OrdersService.countByStatus()`
+(grouped head-counts), the rest computed from already-loaded rows; everything else (filters,
+search debounce, server pagination, soft-delete+undo, raffle draw) was preserved as-is.
+
 ## Dashboard
 
 `/admin/` (AdminDashboard) leads with four KPI tiles — **Total Orders, Total Sales, Total

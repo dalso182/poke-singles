@@ -1,56 +1,30 @@
-.card-types {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  max-width: 960px;
+// Card-types-specific bits only. Table look comes from `.app-table` + primitives.
+
+.card-types__add-row {
+  margin-bottom: 14px;
 }
 
-.card-types__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-
-  h1 {
-    margin: 4px 0 8px;
-  }
-}
-
-.muted {
-  color: var(--mat-sys-on-surface-variant);
-  margin: 0;
+.card-types__add {
+  margin-bottom: 16px;
 }
 
 .card-types__add-form {
   display: grid;
   grid-template-columns: 1fr 1fr 120px auto;
   gap: 12px;
-  align-items: start;
+  align-items: center;
 }
 
 .card-types__sort-field {
   width: 120px;
 }
 
-.card-types__table-card {
-  padding: 0;
-  overflow: hidden;
-}
-
-.card-types__table {
-  width: 100%;
-
-  td {
-    padding-block: 8px;
-  }
-
-  mat-form-field {
-    width: 100%;
-  }
+.card-types__scroll {
+  overflow-x: auto;
 }
 
 .card-types__empty {
-  padding: 24px;
+  padding: 32px 24px;
   text-align: center;
+  color: var(--text-secondary);
 }

@@ -40,7 +40,7 @@
     align-items: start;
 
     p.admin-config__hint,
-    mat-slide-toggle {
+    app-labeled-toggle {
       grid-column: 1 / -1;
     }
   }

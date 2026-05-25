@@ -1,96 +1,58 @@
-.products-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+// Productos-specific bits only. The table look comes from the global
+// `.app-table` system (src/styles/_admin-table.scss) and the shared primitives.
+
+.products-list__scroll {
+  overflow-x: auto;
 }
 
-.products-list__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-
-  h1 {
-    margin: 4px 0 8px;
-  }
-}
-
-.muted {
-  color: var(--mat-sys-on-surface-variant);
-  margin: 0;
-}
-
-.products-list__filter-row {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1.5fr auto auto;
-  gap: 16px;
-  align-items: center;
-}
-
-.products-list__search {
-  width: 100%;
-}
-
-.products-list__table-card {
-  padding: 0;
-  overflow: hidden;
-}
-
-.products-list__table {
-  width: 100%;
-}
-
-.products-list__thumb {
-  width: 40px;
-  height: 56px;
-  object-fit: cover;
-  border-radius: 4px;
-  display: block;
-
-  &--empty {
-    background: var(--mat-sys-surface-variant);
-  }
+// Pushes the labeled toggles to the right edge of the filter bar.
+.spacer {
+  flex: 1 1 auto;
 }
 
 .products-list__name {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 
   strong {
-    font-weight: 600;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--text-primary);
   }
 }
 
 .products-list__slug {
-  font-size: 11px;
-  color: var(--mat-sys-on-surface-variant);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
 }
 
-.products-list__zero {
-  color: var(--brand-red, #ce1126);
-  font-weight: 600;
+.products-list__restock {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+
+  &--today {
+    color: var(--accent-amber);
+  }
 }
 
 .products-list__row {
   cursor: pointer;
 
-  &:hover {
-    background: var(--mat-sys-surface-variant);
-  }
-
   &--inactive {
     opacity: 0.55;
-  }
-
-  ::ng-deep td.mat-mdc-cell {
-    padding-top: 12px;
-    padding-bottom: 12px;
   }
 }
 
 .products-list__empty {
-  padding: 24px;
+  padding: 32px 24px;
   text-align: center;
+  color: var(--text-secondary);
 }

@@ -1,50 +1,50 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
-import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
-import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatFormFieldModule } from '@angular/material/form-field';
+import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatSelectModule } from '@angular/material/select';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { CategoriesService } from '../../core/catalog/categories.service';
 import { ProductsService } from '../../core/catalog/products.service';
 import { SetsService } from '../../core/catalog/sets.service';
-import type {
-  CategoryRow,
-  ProductRow,
-  SetRow,
-} from '../../core/catalog/catalog.types';
+import type { CategoryRow, ProductRow, SetRow } from '../../core/catalog/catalog.types';
+import { PageHeader } from '../../shared/table/page-header/page-header';
+import { FilterBar } from '../../shared/table/filter-bar/filter-bar';
+import { TableCard } from '../../shared/table/table-card/table-card';
+import { SearchInput } from '../../shared/table/controls/search-input/search-input';
+import { Dropdown, type DropdownOption } from '../../shared/table/controls/outlined-dropdown/outlined-dropdown';
+import { LabeledToggle } from '../../shared/table/controls/labeled-toggle/labeled-toggle';
+import { Thumb } from '../../shared/table/cells/thumb-cell/thumb-cell';
+import { Money } from '../../shared/table/cells/money-cell/money-cell';
+import { Stock } from '../../shared/table/cells/stock-cell/stock-cell';
+import { PlainCheckbox } from '../../shared/table/controls/plain-checkbox/plain-checkbox';
+import { ToggleSwitch } from '../../shared/table/controls/toggle-switch/toggle-switch';
+import { IconBtn } from '../../shared/table/controls/icon-btn/icon-btn';
+import { Btn } from '../../shared/table/controls/btn/btn';
+import { PaginationFooter } from '../../shared/table/pagination-footer/pagination-footer';
 
 @Component({
   selector: 'app-admin-products-list',
   imports: [
-    ReactiveFormsModule,
-    RouterLink,
-    MatButtonModule,
-    MatCardModule,
-    MatCheckboxModule,
-    MatChipsModule,
-    MatFormFieldModule,
     MatIconModule,
-    MatInputModule,
-    MatPaginatorModule,
     MatProgressBarModule,
-    MatSelectModule,
-    MatSlideToggleModule,
-    MatSnackBarModule,
     MatTableModule,
-    MatTooltipModule,
+    PageHeader,
+    FilterBar,
+    TableCard,
+    SearchInput,
+    Dropdown,
+    LabeledToggle,
+    Thumb,
+    Money,
+    Stock,
+    PlainCheckbox,
+    ToggleSwitch,
+    IconBtn,
+    Btn,
+    PaginationFooter,
   ],
   templateUrl: './products-list.html',
   styleUrl: './products-list.scss',
@@ -56,24 +56,29 @@ export class ProductsList {
   private readonly router = inject(Router);
   private readonly snack = inject(MatSnackBar);
 
-  protected readonly searchControl = new FormControl('', { nonNullable: true });
-  protected readonly categoryControl = new FormControl<string | ''>('', { nonNullable: true });
-  protected readonly setControl = new FormControl<string | ''>('', { nonNullable: true });
-  protected readonly includeInactiveControl = new FormControl(false, { nonNullable: true });
-  protected readonly featuredOnlyControl = new FormControl(false, { nonNullable: true });
+  // Filter state (signals; search is debounced before it hits the server).
+  protected readonly searchText = signal('');
+  protected readonly category = signal('');
+  protected readonly setId = signal('');
+  protected readonly includeInactive = signal(false);
+  protected readonly featuredOnly = signal(false);
 
   protected readonly categoriesList = signal<CategoryRow[]>([]);
   protected readonly setsList = signal<SetRow[]>([]);
-  protected readonly setsById = computed(() => {
+  private readonly setsById = computed(() => {
     const map = new Map<string, SetRow>();
     for (const s of this.setsList()) map.set(s.id, s);
     return map;
   });
-  protected readonly categoriesById = computed(() => {
-    const map = new Map<string, CategoryRow>();
-    for (const c of this.categoriesList()) map.set(c.id, c);
-    return map;
-  });
+
+  protected readonly categoryOptions = computed<DropdownOption[]>(() => [
+    { value: '', label: 'Todas' },
+    ...this.categoriesList().map((c) => ({ value: c.id, label: c.name })),
+  ]);
+  protected readonly setOptions = computed<DropdownOption[]>(() => [
+    { value: '', label: 'Todos' },
+    ...this.setsList().map((s) => ({ value: s.id, label: `${s.code} — ${s.name}` })),
+  ]);
 
   protected readonly rows = signal<ProductRow[]>([]);
   protected readonly total = signal(0);
@@ -95,29 +100,20 @@ export class ProductsList {
   ];
 
   private readonly searchValue = toSignal(
-    this.searchControl.valueChanges.pipe(debounceTime(250), distinctUntilChanged()),
+    toObservable(this.searchText).pipe(debounceTime(250), distinctUntilChanged()),
     { initialValue: '' },
   );
-  private readonly categoryValue = toSignal(this.categoryControl.valueChanges, { initialValue: '' });
-  private readonly setValue = toSignal(this.setControl.valueChanges, { initialValue: '' });
-  private readonly includeInactiveValue = toSignal(this.includeInactiveControl.valueChanges, {
-    initialValue: false,
-  });
-  private readonly featuredOnlyValue = toSignal(this.featuredOnlyControl.valueChanges, {
-    initialValue: false,
-  });
 
   constructor() {
     this.bootstrap();
-    // Re-fetch when filters change. Reset to page 1 on filter change.
+    // Re-fetch when filters change; reset to page 1 on filter change.
     let firstRun = true;
     effect(() => {
-      // Touch each filter signal so the effect tracks them.
       this.searchValue();
-      this.categoryValue();
-      this.setValue();
-      this.includeInactiveValue();
-      this.featuredOnlyValue();
+      this.category();
+      this.setId();
+      this.includeInactive();
+      this.featuredOnly();
       if (firstRun) {
         firstRun = false;
         return;
@@ -143,10 +139,10 @@ export class ProductsList {
     try {
       const result = await this.products.list({
         search: this.searchValue() || undefined,
-        categoryId: this.categoryValue() || undefined,
-        setId: this.setValue() || undefined,
-        includeInactive: this.includeInactiveValue(),
-        featured: this.featuredOnlyValue() || undefined,
+        categoryId: this.category() || undefined,
+        setId: this.setId() || undefined,
+        includeInactive: this.includeInactive(),
+        featured: this.featuredOnly() || undefined,
         page: this.page(),
         pageSize: this.pageSize(),
       });
@@ -159,9 +155,14 @@ export class ProductsList {
     }
   }
 
-  protected onPageChange(event: PageEvent): void {
-    this.page.set(event.pageIndex + 1);
-    this.pageSize.set(event.pageSize);
+  protected onPage(page: number): void {
+    this.page.set(page);
+    this.refresh();
+  }
+
+  protected onPerPage(size: number): void {
+    this.pageSize.set(size);
+    this.page.set(1);
     this.refresh();
   }
 
@@ -204,24 +205,30 @@ export class ProductsList {
     return this.setsById().get(setId)?.code ?? '—';
   }
 
-  protected formatPrice(price: number): string {
-    return new Intl.NumberFormat('es-CR', {
-      style: 'currency',
-      currency: 'CRC',
-      maximumFractionDigits: 0,
-    }).format(price);
+  /** When discounted, the sale price is what the cell shows (amber). */
+  protected isSale(row: ProductRow): boolean {
+    return row.sale_price != null && row.sale_price < row.price;
+  }
+  protected priceValue(row: ProductRow): number {
+    return this.isSale(row) ? row.sale_price! : row.price;
+  }
+  protected priceOriginal(row: ProductRow): number | null {
+    return this.isSale(row) ? row.price : null;
   }
 
   protected formatRestocked(value: string | null): string {
     if (!value) return '—';
     const date = new Date(value);
-    const diffMs = Date.now() - date.getTime();
-    const days = Math.floor(diffMs / 86400000);
+    const days = Math.floor((Date.now() - date.getTime()) / 86400000);
     if (days === 0) return 'Hoy';
     if (days === 1) return 'Ayer';
     if (days < 30) return `hace ${days} d`;
     if (days < 365) return `hace ${Math.floor(days / 30)} m`;
     return `hace ${Math.floor(days / 365)} a`;
+  }
+
+  protected goToNew(): void {
+    this.router.navigate(['/admin/products/new']);
   }
 
   protected goToEdit(id: string): void {

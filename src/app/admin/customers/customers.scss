@@ -1,51 +1,29 @@
-.customers {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  max-width: 1200px;
-}
+// Clientes-specific bits only. Table look comes from `.app-table` + primitives.
 
-.customers__header {
-  h1 { margin: 4px 0 8px; }
-}
-
-.muted {
-  color: var(--text-secondary);
-  margin: 0;
-}
-
-.customers__search {
-  width: 100%;
-  max-width: 420px;
-}
-
-.customers__table-card {
-  padding: 0;
-  overflow: hidden;
-}
-
-.customers__table {
-  width: 100%;
-
-  td { padding-block: 8px; }
-}
-
-.customers__num {
-  text-align: right;
+.customers__scroll {
+  overflow-x: auto;
 }
 
 .customers__customer {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  line-height: 1.2;
 
-  small {
-    font-size: 11px;
+  strong {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--text-primary);
   }
 }
 
+.customers__email {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-tertiary);
+}
+
 .customers__empty {
-  padding: 24px;
+  padding: 32px 24px;
   text-align: center;
+  color: var(--text-secondary);
 }

@@ -37,6 +37,16 @@ export interface AdminOrderListResult {
   pageSize: number;
 }
 
+/** Counts feeding the Pedidos status-tab badges. `all` is every order
+ *  (including 'shipped', which has no dedicated tab). */
+export interface OrderStatusCounts {
+  all: number;
+  pending: number;
+  paid: number;
+  completed: number;
+  cancelled: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class OrdersService {
   private readonly supabase = inject(SupabaseService);
@@ -333,6 +343,29 @@ export class OrdersService {
       .single();
     if (error) throw error;
     return data as OrderRow;
+  }
+
+  /** Per-status counts for the admin Pedidos tab badges. Five parallel
+   *  head-count queries (no rows fetched). Any individual failure yields 0 so
+   *  the tabs still render. */
+  async countByStatus(): Promise<OrderStatusCounts> {
+    const head = () =>
+      (this.supabase.client as any).from('orders').select('id', { head: true, count: 'exact' });
+    const [all, pending, paid, completed, cancelled] = await Promise.all([
+      head(),
+      head().eq('status', 'pending'),
+      head().eq('status', 'paid'),
+      head().eq('status', 'completed'),
+      head().eq('status', 'cancelled'),
+    ]);
+    const n = (r: { error: unknown; count: number | null }) => (r.error ? 0 : r.count ?? 0);
+    return {
+      all: n(all),
+      pending: n(pending),
+      paid: n(paid),
+      completed: n(completed),
+      cancelled: n(cancelled),
+    };
   }
 
   /** Cheap count for the admin dashboard pending widget. */

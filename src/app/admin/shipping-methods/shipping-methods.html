@@ -1,154 +1,154 @@
-<section class="shipping-methods">
-  <header class="shipping-methods__header admin-page-header">
-    <div>
-      <span class="brand-eyebrow">Logística</span>
-      <h1>Métodos de envío</h1>
-      <p class="muted">
-        Las opciones que el cliente elige al hacer checkout. Crea las que necesites
-        (Correos de Costa Rica, Uber Flash, recoger en persona…).
-      </p>
-    </div>
-    <button mat-flat-button color="primary" (click)="addOpen.set(!addOpen())">
-      <mat-icon>{{ addOpen() ? 'close' : 'add' }}</mat-icon>
-      {{ addOpen() ? 'Cancelar' : 'Agregar método' }}
-    </button>
-  </header>
+<app-page-header
+  kicker="Logística"
+  title="Métodos de envío"
+  sub="Las opciones que el cliente elige al hacer checkout. Crea las que necesites (Correos de Costa Rica, Uber Flash, recoger en persona…)"
+>
+  <app-btn variant="primary" (click)="addOpen.set(!addOpen())">
+    <mat-icon>{{ addOpen() ? 'close' : 'add' }}</mat-icon>
+    {{ addOpen() ? 'Cancelar' : 'Agregar método' }}
+  </app-btn>
+</app-page-header>
 
-  @if (addOpen()) {
-    <mat-card class="shipping-methods__add">
-      <mat-card-content>
-        <form [formGroup]="addForm" (ngSubmit)="onAdd()" class="shipping-methods__add-form">
-          <mat-form-field appearance="outline">
-            <mat-label>Nombre</mat-label>
-            <input matInput formControlName="name" placeholder="Correos de Costa Rica" />
-          </mat-form-field>
-          <mat-form-field appearance="outline" class="shipping-methods__desc-field">
-            <mat-label>Descripción (opcional)</mat-label>
-            <input matInput formControlName="description" placeholder="3-5 días hábiles" />
-          </mat-form-field>
-          <mat-form-field appearance="outline" class="shipping-methods__num-field">
-            <mat-label>Precio (CRC)</mat-label>
-            <input matInput type="number" formControlName="price" min="0" step="100" />
-          </mat-form-field>
-          <mat-form-field appearance="outline" class="shipping-methods__num-field">
-            <mat-label>Orden</mat-label>
-            <input matInput type="number" formControlName="sort_order" min="0" />
-          </mat-form-field>
-          <mat-slide-toggle formControlName="requires_address" class="shipping-methods__add-toggle">
-            Requiere dirección
-          </mat-slide-toggle>
-          <button
-            mat-flat-button
-            color="primary"
-            type="submit"
-            [disabled]="addForm.invalid || saving() === '__new__'"
-          >
-            Crear
-          </button>
-        </form>
-      </mat-card-content>
-    </mat-card>
-  }
+@if (addOpen()) {
+  <mat-card class="shipping-methods__add">
+    <mat-card-content>
+      <form [formGroup]="addForm" class="shipping-methods__add-form">
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre</mat-label>
+          <input matInput formControlName="name" placeholder="Correos de Costa Rica" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="shipping-methods__desc-field">
+          <mat-label>Descripción (opcional)</mat-label>
+          <input matInput formControlName="description" placeholder="3-5 días hábiles" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="shipping-methods__num-field">
+          <mat-label>Precio (CRC)</mat-label>
+          <input matInput type="number" formControlName="price" min="0" step="100" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="shipping-methods__num-field">
+          <mat-label>Orden</mat-label>
+          <input matInput type="number" formControlName="sort_order" min="0" />
+        </mat-form-field>
+        <app-labeled-toggle formControlName="requires_address" class="shipping-methods__add-toggle">
+          Requiere dirección
+        </app-labeled-toggle>
+        <app-btn variant="primary" [disabled]="addForm.invalid || saving() === '__new__'" (click)="onAdd()">
+          Crear
+        </app-btn>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
 
-  <div class="shipping-methods__filters">
-    <mat-button-toggle-group
-      [value]="filter()"
-      (change)="onFilterChange($event.value)"
-      aria-label="Filtrar métodos"
-      hideSingleSelectionIndicator
-    >
-      <mat-button-toggle value="active">Activos</mat-button-toggle>
-      <mat-button-toggle value="inactive">Inactivos</mat-button-toggle>
-      <mat-button-toggle value="deleted">Eliminados</mat-button-toggle>
-    </mat-button-toggle-group>
-  </div>
+<app-pill-tabs class="shipping-methods__tabs" [tabs]="tabs()" [value]="filter()" (valueChange)="onFilterChange($event)" />
 
-  @if (loading()) {
-    <mat-progress-bar mode="indeterminate" />
-  }
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
 
-  <mat-card class="shipping-methods__table-card">
-    <table mat-table [dataSource]="visibleRows()" class="shipping-methods__table">
+<app-table-card>
+  <div class="shipping-methods__scroll">
+    <table mat-table [dataSource]="visibleRows()" class="app-table app-table--cozy">
       <ng-container matColumnDef="name">
         <th mat-header-cell *matHeaderCellDef>Nombre</th>
         <td mat-cell *matCellDef="let row">
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <input matInput [formControl]="$any(formFor(row.id).get('name'))" />
-          </mat-form-field>
+          <app-editable-input
+            [value]="val(row.id, 'name')"
+            (valueChange)="setText(row.id, 'name', $event)"
+            [disabled]="!!row.deleted_at"
+          />
         </td>
       </ng-container>
 
       <ng-container matColumnDef="description">
         <th mat-header-cell *matHeaderCellDef>Descripción</th>
         <td mat-cell *matCellDef="let row">
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <input matInput [formControl]="$any(formFor(row.id).get('description'))" />
-          </mat-form-field>
+          <app-editable-input
+            [value]="val(row.id, 'description')"
+            (valueChange)="setText(row.id, 'description', $event)"
+            placeholder="Sin descripción"
+            [disabled]="!!row.deleted_at"
+          />
         </td>
       </ng-container>
 
       <ng-container matColumnDef="price">
-        <th mat-header-cell *matHeaderCellDef>Precio</th>
-        <td mat-cell *matCellDef="let row">
-          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="shipping-methods__price-field">
-            <input matInput type="number" [formControl]="$any(formFor(row.id).get('price'))" min="0" step="100" />
-          </mat-form-field>
+        <th mat-header-cell *matHeaderCellDef class="is-right">Precio</th>
+        <td mat-cell *matCellDef="let row" class="is-right">
+          <div class="shipping-methods__price">
+            <span class="shipping-methods__currency">₡</span>
+            <app-editable-input
+              [mono]="true"
+              align="right"
+              [width]="70"
+              [value]="val(row.id, 'price')"
+              (valueChange)="setNum(row.id, 'price', $event)"
+              [disabled]="!!row.deleted_at"
+            />
+          </div>
         </td>
       </ng-container>
 
       <ng-container matColumnDef="sort_order">
-        <th mat-header-cell *matHeaderCellDef>Orden</th>
-        <td mat-cell *matCellDef="let row">
-          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="shipping-methods__order-field">
-            <input matInput type="number" [formControl]="$any(formFor(row.id).get('sort_order'))" min="0" />
-          </mat-form-field>
+        <th mat-header-cell *matHeaderCellDef class="is-right">Orden</th>
+        <td mat-cell *matCellDef="let row" class="is-right">
+          <app-editable-input
+            [mono]="true"
+            align="right"
+            [width]="50"
+            [value]="val(row.id, 'sort_order')"
+            (valueChange)="setNum(row.id, 'sort_order', $event)"
+            [disabled]="!!row.deleted_at"
+          />
         </td>
       </ng-container>
 
       <ng-container matColumnDef="requires_address">
-        <th mat-header-cell *matHeaderCellDef>Dirección</th>
-        <td mat-cell *matCellDef="let row">
-          <mat-slide-toggle
-            [formControl]="$any(formFor(row.id).get('requires_address'))"
+        <th mat-header-cell *matHeaderCellDef class="is-center">Dirección</th>
+        <td mat-cell *matCellDef="let row" class="is-center">
+          <app-toggle
+            [on]="boolVal(row.id, 'requires_address')"
+            (change)="setBool(row.id, 'requires_address', $event)"
             [disabled]="saving() === row.id || !!row.deleted_at"
           />
         </td>
       </ng-container>
 
       <ng-container matColumnDef="is_active">
-        <th mat-header-cell *matHeaderCellDef>Activo</th>
-        <td mat-cell *matCellDef="let row">
-          <mat-slide-toggle
-            [checked]="row.is_active"
+        <th mat-header-cell *matHeaderCellDef class="is-center">Activo</th>
+        <td mat-cell *matCellDef="let row" class="is-center">
+          <app-toggle
+            [on]="row.is_active"
+            (change)="onToggleActive(row, $event)"
             [disabled]="saving() === row.id || !!row.deleted_at"
-            (change)="onToggleActive(row, $event.checked)"
           />
         </td>
       </ng-container>
 
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef></th>
-        <td mat-cell *matCellDef="let row" class="shipping-methods__actions">
+        <td mat-cell *matCellDef="let row" class="is-right">
           @if (!row.deleted_at) {
-            <button
-              mat-stroked-button
-              type="button"
-              (click)="onSave(row)"
-              [disabled]="formFor(row.id).invalid || formFor(row.id).pristine || saving() === row.id"
-            >
-              Guardar
-            </button>
-            <button
-              mat-icon-button
-              type="button"
-              [disabled]="saving() === row.id"
-              (click)="onDelete(row)"
-              aria-label="Eliminar"
-            >
-              <mat-icon>delete_outline</mat-icon>
-            </button>
+            <div class="shipping-methods__actions">
+              <app-btn
+                variant="ghost"
+                size="sm"
+                [disabled]="formFor(row.id).invalid || formFor(row.id).pristine || saving() === row.id"
+                (click)="onSave(row)"
+              >
+                Guardar
+              </app-btn>
+              <app-icon-btn
+                label="Eliminar"
+                tone="danger"
+                [disabled]="saving() === row.id"
+                (click)="onDelete(row)"
+              >
+                <mat-icon>delete_outline</mat-icon>
+              </app-icon-btn>
+            </div>
           } @else {
-            <span class="muted">Eliminado</span>
+            <span class="is-mono is-dim">Eliminado</span>
           }
         </td>
       </ng-container>
@@ -156,11 +156,9 @@
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
       <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
     </table>
+  </div>
 
-    @if (!loading() && visibleRows().length === 0) {
-      <p class="shipping-methods__empty muted">
-        Sin métodos en este filtro. Crea uno con el botón de arriba.
-      </p>
-    }
-  </mat-card>
-</section>
+  @if (!loading() && visibleRows().length === 0) {
+    <p class="shipping-methods__empty">Sin métodos en este filtro. Crea uno con el botón de arriba.</p>
+  }
+</app-table-card>

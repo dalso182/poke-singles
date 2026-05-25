@@ -155,22 +155,19 @@
   }
 }
 
-.order-detail__items-table {
-  width: 100%;
+// Items table now uses the shared `.app-table` look.
+.order-detail__items-scroll {
+  overflow-x: auto;
+}
 
-  td { padding-block: 8px; }
+.order-detail__item-link {
+  color: var(--brand-blue);
+  font-weight: 600;
+  text-decoration: none;
 }
 
 .order-detail__num {
   text-align: right;
-}
-
-.order-detail__item-thumb {
-  width: 36px;
-  height: 50px;
-  object-fit: cover;
-  border-radius: 4px;
-  display: block;
 }
 
 .order-detail__row {

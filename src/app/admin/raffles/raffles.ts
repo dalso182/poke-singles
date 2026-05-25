@@ -1,30 +1,36 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
-import { MatButtonModule } from '@angular/material/button';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { MatCardModule } from '@angular/material/card';
+import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { RafflesService } from '../../core/catalog/raffles.service';
 import type { RaffleSummaryRow } from '../../core/catalog/catalog.types';
+import { PageHeader } from '../../shared/table/page-header/page-header';
+import { TableCard } from '../../shared/table/table-card/table-card';
+import { PillTabs, type TabItem } from '../../shared/table/tabs/pill-tabs/pill-tabs';
+import { Thumb } from '../../shared/table/cells/thumb-cell/thumb-cell';
+import { Pill } from '../../shared/table/cells/pill/pill';
+import { Btn } from '../../shared/table/controls/btn/btn';
 
 type RaffleFilter = 'active' | 'completed';
+type PillTone = 'neutral' | 'green' | 'amber' | 'red' | 'blue' | 'ink';
 
 @Component({
   selector: 'app-admin-raffles',
   imports: [
     DatePipe,
-    RouterLink,
-    MatButtonModule,
-    MatButtonToggleModule,
-    MatCardModule,
     MatIconModule,
     MatProgressBarModule,
     MatSnackBarModule,
     MatTableModule,
+    PageHeader,
+    TableCard,
+    PillTabs,
+    Thumb,
+    Pill,
+    Btn,
   ],
   templateUrl: './raffles.html',
   styleUrl: './raffles.scss',
@@ -47,6 +53,18 @@ export class Raffles {
     );
   });
 
+  protected readonly filterTabs = computed<TabItem[]>(() => {
+    const rows = this.rows();
+    return [
+      { key: 'active', label: 'Activas', count: rows.filter((r) => r.status === 'scheduled').length },
+      {
+        key: 'completed',
+        label: 'Completadas',
+        count: rows.filter((r) => r.status === 'drawn' || r.status === 'void').length,
+      },
+    ];
+  });
+
   constructor() {
     void this.refresh();
   }
@@ -62,12 +80,16 @@ export class Raffles {
     }
   }
 
-  protected onFilterChange(next: RaffleFilter): void {
+  protected onFilterChange(next: string): void {
     if (next === 'active' || next === 'completed') this.filter.set(next);
   }
 
   protected goTo(productId: string): void {
     void this.router.navigate(['/admin/raffles', productId]);
+  }
+
+  protected goToNew(): void {
+    void this.router.navigate(['/admin/products/new'], { queryParams: { category: 'rifas' } });
   }
 
   protected statusLabel(status: RaffleSummaryRow['status']): string {
@@ -78,6 +100,17 @@ export class Raffles {
         return 'Sin participantes';
       default:
         return 'Programada';
+    }
+  }
+
+  protected statusTone(status: RaffleSummaryRow['status']): PillTone {
+    switch (status) {
+      case 'drawn':
+        return 'green';
+      case 'void':
+        return 'neutral';
+      default:
+        return 'blue';
     }
   }
 

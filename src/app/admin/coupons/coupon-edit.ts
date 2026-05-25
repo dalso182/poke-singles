@@ -24,10 +24,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ActivatedRoute } from '@angular/router';
 import { CouponsService } from '../../core/catalog/coupons.service';
+import { LabeledToggle } from '../../shared/table/controls/labeled-toggle/labeled-toggle';
 import { CategoriesService } from '../../core/catalog/categories.service';
 import type {
   CategoryRow,
@@ -49,8 +49,8 @@ import type {
     MatInputModule,
     MatProgressBarModule,
     MatSelectModule,
-    MatSlideToggleModule,
     MatSnackBarModule,
+    LabeledToggle,
   ],
   providers: [provideNativeDateAdapter()],
   templateUrl: './coupon-edit.html',

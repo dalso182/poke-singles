@@ -1,102 +1,54 @@
-.shipping-methods {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  max-width: 1100px;
-}
+// Métodos-specific bits only. Table look comes from `.app-table` + primitives.
 
-.shipping-methods__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-
-  h1 { margin: 4px 0 8px; }
-}
-
-.muted {
-  color: var(--text-secondary);
-  margin: 0;
+.shipping-methods__add {
+  margin-bottom: 16px;
 }
 
 .shipping-methods__add-form {
   display: grid;
-  grid-template-columns: 1fr 1.5fr 120px 100px auto;
+  grid-template-columns: 1fr 1.5fr 120px 100px auto auto;
   gap: 12px;
-  align-items: start;
-}
-
-.shipping-methods__filters {
-  display: flex;
   align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.shipping-methods__num-field {
-  width: 110px;
 }
 
 .shipping-methods__desc-field {
   min-width: 200px;
 }
 
-.shipping-methods__table-card {
-  padding: 0;
+.shipping-methods__num-field {
+  width: 110px;
+}
+
+.shipping-methods__tabs {
+  margin-bottom: 16px;
+}
+
+.shipping-methods__scroll {
   overflow-x: auto;
 }
 
-.shipping-methods__table {
-  width: 100%;
+.shipping-methods__price {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
 
-  // Keep every cell middle-aligned so toggles, buttons, and form-field
-  // outlines all sit on the same baseline — without this the row
-  // dividers visually shift between form-field cells and toggle cells.
-  td, th { vertical-align: middle; }
-  td { padding-block: 8px; }
-  mat-form-field { width: 100%; }
-
-  .mat-column-price {
-    width: 100px;
-    min-width: 100px;
-    max-width: 100px;
-  }
-
-  .mat-column-sort_order {
-    width: 90px;
-    min-width: 90px;
-    max-width: 90px;
-  }
-
-  .mat-column-requires_address {
-    width: 90px;
-    min-width: 90px;
-    max-width: 90px;
-    text-align: center;
-  }
-
-  .mat-column-is_active {
-    width: 70px;
-    min-width: 70px;
-    max-width: 70px;
-    text-align: center;
-  }
-
-  .mat-column-actions {
-    width: 140px;
-    min-width: 140px;
-    max-width: 140px;
-  }
+.shipping-methods__currency {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-tertiary);
 }
 
 .shipping-methods__actions {
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 6px;
 }
 
 .shipping-methods__empty {
-  padding: 24px;
+  padding: 32px 24px;
   text-align: center;
+  color: var(--text-secondary);
 }

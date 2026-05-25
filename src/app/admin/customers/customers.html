@@ -1,97 +1,86 @@
-<section class="customers">
-  <header class="customers__header admin-page-header">
-    <div>
-      <span class="brand-eyebrow">Operaciones</span>
-      <h1>Clientes</h1>
-      <p class="muted">Cuentas registradas y su actividad de compra.</p>
-    </div>
-  </header>
+<app-page-header
+  kicker="Operaciones"
+  title="Clientes"
+  sub="Cuentas registradas y su actividad de compra"
+/>
 
-  <mat-card class="customers__filters">
-    <mat-card-content>
-      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="customers__search">
-        <mat-label>Buscar</mat-label>
-        <input
-          matInput
-          [formControl]="searchControl"
-          autocomplete="off"
-          placeholder="nombre, email o teléfono"
-        />
-      </mat-form-field>
-    </mat-card-content>
-  </mat-card>
+<app-filter-bar>
+  <app-search-input [(value)]="searchText" placeholder="Buscar nombre, email o teléfono" />
+</app-filter-bar>
 
-  @if (loading()) {
-    <mat-progress-bar mode="indeterminate" />
-  }
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
 
-  <mat-card class="customers__table-card">
-    <table mat-table [dataSource]="rows()" class="customers__table">
+<app-table-card>
+  <div class="customers__scroll">
+    <table mat-table [dataSource]="rows()" class="app-table app-table--comfy">
       <ng-container matColumnDef="customer">
         <th mat-header-cell *matHeaderCellDef>Cliente</th>
         <td mat-cell *matCellDef="let row">
           <div class="customers__customer">
             <strong>{{ row.full_name || 'Sin nombre' }}</strong>
-            <small class="muted">{{ row.email }}</small>
+            <span class="customers__email">{{ row.email }}</span>
           </div>
         </td>
       </ng-container>
 
       <ng-container matColumnDef="phone">
         <th mat-header-cell *matHeaderCellDef>Teléfono</th>
-        <td mat-cell *matCellDef="let row">
+        <td mat-cell *matCellDef="let row" class="is-mono">
           @if (row.phone) {
             {{ row.phone }}
           } @else {
-            <span class="muted">—</span>
+            <span class="is-dim">—</span>
           }
         </td>
       </ng-container>
 
       <ng-container matColumnDef="orders">
-        <th mat-header-cell *matHeaderCellDef class="customers__num">Pedidos</th>
-        <td mat-cell *matCellDef="let row" class="customers__num">{{ row.order_count }}</td>
+        <th mat-header-cell *matHeaderCellDef class="is-right">Pedidos</th>
+        <td mat-cell *matCellDef="let row" class="is-right is-mono">{{ row.order_count }}</td>
       </ng-container>
 
       <ng-container matColumnDef="spent">
-        <th mat-header-cell *matHeaderCellDef class="customers__num">Total gastado</th>
-        <td mat-cell *matCellDef="let row" class="customers__num">
-          ₡{{ row.total_spent | number: '1.0-0' }}
+        <th mat-header-cell *matHeaderCellDef class="is-right">Total gastado</th>
+        <td mat-cell *matCellDef="let row" class="is-right">
+          <app-money [value]="row.total_spent" />
         </td>
       </ng-container>
 
       <ng-container matColumnDef="last">
         <th mat-header-cell *matHeaderCellDef>Último pedido</th>
-        <td mat-cell *matCellDef="let row">
+        <td mat-cell *matCellDef="let row" class="is-mono is-dim">
           @if (row.last_order_at) {
             {{ row.last_order_at | date: 'short' }}
           } @else {
-            <span class="muted">—</span>
+            —
           }
         </td>
       </ng-container>
 
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef></th>
-        <td mat-cell *matCellDef="let row">
-          <a mat-stroked-button [routerLink]="['/admin/customers', row.id]">Ver</a>
+        <td mat-cell *matCellDef="let row" class="is-right">
+          <app-btn variant="ghost" size="sm" (click)="goToView(row.id)">Ver</app-btn>
         </td>
       </ng-container>
 
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
       <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
     </table>
+  </div>
 
-    @if (!loading() && rows().length === 0) {
-      <p class="customers__empty muted">Sin clientes en este filtro.</p>
-    }
+  @if (!loading() && rows().length === 0) {
+    <p class="customers__empty">Sin clientes en este filtro.</p>
+  }
 
-    <mat-paginator
-      [length]="total()"
-      [pageSize]="pageSize()"
-      [pageSizeOptions]="[10, 25, 50, 100]"
-      [pageIndex]="page() - 1"
-      (page)="onPage($event)"
-    />
-  </mat-card>
-</section>
+  <app-pagination-footer
+    [page]="page()"
+    [perPage]="pageSize()"
+    [total]="total()"
+    [perPageOptions]="[10, 25, 50, 100]"
+    (pageChange)="onPage($event)"
+    (perPageChange)="onPerPage($event)"
+  />
+</app-table-card>

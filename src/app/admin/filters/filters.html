@@ -1,34 +1,17 @@
-<section class="filters">
-  <header class="admin-page-header">
-    <div>
-      <span class="brand-eyebrow">Catálogo</span>
-      <h1>Filtros</h1>
-      <p class="muted">
-        Clasificaciones por categoría — Rareza (multi) para singles, sub-tipos (uno) para
-        producto sellado y accesorios.
-      </p>
-    </div>
-  </header>
+<app-page-header
+  kicker="Catálogo"
+  title="Filtros"
+  sub="Clasificaciones por categoría — Rareza (multi) para singles, sub-tipos (uno) para producto sellado y accesorios"
+/>
 
-  <mat-tab-group animationDuration="0ms">
-    <mat-tab label="Singles">
-      <div class="filters__tab">
-        <app-admin-card-types [categoryId]="null" />
-      </div>
-    </mat-tab>
-    <mat-tab label="Producto sellado">
-      <div class="filters__tab">
-        @if (selladoId(); as id) {
-          <app-admin-card-types [categoryId]="id" slugPrefix="sellado-" />
-        }
-      </div>
-    </mat-tab>
-    <mat-tab label="Accesorios">
-      <div class="filters__tab">
-        @if (accesoriosId(); as id) {
-          <app-admin-card-types [categoryId]="id" slugPrefix="acc-" />
-        }
-      </div>
-    </mat-tab>
-  </mat-tab-group>
-</section>
+<app-underline-tabs [tabs]="tabs()" [(value)]="tab" />
+
+@if (ready()) {
+  <app-admin-card-types
+    [categoryId]="activeCategoryId()"
+    [slugPrefix]="activeSlugPrefix()"
+    (changed)="reloadCounts()"
+  />
+} @else {
+  <p class="filters__loading">Cargando…</p>
+}

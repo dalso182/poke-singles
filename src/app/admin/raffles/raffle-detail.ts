@@ -9,7 +9,6 @@ import {
 } from '@angular/core';
 import { DatePipe, DecimalPipe, isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
-import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -25,6 +24,11 @@ import type {
   RaffleBuyerRow,
   RaffleRow,
 } from '../../core/catalog/catalog.types';
+import { Pill } from '../../shared/table/cells/pill/pill';
+import { Btn } from '../../shared/table/controls/btn/btn';
+import { IconBtn } from '../../shared/table/controls/icon-btn/icon-btn';
+
+type PillTone = 'neutral' | 'green' | 'amber' | 'red' | 'blue' | 'ink';
 
 const PAID_STATUSES: readonly OrderStatus[] = ['paid', 'shipped', 'completed'];
 
@@ -34,13 +38,15 @@ const PAID_STATUSES: readonly OrderStatus[] = ['paid', 'shipped', 'completed'];
     DatePipe,
     DecimalPipe,
     RouterLink,
-    MatButtonModule,
     MatCardModule,
     MatIconModule,
     MatProgressBarModule,
     MatSnackBarModule,
     MatTableModule,
     MatTooltipModule,
+    Pill,
+    Btn,
+    IconBtn,
   ],
   templateUrl: './raffle-detail.html',
   styleUrl: './raffle-detail.scss',
@@ -138,6 +144,20 @@ export class RaffleDetail implements OnInit {
     }
   }
 
+  protected statusTone(s: OrderStatus): PillTone {
+    switch (s) {
+      case 'paid':
+      case 'completed':
+        return 'green';
+      case 'shipped':
+        return 'blue';
+      case 'cancelled':
+        return 'red';
+      default:
+        return 'amber';
+    }
+  }
+
   protected waLink(phone: string): string {
     const digits = phone.replace(/\D/g, '');
     const full = digits.length === 8 ? `506${digits}` : digits;
@@ -204,6 +224,10 @@ export class RaffleDetail implements OnInit {
 
   protected goBack(): void {
     void this.router.navigate(['/admin/raffles']);
+  }
+
+  protected editProduct(id: string): void {
+    void this.router.navigate(['/admin/products', id, 'edit']);
   }
 
   private errorMessage(err: unknown): string {

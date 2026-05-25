@@ -7,9 +7,9 @@ import { MAT_FORM_FIELD_DEFAULT_OPTIONS, MatFormFieldModule } from '@angular/mat
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AppSettingsService } from '../../core/settings/app-settings.service';
+import { LabeledToggle } from '../../shared/table/controls/labeled-toggle/labeled-toggle';
 import { SetsService } from '../../core/catalog/sets.service';
 import type { AppSettingsRow } from '../../core/catalog/catalog.types';
 
@@ -24,8 +24,8 @@ import type { AppSettingsRow } from '../../core/catalog/catalog.types';
     MatIconModule,
     MatInputModule,
     MatProgressBarModule,
-    MatSlideToggleModule,
     MatSnackBarModule,
+    LabeledToggle,
   ],
   templateUrl: './config.html',
   styleUrl: './config.scss',

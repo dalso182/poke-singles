@@ -1,70 +1,34 @@
-<section class="products-list">
-  <header class="products-list__header admin-page-header">
-    <div>
-      <span class="brand-eyebrow">Inventario</span>
-      <h1>Productos</h1>
-      <p class="muted">Catálogo completo. Buscar, filtrar, editar.</p>
-    </div>
-    <a mat-flat-button color="primary" routerLink="/admin/products/new">
-      <mat-icon>add</mat-icon>
-      Nuevo producto
-    </a>
-  </header>
+<app-page-header
+  kicker="Inventario"
+  title="Productos"
+  sub="Catálogo completo · Buscar, filtrar, editar"
+>
+  <app-btn variant="primary" (click)="goToNew()">
+    <mat-icon>add</mat-icon>
+    Nuevo producto
+  </app-btn>
+</app-page-header>
 
-  <mat-card class="products-list__filters">
-    <mat-card-content>
-      <div class="products-list__filter-row">
-        <mat-form-field appearance="outline" class="products-list__search">
-          <mat-label>Buscar</mat-label>
-          <input matInput [formControl]="searchControl" placeholder="Nombre, pokémon, slug…" />
-          <mat-icon matSuffix>search</mat-icon>
-        </mat-form-field>
+<app-filter-bar>
+  <app-search-input [(value)]="searchText" [width]="300" placeholder="Buscar" />
+  <app-dropdown label="Categoría" [options]="categoryOptions()" [(value)]="category" />
+  <app-dropdown label="Set" [options]="setOptions()" [(value)]="setId" [width]="220" />
+  <span class="spacer"></span>
+  <app-labeled-toggle [(on)]="includeInactive">Mostrar inactivos</app-labeled-toggle>
+  <app-labeled-toggle [(on)]="featuredOnly">Solo destacados</app-labeled-toggle>
+</app-filter-bar>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Categoría</mat-label>
-          <mat-select [formControl]="categoryControl">
-            <mat-option value="">Todas</mat-option>
-            @for (c of categoriesList(); track c.id) {
-              <mat-option [value]="c.id">{{ c.name }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
 
-        <mat-form-field appearance="outline">
-          <mat-label>Set</mat-label>
-          <mat-select [formControl]="setControl">
-            <mat-option value="">Todos</mat-option>
-            @for (s of setsList(); track s.id) {
-              <mat-option [value]="s.id">{{ s.code }} — {{ s.name }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-
-        <mat-slide-toggle [formControl]="includeInactiveControl">
-          Mostrar inactivos
-        </mat-slide-toggle>
-
-        <mat-slide-toggle [formControl]="featuredOnlyControl">
-          Solo destacados
-        </mat-slide-toggle>
-      </div>
-    </mat-card-content>
-  </mat-card>
-
-  @if (loading()) {
-    <mat-progress-bar mode="indeterminate" />
-  }
-
-  <mat-card class="products-list__table-card">
-    <table mat-table [dataSource]="rows()" class="products-list__table">
+<app-table-card>
+  <div class="products-list__scroll">
+    <table mat-table [dataSource]="rows()" class="app-table app-table--cozy">
       <ng-container matColumnDef="image">
         <th mat-header-cell *matHeaderCellDef></th>
         <td mat-cell *matCellDef="let row">
-          @if (row.image_url) {
-            <img [src]="row.image_url" alt="" class="products-list__thumb" />
-          } @else {
-            <div class="products-list__thumb products-list__thumb--empty"></div>
-          }
+          <app-thumb [src]="row.image_url" [lang]="row.language" />
         </td>
       </ng-container>
 
@@ -73,82 +37,70 @@
         <td mat-cell *matCellDef="let row">
           <div class="products-list__name">
             <strong>{{ row.name }}</strong>
-            <span class="brand-mono products-list__slug">{{ row.slug }}</span>
+            <span class="products-list__slug">{{ row.slug }}</span>
           </div>
         </td>
       </ng-container>
 
       <ng-container matColumnDef="set">
         <th mat-header-cell *matHeaderCellDef>Set</th>
-        <td mat-cell *matCellDef="let row" class="brand-mono">{{ setLabel(row.set_id) }}</td>
+        <td mat-cell *matCellDef="let row" class="is-mono is-dim">{{ setLabel(row.set_id) }}</td>
       </ng-container>
 
       <ng-container matColumnDef="condition">
         <th mat-header-cell *matHeaderCellDef>Cond.</th>
-        <td mat-cell *matCellDef="let row" class="brand-mono">{{ row.condition || '—' }}</td>
+        <td mat-cell *matCellDef="let row" class="is-mono is-dim">{{ row.condition || '—' }}</td>
       </ng-container>
 
       <ng-container matColumnDef="language">
         <th mat-header-cell *matHeaderCellDef>Idioma</th>
-        <td mat-cell *matCellDef="let row" class="brand-mono">{{ row.language }}</td>
+        <td mat-cell *matCellDef="let row" class="is-mono is-dim">{{ row.language }}</td>
       </ng-container>
 
       <ng-container matColumnDef="price">
-        <th mat-header-cell *matHeaderCellDef>Precio</th>
-        <td mat-cell *matCellDef="let row">
-          @if (row.sale_price != null && row.sale_price < row.price) {
-            <span class="price--sale">{{ formatPrice(row.sale_price) }}</span>
-            <span class="price--original">{{ formatPrice(row.price) }}</span>
-          } @else {
-            {{ formatPrice(row.price) }}
-          }
+        <th mat-header-cell *matHeaderCellDef class="is-right">Precio</th>
+        <td mat-cell *matCellDef="let row" class="is-right">
+          <app-money [value]="priceValue(row)" [original]="priceOriginal(row)" />
         </td>
       </ng-container>
 
       <ng-container matColumnDef="quantity">
-        <th mat-header-cell *matHeaderCellDef>Stock</th>
-        <td mat-cell *matCellDef="let row">
-          @if (row.quantity === 0) {
-            <span class="products-list__zero">0</span>
-          } @else {
-            {{ row.quantity }}
-          }
+        <th mat-header-cell *matHeaderCellDef class="is-right">Stock</th>
+        <td mat-cell *matCellDef="let row" class="is-right">
+          <app-stock [value]="row.quantity" [low]="3" />
         </td>
       </ng-container>
 
       <ng-container matColumnDef="restocked">
         <th mat-header-cell *matHeaderCellDef>Reabastecido</th>
-        <td mat-cell *matCellDef="let row" class="muted brand-mono">
-          {{ formatRestocked(row.last_restocked_at) }}
+        <td mat-cell *matCellDef="let row">
+          @let r = formatRestocked(row.last_restocked_at);
+          <span class="products-list__restock" [class.products-list__restock--today]="r === 'Hoy'">
+            {{ r }}
+          </span>
         </td>
       </ng-container>
 
       <ng-container matColumnDef="featured">
-        <th mat-header-cell *matHeaderCellDef>Destacado</th>
-        <td mat-cell *matCellDef="let row" (click)="$event.stopPropagation()">
-          <mat-checkbox
-            [checked]="row.featured"
-            (change)="onToggleFeatured(row, $event.checked)"
-          />
+        <th mat-header-cell *matHeaderCellDef class="is-center">Destacado</th>
+        <td mat-cell *matCellDef="let row" class="is-center" (click)="$event.stopPropagation()">
+          <app-checkbox [on]="row.featured" (change)="onToggleFeatured(row, $event)" />
         </td>
       </ng-container>
 
       <ng-container matColumnDef="active">
-        <th mat-header-cell *matHeaderCellDef>Activo</th>
-        <td mat-cell *matCellDef="let row" (click)="$event.stopPropagation()">
-          <mat-slide-toggle
-            [checked]="row.active"
-            (change)="onToggleActive(row, $event.checked)"
-          />
+        <th mat-header-cell *matHeaderCellDef class="is-center">Activo</th>
+        <td mat-cell *matCellDef="let row" class="is-center" (click)="$event.stopPropagation()">
+          <app-toggle [on]="row.active" (change)="onToggleActive(row, $event)" />
         </td>
       </ng-container>
 
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef></th>
-        <td mat-cell *matCellDef="let row" (click)="$event.stopPropagation()">
-          <button mat-icon-button (click)="goToEdit(row.id)" matTooltip="Editar">
+        <td mat-cell *matCellDef="let row" class="is-right" (click)="$event.stopPropagation()">
+          <app-icon-btn label="Editar" (click)="goToEdit(row.id)">
             <mat-icon>edit</mat-icon>
-          </button>
+          </app-icon-btn>
         </td>
       </ng-container>
 
@@ -161,19 +113,18 @@
         (click)="goToEdit(row.id)"
       ></tr>
     </table>
+  </div>
 
-    @if (!loading() && rows().length === 0) {
-      <p class="products-list__empty muted">
-        No hay productos que coincidan con los filtros.
-      </p>
-    }
+  @if (!loading() && rows().length === 0) {
+    <p class="products-list__empty">No hay productos que coincidan con los filtros.</p>
+  }
 
-    <mat-paginator
-      [length]="total()"
-      [pageSize]="pageSize()"
-      [pageIndex]="page() - 1"
-      [pageSizeOptions]="[25, 50, 100]"
-      (page)="onPageChange($event)"
-    />
-  </mat-card>
-</section>
+  <app-pagination-footer
+    [page]="page()"
+    [perPage]="pageSize()"
+    [total]="total()"
+    [perPageOptions]="[25, 50, 100]"
+    (pageChange)="onPage($event)"
+    (perPageChange)="onPerPage($event)"
+  />
+</app-table-card>

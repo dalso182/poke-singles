@@ -1,21 +1,21 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
-import { MatButtonModule } from '@angular/material/button';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
+import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { StaticPagesService } from '../../core/catalog/static-pages.service';
 import type { StaticPageRow } from '../../core/catalog/catalog.types';
+import { PageHeader } from '../../shared/table/page-header/page-header';
+import { PillTabs, type TabItem } from '../../shared/table/tabs/pill-tabs/pill-tabs';
+import { SearchInput } from '../../shared/table/controls/search-input/search-input';
+import { TableCard } from '../../shared/table/table-card/table-card';
+import { Pill } from '../../shared/table/cells/pill/pill';
+import { Btn } from '../../shared/table/controls/btn/btn';
+import { IconBtn } from '../../shared/table/controls/icon-btn/icon-btn';
 
 type PageFilter = 'all' | 'published' | 'unpublished' | 'deleted';
 
@@ -23,18 +23,17 @@ type PageFilter = 'all' | 'published' | 'unpublished' | 'deleted';
   selector: 'app-admin-pages-list',
   imports: [
     DatePipe,
-    ReactiveFormsModule,
-    RouterLink,
-    MatButtonModule,
-    MatButtonToggleModule,
-    MatCardModule,
-    MatFormFieldModule,
     MatIconModule,
-    MatInputModule,
     MatProgressBarModule,
     MatSnackBarModule,
     MatTableModule,
-    MatTooltipModule,
+    PageHeader,
+    PillTabs,
+    SearchInput,
+    TableCard,
+    Pill,
+    Btn,
+    IconBtn,
   ],
   templateUrl: './pages-list.html',
   styleUrl: './pages-list.scss',
@@ -42,27 +41,19 @@ type PageFilter = 'all' | 'published' | 'unpublished' | 'deleted';
 export class PagesList {
   private readonly service = inject(StaticPagesService);
   private readonly snack = inject(MatSnackBar);
+  private readonly router = inject(Router);
 
   protected readonly rows = signal<StaticPageRow[]>([]);
   protected readonly loading = signal(false);
   protected readonly saving = signal<string | null>(null);
   protected readonly filter = signal<PageFilter>('all');
-  protected readonly searchControl = new FormControl('', { nonNullable: true });
+  protected readonly searchText = signal('');
   private readonly searchValue = toSignal(
-    this.searchControl.valueChanges.pipe(
-      debounceTime(200),
-      distinctUntilChanged(),
-    ),
+    toObservable(this.searchText).pipe(debounceTime(200), distinctUntilChanged()),
     { initialValue: '' },
   );
 
-  protected readonly displayedColumns = [
-    'title',
-    'slug',
-    'is_published',
-    'updated_at',
-    'actions',
-  ];
+  protected readonly displayedColumns = ['title', 'slug', 'is_published', 'updated_at', 'actions'];
 
   protected readonly visibleRows = computed<StaticPageRow[]>(() => {
     const f = this.filter();
@@ -73,12 +64,27 @@ export class PagesList {
         if (!hay.includes(q)) return false;
       }
       switch (f) {
-        case 'all':         return !r.deleted_at;
-        case 'published':   return !r.deleted_at && r.is_published;
-        case 'unpublished': return !r.deleted_at && !r.is_published;
-        case 'deleted':     return !!r.deleted_at;
+        case 'all':
+          return !r.deleted_at;
+        case 'published':
+          return !r.deleted_at && r.is_published;
+        case 'unpublished':
+          return !r.deleted_at && !r.is_published;
+        case 'deleted':
+          return !!r.deleted_at;
       }
     });
+  });
+
+  protected readonly tabs = computed<TabItem[]>(() => {
+    const rows = this.rows();
+    const live = rows.filter((r) => !r.deleted_at);
+    return [
+      { key: 'all', label: 'Todas', count: live.length },
+      { key: 'published', label: 'Publicadas', count: live.filter((r) => r.is_published).length },
+      { key: 'unpublished', label: 'No publicadas', count: live.filter((r) => !r.is_published).length },
+      { key: 'deleted', label: 'Eliminadas', count: rows.filter((r) => !!r.deleted_at).length },
+    ];
   });
 
   constructor() {
@@ -97,21 +103,18 @@ export class PagesList {
     }
   }
 
-  protected onFilterChange(next: PageFilter): void {
-    if (!['all', 'published', 'unpublished', 'deleted'].includes(next)) return;
-    this.filter.set(next);
+  protected onFilterChange(next: string): void {
+    if (next === 'all' || next === 'published' || next === 'unpublished' || next === 'deleted') {
+      this.filter.set(next);
+    }
   }
 
-  protected async onTogglePublished(row: StaticPageRow, published: boolean): Promise<void> {
-    this.saving.set(row.id);
-    try {
-      await this.service.update(row.id, { is_published: published });
-      await this.refresh();
-    } catch (err) {
-      this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
-    } finally {
-      this.saving.set(null);
-    }
+  protected goToNew(): void {
+    this.router.navigate(['/admin/pages/new']);
+  }
+
+  protected goToEdit(id: string): void {
+    this.router.navigate(['/admin/pages', id, 'edit']);
   }
 
   protected async onDelete(row: StaticPageRow): Promise<void> {
@@ -119,7 +122,8 @@ export class PagesList {
     try {
       await this.service.softDelete(row.id);
       await this.refresh();
-      this.snack.open('Página eliminada', 'Deshacer', { duration: 5000 })
+      this.snack
+        .open('Página eliminada', 'Deshacer', { duration: 5000 })
         .onAction()
         .subscribe(() => void this.onRestore(row.id));
     } catch (err) {

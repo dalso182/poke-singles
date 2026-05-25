@@ -6,6 +6,7 @@
 @use './styles/brand-tokens';
 @use './styles/material-overrides';
 @use './styles/brand-utilities';
+@use './styles/admin-table';
 
 html {
   height: 100%;
@@ -49,4 +50,6 @@ body {
   background: var(--mat-sys-surface);
   color: var(--mat-sys-on-surface);
   font: var(--mat-sys-body-medium);
+  // Align digits in money/stock/count columns.
+  font-variant-numeric: tabular-nums;
 }

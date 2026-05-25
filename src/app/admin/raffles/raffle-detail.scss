@@ -100,19 +100,34 @@
   margin-bottom: 12px;
 }
 
-.raffle-detail__table {
-  width: 100%;
-  background: transparent;
+.raffle-detail__scroll {
+  overflow-x: auto;
 }
 
-.raffle-detail__num {
-  text-align: right;
+.raffle-detail__orderlink {
+  color: var(--brand-blue);
+  font-weight: 700;
+  text-decoration: none;
 }
 
-.raffle-detail__row--winner {
+.raffle-detail__contact {
+  color: var(--brand-blue);
+  text-decoration: none;
+}
+
+.raffle-detail__email {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-tertiary);
+}
+
+// Winner row keeps its amber highlight on top of the .app-table styling.
+.raffle-detail__row--winner.mat-mdc-row {
   background: color-mix(in srgb, var(--accent-amber) 14%, transparent);
 
-  td {
+  .mat-mdc-cell {
     font-weight: 700;
   }
 }

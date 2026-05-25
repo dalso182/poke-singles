@@ -1,0 +1,130 @@
+// Admin table system — shared tokens + the global `.app-table` look.
+// Built from the design_handoff_admin_tables spec. Page components compose the
+// app-* primitives (src/app/shared/table/); this file owns the tokens those
+// primitives reference and the styling of the underlying mat-table.
+//
+// Brand-red rule still applies: the "red" semantic tone here is --danger
+// (#b91c1c), NOT --brand-red. See _brand-tokens.scss.
+
+:root {
+  // Tico Blue as a flat brand value (the M3 --mat-sys-primary is a tonal
+  // variant, not exactly #1E3A8A, so the table system uses these directly).
+  --brand-blue: #1e3a8a;
+  --brand-blue-soft: #e8edf8;
+  --brand-blue-edge: #c7d2ea;
+
+  // Pill soft/edge/text tokens not already in _brand-tokens.scss.
+  // (--accent-amber/-soft, --success, --danger, --brand-red-soft,
+  //  --surface-tonal, --border-subtle/-strong, --text-* already exist.)
+  --amber-edge: #efd7a4;
+  --amber-text: #8c5f0e; // readable amber text on amber-soft fills
+  --green-soft: #ddf0e5;
+  --green-edge: #bfe0cd;
+  --red-edge: #f0c7cc;
+
+  // Subtle warm row hover for table rows.
+  --row-hover: #faf9f5;
+}
+
+// ── The shared table look ────────────────────────────────────────────────
+// Applied to `<table mat-table class="app-table app-table--comfy|--cozy">`.
+// Lives in the global sheet (not a component) so it reaches mat-table's
+// generated header/row/cell elements.
+.app-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-brand);
+
+  // Header row
+  .mat-mdc-header-row {
+    height: 40px;
+    background: var(--surface-tonal);
+  }
+
+  .mat-mdc-header-cell {
+    padding: 0 16px;
+    border-top: none;
+    border-bottom: 1px solid var(--border-subtle);
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+  }
+
+  // Body rows
+  .mat-mdc-row {
+    transition: background 0.1s ease;
+  }
+
+  .mat-mdc-row:hover {
+    background: var(--row-hover);
+  }
+
+  .mat-mdc-cell {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-subtle);
+    font-family: var(--font-brand);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: -0.1px;
+    color: var(--text-primary);
+    vertical-align: middle;
+  }
+
+  // Last row carries no divider (the card border closes it off).
+  .mat-mdc-row:last-child .mat-mdc-cell {
+    border-bottom: none;
+  }
+
+  // Uniform 16px gutters (override Material's 24px first/last padding).
+  .mat-mdc-header-cell:first-of-type,
+  .mat-mdc-cell:first-of-type {
+    padding-left: 16px;
+  }
+
+  .mat-mdc-header-cell:last-of-type,
+  .mat-mdc-cell:last-of-type {
+    padding-right: 16px;
+  }
+
+  // Cell modifier classes (put on the <th>/<td>)
+  .is-mono {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    letter-spacing: 0.4px;
+  }
+  .is-dim {
+    color: var(--text-tertiary);
+  }
+  .is-right {
+    text-align: right;
+  }
+  .is-center {
+    text-align: center;
+  }
+}
+
+// Row density
+.app-table--comfy .mat-mdc-row {
+  height: 60px;
+}
+.app-table--cozy .mat-mdc-row {
+  height: 76px;
+}
+
+// Slug chip — mono pill used in Páginas (slug) and Filtros (slug).
+.app-slug-chip {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.4px;
+  color: var(--text-secondary);
+  background: var(--surface-tonal);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  padding: 3px 8px;
+}

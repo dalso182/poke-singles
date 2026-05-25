@@ -1,49 +1,24 @@
-<section class="orders">
-  <header class="orders__header admin-page-header">
-    <div>
-      <span class="brand-eyebrow">Operaciones</span>
-      <h1>Pedidos</h1>
-      <p class="muted">Recibos, comprobantes y entregas.</p>
-    </div>
-  </header>
+<app-page-header kicker="Operaciones" title="Pedidos" sub="Recibos, comprobantes y entregas" />
 
-  <mat-card class="orders__filters">
-    <mat-card-content class="orders__filters-row">
-      <mat-button-toggle-group
-        [formControl]="statusControl"
-        aria-label="Filtrar por estado"
-        hideSingleSelectionIndicator
-      >
-        <mat-button-toggle value="all">Todos</mat-button-toggle>
-        <mat-button-toggle value="pending">Pendientes</mat-button-toggle>
-        <mat-button-toggle value="paid">Pagados</mat-button-toggle>
-        <mat-button-toggle value="completed">Completados</mat-button-toggle>
-        <mat-button-toggle value="cancelled">Cancelados</mat-button-toggle>
-      </mat-button-toggle-group>
-      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="orders__search">
-        <mat-label>Buscar</mat-label>
-        <input matInput [formControl]="searchControl" autocomplete="off" placeholder="email, nombre o #7300" />
-      </mat-form-field>
-      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="orders__payment">
-        <mat-label>Pago</mat-label>
-        <mat-select [formControl]="paymentControl">
-          <mat-option value="all">Todos</mat-option>
-          <mat-option value="sinpe_or_transfer">SINPE / Transferencia</mat-option>
-          <mat-option value="payment_link">Enlace de pago</mat-option>
-        </mat-select>
-      </mat-form-field>
-    </mat-card-content>
-  </mat-card>
+<app-filter-bar>
+  <app-pill-tabs [tabs]="statusTabs()" [(value)]="status" />
+  <app-search-input [(value)]="searchText" placeholder="Buscar pedido, cliente, SKU…" />
+  <span class="spacer"></span>
+  <app-dropdown label="Pago" [options]="paymentOptions" [(value)]="payment" [width]="200" />
+</app-filter-bar>
 
-  @if (loading()) {
-    <mat-progress-bar mode="indeterminate" />
-  }
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
 
-  <mat-card class="orders__table-card">
-    <table mat-table [dataSource]="rows()" class="orders__table">
+<app-table-card>
+  <div class="orders__scroll">
+    <table mat-table [dataSource]="rows()" class="app-table app-table--comfy">
       <ng-container matColumnDef="ref">
         <th mat-header-cell *matHeaderCellDef>Pedido</th>
-        <td mat-cell *matCellDef="let row" class="brand-mono">{{ shortRef(row.order_number) }}</td>
+        <td mat-cell *matCellDef="let row" class="is-mono">
+          <span class="orders__hash">#</span><strong>{{ shortRef(row.order_number) }}</strong>
+        </td>
       </ng-container>
 
       <ng-container matColumnDef="customer">
@@ -51,15 +26,15 @@
         <td mat-cell *matCellDef="let row">
           <div class="orders__customer">
             <strong>{{ row.customer_name }}</strong>
-            <small class="muted">{{ row.customer_email }}</small>
+            <span class="orders__email">{{ row.customer_email }}</span>
           </div>
         </td>
       </ng-container>
 
       <ng-container matColumnDef="total">
-        <th mat-header-cell *matHeaderCellDef class="orders__num">Total</th>
-        <td mat-cell *matCellDef="let row" class="orders__num">
-          ₡{{ row.total | number: '1.0-0' }}
+        <th mat-header-cell *matHeaderCellDef class="is-right">Total</th>
+        <td mat-cell *matCellDef="let row" class="is-right">
+          <app-money [value]="row.total" />
         </td>
       </ng-container>
 
@@ -74,22 +49,20 @@
           @switch (proofKind(row.payment_proof_url)) {
             @case ('file') {
               <button
-                mat-icon-button
                 type="button"
+                class="orders__proof-btn"
                 (click)="openProof(row)"
-                matTooltip="Abrir comprobante"
+                title="Abrir comprobante"
                 aria-label="Abrir comprobante"
               >
-                <mat-icon>image</mat-icon>
+                <app-pill tone="green" [dot]="true">Recibido</app-pill>
               </button>
             }
             @case ('whatsapp') {
-              <span class="orders__whatsapp" matTooltip="Comprobante enviado por WhatsApp">
-                <mat-icon>chat</mat-icon>
-              </span>
+              <app-pill tone="green" [dot]="true">WhatsApp</app-pill>
             }
             @default {
-              <span class="muted">—</span>
+              <span class="is-mono is-dim">—</span>
             }
           }
         </td>
@@ -98,38 +71,39 @@
       <ng-container matColumnDef="status">
         <th mat-header-cell *matHeaderCellDef>Estado</th>
         <td mat-cell *matCellDef="let row">
-          <span class="order-status order-status--{{ row.status }}">
-            {{ statusLabel(row.status) }}
-          </span>
+          <app-pill [tone]="statusTone(row.status)">{{ statusLabel(row.status) }}</app-pill>
         </td>
       </ng-container>
 
       <ng-container matColumnDef="date">
         <th mat-header-cell *matHeaderCellDef>Fecha</th>
-        <td mat-cell *matCellDef="let row">{{ row.created_at | date: 'short' }}</td>
+        <td mat-cell *matCellDef="let row" class="is-mono is-dim">
+          {{ row.created_at | date: 'short' }}
+        </td>
       </ng-container>
 
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef></th>
-        <td mat-cell *matCellDef="let row">
-          <a mat-stroked-button [routerLink]="['/admin/orders', row.id]">Ver</a>
+        <td mat-cell *matCellDef="let row" class="is-right">
+          <app-btn variant="ghost" size="sm" (click)="goToView(row.id)">Ver</app-btn>
         </td>
       </ng-container>
 
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
       <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
     </table>
+  </div>
 
-    @if (!loading() && rows().length === 0) {
-      <p class="orders__empty muted">Sin pedidos en este filtro.</p>
-    }
+  @if (!loading() && rows().length === 0) {
+    <p class="orders__empty">Sin pedidos en este filtro.</p>
+  }
 
-    <mat-paginator
-      [length]="total()"
-      [pageSize]="pageSize()"
-      [pageSizeOptions]="[10, 25, 50, 100]"
-      [pageIndex]="page() - 1"
-      (page)="onPage($event)"
-    />
-  </mat-card>
-</section>
+  <app-pagination-footer
+    [page]="page()"
+    [perPage]="pageSize()"
+    [total]="total()"
+    [perPageOptions]="[10, 25, 50, 100]"
+    (pageChange)="onPage($event)"
+    (perPageChange)="onPerPage($event)"
+  />
+</app-table-card>

@@ -1,75 +1,32 @@
-.pages-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  max-width: 1100px;
-}
+// Páginas-specific bits only. Table look comes from `.app-table` + primitives.
 
-.pages-list__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-
-  h1 { margin: 4px 0 8px; }
-}
-
-.muted {
-  color: var(--text-secondary);
-  margin: 0;
-}
-
-.pages-list__filters {
+.pages-list__toolbar {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+  margin-bottom: 16px;
 }
 
-.pages-list__search {
-  flex: 1;
-  min-width: 220px;
-  max-width: 360px;
-}
-
-.pages-list__table-card {
-  padding: 0;
+.pages-list__scroll {
   overflow-x: auto;
 }
 
-.pages-list__table {
-  width: 100%;
-
-  td, th { vertical-align: middle; }
-  td { padding-block: 10px; }
-}
-
-.pages-list__pill {
-  display: inline-block;
-  padding: 2px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.4px;
-
-  &--on {
-    background: rgba(34, 197, 94, 0.14);
-    color: #166534;
-  }
-  &--off {
-    background: var(--surface-tonal);
-    color: var(--text-secondary);
-  }
+.pages-list__title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
 .pages-list__actions {
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 6px;
 }
 
 .pages-list__empty {
-  padding: 24px;
+  padding: 32px 24px;
   text-align: center;
+  color: var(--text-secondary);
 }

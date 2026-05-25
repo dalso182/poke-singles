@@ -1,21 +1,22 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { DatePipe, DecimalPipe } from '@angular/common';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { DatePipe } from '@angular/common';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
-import { MatButtonModule } from '@angular/material/button';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
+import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { CouponsService } from '../../core/catalog/coupons.service';
 import type { CouponRow } from '../../core/catalog/catalog.types';
+import { PageHeader } from '../../shared/table/page-header/page-header';
+import { TableCard } from '../../shared/table/table-card/table-card';
+import { PillTabs, type TabItem } from '../../shared/table/tabs/pill-tabs/pill-tabs';
+import { SearchInput } from '../../shared/table/controls/search-input/search-input';
+import { Money } from '../../shared/table/cells/money-cell/money-cell';
+import { ToggleSwitch } from '../../shared/table/controls/toggle-switch/toggle-switch';
+import { Btn } from '../../shared/table/controls/btn/btn';
+import { IconBtn } from '../../shared/table/controls/icon-btn/icon-btn';
 
 type CouponFilter = 'active' | 'inactive' | 'expired' | 'deleted';
 
@@ -23,19 +24,18 @@ type CouponFilter = 'active' | 'inactive' | 'expired' | 'deleted';
   selector: 'app-admin-coupons',
   imports: [
     DatePipe,
-    DecimalPipe,
-    ReactiveFormsModule,
-    RouterLink,
-    MatButtonModule,
-    MatButtonToggleModule,
-    MatCardModule,
-    MatFormFieldModule,
     MatIconModule,
-    MatInputModule,
     MatProgressBarModule,
-    MatSlideToggleModule,
     MatSnackBarModule,
     MatTableModule,
+    PageHeader,
+    TableCard,
+    PillTabs,
+    SearchInput,
+    Money,
+    ToggleSwitch,
+    Btn,
+    IconBtn,
   ],
   templateUrl: './coupons.html',
   styleUrl: './coupons.scss',
@@ -43,17 +43,15 @@ type CouponFilter = 'active' | 'inactive' | 'expired' | 'deleted';
 export class Coupons {
   private readonly service = inject(CouponsService);
   private readonly snack = inject(MatSnackBar);
+  private readonly router = inject(Router);
 
   protected readonly rows = signal<CouponRow[]>([]);
   protected readonly loading = signal(false);
   protected readonly saving = signal<string | null>(null);
   protected readonly filter = signal<CouponFilter>('active');
-  protected readonly searchControl = new FormControl('', { nonNullable: true });
+  protected readonly searchText = signal('');
   private readonly searchValue = toSignal(
-    this.searchControl.valueChanges.pipe(
-      debounceTime(200),
-      distinctUntilChanged(),
-    ),
+    toObservable(this.searchText).pipe(debounceTime(200), distinctUntilChanged()),
     { initialValue: '' },
   );
 
@@ -76,12 +74,28 @@ export class Coupons {
       if (q && !r.code.toLowerCase().includes(q)) return false;
       const expired = new Date(r.expires_at).getTime() <= now;
       switch (f) {
-        case 'active':   return !r.deleted_at && r.is_active && !expired;
-        case 'inactive': return !r.deleted_at && !r.is_active;
-        case 'expired':  return !r.deleted_at && expired;
-        case 'deleted':  return !!r.deleted_at;
+        case 'active':
+          return !r.deleted_at && r.is_active && !expired;
+        case 'inactive':
+          return !r.deleted_at && !r.is_active;
+        case 'expired':
+          return !r.deleted_at && expired;
+        case 'deleted':
+          return !!r.deleted_at;
       }
     });
+  });
+
+  protected readonly filterTabs = computed<TabItem[]>(() => {
+    const rows = this.rows();
+    const now = Date.now();
+    const isExp = (r: CouponRow) => new Date(r.expires_at).getTime() <= now;
+    return [
+      { key: 'active', label: 'Activos', count: rows.filter((r) => !r.deleted_at && r.is_active && !isExp(r)).length },
+      { key: 'inactive', label: 'Inactivos', count: rows.filter((r) => !r.deleted_at && !r.is_active).length },
+      { key: 'expired', label: 'Vencidos', count: rows.filter((r) => !r.deleted_at && isExp(r)).length },
+      { key: 'deleted', label: 'Eliminados', count: rows.filter((r) => !!r.deleted_at).length },
+    ];
   });
 
   constructor() {
@@ -100,9 +114,18 @@ export class Coupons {
     }
   }
 
-  protected onFilterChange(next: CouponFilter): void {
-    if (!['active', 'inactive', 'expired', 'deleted'].includes(next)) return;
-    this.filter.set(next);
+  protected onFilterChange(next: string): void {
+    if (next === 'active' || next === 'inactive' || next === 'expired' || next === 'deleted') {
+      this.filter.set(next);
+    }
+  }
+
+  protected goToNew(): void {
+    this.router.navigate(['/admin/coupons/new']);
+  }
+
+  protected goToEdit(id: string): void {
+    this.router.navigate(['/admin/coupons', id, 'edit']);
   }
 
   protected async onToggleActive(row: CouponRow, active: boolean): Promise<void> {
@@ -122,7 +145,8 @@ export class Coupons {
     try {
       await this.service.softDelete(row.id);
       await this.refresh();
-      this.snack.open('Cupón eliminado', 'Deshacer', { duration: 5000 })
+      this.snack
+        .open('Cupón eliminado', 'Deshacer', { duration: 5000 })
         .onAction()
         .subscribe(() => void this.onRestore(row.id));
     } catch (err) {

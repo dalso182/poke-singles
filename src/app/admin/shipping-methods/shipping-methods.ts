@@ -1,36 +1,44 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { ShippingMethodsService } from '../../core/catalog/shipping-methods.service';
 import type { ShippingMethodRow } from '../../core/catalog/catalog.types';
+import { PageHeader } from '../../shared/table/page-header/page-header';
+import { PillTabs, type TabItem } from '../../shared/table/tabs/pill-tabs/pill-tabs';
+import { TableCard } from '../../shared/table/table-card/table-card';
+import { EditableInput } from '../../shared/table/controls/editable-input/editable-input';
+import { ToggleSwitch } from '../../shared/table/controls/toggle-switch/toggle-switch';
+import { LabeledToggle } from '../../shared/table/controls/labeled-toggle/labeled-toggle';
+import { Btn } from '../../shared/table/controls/btn/btn';
+import { IconBtn } from '../../shared/table/controls/icon-btn/icon-btn';
 
 type ShippingFilter = 'active' | 'inactive' | 'deleted';
 
 @Component({
   selector: 'app-admin-shipping-methods',
   imports: [
-    DecimalPipe,
     ReactiveFormsModule,
-    MatButtonModule,
-    MatButtonToggleModule,
     MatCardModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
     MatProgressBarModule,
-    MatSlideToggleModule,
     MatSnackBarModule,
     MatTableModule,
+    PageHeader,
+    PillTabs,
+    TableCard,
+    EditableInput,
+    ToggleSwitch,
+    LabeledToggle,
+    Btn,
+    IconBtn,
   ],
   templateUrl: './shipping-methods.html',
   styleUrl: './shipping-methods.scss',
@@ -69,11 +77,23 @@ export class ShippingMethods {
     const f = this.filter();
     return this.rows().filter((r) => {
       switch (f) {
-        case 'active':   return !r.deleted_at && r.is_active;
-        case 'inactive': return !r.deleted_at && !r.is_active;
-        case 'deleted':  return !!r.deleted_at;
+        case 'active':
+          return !r.deleted_at && r.is_active;
+        case 'inactive':
+          return !r.deleted_at && !r.is_active;
+        case 'deleted':
+          return !!r.deleted_at;
       }
     });
+  });
+
+  protected readonly tabs = computed<TabItem[]>(() => {
+    const rows = this.rows();
+    return [
+      { key: 'active', label: 'Activos', count: rows.filter((r) => !r.deleted_at && r.is_active).length },
+      { key: 'inactive', label: 'Inactivos', count: rows.filter((r) => !r.deleted_at && !r.is_active).length },
+      { key: 'deleted', label: 'Eliminados', count: rows.filter((r) => !!r.deleted_at).length },
+    ];
   });
 
   constructor() {
@@ -109,9 +129,34 @@ export class ShippingMethods {
     return this.editForms.get(id)!;
   }
 
-  protected onFilterChange(next: ShippingFilter): void {
-    if (!['active', 'inactive', 'deleted'].includes(next)) return;
-    this.filter.set(next);
+  // Bridges between the FormControls (kept for validation + dirty tracking) and
+  // the signal-based EditableInput / ToggleSwitch primitives.
+  protected val(id: string, name: string): string {
+    return String(this.formFor(id).get(name)!.value ?? '');
+  }
+  protected boolVal(id: string, name: string): boolean {
+    return !!this.formFor(id).get(name)!.value;
+  }
+  protected setText(id: string, name: string, value: string): void {
+    const c = this.formFor(id).get(name)!;
+    c.setValue(value);
+    c.markAsDirty();
+  }
+  protected setNum(id: string, name: string, value: string): void {
+    const c = this.formFor(id).get(name)!;
+    c.setValue(Number(value) || 0);
+    c.markAsDirty();
+  }
+  protected setBool(id: string, name: string, value: boolean): void {
+    const c = this.formFor(id).get(name)!;
+    c.setValue(value);
+    c.markAsDirty();
+  }
+
+  protected onFilterChange(next: string): void {
+    if (next === 'active' || next === 'inactive' || next === 'deleted') {
+      this.filter.set(next);
+    }
   }
 
   protected async onAdd(): Promise<void> {
@@ -176,7 +221,8 @@ export class ShippingMethods {
     try {
       await this.service.softDelete(row.id);
       await this.refresh();
-      this.snack.open('Método eliminado', 'Deshacer', { duration: 5000 })
+      this.snack
+        .open('Método eliminado', 'Deshacer', { duration: 5000 })
         .onAction()
         .subscribe(() => void this.onRestore(row.id));
     } catch (err) {

@@ -1,79 +1,34 @@
-.raffles {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  max-width: 1100px;
+// Rifas-list-specific bits only. Table look comes from `.app-table` + primitives.
+
+.raffles__tabs {
+  margin-bottom: 16px;
 }
 
-.raffles__filters {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
+.raffles__scroll {
+  overflow-x: auto;
 }
 
-.raffles__table-card {
-  padding: 0;
-  overflow: hidden;
+.raffles__name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
-.raffles__table {
-  width: 100%;
-
-  .mat-mdc-header-cell,
-  .mat-mdc-cell {
-    padding-top: 14px;
-    padding-bottom: 14px;
-  }
+.raffles__inactive {
+  font-size: 12px;
+  color: var(--text-tertiary);
 }
 
-.raffles__thumb {
-  width: 40px;
-  height: 56px;
-  object-fit: cover;
-  border-radius: 3px;
-  display: block;
+.raffles__entries {
+  margin-right: 8px;
 }
 
 .raffles__row {
   cursor: pointer;
-
-  &:hover {
-    background: var(--mat-sys-surface-variant);
-  }
-}
-
-.raffles__unpaid {
-  display: inline-block;
-  margin-left: 6px;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--danger);
-  background: #fee2e2;
-  padding: 1px 7px;
-  border-radius: 999px;
-}
-
-.raffle-status {
-  display: inline-block;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: var(--surface-tonal);
-  color: var(--text-secondary);
-
-  &--scheduled { background: #dbeafe; color: #1d4ed8; }
-  &--drawn     { background: #dcfce7; color: var(--success); }
-  &--void      { background: var(--surface-tonal); color: var(--text-tertiary); }
-}
-
-.muted {
-  color: var(--text-secondary);
 }
 
 .raffles__empty {
-  padding: 32px 16px;
+  padding: 32px 24px;
   text-align: center;
+  color: var(--text-secondary);
 }

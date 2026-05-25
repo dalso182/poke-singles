@@ -23,11 +23,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { SetTypeahead } from '../../shared/set-typeahead/set-typeahead';
+import { LabeledToggle } from '../../shared/table/controls/labeled-toggle/labeled-toggle';
 import {
   ImagePickerDialog,
   type ImagePickerResult,
@@ -66,9 +66,9 @@ const CARD_CATEGORY_SLUGS = ['singles', 'graded'];
     MatInputModule,
     MatProgressBarModule,
     MatSelectModule,
-    MatSlideToggleModule,
     MatSnackBarModule,
     MatTooltipModule,
+    LabeledToggle,
   ],
   templateUrl: './product-edit.html',
   styleUrl: './product-edit.scss',

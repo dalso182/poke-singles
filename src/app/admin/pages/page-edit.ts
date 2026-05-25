@@ -20,9 +20,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { StaticPagesService } from '../../core/catalog/static-pages.service';
+import { LabeledToggle } from '../../shared/table/controls/labeled-toggle/labeled-toggle';
 import type {
   StaticPageInsert,
   StaticPageRow,
@@ -39,8 +39,8 @@ import type {
     MatIconModule,
     MatInputModule,
     MatProgressBarModule,
-    MatSlideToggleModule,
     MatSnackBarModule,
+    LabeledToggle,
   ],
   templateUrl: './page-edit.html',
   styleUrl: './page-edit.scss',
