@@ -14,20 +14,20 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
-import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
+import { ActivatedRoute, Router } from '@angular/router';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { ActivatedRoute } from '@angular/router';
 import { CouponsService } from '../../core/catalog/coupons.service';
 import { LabeledToggle } from '../../shared/table/controls/labeled-toggle/labeled-toggle';
+import { BackHeader } from '../../shared/forms/back-header/back-header';
+import { FormSection } from '../../shared/forms/form-section/form-section';
+import { FormGrid } from '../../shared/forms/form-grid/form-grid';
+import { FormFooter } from '../../shared/forms/form-footer/form-footer';
 import { CategoriesService } from '../../core/catalog/categories.service';
 import type {
   CategoryRow,
@@ -40,17 +40,17 @@ import type {
   selector: 'app-admin-coupon-edit',
   imports: [
     ReactiveFormsModule,
-    RouterLink,
-    MatButtonModule,
-    MatCardModule,
     MatDatepickerModule,
     MatFormFieldModule,
-    MatIconModule,
     MatInputModule,
     MatProgressBarModule,
     MatSelectModule,
     MatSnackBarModule,
     LabeledToggle,
+    BackHeader,
+    FormSection,
+    FormGrid,
+    FormFooter,
   ],
   providers: [provideNativeDateAdapter()],
   templateUrl: './coupon-edit.html',
@@ -159,6 +159,10 @@ export class CouponEdit implements OnInit {
     const ctrl = this.form.controls['code'];
     const next = (ctrl.value ?? '').trim().toUpperCase();
     if (next !== ctrl.value) ctrl.setValue(next, { emitEvent: false });
+  }
+
+  protected cancel(): void {
+    void this.router.navigate(['/admin/coupons']);
   }
 
   protected async onSubmit(): Promise<void> {

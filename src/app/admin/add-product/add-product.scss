@@ -1,125 +1,38 @@
+// Add-product form. Field + section look comes from _admin-forms.scss + shared
+// form primitives. Only page width, the TCGdex picker stack, and the preview
+// detail lines remain here.
 .add-product {
   max-width: 900px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
-.add-product__header {
-  padding-bottom: 8px;
-
-  .brand-eyebrow {
-    display: block;
-    margin-bottom: 6px;
-  }
-
-  h1 {
-    margin: 0 0 10px;
-  }
-}
-
-.muted {
-  color: var(--mat-sys-on-surface-variant);
-  margin: 0;
-}
-
-.add-product__warning {
-  background: var(--mat-sys-tertiary-container);
-
-  p {
-    margin: 0 0 12px;
-  }
-}
-
-.add-product__panel {
-  padding: 8px;
+.add-product__warning p {
+  margin: 0 0 12px;
 }
 
 .add-product__picker {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding-top: 4px;
-}
-
-.add-product__manual-link {
-  margin-top: 4px;
-  align-self: flex-start;
 }
 
 .add-product__form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
-.add-product__card-preview {
-  background: var(--mat-sys-surface-variant);
-}
-
-.add-product__preview-row {
-  display: flex;
-  gap: 16px;
-  align-items: flex-start;
-
-  h2 {
-    margin: 4px 0;
-  }
-
-  p {
-    margin: 4px 0 12px;
-  }
-}
-
-.add-product__thumb {
-  width: 180px;
-  height: 252px;
-  object-fit: contain;
-  border-radius: 4px;
-  display: block;
-  flex-shrink: 0;
-}
-
-.add-product__grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px 16px;
-
-  mat-form-field,
-  app-set-typeahead {
-    align-self: start;
-  }
-}
-
-.add-product__full {
-  grid-column: 1 / -1;
-}
-
-.add-product__featured {
-  padding: 4px 0;
-}
-
-.add-product__actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding-top: 8px;
-}
-
-.card-types-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px 16px;
-}
-
+// Detail lines projected into app-selected-card-preview.
 .add-product__tcgdex-meta {
-  color: var(--mat-sys-on-surface-variant);
+  margin: 8px 0 0;
   font-size: 12px;
-  margin: 4px 0;
+  color: var(--text-secondary);
 }
 
 .add-product__preview-missing {
-  color: var(--mat-sys-error);
+  margin: 8px 0 0;
   font-size: 12px;
-  margin: 4px 0;
+  color: var(--danger);
 }

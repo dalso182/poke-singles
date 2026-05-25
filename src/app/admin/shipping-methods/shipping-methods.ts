@@ -1,6 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -12,6 +11,7 @@ import type { ShippingMethodRow } from '../../core/catalog/catalog.types';
 import { PageHeader } from '../../shared/table/page-header/page-header';
 import { PillTabs, type TabItem } from '../../shared/table/tabs/pill-tabs/pill-tabs';
 import { TableCard } from '../../shared/table/table-card/table-card';
+import { FormSection } from '../../shared/forms/form-section/form-section';
 import { EditableInput } from '../../shared/table/controls/editable-input/editable-input';
 import { ToggleSwitch } from '../../shared/table/controls/toggle-switch/toggle-switch';
 import { LabeledToggle } from '../../shared/table/controls/labeled-toggle/labeled-toggle';
@@ -24,7 +24,6 @@ type ShippingFilter = 'active' | 'inactive' | 'deleted';
   selector: 'app-admin-shipping-methods',
   imports: [
     ReactiveFormsModule,
-    MatCardModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
@@ -34,6 +33,7 @@ type ShippingFilter = 'active' | 'inactive' | 'deleted';
     PageHeader,
     PillTabs,
     TableCard,
+    FormSection,
     EditableInput,
     ToggleSwitch,
     LabeledToggle,

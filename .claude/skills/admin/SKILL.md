@@ -58,9 +58,10 @@ locally. Inline-edit screens (Categorías, card-types, Métodos de envío) bridg
 `FormGroup`s to `app-editable-input`/`app-toggle` with small `val()`/`setText()`/`setNum()`
 helpers (keeps validation + dirty tracking). Detail-page inner tables (RaffleDetail
 participants, OrderDetail items) apply `.app-table` directly — **no** `app-table-card`, since
-they already sit in a `mat-card` panel. **Sets** is the lone exception: a series-grouped
-accordion (not a flat table), so it got chrome alignment only (page-header + `app-btn` +
-restyled cards); its edit dialog stays Material like every other admin dialog.
+they already sit in a `mat-card` panel. **Sets** is a series-grouped accordion (not a flat
+table): the `mat-expansion-panel` is re-skinned (`hideToggle` + glyph chip / count / "Expandido"
+pill / rotating chevron, driven by the panel's own `expanded` via a `#panel` ref) over a grid of
+set-cards (code / glyph / name / date); clicking a card still opens the Material edit dialog.
 
 **Toggles:** the admin uses `app-toggle` everywhere, **never `mat-slide-toggle`.** In tables
 bind `[on]` + `(change)` (or `[(on)]`); in reactive forms use `app-labeled-toggle` — it's a
@@ -69,6 +70,26 @@ bind `[on]` + `(change)` (or `[(on)]`); in reactive forms use `app-labeled-toggl
 behavioural addition was **tab count badges** — Pedidos via `OrdersService.countByStatus()`
 (grouped head-counts), the rest computed from already-loaded rows; everything else (filters,
 search debounce, server pagination, soft-delete+undo, raffle draw) was preserved as-is.
+
+## Shared form system
+
+Every admin **create/edit form** composes layout shells from `src/app/shared/forms/`
+(`app-back-header`, `app-form-section`, `app-sub-section`, `app-form-grid`, `app-form-footer`,
+`app-selected-card-preview`) plus the table system's `app-btn` / `app-labeled-toggle`. The
+Material controls themselves (`mat-form-field`, `mat-select`, `mat-checkbox`, `mat-datepicker`)
+are **kept** and reskinned globally by `_admin-forms.scss` (scoped to `app-admin-shell`) →
+`theme` skill. Add `class="is-mono"` for slug/price/ID fields and
+`panelClass="admin-form-overlay"` on every select/datepicker so its overlay panel is styled.
+
+Reskinned forms: add-product, product-edit, coupon-edit, page-edit, config, and the
+Métodos-de-envío inline add-bar — **reskin only**, same fields/validators/flows preserved (TCGdex
+autofill, image-picker suffix, slug gen, coupon type-conditional validators, page HTML live
+preview, config single-save, raffle/card conditional fields). `app-labeled-toggle` gained an
+optional `helper` line for the form "toggle-row". `app-dropdown` is now a real `mat-select` (was
+a native `<select>`, whose OS-drawn list can't be styled).
+
+**Cliente detail** (`/admin/customers/:id`) reuses `app-back-header` + `app-table-card` (info +
+KPI cards, monogram avatar) + the `.app-table` order history — no new components.
 
 ## Dashboard
 

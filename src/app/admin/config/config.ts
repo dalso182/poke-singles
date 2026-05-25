@@ -1,8 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
-import { MatDividerModule } from '@angular/material/divider';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS, MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -10,6 +7,10 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AppSettingsService } from '../../core/settings/app-settings.service';
 import { LabeledToggle } from '../../shared/table/controls/labeled-toggle/labeled-toggle';
+import { PageHeader } from '../../shared/table/page-header/page-header';
+import { FormSection } from '../../shared/forms/form-section/form-section';
+import { FormGrid } from '../../shared/forms/form-grid/form-grid';
+import { Btn } from '../../shared/table/controls/btn/btn';
 import { SetsService } from '../../core/catalog/sets.service';
 import type { AppSettingsRow } from '../../core/catalog/catalog.types';
 
@@ -17,15 +18,16 @@ import type { AppSettingsRow } from '../../core/catalog/catalog.types';
   selector: 'app-admin-config',
   imports: [
     ReactiveFormsModule,
-    MatButtonModule,
-    MatCardModule,
-    MatDividerModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
     MatProgressBarModule,
     MatSnackBarModule,
     LabeledToggle,
+    PageHeader,
+    FormSection,
+    FormGrid,
+    Btn,
   ],
   templateUrl: './config.html',
   styleUrl: './config.scss',

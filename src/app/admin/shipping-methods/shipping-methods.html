@@ -10,34 +10,30 @@
 </app-page-header>
 
 @if (addOpen()) {
-  <mat-card class="shipping-methods__add">
-    <mat-card-content>
-      <form [formGroup]="addForm" class="shipping-methods__add-form">
-        <mat-form-field appearance="outline">
-          <mat-label>Nombre</mat-label>
-          <input matInput formControlName="name" placeholder="Correos de Costa Rica" />
-        </mat-form-field>
-        <mat-form-field appearance="outline" class="shipping-methods__desc-field">
-          <mat-label>Descripción (opcional)</mat-label>
-          <input matInput formControlName="description" placeholder="3-5 días hábiles" />
-        </mat-form-field>
-        <mat-form-field appearance="outline" class="shipping-methods__num-field">
-          <mat-label>Precio (CRC)</mat-label>
-          <input matInput type="number" formControlName="price" min="0" step="100" />
-        </mat-form-field>
-        <mat-form-field appearance="outline" class="shipping-methods__num-field">
-          <mat-label>Orden</mat-label>
-          <input matInput type="number" formControlName="sort_order" min="0" />
-        </mat-form-field>
-        <app-labeled-toggle formControlName="requires_address" class="shipping-methods__add-toggle">
-          Requiere dirección
-        </app-labeled-toggle>
-        <app-btn variant="primary" [disabled]="addForm.invalid || saving() === '__new__'" (click)="onAdd()">
-          Crear
-        </app-btn>
-      </form>
-    </mat-card-content>
-  </mat-card>
+  <app-form-section [padding]="18" class="shipping-methods__add">
+    <form [formGroup]="addForm" class="shipping-methods__add-form">
+      <mat-form-field appearance="outline">
+        <mat-label>Nombre</mat-label>
+        <input matInput formControlName="name" placeholder="Correos de Costa Rica" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="shipping-methods__desc-field">
+        <mat-label>Descripción (opcional)</mat-label>
+        <input matInput formControlName="description" placeholder="3-5 días hábiles" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="shipping-methods__num-field is-mono">
+        <mat-label>Precio (CRC)</mat-label>
+        <input matInput type="number" formControlName="price" min="0" step="100" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="shipping-methods__num-field is-mono">
+        <mat-label>Orden</mat-label>
+        <input matInput type="number" formControlName="sort_order" min="0" />
+      </mat-form-field>
+      <app-labeled-toggle formControlName="requires_address">Requiere dirección</app-labeled-toggle>
+      <app-btn variant="primary" [disabled]="addForm.invalid || saving() === '__new__'" (click)="onAdd()">
+        Crear
+      </app-btn>
+    </form>
+  </app-form-section>
 }
 
 <app-pill-tabs class="shipping-methods__tabs" [tabs]="tabs()" [value]="filter()" (valueChange)="onFilterChange($event)" />

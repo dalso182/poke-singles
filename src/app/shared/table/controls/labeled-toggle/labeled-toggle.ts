@@ -1,4 +1,4 @@
-import { Component, forwardRef, model, output, signal } from '@angular/core';
+import { Component, forwardRef, input, model, output, signal } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { ToggleSwitch } from '../toggle-switch/toggle-switch';
 
@@ -7,6 +7,7 @@ import { ToggleSwitch } from '../toggle-switch/toggle-switch';
  *  - `[(on)]` two-way + `(change)` (filter toggles, e.g. Productos)
  *  - `formControlName` / `[formControl]` (reactive forms) — implements
  *    ControlValueAccessor so it's a drop-in for `<mat-slide-toggle>`.
+ * Optional `helper` renders a second line beneath the label (form "toggle-row").
  */
 @Component({
   selector: 'app-labeled-toggle',
@@ -19,11 +20,17 @@ import { ToggleSwitch } from '../toggle-switch/toggle-switch';
       <app-toggle [on]="on()" [disabled]="disabled()" (change)="onToggle($event)" />
       <span class="lt__label"><ng-content /></span>
     </label>
+    @if (helper()) {
+      <div class="lt__helper">{{ helper() }}</div>
+    }
   `,
   styles: [
     `
       :host {
         display: inline-flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
       }
       .lt {
         display: inline-flex;
@@ -43,11 +50,20 @@ import { ToggleSwitch } from '../toggle-switch/toggle-switch';
         font-weight: 500;
         color: var(--text-primary);
       }
+      .lt__helper {
+        margin-left: 48px;
+        font-family: var(--font-brand);
+        font-size: 11.5px;
+        font-weight: 500;
+        letter-spacing: -0.05px;
+        color: var(--text-secondary);
+      }
     `,
   ],
 })
 export class LabeledToggle implements ControlValueAccessor {
   readonly on = model(false);
+  readonly helper = input<string | null>(null);
   readonly change = output<boolean>();
   protected readonly disabled = signal(false);
 

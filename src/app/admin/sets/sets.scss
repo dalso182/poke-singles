@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  max-width: 1080px;
+  max-width: 1480px;
 }
 
 .muted {
@@ -34,91 +34,231 @@
   padding: 24px;
 }
 
+// ── Series accordion (re-skinned mat-expansion-panel) ──
 .sets__accordion {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-}
-
-.sets__panel {
-  border-radius: 10px;
-}
-
-.sets__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 12px;
-  padding: 8px 0 4px;
 }
 
-.sets__card {
+// Material chrome lives in the panel's own view → reach it with ::ng-deep,
+// scoped to this component via :host.
+:host ::ng-deep .sets__panel.mat-expansion-panel {
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 0 rgba(21, 21, 26, 0.02);
+  transition: box-shadow 0.15s ease;
+}
+:host ::ng-deep .sets__panel.mat-expansion-panel.mat-expanded {
+  box-shadow:
+    0 1px 0 rgba(21, 21, 26, 0.02),
+    0 12px 28px -18px rgba(21, 21, 26, 0.12);
+}
+:host ::ng-deep .sets__panel .mat-expansion-panel-header,
+:host ::ng-deep .sets__panel .mat-expansion-panel-header.mat-expanded {
+  height: 64px;
+  padding: 0 24px;
+}
+:host ::ng-deep .sets__panel .mat-expansion-panel-header .mat-content {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 24px;
+}
+:host ::ng-deep .sets__panel .mat-expansion-panel-body {
+  padding: 4px 24px 24px;
+}
+
+// Header content (projected — normal scoped styles)
+.sets__head-left {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 10px;
-  background: var(--surface-card);
-  text-align: left;
-  cursor: pointer;
-  transition: border-color 0.12s ease, background 0.12s ease;
-  font: inherit;
-  color: inherit;
-
-  &:hover,
-  &:focus-visible {
-    border-color: var(--border-strong);
-    background: var(--row-hover);
-    outline: none;
-  }
+  gap: 14px;
+  min-width: 0;
 }
-
-.sets__card-symbol {
-  width: 36px;
-  height: 36px;
-  display: grid;
-  place-items: center;
-  background: var(--surface-tonal);
+.sets__glyph {
+  width: 26px;
+  height: 26px;
   border-radius: 6px;
-  flex: 0 0 auto;
-
-  img {
-    width: 28px;
-    height: 28px;
-    object-fit: contain;
-  }
+  background: var(--surface-tonal);
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
 
   mat-icon {
-    color: var(--text-tertiary);
+    font-size: 15px;
+    width: 15px;
+    height: 15px;
+    line-height: 15px;
   }
 }
-
-.sets__card-text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  flex: 1 1 auto;
+.sets__glyph--open {
+  background: var(--text-primary);
+  color: #fff;
 }
-
-.sets__card-code {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-}
-
-.sets__card-name {
-  font-weight: 600;
+.sets__series {
+  font-family: var(--font-brand);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-.sets__card-date {
+.sets__head-mid {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sets__count {
   font-family: var(--font-mono);
   font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  color: var(--text-secondary);
+}
+.sets__expanded {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  padding: 3px 7px;
+  border-radius: 4px;
+  color: var(--accent-amber);
+  background: var(--accent-amber-soft);
+  border: 1px solid var(--amber-edge);
+}
+.sets__chev {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  transition: all 0.18s ease;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
+  }
+}
+.sets__chev--open {
+  background: var(--surface-tonal);
+  transform: rotate(180deg);
+}
+
+// ── Set cards ──
+.sets__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+.sets__card {
+  position: relative;
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 14px 14px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  background: var(--surface-card);
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition: all 0.12s ease;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--row-hover);
+    border-color: var(--border-strong);
+    outline: none;
+  }
+  &:hover .sets__card-chev,
+  &:focus-visible .sets__card-chev {
+    color: var(--text-secondary);
+  }
+}
+
+.sets__card-code {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
   color: var(--text-tertiary);
+  margin-bottom: 8px;
+}
+
+.sets__card-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sets__card-glyph {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+
+  img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+  }
+  mat-icon {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+    line-height: 22px;
+    color: var(--text-secondary);
+  }
+}
+
+.sets__card-name {
+  font-family: var(--font-brand);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.sets__card-date {
+  display: block;
+  margin: 8px 0 0 38px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.4px;
+  color: var(--text-tertiary);
+}
+
+.sets__card-chev {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  color: transparent;
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  line-height: 16px;
+  transition: color 0.12s ease;
 }

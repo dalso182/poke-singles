@@ -1,5 +1,6 @@
 import { Component, input, model } from '@angular/core';
-import { MatIconModule } from '@angular/material/icon';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 
 export interface DropdownOption {
   readonly value: string;
@@ -7,77 +8,45 @@ export interface DropdownOption {
 }
 
 /**
- * Outlined dropdown with a floating label — a styled native `<select>` (hits the
- * exact spec without fighting mat-form-field). Two-way `[(value)]`.
+ * Outlined dropdown with a floating label. Backed by a real `mat-select` (not a
+ * native `<select>`) so the open panel is a stylable CDK overlay — see the
+ * `admin-form-overlay` panelClass rules in `_admin-forms.scss`. Two-way `[(value)]`.
+ * Sized compact (40px) for filter bars, overriding the 48px admin-form default.
  */
 @Component({
   selector: 'app-dropdown',
-  imports: [MatIconModule],
+  imports: [MatFormFieldModule, MatSelectModule],
   host: { '[style.width.px]': 'width()' },
   template: `
-    <div class="dd">
-      <label class="dd__label">{{ label() }}</label>
-      <select class="dd__select" [value]="value()" (change)="onChange($event)" [attr.aria-label]="label()">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="dd">
+      <mat-label>{{ label() }}</mat-label>
+      <mat-select
+        [value]="value()"
+        (selectionChange)="value.set($event.value)"
+        panelClass="admin-form-overlay"
+      >
         @for (o of options(); track o.value) {
-          <option [value]="o.value">{{ o.label }}</option>
+          <mat-option [value]="o.value">{{ o.label }}</mat-option>
         }
-      </select>
-      <mat-icon class="dd__chev">expand_more</mat-icon>
-    </div>
+      </mat-select>
+    </mat-form-field>
   `,
   styles: [
     `
       :host {
-        display: inline-flex;
+        display: inline-block;
       }
       .dd {
-        position: relative;
         width: 100%;
-        height: 38px;
       }
-      .dd__label {
-        position: absolute;
-        top: -7px;
-        left: 10px;
-        z-index: 1;
-        padding: 0 5px;
-        background: var(--surface-card);
-        font-family: var(--font-brand);
-        font-size: 10.5px;
-        font-weight: 600;
-        letter-spacing: 0.1px;
-        color: var(--text-secondary);
+      // Compact 40px trigger for filter bars (the admin-form default is 48px).
+      :host ::ng-deep .mat-mdc-form-field {
+        --mat-form-field-container-height: 40px;
       }
-      .dd__select {
-        appearance: none;
-        -webkit-appearance: none;
-        width: 100%;
-        height: 38px;
-        padding: 0 32px 0 12px;
-        border: 1px solid var(--border-strong);
-        border-radius: 8px;
-        background: var(--surface-card);
-        font-family: var(--font-brand);
-        font-size: 13.5px;
-        font-weight: 600;
-        color: var(--text-primary);
-        outline: none;
-        cursor: pointer;
-      }
-      .dd__select:focus {
-        border-color: var(--brand-blue);
-      }
-      .dd__chev {
-        position: absolute;
-        right: 10px;
-        top: 50%;
-        transform: translateY(-50%);
-        pointer-events: none;
-        color: var(--text-secondary);
-        font-size: 18px;
-        width: 18px;
-        height: 18px;
-        line-height: 18px;
+      :host ::ng-deep .mat-mdc-form-field-infix {
+        min-height: 40px !important;
+        padding-top: 9px !important;
+        padding-bottom: 9px !important;
       }
     `,
   ],
@@ -87,8 +56,4 @@ export class Dropdown {
   readonly value = model('');
   readonly options = input.required<readonly DropdownOption[]>();
   readonly width = input(180);
-
-  protected onChange(event: Event): void {
-    this.value.set((event.target as HTMLSelectElement).value);
-  }
 }

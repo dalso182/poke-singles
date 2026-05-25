@@ -16,7 +16,6 @@ import {
 } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -28,6 +27,10 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { SetTypeahead } from '../../shared/set-typeahead/set-typeahead';
 import { LabeledToggle } from '../../shared/table/controls/labeled-toggle/labeled-toggle';
+import { Btn } from '../../shared/table/controls/btn/btn';
+import { BackHeader } from '../../shared/forms/back-header/back-header';
+import { FormSection } from '../../shared/forms/form-section/form-section';
+import { FormGrid } from '../../shared/forms/form-grid/form-grid';
 import {
   ImagePickerDialog,
   type ImagePickerResult,
@@ -59,7 +62,6 @@ const CARD_CATEGORY_SLUGS = ['singles', 'graded'];
     ReactiveFormsModule,
     SetTypeahead,
     MatButtonModule,
-    MatCardModule,
     MatCheckboxModule,
     MatFormFieldModule,
     MatIconModule,
@@ -69,6 +71,10 @@ const CARD_CATEGORY_SLUGS = ['singles', 'graded'];
     MatSnackBarModule,
     MatTooltipModule,
     LabeledToggle,
+    Btn,
+    BackHeader,
+    FormSection,
+    FormGrid,
   ],
   templateUrl: './product-edit.html',
   styleUrl: './product-edit.scss',

@@ -1,24 +1,17 @@
-<section class="page-edit">
-  <header class="page-edit__header admin-page-header">
-    <a mat-icon-button routerLink="/admin/pages" aria-label="Volver">
-      <mat-icon>arrow_back</mat-icon>
-    </a>
-    <div class="page-edit__title">
-      <span class="brand-eyebrow">Contenido</span>
-      <h1>{{ mode() === 'edit' ? 'Editar página' : 'Crear página' }}</h1>
-    </div>
-  </header>
+<div class="page-edit">
+  <app-back-header
+    kicker="Contenido"
+    [title]="mode() === 'edit' ? 'Editar página' : 'Crear página'"
+    backLink="/admin/pages"
+  />
 
   @if (loading()) {
     <mat-progress-bar mode="indeterminate" />
   }
 
-  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="page-edit__form">
-    <mat-card class="page-edit__panel">
-      <mat-card-header>
-        <mat-card-title>Datos</mat-card-title>
-      </mat-card-header>
-      <mat-card-content class="page-edit__grid">
+  <form [formGroup]="form" class="page-edit__form">
+    <app-form-section title="Datos">
+      <app-form-grid [cols]="2">
         <mat-form-field appearance="outline">
           <mat-label>Título</mat-label>
           <input matInput type="text" formControlName="title" autocomplete="off" />
@@ -27,9 +20,9 @@
           }
         </mat-form-field>
 
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" class="is-mono">
           <mat-label>Slug (URL)</mat-label>
-          <span matTextPrefix>/info/&nbsp;</span>
+          <span matTextPrefix>/info/</span>
           <input
             matInput
             type="text"
@@ -46,7 +39,7 @@
           }
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="page-edit__full">
+        <mat-form-field appearance="outline" style="grid-column: span 2">
           <mat-label>Descripción (SEO)</mat-label>
           <textarea
             matInput
@@ -56,29 +49,21 @@
           ></textarea>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="page-edit__num-field">
+        <mat-form-field appearance="outline" class="is-mono">
           <mat-label>Orden</mat-label>
           <input matInput type="number" formControlName="sort_order" min="0" />
         </mat-form-field>
 
-        <app-labeled-toggle formControlName="is_published" class="page-edit__toggle">
-          Publicada
-        </app-labeled-toggle>
-      </mat-card-content>
-    </mat-card>
+        <app-labeled-toggle formControlName="is_published">Publicada</app-labeled-toggle>
+      </app-form-grid>
+    </app-form-section>
 
-    <mat-card class="page-edit__panel">
-      <mat-card-header>
-        <mat-card-title>Contenido (HTML)</mat-card-title>
-        <mat-card-subtitle class="muted">
-          Pegá el HTML directamente. Vista previa al lado.
-        </mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-content class="page-edit__editor">
+    <app-form-section title="Contenido (HTML)" subtitle="Pegá el HTML directamente. Vista previa al lado.">
+      <div class="page-edit__editor">
         <div class="page-edit__editor-pane">
           <label class="page-edit__editor-label">HTML</label>
           <textarea
-            class="page-edit__textarea"
+            class="ps-mono-textarea page-edit__textarea"
             formControlName="content"
             rows="22"
             spellcheck="false"
@@ -88,19 +73,15 @@
           <label class="page-edit__editor-label">Vista previa</label>
           <div class="page-edit__preview" [innerHTML]="previewHtml()"></div>
         </div>
-      </mat-card-content>
-    </mat-card>
+      </div>
+    </app-form-section>
 
-    <div class="page-edit__actions">
-      <a mat-stroked-button routerLink="/admin/pages">Cancelar</a>
-      <button
-        mat-flat-button
-        color="primary"
-        type="submit"
-        [disabled]="form.invalid || saving()"
-      >
-        {{ saving() ? 'Guardando…' : (mode() === 'edit' ? 'Guardar' : 'Crear página') }}
-      </button>
-    </div>
+    <app-form-footer
+      [primaryLabel]="saving() ? 'Guardando…' : (mode() === 'edit' ? 'Guardar' : 'Crear página')"
+      [primaryDisabled]="form.invalid || saving()"
+      [sticky]="false"
+      (primary)="onSubmit()"
+      (secondary)="cancel()"
+    />
   </form>
-</section>
+</div>

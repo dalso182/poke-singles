@@ -1,59 +1,33 @@
+// Edit-product form. Field + section look comes from _admin-forms.scss + shared
+// form primitives. Only page width, the quick-update layout, audit dl, and the
+// action row remain here.
 .product-edit {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
   max-width: 900px;
-}
-
-.product-edit__header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-
-  h1 {
-    margin: 4px 0 0;
-  }
 }
 
 .product-edit__form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-}
-
-.product-edit__panel {
-  padding: 8px;
-}
-
-.product-edit__grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.product-edit__full {
-  grid-column: 1 / -1;
+  gap: 20px;
 }
 
 .product-edit__active {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 12px 0;
-}
-
-.product-edit__meta {
-  background: var(--mat-sys-surface-variant);
+  gap: 24px;
 }
 
 .product-edit__dl {
   display: grid;
   grid-template-columns: 200px 1fr;
   gap: 4px 16px;
-  margin: 8px 0 0;
+  margin: 0;
 
   dt {
-    color: var(--mat-sys-on-surface-variant);
+    color: var(--text-secondary);
     font-size: 12px;
     letter-spacing: 0.5px;
     text-transform: uppercase;
@@ -70,17 +44,6 @@
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  padding-top: 8px;
-}
-
-.card-types-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px 16px;
-}
-
-.product-edit__quick {
-  border: 1px solid var(--mat-sys-primary);
 }
 
 .product-edit__quick-layout {
@@ -93,13 +56,14 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 
 .product-edit__quick-title {
   font-family: var(--font-brand);
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: -0.3px;
   margin: 0;
 }
 
@@ -107,31 +71,28 @@
   display: flex;
   align-items: flex-start;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .product-edit__quick-thumb {
   width: 104px;
   height: 146px;
   object-fit: cover;
-  border-radius: 4px;
+  border-radius: 6px;
   flex: 0 0 auto;
 }
 
 .product-edit__quick-price {
-  width: 180px;
+  width: 200px;
   flex: 0 0 auto;
 }
 
 .product-edit__quick-qty {
-  width: 110px;
+  width: 130px;
   flex: 0 0 auto;
 }
 
 .product-edit__quick-actions {
   display: flex;
   justify-content: flex-start;
-}
-
-.muted {
-  color: var(--text-secondary);
 }

@@ -63,14 +63,27 @@
   }
 
   @if (totalSets() > 0) {
-    <mat-accordion class="sets__accordion" multi>
+    <div class="sets__accordion">
       @for (group of grouped(); track group.label) {
-        <mat-expansion-panel class="sets__panel">
-          <mat-expansion-panel-header>
-            <mat-panel-title>{{ group.label }}</mat-panel-title>
-            <mat-panel-description>
-              {{ group.sets.length }} {{ group.sets.length === 1 ? 'set' : 'sets' }}
-            </mat-panel-description>
+        <mat-expansion-panel #panel hideToggle class="sets__panel">
+          <mat-expansion-panel-header class="sets__header">
+            <div class="sets__head-left">
+              <span class="sets__glyph" [class.sets__glyph--open]="panel.expanded">
+                <mat-icon>collections_bookmark</mat-icon>
+              </span>
+              <span class="sets__series">{{ group.label }}</span>
+            </div>
+            <div class="sets__head-mid">
+              <span class="sets__count">
+                {{ group.sets.length }} {{ group.sets.length === 1 ? 'set' : 'sets' }}
+              </span>
+              @if (panel.expanded) {
+                <span class="sets__expanded">Expandido</span>
+              }
+            </div>
+            <span class="sets__chev" [class.sets__chev--open]="panel.expanded">
+              <mat-icon>expand_more</mat-icon>
+            </span>
           </mat-expansion-panel-header>
 
           <div class="sets__grid">
@@ -81,23 +94,24 @@
                 (click)="openDetail(set)"
                 [attr.aria-label]="'Ver detalle de ' + set.name"
               >
-                <div class="sets__card-symbol">
-                  @if (set.symbol_image_url) {
-                    <img [src]="set.symbol_image_url" alt="" />
-                  } @else {
-                    <mat-icon>collections_bookmark</mat-icon>
-                  }
-                </div>
-                <div class="sets__card-text">
-                  <span class="brand-mono sets__card-code">{{ set.code }}</span>
+                <span class="sets__card-code">{{ set.code }}</span>
+                <div class="sets__card-row">
+                  <span class="sets__card-glyph">
+                    @if (set.symbol_image_url) {
+                      <img [src]="set.symbol_image_url" alt="" />
+                    } @else {
+                      <mat-icon>collections_bookmark</mat-icon>
+                    }
+                  </span>
                   <span class="sets__card-name">{{ set.name }}</span>
-                  <span class="sets__card-date">{{ set.release_date || '—' }}</span>
                 </div>
+                <span class="sets__card-date">{{ set.release_date || '—' }}</span>
+                <mat-icon class="sets__card-chev">chevron_right</mat-icon>
               </button>
             }
           </div>
         </mat-expansion-panel>
       }
-    </mat-accordion>
+    </div>
   }
 </section>

@@ -12,17 +12,18 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { StaticPagesService } from '../../core/catalog/static-pages.service';
 import { LabeledToggle } from '../../shared/table/controls/labeled-toggle/labeled-toggle';
+import { BackHeader } from '../../shared/forms/back-header/back-header';
+import { FormSection } from '../../shared/forms/form-section/form-section';
+import { FormGrid } from '../../shared/forms/form-grid/form-grid';
+import { FormFooter } from '../../shared/forms/form-footer/form-footer';
 import type {
   StaticPageInsert,
   StaticPageRow,
@@ -32,15 +33,15 @@ import type {
   selector: 'app-admin-page-edit',
   imports: [
     ReactiveFormsModule,
-    RouterLink,
-    MatButtonModule,
-    MatCardModule,
     MatFormFieldModule,
-    MatIconModule,
     MatInputModule,
     MatProgressBarModule,
     MatSnackBarModule,
     LabeledToggle,
+    BackHeader,
+    FormSection,
+    FormGrid,
+    FormFooter,
   ],
   templateUrl: './page-edit.html',
   styleUrl: './page-edit.scss',
@@ -135,6 +136,10 @@ export class PageEdit implements OnInit {
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '');
     if (next !== ctrl.value) ctrl.setValue(next, { emitEvent: false });
+  }
+
+  protected cancel(): void {
+    void this.router.navigate(['/admin/pages']);
   }
 
   protected async onSubmit(): Promise<void> {

@@ -15,12 +15,10 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import type { Card } from '@tcgdex/sdk';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -32,6 +30,13 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { CardTypeahead } from '../../shared/card-typeahead/card-typeahead';
 import { SetTypeahead } from '../../shared/set-typeahead/set-typeahead';
 import { LabeledToggle } from '../../shared/table/controls/labeled-toggle/labeled-toggle';
+import { Btn } from '../../shared/table/controls/btn/btn';
+import { BackHeader } from '../../shared/forms/back-header/back-header';
+import { FormSection } from '../../shared/forms/form-section/form-section';
+import { SubSection } from '../../shared/forms/sub-section/sub-section';
+import { FormGrid } from '../../shared/forms/form-grid/form-grid';
+import { FormFooter } from '../../shared/forms/form-footer/form-footer';
+import { SelectedCardPreview } from '../../shared/forms/selected-card-preview/selected-card-preview';
 import {
   ImagePickerDialog,
   type ImagePickerResult,
@@ -64,13 +69,10 @@ const CARD_CATEGORY_SLUGS = ['singles', 'graded'];
   selector: 'app-add-product',
   imports: [
     ReactiveFormsModule,
-    RouterLink,
     CardTypeahead,
     SetTypeahead,
     MatButtonModule,
-    MatCardModule,
     MatCheckboxModule,
-    MatDividerModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
@@ -79,6 +81,13 @@ const CARD_CATEGORY_SLUGS = ['singles', 'graded'];
     MatSnackBarModule,
     MatTooltipModule,
     LabeledToggle,
+    Btn,
+    BackHeader,
+    FormSection,
+    SubSection,
+    FormGrid,
+    FormFooter,
+    SelectedCardPreview,
   ],
   templateUrl: './add-product.html',
   styleUrl: './add-product.scss',
@@ -426,6 +435,16 @@ export class AddProduct {
       legal_standard: null,
       legal_expanded: null,
     });
+  }
+
+  /** Footer "Cancelar" — return to the TCGdex picker (does not leave the page). */
+  protected resetSelection(): void {
+    this.selectedCard.set(null);
+    this.manualMode.set(false);
+  }
+
+  protected goToCategories(): void {
+    void this.router.navigate(['/admin/categories']);
   }
 
   private refreshSlug(): void {

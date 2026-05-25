@@ -1,28 +1,22 @@
-<section class="admin-config">
-  <header class="admin-config__header admin-page-header">
-    <span class="brand-eyebrow">Administración</span>
-    <h1>Configuración</h1>
-    <p class="muted">
-      Valores globales de la tienda. Los cambios se aplican a clientes y al panel
-      en cuanto se guardan.
-    </p>
-  </header>
+<div class="admin-config">
+  <app-page-header
+    kicker="Administración"
+    title="Configuración"
+    sub="Valores globales de la tienda. Los cambios se aplican a clientes y al panel en cuanto se guardan."
+  />
 
   @if (loading()) {
     <mat-progress-bar mode="indeterminate" />
   }
 
-  <form [formGroup]="form" (ngSubmit)="onSave()" class="admin-config__form">
-    <mat-card class="admin-config__panel">
-      <mat-card-header>
-        <mat-card-title>Tipo de cambio</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <p class="muted admin-config__hint">
-          Colones por dólar (USD → CRC). Se usará para mostrar precios y/o
-          calcular conversiones cuando lo conectemos.
-        </p>
-        <mat-form-field appearance="outline">
+  <form [formGroup]="form" class="admin-config__form">
+    <app-form-section title="Tipo de cambio">
+      <p class="muted admin-config__hint">
+        Colones por dólar (USD → CRC). Se usará para mostrar precios y/o calcular conversiones
+        cuando lo conectemos.
+      </p>
+      <app-form-grid [cols]="2">
+        <mat-form-field appearance="outline" class="is-mono">
           <mat-label>CRC por 1 USD</mat-label>
           <input
             matInput
@@ -34,38 +28,25 @@
           />
           <span matTextSuffix>CRC</span>
         </mat-form-field>
-      </mat-card-content>
-    </mat-card>
+      </app-form-grid>
+    </app-form-section>
 
-    <mat-card class="admin-config__panel">
-      <mat-card-header>
-        <mat-card-title>Datos de pago</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <p class="muted admin-config__hint">
-          Estos datos se muestran al cliente en la pantalla de confirmación de
-          pedido cuando paga por SINPE Móvil o transferencia bancaria.
-        </p>
-        <mat-form-field appearance="outline">
+    <app-form-section title="Datos de pago">
+      <p class="muted admin-config__hint">
+        Estos datos se muestran al cliente en la pantalla de confirmación de pedido cuando paga
+        por SINPE Móvil o transferencia bancaria.
+      </p>
+      <app-form-grid [cols]="2">
+        <mat-form-field appearance="outline" class="is-mono">
           <mat-label>Número SINPE Móvil</mat-label>
-          <input
-            matInput
-            type="tel"
-            formControlName="sinpe_phone"
-            placeholder="+506 6345-2039"
-          />
+          <input matInput type="tel" formControlName="sinpe_phone" placeholder="+506 6345-2039" />
         </mat-form-field>
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" class="is-mono">
           <mat-label>Número de WhatsApp para comprobantes</mat-label>
-          <input
-            matInput
-            type="tel"
-            formControlName="whatsapp_number"
-            placeholder="50663452039"
-          />
+          <input matInput type="tel" formControlName="whatsapp_number" placeholder="50663452039" />
           <mat-hint>Solo dígitos, con código de país (sin + ni espacios).</mat-hint>
         </mat-form-field>
-        <mat-form-field appearance="outline" class="admin-config__full">
+        <mat-form-field appearance="outline" style="grid-column: span 2">
           <mat-label>Datos para transferencia bancaria</mat-label>
           <textarea
             matInput
@@ -77,20 +58,16 @@ A nombre de: Poke-Singles SA
 Cédula jurídica: 3-101-…"
           ></textarea>
         </mat-form-field>
-      </mat-card-content>
-    </mat-card>
+      </app-form-grid>
+    </app-form-section>
 
-    <mat-card class="admin-config__panel">
-      <mat-card-header>
-        <mat-card-title>Notificaciones de pedidos</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <p class="muted admin-config__hint">
-          Cuando un cliente realiza un pedido, se envía un correo a estas
-          direcciones (separadas por coma) además del correo de confirmación
-          al cliente. Dejar vacío para no notificar.
-        </p>
-        <mat-form-field appearance="outline" class="admin-config__full">
+    <app-form-section title="Notificaciones de pedidos">
+      <p class="muted admin-config__hint">
+        Cuando un cliente realiza un pedido, se envía un correo a estas direcciones (separadas
+        por coma) además del correo de confirmación al cliente. Dejar vacío para no notificar.
+      </p>
+      <app-form-grid [cols]="2">
+        <mat-form-field appearance="outline" style="grid-column: span 2">
           <mat-label>Destinatarios</mat-label>
           <textarea
             matInput
@@ -99,22 +76,19 @@ Cédula jurídica: 3-101-…"
             placeholder="ventas@poke-singles.com, diego@poke-singles.com"
           ></textarea>
         </mat-form-field>
-      </mat-card-content>
-    </mat-card>
+      </app-form-grid>
+    </app-form-section>
 
-    <mat-card class="admin-config__panel">
-      <mat-card-header>
-        <mat-card-title>Modo mantenimiento</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <p class="muted admin-config__hint">
-          Cuando esté activo, la tienda mostrará un mensaje y no aceptará
-          pedidos. La lógica del frontend se conectará después.
-        </p>
-        <app-labeled-toggle formControlName="maintenance_mode">
+    <app-form-section title="Modo mantenimiento">
+      <p class="muted admin-config__hint">
+        Cuando esté activo, la tienda mostrará un mensaje y no aceptará pedidos. La lógica del
+        frontend se conectará después.
+      </p>
+      <app-form-grid [cols]="2">
+        <app-labeled-toggle formControlName="maintenance_mode" style="grid-column: span 2">
           Activar modo mantenimiento
         </app-labeled-toggle>
-        <mat-form-field appearance="outline" class="admin-config__full">
+        <mat-form-field appearance="outline" style="grid-column: span 2">
           <mat-label>Mensaje a mostrar</mat-label>
           <textarea
             matInput
@@ -123,50 +97,37 @@ Cédula jurídica: 3-101-…"
             placeholder="Estamos actualizando el inventario, volvemos en un rato."
           ></textarea>
         </mat-form-field>
-      </mat-card-content>
-    </mat-card>
+      </app-form-grid>
+    </app-form-section>
 
     <div class="admin-config__actions">
-      <button
-        mat-flat-button
-        color="primary"
-        type="submit"
+      <app-btn
+        variant="primary"
         [disabled]="form.invalid || form.pristine || saving() || loading()"
+        (click)="onSave()"
       >
         Guardar cambios
-      </button>
+      </app-btn>
     </div>
   </form>
 
-  <mat-divider class="admin-config__divider" />
-
-  <mat-card class="admin-config__panel admin-config__advanced">
-    <mat-card-header>
-      <mat-card-title>Operaciones</mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
-      <div class="admin-config__op">
-        <div class="admin-config__op-text">
-          <strong>Importar histórico de sets de TCGdex</strong>
-          <p class="muted admin-config__hint">
-            Inserta todos los sets de TCGdex que aún no existan en la base.
-            Pensado para ejecutarse una sola vez al configurar la tienda. Es
-            seguro re-ejecutarlo: nunca sobrescribe sets existentes.
-          </p>
-        </div>
-        <button
-          mat-stroked-button
-          type="button"
-          (click)="onImportTcgdexSets()"
-          [disabled]="importing()"
-        >
-          <mat-icon>cloud_download</mat-icon>
-          {{ importing() ? 'Importando…' : 'Importar' }}
-        </button>
+  <app-form-section title="Operaciones" class="admin-config__advanced">
+    <div class="admin-config__op">
+      <div class="admin-config__op-text">
+        <strong>Importar histórico de sets de TCGdex</strong>
+        <p class="muted admin-config__hint">
+          Inserta todos los sets de TCGdex que aún no existan en la base. Pensado para
+          ejecutarse una sola vez al configurar la tienda. Es seguro re-ejecutarlo: nunca
+          sobrescribe sets existentes.
+        </p>
       </div>
-      @if (importing()) {
-        <mat-progress-bar mode="indeterminate" />
-      }
-    </mat-card-content>
-  </mat-card>
-</section>
+      <app-btn variant="ghost" [disabled]="importing()" (click)="onImportTcgdexSets()">
+        <mat-icon>cloud_download</mat-icon>
+        {{ importing() ? 'Importando…' : 'Importar' }}
+      </app-btn>
+    </div>
+    @if (importing()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+  </app-form-section>
+</div>
