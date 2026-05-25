@@ -1,13 +1,8 @@
 <section class="card-types">
-  <header class="card-types__header admin-page-header">
-    <div>
-      <span class="brand-eyebrow">Catálogo</span>
-      <h1>Tipos de carta</h1>
-      <p class="muted">Etiquetas multi-asignables — Full Art, VMAX, Mega, Promos, etc.</p>
-    </div>
+  <header class="card-types__header">
     <button mat-flat-button color="primary" (click)="addOpen.set(!addOpen())">
       <mat-icon>{{ addOpen() ? 'close' : 'add' }}</mat-icon>
-      {{ addOpen() ? 'Cancelar' : 'Agregar tipo' }}
+      {{ addOpen() ? 'Cancelar' : 'Agregar' }}
     </button>
   </header>
 

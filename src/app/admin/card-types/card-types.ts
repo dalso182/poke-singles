@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, effect, inject, input, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -30,6 +30,12 @@ import type { CardTypeRow } from '../../core/catalog/catalog.types';
   styleUrl: './card-types.scss',
 })
 export class CardTypes {
+  /** Which category's types this CRUD manages. `null` = global (singles/graded
+   *  Rareza tags); a category id = that category's sub-types. */
+  readonly categoryId = input<string | null>(null);
+  /** Prepended to new slugs (slug is globally unique), e.g. 'sellado-'. */
+  readonly slugPrefix = input<string>('');
+
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(CardTypesService);
   private readonly snack = inject(MatSnackBar);
@@ -49,13 +55,18 @@ export class CardTypes {
   protected readonly editForms = new Map<string, FormGroup>();
 
   constructor() {
-    this.refresh();
+    // categoryId is a parent-bound input (set after construction), so load
+    // reactively rather than one-shot in the constructor.
+    effect(() => {
+      this.categoryId();
+      void this.refresh();
+    });
   }
 
   protected async refresh(): Promise<void> {
     this.loading.set(true);
     try {
-      const rows = await this.service.list();
+      const rows = await this.service.list({ categoryId: this.categoryId() });
       this.rows.set(rows);
       this.editForms.clear();
       for (const row of rows) {
@@ -82,7 +93,10 @@ export class CardTypes {
     if (this.addForm.invalid) return;
     this.saving.set('__new__');
     try {
-      await this.service.create(this.addForm.getRawValue());
+      const raw = this.addForm.getRawValue();
+      const prefix = this.slugPrefix();
+      const slug = prefix && !raw.slug.startsWith(prefix) ? prefix + raw.slug : raw.slug;
+      await this.service.create({ ...raw, slug, category_id: this.categoryId() });
       this.addForm.reset({ slug: '', name: '', sort_order: 0 });
       this.addOpen.set(false);
       await this.refresh();

@@ -14,7 +14,12 @@ export class CardTypesService {
   private readonly countsCache = signal<Map<string, number> | null>(null);
   private countsInflight: Promise<Map<string, number>> | null = null;
 
-  async list(opts: { activeOnly?: boolean } = {}): Promise<CardTypeRow[]> {
+  /** List card types. Pass `categoryId` to scope: `null` = global (singles/graded
+   *  Rareza tags), a category id = that category's sub-types. Omit the key to
+   *  return all (existing callers unchanged). */
+  async list(
+    opts: { activeOnly?: boolean; categoryId?: string | null } = {},
+  ): Promise<CardTypeRow[]> {
     let query = (this.supabase.client as any)
       .from('card_types')
       .select('*')
@@ -22,6 +27,11 @@ export class CardTypesService {
       .order('name', { ascending: true });
     if (opts.activeOnly) {
       query = query.eq('active', true);
+    }
+    if ('categoryId' in opts) {
+      query = opts.categoryId === null
+        ? query.is('category_id', null)
+        : query.eq('category_id', opts.categoryId);
     }
     const { data, error } = await query;
     if (error) throw error;

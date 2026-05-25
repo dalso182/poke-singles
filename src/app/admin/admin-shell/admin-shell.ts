@@ -48,7 +48,7 @@ export class AdminShell {
     { label: 'Productos',        icon: 'inventory_2',          path: '/admin/products',     exact: true },
     { label: 'Rifas', icon: 'confirmation_number', path: '/admin/raffles' },
     { label: 'Categorías', icon: 'category', path: '/admin/categories' },
-    { label: 'Tipos de carta', icon: 'local_offer', path: '/admin/card-types' },
+    { label: 'Filtros', icon: 'tune', path: '/admin/filters' },
     { label: 'Cupones', icon: 'redeem', path: '/admin/coupons' },
     { label: 'Métodos de envío', icon: 'local_shipping', path: '/admin/shipping-methods' },
     { label: 'Sets', icon: 'collections_bookmark', path: '/admin/sets' },

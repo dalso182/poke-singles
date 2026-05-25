@@ -49,9 +49,9 @@ export const routes: Routes = [
           import('./admin/categories/categories').then((m) => m.Categories),
       },
       {
-        path: 'card-types',
+        path: 'filters',
         loadComponent: () =>
-          import('./admin/card-types/card-types').then((m) => m.CardTypes),
+          import('./admin/filters/filters').then((m) => m.Filters),
       },
       {
         path: 'coupons',

@@ -107,6 +107,8 @@ export class AddProduct {
   protected readonly categoriesList = signal<CategoryRow[]>([]);
   protected readonly cardTypesList = signal<CardTypeRow[]>([]);
   protected readonly selectedCardTypeIds = signal<Set<string>>(new Set());
+  /** Single sub-type selection for sealed/accessories (one per product). */
+  protected readonly selectedSubtypeId = signal<string | null>(null);
   private readonly setsById = signal<Map<string, SetRow>>(new Map());
   protected readonly selectedCard = signal<Card | null>(null);
   // True once the form preview <img> fails to load — i.e. the hosted image
@@ -140,10 +142,32 @@ export class AddProduct {
     const slug = this.categoriesList().find((c) => c.id === id)?.slug;
     return slug !== undefined && CARD_CATEGORY_SLUGS.includes(slug);
   });
+  /** Slug of the chosen category (or null). */
+  protected readonly selectedCategorySlug = computed(() => {
+    const id = this.selectedCategoryId();
+    return id ? this.categoriesList().find((c) => c.id === id)?.slug ?? null : null;
+  });
+  /** Global Rareza tags (category_id NULL) — the singles/graded multi-select. */
+  protected readonly globalCardTypes = computed(() =>
+    this.cardTypesList().filter((t) => t.category_id === null),
+  );
+  /** Sub-types scoped to the chosen category — the sealed/accessories list. */
+  protected readonly subtypeOptions = computed(() =>
+    this.cardTypesList().filter((t) => t.category_id === this.selectedCategoryId()),
+  );
+  /** True when the category uses a single-select sub-type (sealed/accessories). */
+  protected readonly isSubtypeCategory = computed(() => {
+    const slug = this.selectedCategorySlug();
+    return slug === 'sellado' || slug === 'accesorios';
+  });
   /** True when there are card types to assign AND the category is a card one —
    *  gates the "Tipos de carta" panel. */
   protected readonly showCardTypes = computed(
-    () => this.cardTypesList().length > 0 && this.isCardCategory(),
+    () => this.globalCardTypes().length > 0 && this.isCardCategory(),
+  );
+  /** Gates the single-select "Sub-tipo" panel for sealed/accessories. */
+  protected readonly showSubtype = computed(
+    () => this.isSubtypeCategory() && this.subtypeOptions().length > 0,
   );
 
   // Optional set filter for the TCGdex card picker. Holds a Supabase set_id (UUID);
@@ -373,6 +397,7 @@ export class AddProduct {
     this.manualMode.set(true);
     this.selectedCard.set(null);
     this.selectedCardTypeIds.set(new Set());
+    this.selectedSubtypeId.set(null);
     this.form.reset({
       name: '',
       pokemon_name: '',
@@ -476,7 +501,13 @@ export class AddProduct {
         legal_standard: isCard ? raw.legal_standard : null,
         legal_expanded: isCard ? raw.legal_expanded : null,
       });
-      await this.products.setCardTypes(created.id, isCard ? [...this.selectedCardTypeIds()] : []);
+      // Singles/graded → multi Rareza; sealed/accesorios → one sub-type; else none.
+      const typeIds = isCard
+        ? [...this.selectedCardTypeIds()]
+        : this.isSubtypeCategory() && this.selectedSubtypeId()
+          ? [this.selectedSubtypeId()!]
+          : [];
+      await this.products.setCardTypes(created.id, typeIds);
       if (this.isRaffle()) {
         await this.raffles.upsert(created.id, {
           draw_at: raw.draw_at || null,
@@ -497,6 +528,7 @@ export class AddProduct {
   private resetForNext(): void {
     this.selectedCard.set(null);
     this.selectedCardTypeIds.set(new Set());
+    this.selectedSubtypeId.set(null);
     this.form.reset({
       name: '',
       pokemon_name: '',

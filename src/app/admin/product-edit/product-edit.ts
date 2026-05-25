@@ -94,6 +94,8 @@ export class ProductEdit implements OnInit {
   protected readonly categoriesList = signal<CategoryRow[]>([]);
   protected readonly cardTypesList = signal<CardTypeRow[]>([]);
   protected readonly selectedCardTypeIds = signal<Set<string>>(new Set());
+  /** Single sub-type selection for sealed/accessories (one per product). */
+  protected readonly selectedSubtypeId = signal<string | null>(null);
   protected readonly product = signal<ProductRow | null>(null);
   protected readonly loading = signal(false);
   protected readonly saving = signal(false);
@@ -116,10 +118,32 @@ export class ProductEdit implements OnInit {
     const slug = this.categoriesList().find((c) => c.id === id)?.slug;
     return slug !== undefined && CARD_CATEGORY_SLUGS.includes(slug);
   });
+  /** Slug of the chosen category (or null). */
+  protected readonly selectedCategorySlug = computed(() => {
+    const id = this.selectedCategoryId();
+    return id ? this.categoriesList().find((c) => c.id === id)?.slug ?? null : null;
+  });
+  /** Global Rareza tags (category_id NULL) — the singles/graded multi-select. */
+  protected readonly globalCardTypes = computed(() =>
+    this.cardTypesList().filter((t) => t.category_id === null),
+  );
+  /** Sub-types scoped to the chosen category — the sealed/accessories list. */
+  protected readonly subtypeOptions = computed(() =>
+    this.cardTypesList().filter((t) => t.category_id === this.selectedCategoryId()),
+  );
+  /** True when the category uses a single-select sub-type (sealed/accessories). */
+  protected readonly isSubtypeCategory = computed(() => {
+    const slug = this.selectedCategorySlug();
+    return slug === 'sellado' || slug === 'accesorios';
+  });
   /** True when there are card types to assign AND the category is a card one —
    *  gates the "Tipos de carta" panel. */
   protected readonly showCardTypes = computed(
-    () => this.cardTypesList().length > 0 && this.isCardCategory(),
+    () => this.globalCardTypes().length > 0 && this.isCardCategory(),
+  );
+  /** Gates the single-select "Sub-tipo" panel for sealed/accessories. */
+  protected readonly showSubtype = computed(
+    () => this.isSubtypeCategory() && this.subtypeOptions().length > 0,
   );
 
   protected readonly form: FormGroup = this.fb.nonNullable.group(
@@ -168,6 +192,9 @@ export class ProductEdit implements OnInit {
       this.categoriesList.set(cats);
       this.cardTypesList.set(types);
       this.selectedCardTypeIds.set(new Set(assignedTypeIds));
+      // Same junction backs the single sub-type; a sealed/accessory product has
+      // at most one assigned id.
+      this.selectedSubtypeId.set(assignedTypeIds[0] ?? null);
       if (!product) {
         this.notFound.set(true);
         return;
@@ -226,6 +253,11 @@ export class ProductEdit implements OnInit {
     this.form.markAsDirty();
   }
 
+  protected onSubtypeChange(id: string | null): void {
+    this.selectedSubtypeId.set(id);
+    this.form.markAsDirty();
+  }
+
   protected openImagePicker(): void {
     const ref = this.dialog.open<ImagePickerDialog, undefined, ImagePickerResult>(
       ImagePickerDialog,
@@ -281,7 +313,13 @@ export class ProductEdit implements OnInit {
           market_price: toNullableNumber(raw.market_price),
         });
       }
-      await this.products.setCardTypes(product.id, isCard ? [...this.selectedCardTypeIds()] : []);
+      // Singles/graded → multi Rareza; sealed/accesorios → one sub-type; else none.
+      const typeIds = isCard
+        ? [...this.selectedCardTypeIds()]
+        : this.isSubtypeCategory() && this.selectedSubtypeId()
+          ? [this.selectedSubtypeId()!]
+          : [];
+      await this.products.setCardTypes(product.id, typeIds);
       this.product.set(updated);
       // Repaint the form from the canonical saved row. Price/sale_price/quantity
       // each have two inputs bound to the same control (quick-update card + the

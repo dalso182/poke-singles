@@ -71,6 +71,7 @@ export type Database = {
       card_types: {
         Row: {
           active: boolean
+          category_id: string | null
           created_at: string
           id: string
           name: string
@@ -79,6 +80,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          category_id?: string | null
           created_at?: string
           id?: string
           name: string
@@ -87,13 +89,22 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          category_id?: string | null
           created_at?: string
           id?: string
           name?: string
           slug?: string
           sort_order?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "card_types_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cart_items: {
         Row: {

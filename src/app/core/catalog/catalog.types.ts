@@ -28,6 +28,10 @@ export interface CardTypeRow {
   active: boolean;
   sort_order: number;
   created_at: string;
+  /** Category this type is scoped to. NULL = global (singles/graded Rareza
+   *  tags, multi-select); a category id = single-select sub-type for sealed /
+   *  accessories. */
+  category_id: string | null;
 }
 
 export interface CardTypeInsert {
@@ -35,6 +39,7 @@ export interface CardTypeInsert {
   name: string;
   active?: boolean;
   sort_order?: number;
+  category_id?: string | null;
 }
 
 export type CardTypeUpdate = Partial<CardTypeInsert>;
