@@ -4,8 +4,12 @@
   </a>
   <span class="breadcrumb-sep">›</span>
   <a routerLink="/products" class="breadcrumb-link">Cartas</a>
+  @if (set(); as s) {
+    <span class="breadcrumb-sep">›</span>
+    <span class="breadcrumb-set">{{ s.name }}</span>
+  }
   <span class="breadcrumb-sep">›</span>
-  <span class="breadcrumb-current">{{ product()?.name ?? '—' }}</span>
+  <span class="breadcrumb-current">{{ product()?.name | orDash }}</span>
 </nav>
 
 @if (loading()) {
@@ -13,236 +17,354 @@
 }
 
 @if (notFound()) {
-  <mat-card class="detail-not-found">
-    <mat-card-content>
-      <p>No encontramos esta carta.</p>
-      <a mat-stroked-button routerLink="/products">Volver al catálogo</a>
-    </mat-card-content>
-  </mat-card>
+  <div class="detail-not-found">
+    <p>No encontramos esta carta.</p>
+    <a mat-stroked-button routerLink="/products">Volver al catálogo</a>
+  </div>
 }
 
 @if (product(); as p) {
-  <section class="detail-grid">
-    <div class="detail-image">
-      @if (p.image_url) {
-        <img [src]="p.image_url" [alt]="p.name" />
-      } @else {
-        <div class="detail-image-placeholder">Sin imagen</div>
-      }
+  <!-- ───────── Hero ───────── -->
+  <section class="hero">
+    <!-- Left: card image + trust strip -->
+    <div class="card-image-wrap">
+      <div
+        class="card-image"
+        [class.is-placeholder]="!p.image_url"
+        [style.--type-color]="typeColor(primaryType())"
+      >
+        @if (p.image_url) {
+          <img [src]="p.image_url" [alt]="p.name" />
+        } @else {
+          <span class="card-image-placeholder-label">Sin imagen</span>
+        }
+        <span class="card-image-shine" aria-hidden="true"></span>
+      </div>
+
+      <div class="trust-strip">
+        <mat-icon class="trust-icon">verified_user</mat-icon>
+        <div>
+          <div class="trust-title">Verificación de autenticidad</div>
+          <div class="trust-sub">
+            Inspeccionada a mano. Toploader incluido en piezas sobre ₡8,000.
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="detail-info">
-      @if (set(); as s) {
-        <span class="brand-eyebrow">{{ s.name }}</span>
-      }
-      <h1>{{ p.name }}</h1>
-      <p class="brand-mono detail-meta">
-        @if (p.card_number) { #{{ p.card_number }} }
-        @if (p.rarity) { · {{ p.rarity }} }
-        @if (p.regulation_mark) { · Reg {{ p.regulation_mark }} }
-      </p>
+    <!-- Right: buy panel -->
+    <div class="buy-panel">
+      <div class="eyebrow">{{ set()?.name | orDash }}</div>
 
-      <div class="detail-price-block">
-        @if (p.sale_price != null && p.sale_price < p.price) {
-          <div class="detail-price">
-            <span class="price--sale">₡{{ p.sale_price | number: '1.0-0' }}</span>
-            <span class="price--original">₡{{ p.price | number: '1.0-0' }}</span>
-          </div>
-        } @else {
-          <div class="detail-price">₡{{ p.price | number: '1.0-0' }}</div>
+      <h1 class="card-name">
+        <span [class.is-dash]="!p.name">{{ p.name | orDash }}</span>
+        <app-energy-chip [type]="primaryType()" [size]="24" />
+        @if (p.type2) {
+          <app-energy-chip [type]="p.type2" [size]="24" />
         }
-        <div class="detail-stock">
-          {{ p.quantity }} disponible{{ p.quantity !== 1 ? 's' : '' }}
+      </h1>
+
+      @if (p.card_number || p.rarity || p.regulation_mark) {
+        <div class="meta-row">
+          <span class="meta-num">#{{ p.card_number | orDash }}/{{ set()?.printed_total | orDash }}</span>
+          <span class="meta-dot">·</span>
+          <span class="meta-rarity">{{ p.rarity | orDash }}</span>
+          <span class="meta-dot">·</span>
+          <span>REG {{ p.regulation_mark | orDash }}</span>
+        </div>
+      }
+
+      @if (tags().length) {
+        <div class="tags">
+          @for (t of tags(); track t.id) {
+            <span class="tag">{{ t.name }}</span>
+          }
+        </div>
+      }
+
+      <!-- Price block -->
+      <div class="price-block">
+        <span class="price-tick" aria-hidden="true"></span>
+        <div class="price-row">
+          @if (p.sale_price != null && p.sale_price < p.price) {
+            <span class="price on-sale">₡{{ p.sale_price | number: '1.0-0' }}</span>
+            <span class="price-original">₡{{ p.price | number: '1.0-0' }}</span>
+          } @else if (p.price) {
+            <span class="price">₡{{ p.price | number: '1.0-0' }}</span>
+          } @else {
+            <span class="price price--tba">Precio a consultar</span>
+          }
+          <span class="stock">
+            <span class="stock-dot" [class]="stockClass(p.quantity)"></span>
+            <span class="stock-label">{{ stockLabel(p.quantity) }}</span>
+          </span>
+        </div>
+
+        <div class="actions">
+          @if (p.quantity > 0) {
+            <div class="qty-stepper">
+              <button type="button" (click)="decQty()" aria-label="Restar" [disabled]="qty() <= 1">
+                <mat-icon>remove</mat-icon>
+              </button>
+              <span class="qty-value">{{ qty() }}</span>
+              <button
+                type="button"
+                (click)="incQty(p.quantity)"
+                aria-label="Sumar"
+                [disabled]="qty() >= p.quantity"
+              >
+                <mat-icon>add</mat-icon>
+              </button>
+            </div>
+          }
+          <button
+            type="button"
+            class="cta"
+            (click)="onAddToCart()"
+            [disabled]="p.quantity === 0"
+          >
+            <mat-icon>shopping_cart</mat-icon>
+            {{ ctaLabel(p.quantity) }}
+          </button>
+        </div>
+
+        <a class="secondary-btn" [href]="whatsappLink()" target="_blank" rel="noopener">
+          <svg class="wa-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/>
+          </svg>
+          Pedir fotos adicionales
+        </a>
+      </div>
+
+      <!-- Spec grid -->
+      <div class="spec-grid">
+        <div class="spec">
+          <div class="spec-label">Condición</div>
+          <div class="spec-value" [class.is-dash]="!p.condition">{{ p.condition | orDash }}</div>
+          @if (conditionSub(p.condition); as sub) {
+            <div class="spec-sub">{{ sub }}</div>
+          }
+        </div>
+        <div class="spec">
+          <div class="spec-label">Idioma</div>
+          <div class="spec-value" [class.is-dash]="!p.language">{{ languageLabel(p.language) }}</div>
+        </div>
+        <div class="spec">
+          <div class="spec-label">Variante</div>
+          <div class="spec-value" [class.is-dash]="!p.variant">{{ variantLabel(p.variant) }}</div>
+        </div>
+        <div class="spec">
+          <div class="spec-label">Ilustrador</div>
+          <div class="spec-value" [class.is-dash]="!p.illustrator">{{ p.illustrator | orDash }}</div>
+          @if (p.illustrator) {
+            <a class="spec-link" routerLink="/buscar" [queryParams]="{ q: p.illustrator }"
+              >Más de este ilustrador</a>
+          }
         </div>
       </div>
 
-      <button
-        mat-flat-button
-        color="primary"
-        class="detail-add-btn"
-        (click)="onAddToCart()"
-        [disabled]="p.quantity === 0"
-      >
-        <mat-icon>shopping_cart</mat-icon>
-        {{ p.quantity === 0 ? 'Agotada' : 'Añadir al carrito' }}
-      </button>
+      <!-- Service strip -->
+      <div class="service-strip">
+        <div class="service">
+          <mat-icon>local_shipping</mat-icon>
+          <div>
+            <div class="service-title">Envío a todo CR</div>
+            <div class="service-sub">Correos o courier · 2-4 días</div>
+          </div>
+        </div>
+        <div class="service">
+          <mat-icon>autorenew</mat-icon>
+          <div>
+            <div class="service-title">Cambios 7 días</div>
+            <div class="service-sub">Si la condición no calza</div>
+          </div>
+        </div>
+      </div>
 
-      <dl class="detail-specs">
-        <dt>Condición</dt>
-        <dd>{{ p.condition || '—' }}</dd>
-        <dt>Idioma</dt>
-        <dd>{{ languageLabel(p.language) }}</dd>
-        @if (p.variant) {
-          <dt>Variante</dt>
-          <dd>{{ variantLabel(p.variant) }}</dd>
-        }
-      </dl>
-
-      @if (tags().length) {
-        <mat-chip-set class="detail-tags">
-          @for (t of tags(); track t.id) {
-            <mat-chip>{{ t.name }}</mat-chip>
-          }
-        </mat-chip-set>
+      <!-- Format legality -->
+      @if (p.legal_standard !== null || p.legal_expanded !== null) {
+        <div class="format-strip">
+          <span class="format-label">Formato</span>
+          <span class="format-badge" [class.is-legal]="p.legal_standard">
+            @if (p.legal_standard) { <mat-icon>check</mat-icon> }
+            Standard
+          </span>
+          <span class="format-badge" [class.is-legal]="p.legal_expanded">
+            @if (p.legal_expanded) { <mat-icon>check</mat-icon> }
+            Expanded
+          </span>
+        </div>
       }
     </div>
   </section>
 
-  @if (card(); as c) {
-    @if (isPokemon()) {
-      <mat-card class="detail-section">
-        <mat-card-header>
-          <mat-card-title>Estadísticas</mat-card-title>
-        </mat-card-header>
-        <mat-card-content class="detail-stats-grid">
-          @if (c.hp) {
-            <div><span class="brand-mono">HP</span><strong>{{ c.hp }}</strong></div>
-          }
-          @if (c.types?.length) {
-            <div><span class="brand-mono">Tipo</span><strong>{{ c.types?.join(' · ') }}</strong></div>
-          }
-          @if (c.stage) {
-            <div><span class="brand-mono">Etapa</span><strong>{{ c.stage }}</strong></div>
-          }
-          @if (c.evolveFrom) {
-            <div><span class="brand-mono">Evoluciona de</span><strong>{{ c.evolveFrom }}</strong></div>
-          }
-          @if (c.dexId?.length) {
-            <div><span class="brand-mono">Pokédex #</span><strong>{{ c.dexId?.join(', ') }}</strong></div>
-          }
-          @if (c.suffix) {
-            <div><span class="brand-mono">Sufijo</span><strong>{{ c.suffix }}</strong></div>
-          }
-          @if (c.weight) {
-            <div><span class="brand-mono">Peso</span><strong>{{ c.weight }}</strong></div>
-          }
-          @if (c.level) {
-            <div><span class="brand-mono">Nivel</span><strong>{{ c.level }}</strong></div>
-          }
-        </mat-card-content>
-      </mat-card>
-    }
+  <!-- ───────── Detalles de combate (Pokémon only) ───────── -->
+  @if (isPokemon()) {
+  <section class="combat">
+    <div class="section-head">
+      <h2>Detalles de combate</h2>
+    </div>
 
-    @if (c.item; as item) {
-      <mat-card class="detail-section">
-        <mat-card-header>
-          <mat-card-title>Objeto</mat-card-title>
-          <mat-card-subtitle>{{ item.name }}</mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content>
-          <p>{{ item.effect }}</p>
-        </mat-card-content>
-      </mat-card>
-    }
+    <!-- HP / Type / Pokédex bar -->
+    <div
+      class="hp-bar"
+      [style.--type-color]="typeColor(primaryType())"
+      [style.--type-fg]="typeFg(primaryType())"
+    >
+      <div class="hp-block">
+        <div class="hp-label">HP</div>
+        <div class="hp-value" [class.is-dash]="!(card()?.hp)">{{ card()?.hp | orDash }}</div>
+      </div>
+      <div class="type-block">
+        <div class="hp-label">Tipo</div>
+        <div class="type-row">
+          <app-energy-chip [type]="primaryType()" [size]="22" />
+          <span class="type-name" [class.is-dash]="!typeName(primaryType())">
+            {{ typeName(primaryType()) | orDash }}
+          </span>
+          @if (card()?.stage || card()?.evolveFrom) {
+            <span class="type-meta">
+              {{ card()?.stage | orDash }}@if (card()?.evolveFrom) {
+                · evoluciona de {{ card()?.evolveFrom }}
+              }
+            </span>
+          }
+        </div>
+      </div>
+      <div class="dex-block">
+        <div class="hp-label">Pokédex</div>
+        <div class="dex-value" [class.is-dash]="dexNumber() == null">
+          #{{ dexNumber() | orDash }}
+          @if (card()?.suffix) { <span class="dex-suffix">{{ card()?.suffix }}</span> }
+        </div>
+      </div>
+    </div>
 
+    <!-- Abilities (kept so card data isn't lost; design has no dedicated slot) -->
     @if (abilities().length) {
-      <mat-card class="detail-section">
-        <mat-card-header>
-          <mat-card-title>Habilidades</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          @for (a of abilities(); track a.name) {
-            <div class="detail-ability">
-              <h3>
-                <span class="brand-eyebrow">{{ a.type }}</span>
-                {{ a.name }}
-              </h3>
-              <p>{{ a.effect }}</p>
-            </div>
-          }
-        </mat-card-content>
-      </mat-card>
+      <div class="abilities">
+        @for (a of abilities(); track a.name) {
+          <div class="ability">
+            <div class="ability-eyebrow">{{ a.type }}</div>
+            <div class="ability-name">{{ a.name }}</div>
+            @if (a.effect) { <p class="ability-effect">{{ a.effect }}</p> }
+          </div>
+        }
+      </div>
     }
 
+    <!-- Attacks -->
     @if (attacks().length) {
-      <mat-card class="detail-section">
-        <mat-card-header>
-          <mat-card-title>Ataques</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          @for (atk of attacks(); track atk.name) {
-            <div class="detail-attack">
-              <div class="detail-attack-row">
-                <span class="brand-mono detail-attack-cost">
-                  {{ (atk.cost ?? []).join(' ') || '—' }}
-                </span>
-                <h3 class="detail-attack-name">{{ atk.name }}</h3>
-                @if (atk.damage) {
-                  <span class="detail-attack-damage">{{ atk.damage }}</span>
+      <div class="attacks">
+        @for (atk of attacks(); track atk.name) {
+          <div class="attack">
+            <div class="attack-cost">
+              @if (atk.cost?.length) {
+                @for (c of atk.cost; track $index) {
+                  <app-energy-chip [type]="c" [size]="24" />
                 }
-              </div>
-              @if (atk.effect) {
-                <p>{{ atk.effect }}</p>
+              } @else {
+                <span class="dash">—</span>
               }
             </div>
-          }
-        </mat-card-content>
-      </mat-card>
-    }
-
-    @if (weaknesses().length || resistances().length || c.retreat !== undefined) {
-      <mat-card class="detail-section">
-        <mat-card-content class="detail-defense-grid">
-          @if (weaknesses().length) {
-            <div>
-              <span class="brand-eyebrow">Debilidad</span>
-              @for (w of weaknesses(); track w.type) {
-                <div>{{ w.type }} {{ w.value || '' }}</div>
+            <div class="attack-body">
+              <div class="attack-name">{{ atk.name | orDash }}</div>
+              @if (atk.effect) { <p class="attack-effect">{{ atk.effect }}</p> }
+            </div>
+            <div class="attack-damage">
+              @if (atk.damage) {
+                <span class="damage-value">{{ atk.damage }}</span>
+              } @else {
+                <span class="no-damage">Sin daño</span>
               }
             </div>
-          }
-          @if (resistances().length) {
-            <div>
-              <span class="brand-eyebrow">Resistencia</span>
-              @for (r of resistances(); track r.type) {
-                <div>{{ r.type }} {{ r.value || '' }}</div>
-              }
-            </div>
-          }
-          @if (c.retreat !== undefined) {
-            <div>
-              <span class="brand-eyebrow">Costo de retirada</span>
-              <div>{{ c.retreat }}</div>
-            </div>
-          }
-        </mat-card-content>
-      </mat-card>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="attacks">
+        <div class="attack attack--empty">
+          <div class="attack-empty-eyebrow">Sin ataques registrados</div>
+          <span class="dash">—</span>
+        </div>
+      </div>
     }
 
-    @if (!isPokemon() && c.effect) {
-      <mat-card class="detail-section">
-        <mat-card-content>
-          <p>{{ c.effect }}</p>
-        </mat-card-content>
-      </mat-card>
-    }
-
-    @if (c.description || p.illustrator || p.legal_standard !== null) {
-      <mat-card class="detail-section detail-flavor">
-        <mat-card-content>
-          @if (c.description) {
-            <p class="detail-flavor-text"><em>{{ c.description }}</em></p>
-          }
-          <p class="brand-mono detail-credits">
-            @if (p.illustrator) { Ilustrado por {{ p.illustrator }} }
-            @if (p.legal_standard !== null) {
-              · Standard {{ p.legal_standard ? '✓' : '✗' }}
-              · Expanded {{ p.legal_expanded ? '✓' : '✗' }}
+    <!-- Weakness / Resistance / Retreat -->
+    <div class="combat-row">
+      <div class="combat-stat">
+        <div class="combat-label">Debilidad</div>
+        <div class="combat-value">
+          @if (weakness(); as w) {
+            <app-energy-chip [type]="w.type" [size]="22" [withLabel]="true" />
+            @if (w.value) {
+              <span class="combat-mult" [style.color]="typeColor(w.type)">{{ w.value }}</span>
             }
-          </p>
-        </mat-card-content>
-      </mat-card>
+          } @else {
+            <span class="dash">—</span>
+          }
+        </div>
+      </div>
+      <div class="combat-stat">
+        <div class="combat-label">Resistencia</div>
+        <div class="combat-value">
+          @if (resistance(); as r) {
+            <app-energy-chip [type]="r.type" [size]="22" [withLabel]="true" />
+            @if (r.value) { <span class="combat-mult">{{ r.value }}</span> }
+          } @else {
+            <span class="dash">—</span>
+          }
+        </div>
+      </div>
+      <div class="combat-stat">
+        <div class="combat-label">Costo de retirada</div>
+        <div class="combat-value">
+          @if (retreatChips().length) {
+            @for (chip of retreatChips(); track $index) {
+              <app-energy-chip type="Colorless" [size]="20" />
+            }
+          } @else {
+            <span class="dash">—</span>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- ex / VMAX rules -->
+    @for (r of rules(); track $index) {
+      <div class="rule-callout">
+        <div class="rule-title">★ Regla</div>
+        <p class="rule-text">{{ r }}</p>
+      </div>
     }
+  </section>
   }
 
+  <!-- Card effect — Trainer / Stadium / Energy (and the rare attack-less Pokémon),
+       so the card's actual text isn't lost when the combat section is hidden. -->
+  @if ((item() || cardEffect()) && !attacks().length) {
+    <section class="combat">
+      <div class="section-head">
+        <h2>Efecto</h2>
+      </div>
+      @if (item(); as it) {
+        <div class="effect-box">
+          <div class="effect-eyebrow">{{ it.name }}</div>
+          <p class="effect-text">{{ it.effect }}</p>
+        </div>
+      } @else if (cardEffect(); as eff) {
+        <p class="effect-text">{{ eff }}</p>
+      }
+    </section>
+  }
+
+  <!-- Seller notes (kept; not in the design but real data) -->
   @if (p.description) {
-    <mat-card class="detail-section">
-      <mat-card-header>
-        <mat-card-title>Notas del vendedor</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <p>{{ p.description }}</p>
-      </mat-card-content>
-    </mat-card>
+    <section class="combat seller-notes">
+      <div class="section-head">
+        <h2>Notas del vendedor</h2>
+      </div>
+      <p class="notes-text">{{ p.description }}</p>
+    </section>
   }
 }

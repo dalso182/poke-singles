@@ -1,0 +1,21 @@
+@if (iconUrl(); as src) {
+  <img
+    [src]="src"
+    [alt]="label()"
+    class="energy-icon"
+    [style.width.px]="size()"
+    [style.height.px]="size()"
+  />
+} @else {
+  <span
+    class="energy-fallback"
+    [style.width.px]="size()"
+    [style.height.px]="size()"
+    [style.font-size.px]="size() * 0.6"
+    aria-hidden="true"
+    >—</span
+  >
+}
+@if (withLabel()) {
+  <span class="energy-label">{{ label() }}</span>
+}
