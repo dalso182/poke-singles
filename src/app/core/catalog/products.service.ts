@@ -170,6 +170,22 @@ export class ProductsService {
     return (data as ProductRow | null) ?? null;
   }
 
+  /**
+   * All products for a TCGdex card id, any condition/variant/language. Powers
+   * the add-product duplicate warning: a card can be several SKUs (each its own
+   * unique slug), so this returns 0..n rows. Admin RLS (`products_admin_all`)
+   * lets this see inactive / out-of-stock rows so dormant duplicates surface.
+   */
+  async listByCardRef(cardRef: string): Promise<ProductRow[]> {
+    const { data, error } = await (this.supabase.client as any)
+      .from('products')
+      .select('id, slug, name, condition, variant, language, quantity, active, card_number, set_id')
+      .eq('card_ref', cardRef)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data as ProductRow[] | null) ?? [];
+  }
+
   async create(input: ProductInsert): Promise<ProductRow> {
     const { data, error } = await (this.supabase.client as any)
       .from('products')

@@ -66,6 +66,37 @@
         </app-selected-card-preview>
       }
 
+      @if (existingMatches().length) {
+        <div class="add-product__dup-banner" role="status">
+          <mat-icon>inventory_2</mat-icon>
+          <div class="add-product__dup-body">
+            @if (exactDuplicate(); as dup) {
+              <strong>Este producto ya existe</strong>
+              <p>
+                Ya tienes esta carta en esta misma condición. Edítala para reponer stock
+                en vez de crear un duplicado.
+              </p>
+            } @else {
+              <strong>Esta carta ya está en el catálogo</strong>
+              <p>Existe en otra condición o idioma. Continúa solo si es una variante nueva.</p>
+            }
+            <ul class="add-product__dup-list">
+              @for (p of existingMatches(); track p.id) {
+                <li [class.is-exact]="p.slug === currentSlug()">
+                  <button type="button" class="add-product__dup-link" (click)="goToProduct(p.id)">
+                    <span class="add-product__dup-meta">
+                      {{ p.condition || '—' }}@if (p.variant) { · {{ p.variant }} } · {{ p.language }}
+                      · stock {{ p.quantity }}@if (!p.active) { · inactivo }
+                    </span>
+                    <span class="add-product__dup-action">Editar</span>
+                  </button>
+                </li>
+              }
+            </ul>
+          </div>
+        </div>
+      }
+
       <app-form-section title="Información del producto">
         <app-sub-section>
           <app-form-grid [cols]="2">

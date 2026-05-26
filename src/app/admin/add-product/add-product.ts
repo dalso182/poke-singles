@@ -56,7 +56,13 @@ import {
   LANGUAGE_OPTIONS,
   VARIANT_OPTIONS,
 } from '../../core/catalog/catalog.types';
-import type { CardTypeRow, CategoryRow, SetRow, VariantCode } from '../../core/catalog/catalog.types';
+import type {
+  CardTypeRow,
+  CategoryRow,
+  ProductRow,
+  SetRow,
+  VariantCode,
+} from '../../core/catalog/catalog.types';
 
 const PICKER_SET_STORAGE_KEY = 'admin:add-product:picker-set-id';
 
@@ -123,6 +129,20 @@ export class AddProduct {
   // True once the form preview <img> fails to load — i.e. the hosted image
   // isn't on our server yet. Reset on each card selection.
   protected readonly previewMissing = signal(false);
+
+  // Existing products that share the picked card's `card_ref` (any condition /
+  // variant / language). Drives the duplicate-card warning banner so the admin
+  // can restock the existing SKU instead of creating a duplicate. Populated on
+  // card selection, cleared whenever the selection is reset.
+  protected readonly existingMatches = signal<ProductRow[]>([]);
+  // Mirror of the computed slug so `exactDuplicate` re-evaluates live as the
+  // admin changes condition/variant/language (the slug control is silent).
+  protected readonly currentSlug = signal('');
+  /** The existing SKU (if any) whose slug equals the current form's slug — the
+   *  true duplicate / restock target, highlighted in the banner. */
+  protected readonly exactDuplicate = computed(() =>
+    this.existingMatches().find((p) => p.slug === this.currentSlug()),
+  );
 
   /** Direct TCGplayer product URL for the picked card, when it has pricing data. */
   protected readonly tcgplayerUrl = computed(() => {
@@ -288,6 +308,12 @@ export class AddProduct {
   protected async onCardSelected(card: Card): Promise<void> {
     this.selectedCard.set(card);
     this.previewMissing.set(false);
+    // Surface any existing products for this card so the admin can restock the
+    // existing SKU instead of duplicating it. Best-effort — never block the pick.
+    void this.products
+      .listByCardRef(card.id)
+      .then((rows) => this.existingMatches.set(rows))
+      .catch(() => this.existingMatches.set([]));
     this.form.patchValue({
       name: card.name,
       pokemon_name: card.name, // user can refine; trigger lowercase+trims server-side
@@ -405,6 +431,7 @@ export class AddProduct {
   protected enableManualMode(): void {
     this.manualMode.set(true);
     this.selectedCard.set(null);
+    this.existingMatches.set([]);
     this.selectedCardTypeIds.set(new Set());
     this.selectedSubtypeId.set(null);
     this.form.reset({
@@ -440,6 +467,7 @@ export class AddProduct {
   /** Footer "Cancelar" — return to the TCGdex picker (does not leave the page). */
   protected resetSelection(): void {
     this.selectedCard.set(null);
+    this.existingMatches.set([]);
     this.manualMode.set(false);
   }
 
@@ -447,8 +475,14 @@ export class AddProduct {
     void this.router.navigate(['/admin/categories']);
   }
 
+  /** Banner "Editar" — jump to the existing product's edit page. */
+  protected goToProduct(id: string): void {
+    void this.router.navigate(['/admin/products', id, 'edit']);
+  }
+
   private refreshSlug(): void {
     const next = this.computeSlug();
+    this.currentSlug.set(next);
     const slug = this.form.controls['slug'];
     if (slug.value !== next) {
       slug.setValue(next, { emitEvent: false });
@@ -546,6 +580,7 @@ export class AddProduct {
 
   private resetForNext(): void {
     this.selectedCard.set(null);
+    this.existingMatches.set([]);
     this.selectedCardTypeIds.set(new Set());
     this.selectedSubtypeId.set(null);
     this.form.reset({

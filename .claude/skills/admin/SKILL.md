@@ -124,6 +124,16 @@ filter; `shared/set-typeahead/` over cached `SetsService.list`), the image picke
 plus the full form. Catalog services live in `src/app/core/catalog/` (`ProductsService`,
 `CategoriesService`, `SetsService`, `CardTypesService`, `CouponsService`, `TcgdexCardsService`).
 
+**Duplicate-card warning** (add-product only): picking a TCGdex card fires
+`ProductsService.listByCardRef(card.id)` and renders an amber banner if that card already exists
+as one or more products (any condition/variant/language — admin RLS sees inactive rows too). The
+SKU whose slug matches the current form's slug is flagged as the exact duplicate / restock target
+(via the `exactDuplicate` computed off a `currentSlug` mirror, so it re-evaluates live as
+condition/variant/language change); other matches read as "ya está en el catálogo". Each row links
+to its edit page. Non-blocking — the hard duplicate-slug stop stays at submit (`slugInUse`). Manual
+mode has no `card_ref`, so no banner. Banner uses amber tokens (`--accent-amber*`/`--amber-text`),
+never brand red.
+
 ## Coupons admin
 
 CRUD at `/admin/coupons` (list with filters + search + soft-delete-with-undo) and the shared
