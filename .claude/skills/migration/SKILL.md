@@ -34,8 +34,11 @@ enrichment, preserving OC's original list dates. Pipeline:
 4. **Match TCGdex card** by `localId` in the resolved set, then fetch the full Card payload
    (attacks, illustrator, regulation mark, types, legal status).
 5. **Build product row** — TCGdex enrichment + OC price (rounded to ₡100), quantity,
-   `first_listed_at` from `oc_product.date_added`, `variant` derived from any Reverse-Holo /
-   Holográficas card-type.
+   `first_listed_at` from `oc_product.date_added`, `last_restocked_at` from
+   `oc_product.date_modified` (the `tg_products_track_restock` trigger only stamps `now()` when
+   the caller leaves it null — see migration `20260526000000`), `condition` from
+   `oc_product.model` normalized to NM/LP/MP/HP/DMG (anything else → NM), `variant` derived from
+   any Reverse-Holo / Holográficas card-type.
 6. **In-process slug claim** — a synchronous `Set<slug>` prevents the 8 parallel batches from
    racing on duplicate inserts when OC has two listings for the same TCGdex card.
 7. **Insert + attach card-types** — `tcgdex_cards` upsert (cache), `products` insert,

@@ -167,7 +167,8 @@ function loadDump(sqlPath) {
   //   15 price, 16 points, 17 tax_class_id, 18 date_available, 19 weight,
   //   20 weight_class_id, 21 length, 22 width, 23 height, 24 length_class_id,
   //   25 subtract, 26 minimum, 27 sort_order, 28 status, 29 viewed, 30 date_added, 31 date_modified
-  // We capture id (1), quantity (10), image (12), price (15), status (28), and date_added (30).
+  // We capture id (1), model (2) — OC stored card condition here — quantity (10),
+  // image (12), price (15), status (28), date_added (30), and date_modified (31).
   const pStart = sql.indexOf('INSERT INTO `oc_product` (');
   const pEnd = sql.indexOf('-- --------------------------------------------------------', pStart);
   const pBlock = sql.slice(pStart, pEnd);
@@ -175,7 +176,8 @@ function loadDump(sqlPath) {
   const prodRe = new RegExp(
     [
       String.raw`\((\d+),`,                                              // 1  id
-      String.raw`\s*'[^']*',\s*'[^']*',\s*'[^']*',\s*'[^']*',`,          // 2-5
+      String.raw`\s*'([^']*)',`,                                         // 2  model (condition)
+      String.raw`\s*'[^']*',\s*'[^']*',\s*'[^']*',`,                     // 3-5  sku/upc/ean
       String.raw`\s*'[^']*',\s*'[^']*',\s*'[^']*',\s*'[^']*',`,          // 6-9
       String.raw`\s*(-?\d+),`,                                           // 10 quantity
       String.raw`\s*\d+,`,                                               // 11 stock_status_id
@@ -190,22 +192,26 @@ function loadDump(sqlPath) {
       String.raw`\s*(\d+),`,                                             // 28 status
       String.raw`\s*\d+,`,                                               // 29 viewed
       String.raw`\s*'([^']*)',`,                                         // 30 date_added
+      String.raw`\s*'([^']*)'`,                                          // 31 date_modified
     ].join(''),
     'g',
   );
+  // OC dates are local time, no zone. Treat as UTC — we only need a stable
+  // ordering hint, not millisecond accuracy. `'0000-00-00 00:00:00'` is OC's
+  // "no value" sentinel and must become null.
+  const ocDateToIso = (raw) =>
+    raw && raw !== '0000-00-00 00:00:00' ? new Date(raw.replace(' ', 'T') + 'Z').toISOString() : null;
   let m;
   while ((m = prodRe.exec(pBlock))) {
-    // date_added is OC's local time (no zone). Treat as UTC for storage — we
-    // only want a stable ordering hint, not millisecond accuracy.
-    const da = m[6];
-    const dateAdded = da && da !== '0000-00-00 00:00:00' ? new Date(da.replace(' ', 'T') + 'Z').toISOString() : null;
     products.set(+m[1], {
       id: +m[1],
-      quantity: +m[2],
-      image: m[3],
-      price: parseFloat(m[4]),
-      status: +m[5],
-      date_added: dateAdded,
+      model: m[2],
+      quantity: +m[3],
+      image: m[4],
+      price: parseFloat(m[5]),
+      status: +m[6],
+      date_added: ocDateToIso(m[7]),
+      date_modified: ocDateToIso(m[8]),
     });
   }
 
@@ -246,6 +252,18 @@ function parseTitle(rawName) {
   const m = TITLE_RE.exec(name);
   if (!m) return null;
   return { pokemonName: m[1].trim(), cardNumber: m[2], descriptors: m[3].trim() };
+}
+
+// OC stored condition in oc_product.model. Canonical storefront tokens are
+// NM / LP / MP / HP / DMG (see CONDITION_OPTIONS in catalog.types.ts). Anything
+// outside that set in the dump — `Graded`, `NA`, `TEST`, `Variada`,
+// `Opened`/`Unopened` (those land on non-singles anyway), blank, whitespace —
+// falls back to NM, which matches the prior hardcoded default and keeps
+// storefront condition filters intact.
+const CONDITION_MAP = { NM: 'NM', LP: 'LP', MP: 'MP', HP: 'HP', DM: 'DMG', DMG: 'DMG' };
+function normalizeCondition(raw) {
+  const key = (raw ?? '').trim().toUpperCase();
+  return CONDITION_MAP[key] ?? 'NM';
 }
 
 // ---- Mapping load ---------------------------------------------------------
@@ -691,6 +709,10 @@ async function main() {
           quantity: p.quantity,
           image_url: img.path,
           ...(p.date_added ? { first_listed_at: p.date_added } : {}),
+          // Preserve OC's last-touched date so admin sort-by-restocked reflects
+          // real shop history. The track-restock trigger respects a non-null
+          // value on INSERT (migration 20260526000000); null falls back to now().
+          last_restocked_at: p.date_modified ?? p.date_added ?? null,
         })
         .select('id')
         .single();
@@ -825,7 +847,10 @@ async function main() {
       image_url: tcgdexImageToHostedPath(card.image) || null,
       set_id: setRow.id,
       category_id: singlesId,
-      condition: 'NM',
+      // OC stored per-card condition in `model` — normalize to the canonical
+      // NM/LP/MP/HP/DMG set (anything unrecognised → NM, matching the prior
+      // hardcoded default).
+      condition: normalizeCondition(p.model),
       language: 'EN',
       variant,
       // Round to nearest ₡100 (most OC prices already are).
@@ -840,10 +865,14 @@ async function main() {
       type2: card.types?.[1] ?? null,
       legal_standard: card.legal?.standard ?? null,
       legal_expanded: card.legal?.expanded ?? null,
-      // Preserve OC's original listing date so /products sort-by-recent and
-      // the home "Recent" rail reflect the real shop history, not the import
-      // run timestamp. The pin trigger is BEFORE UPDATE only, so this sticks.
+      // Preserve OC's original listing date (date_added) and last-touched date
+      // (date_modified) so /products sort-by-recent and admin sort-by-restocked
+      // reflect real shop history rather than the import run timestamp. The
+      // first_listed pin trigger is BEFORE UPDATE only, so the value sticks on
+      // INSERT; the track-restock trigger respects a non-null last_restocked_at
+      // on INSERT (migration 20260526000000) and falls back to now() when null.
       ...(p.date_added ? { first_listed_at: p.date_added } : {}),
+      last_restocked_at: p.date_modified ?? p.date_added ?? null,
     };
 
     const { data: inserted, error: insErr } = await supabase
