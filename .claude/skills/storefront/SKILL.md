@@ -72,11 +72,21 @@ Surfaces: header badge bound to `cart.itemCount()`; a right-side `mat-sidenav` d
 (full review, list/grid toggle persisted to `cart:view`). Cart-level metadata (the applied
 coupon) lives in the separate 1-row-per-user `carts` table.
 
-**Coupons (customer side):** the chosen coupon id rides on `carts.coupon_id`; the cart
-re-validates after every mutation; a `couponDroppedTick` signal flashes a snackbar on auto-drop
-(e.g. subtotal fell below threshold). Error codes map to Spanish via
+**Coupons (customer side):** apply/remove through the shared `<app-coupon-field>`
+(`src/app/shared/coupon-field/`), reused on `/cart`, the cart drawer, and `/checkout` — each host
+still prints its own `−₡ discount` line, so the component renders only the form/applied-chip. The
+chosen coupon id rides on `carts.coupon_id`; the cart re-validates after every mutation; a
+`couponDroppedTick` signal flashes a snackbar on auto-drop (e.g. subtotal fell below threshold) —
+that effect lives in `cart-page`, deliberately **not** in the shared component, so it can't
+double-fire when the field is mounted on two surfaces at once. Error codes map to Spanish via
 `src/app/core/catalog/coupon-errors.ts`. The discount is computed locally (TS mirror of
-`calculate_coupon_discount`) to avoid an RPC per cart change. Full RPC contract → `database` skill.
+`calculate_coupon_discount`, category-scoped via `eligibleSubtotal`) to avoid an RPC per cart
+change. **Per-line breakdown:** `CartService.lineCoupon` (`computed<Map<product_id, LineCoupon>>`)
+distributes the rounded `discount()` across in-scope lines (largest-remainder, sums exactly to the
+summary) so each cart line shows its discounted price — struck `.price--original` + amber
+`.price--sale`, with "Cupón no aplica" on the lines a category-scoped coupon skips. PERCENTAGE
+coupons get per-item prices; a `FIXED_ON_THRESHOLD` coupon only highlights its eligible lines.
+Full RPC contract → `database` skill.
 
 ## Raffles (customer view)
 
