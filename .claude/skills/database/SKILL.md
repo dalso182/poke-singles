@@ -59,6 +59,10 @@ stock listings are never visible to anon clients on any query path).
 - **Reporting/analytics:** `customer_activity` (login / order_created / registered events with
   IP), `search_log` (storefront searches: keyword + match count + IP). Both **RLS-enabled with
   no policies** — written only by security-definer fns, read only by admin report RPCs.
+- **Price review:** `price_reviews` (one row per flagged product, snapshot of store + market
+  + suggested + `tcgplayer_product_id` + signed `diff_pct` + `condition_multiplier` reserved,
+  per-row `ignored_at`), `price_check_runs` (small audit log: trigger / counts / error).
+  Both admin-only RLS. `products.price_checked_at` is the cursor for oldest-first sweeps.
 - Triggers: `updated_at`, `first_listed_at`, restock tracking, `pokemon_name` normalization.
 
 ## Customer auth (DB side)
@@ -229,9 +233,82 @@ global `fetch`, caches in localStorage. **Endpoint is per-environment** via
 `environment.tcgdex.endpoint`: empty = SDK default (`api.tcgdex.net`); a URL points at a custom
 proxy (useful on localhost). Smoke test: `node scripts/tcgdex-smoke.mjs`.
 
+## Price review (data side)
+
+Backs the admin `/admin/price-review` screen + the weekly cron. Compares each active NM single's
+store price (CRC) against the TCGplayer market price (USD × `app_settings.exchange_rate_usd_crc`)
+and flags rows whose absolute `diff_pct` ≥ the configured threshold. Scope is intentional and
+enforced both client- and server-side: `active = true AND card_ref IS NOT NULL AND
+category_id = (categories.slug='singles') AND condition = 'NM' AND price >= floor`.
+TCGplayer's `marketPrice` is broadly NM by convention; LP/MP/HP/DMG cards are silently skipped
+rather than approximated. UI homes → `admin` skill.
+
+**Tables.**
+- `price_reviews` (PK `product_id`, FK products `on delete cascade`): snapshots of
+  `store_price`, `market_usd`, `exchange_rate`, `market_crc`, `suggested_price` (rounded up to
+  nearest ₡100), signed `diff_pct`, `tcgplayer_product_id`, `market_updated_at`, `checked_at`,
+  `ignored_at`. Admin-only RLS.
+- `price_check_runs` (audit log): `started_at`, `finished_at`, `trigger` (`'manual'`/`'cron'`),
+  scanned/priced/flagged counters, optional `error`. Admin-only RLS.
+- `products.price_checked_at` (added): cursor for oldest-first sweeps, partial index on
+  `(active AND card_ref IS NOT NULL)`.
+- `app_settings` gained `price_review_enabled`, `price_review_threshold_pct (default 10)`,
+  `price_review_floor_crc (default 5000)`.
+
+**RPCs** (all `security definer` + `is_admin()` guard, granted to `authenticated`).
+- `admin_record_price_check(p_product_id, p_store_price, p_market_usd, p_exchange_rate,
+  p_threshold_pct, p_market_updated_at, p_tcgplayer_product_id default null) returns boolean`
+  — computes `market_crc` / `suggested_price` / `diff_pct`, upserts or deletes the
+  `price_reviews` row, and bumps `products.price_checked_at`. Used by **both** the browser
+  runner and the edge function so they produce identical rows.
+- `admin_price_review_start(p_trigger) returns uuid` — inserts a fresh `price_check_runs`
+  row, then **wipes** `price_reviews` and any prior runs (`where true` to satisfy pg-safeupdate
+  — see below). The clean-snapshot rule: each new run is the only data that exists.
+- `admin_price_review_finish(p_run_id, p_scanned, p_priced, p_flagged, p_error)` — finalizes
+  the current run row.
+- `admin_price_review_summary()` — pending count + total flagged + latest run row, joined into
+  one row via a `right join (select 1)` so it always returns something even pre-first-run.
+- `admin_price_review_next()` — highest-`|diff_pct|`, oldest-checked, non-ignored row joined
+  with the product/set columns the card UI needs.
+- `admin_price_review_ignore(p_product_id)` — sets `ignored_at = now()`; the row reappears on
+  the next run because that run wipes the table.
+- `admin_price_review_accept(p_product_id, p_new_price)` — atomically updates `products.price`
+  and deletes the queue row.
+
+**Edge function** `supabase/functions/price-check/` (Deno). Modeled on `send-raffle-result`:
+service-role client, the same `firstTcgplayerVariant` extraction logic mirrored in Deno-TS,
+fetches TCGdex REST directly (`https://api.tcgdex.net/v2/en/cards/<card_ref>`), batches of 200,
+**self-chains via `fetch(req.url, …)` when a full batch comes back** so one logical cron run
+sweeps the whole catalog even if a single invocation hits the wall-clock limit. `verify_jwt =
+false` in `config.toml` (cron has no session). Scope filters mirror the browser runner exactly.
+
+**pg_cron schedule.** `cron.schedule('price-check-weekly', '0 10 * * 1', …)` — Mondays 10:00 UTC
+(= 04:00 Costa Rica). Body honors `app_settings.price_review_enabled` and reads the function URL
+from Vault (`price_check_url` + existing `supabase_anon_key`); failure is swallowed so a missing
+secret never breaks the schedule. Migration `20260525003600_price_review_cron.sql`. The Vault
+secret is set manually in the dashboard at first deploy — point to
+`https://<project-ref>.supabase.co/functions/v1/price-check`.
+
+**Migration trail** (all `20260525*`):
+- `003500_price_review` — tables, RPCs, settings columns, cursor on products.
+- `003600_price_review_cron` — `create extension if not exists pg_cron` + the weekly schedule.
+- `003700_price_review_clear_on_start` — clean-snapshot semantic in `admin_price_review_start`.
+- `003800_price_review_tcgplayer_product_id` — snapshot column + plumb productId end-to-end
+  (extracted from `pricing.tcgplayer.<variant>.productId` on the same TCGdex payload that
+  yields `marketPrice`). Direct deep links to TCGplayer where TCGdex provides the id; the
+  client falls back to a search URL composed of name + card_number + set_name when it doesn't.
+- `003900_price_review_start_safedelete` — see pg-safeupdate note below.
+
+**pg-safeupdate.** Supabase enables the **pg-safeupdate** extension by default on hosted
+projects. It rejects bare `delete from t;` / `update t set …;` at runtime with `"DELETE
+requires a WHERE clause"`. This applies inside `security definer` RPCs too (RLS bypass doesn't
+help — it's a different hook). For an intentional wipe use `delete from t where true;` —
+keeps the intent explicit at the call site, preferred over disabling the extension or reaching
+for `truncate` (which has different transactional / trigger semantics).
+
 ## Edge functions
 
-`send-order-email`, `send-signup-email`, `send-raffle-result` are live. DB triggers invoke them
-via `net.http_post` — **pg_net lives in the `net` schema on this project, NOT `extensions`** —
-plus Vault secrets for the function URL + `supabase_anon_key`. The folder grows as new flows
-need server-side hooks.
+`send-order-email`, `send-signup-email`, `send-raffle-result`, and **`price-check`** are live.
+DB triggers / cron jobs invoke them via `net.http_post` — **pg_net lives in the `net` schema on
+this project, NOT `extensions`** — plus Vault secrets for the function URL +
+`supabase_anon_key`. The folder grows as new flows need server-side hooks.

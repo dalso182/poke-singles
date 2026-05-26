@@ -1,0 +1,249 @@
+<div class="price-review">
+  <app-page-header
+    kicker="Operaciones"
+    title="Revisión de precios"
+    [sub]="
+      summary()
+        ? (summary()!.pending_count + ' carta(s) por revisar')
+        : 'Cargando…'
+    "
+  >
+    @switch (phase()) {
+      @case ('running') {
+        <div class="price-review__progress" aria-live="polite">
+          <mat-icon class="price-review__spinner">autorenew</mat-icon>
+          <span class="price-review__progress-text">
+            {{ progress()?.scanned ?? 0 }} / {{ progress()?.total ?? 0 }}
+            · {{ progress()?.flagged ?? 0 }} marcadas
+          </span>
+        </div>
+      }
+      @case ('configuring') {
+        <!-- The header button intentionally hides while the panel is open;
+             the panel below owns Iniciar/Cancelar. -->
+      }
+      @default {
+        <app-btn variant="primary" [disabled]="loading() || acting()" (click)="onOpenOptions()">
+          <mat-icon>refresh</mat-icon>
+          Ejecutar revisión ahora
+        </app-btn>
+      }
+    }
+  </app-page-header>
+
+  @if (summary()?.last_run_started; as started) {
+    <div class="price-review__last-run">
+      Última ejecución:
+      <strong>{{ formatRunStarted(started) }}</strong>
+      @if (summary()?.last_run_trigger === 'cron') {
+        <span class="muted"> (automática)</span>
+      }
+      @if (summary()?.last_run_scanned != null) {
+        <span class="muted">
+          · {{ summary()!.last_run_scanned }} escaneadas
+          / {{ summary()!.last_run_priced }} con precio
+          / {{ summary()!.last_run_flagged }} marcadas
+        </span>
+      }
+    </div>
+  }
+
+  <div class="price-review__scope muted">
+    Solo cartas singles en NM (Near Mint)
+  </div>
+
+  @if (phase() === 'configuring') {
+    <div class="price-review__options">
+      <div class="price-review__options-head">
+        <strong>Opciones de esta revisión</strong>
+        <span class="muted">
+          Los valores aquí solo se usan para esta corrida — la configuración guardada en
+          <em>/admin/config</em> no cambia.
+        </span>
+      </div>
+
+      <div class="price-review__options-row">
+        <mat-form-field appearance="outline" class="is-mono price-review__field-pct">
+          <mat-label>Umbral de desviación</mat-label>
+          <input
+            matInput
+            type="number"
+            [formControl]="thresholdCtrl"
+            min="0.01"
+            max="100"
+            step="0.5"
+          />
+          <span matTextSuffix>%</span>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="is-mono price-review__field-floor">
+          <mat-label>Piso de valor</mat-label>
+          <input
+            matInput
+            type="number"
+            [formControl]="floorCtrl"
+            min="0"
+            step="500"
+          />
+          <span matTextPrefix>₡&nbsp;</span>
+        </mat-form-field>
+
+        <div class="price-review__qualifying">
+          @if (qualifyingCount() == null) {
+            <span class="muted">Calculando cartas a revisar…</span>
+          } @else {
+            <strong>{{ formatCrc(qualifyingCount()!) }}</strong>
+            cartas singles en NM serán revisadas con este piso
+          }
+        </div>
+      </div>
+
+      <div class="price-review__options-actions">
+        <app-btn variant="ghost" (click)="onCancelOptions()">Cancelar</app-btn>
+        <app-btn
+          variant="primary"
+          [disabled]="thresholdCtrl.invalid || floorCtrl.invalid || qualifyingCount() === 0"
+          (click)="onStartRun()"
+        >
+          <mat-icon>play_arrow</mat-icon>
+          Iniciar revisión
+        </app-btn>
+      </div>
+    </div>
+  }
+
+  @if (loading() && !current()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  @if (!loading() || current()) {
+    @if (current(); as c) {
+      <div class="price-review__card">
+        <!-- Left column: just the card image -->
+        <app-thumb
+          class="price-review__thumb"
+          [src]="c.image_url"
+          [lang]="c.language"
+          [size]="225"
+        />
+
+        <!-- Right column: identity + facts + commit, stacked top-to-bottom -->
+        <div class="price-review__info">
+          <header class="price-review__id">
+            <h2 class="price-review__name">{{ c.product_name }}</h2>
+            @if (c.set_name) {
+              <div class="price-review__set">{{ c.set_name }}</div>
+            }
+            <div class="price-review__meta">
+              @if (c.card_number) {
+                <span>{{ c.card_number }}</span>
+              }
+              @if (c.variant) {
+                <span>· {{ c.variant }}</span>
+              }
+              @if (c.condition) {
+                <span>· {{ c.condition }}</span>
+              }
+              @if (c.language) {
+                <span>· {{ c.language }}</span>
+              }
+            </div>
+          </header>
+
+          <div class="price-review__facts-row">
+            <div class="price-review__fact">
+              <span class="price-review__fact-label">Tu precio</span>
+              <app-money [value]="c.store_price" />
+            </div>
+
+            <div class="price-review__fact">
+              <span class="price-review__fact-label">Mercado (TCGplayer)</span>
+              <div class="price-review__market">
+                <app-money [value]="c.market_crc" />
+                <span class="price-review__usd">${{ formatUsd(c.market_usd) }}</span>
+                @if (tcgplayerLink(); as link) {
+                  <a
+                    class="price-review__tcg-link"
+                    [href]="link.url"
+                    target="_blank"
+                    rel="noopener"
+                    [matTooltip]="link.tooltip"
+                    [attr.aria-label]="link.tooltip"
+                  >
+                    <mat-icon>open_in_new</mat-icon>
+                  </a>
+                }
+              </div>
+              @if (c.market_updated_at) {
+                <span class="price-review__as-of muted">al {{ formatDate(c.market_updated_at) }}</span>
+              }
+            </div>
+
+            <div class="price-review__fact price-review__fact--diff">
+              <span class="price-review__fact-label">Diferencia</span>
+              <span class="price-review__diff-crc">{{ diffCrcLabel() }}</span>
+              <app-pill
+                [tone]="direction() === 'over' ? 'red' : 'amber'"
+                [dot]="true"
+                [title]="directionLabel()"
+              >
+                {{ diffLabel() }}
+              </app-pill>
+            </div>
+          </div>
+
+          <div class="price-review__commit">
+            <mat-form-field appearance="outline" class="is-mono price-review__price-field">
+              <mat-label>Precio sugerido</mat-label>
+              <input
+                matInput
+                type="number"
+                [formControl]="priceCtrl"
+                min="1"
+                step="100"
+              />
+              <span matTextPrefix>₡&nbsp;</span>
+            </mat-form-field>
+
+            <div class="price-review__actions">
+              <app-btn variant="ghost" [disabled]="acting()" (click)="onIgnore()">
+                <mat-icon>visibility_off</mat-icon>
+                Ignorar
+              </app-btn>
+              <app-btn
+                variant="primary"
+                [disabled]="acting() || priceCtrl.invalid"
+                (click)="onAccept()"
+              >
+                <mat-icon>check</mat-icon>
+                Aceptar
+              </app-btn>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      @if (progressLabel(); as label) {
+        <div class="price-review__progress-counter muted">{{ label }}</div>
+      }
+    } @else {
+      <div class="price-review__empty">
+        <mat-icon class="price-review__empty-icon">verified</mat-icon>
+        <div class="price-review__empty-text">
+          <strong>Todas las cartas están dentro del rango</strong>
+          @if (summary() && summary()!.last_run_started == null) {
+            <p class="muted">
+              Aún no se ha ejecutado una revisión. Hacé clic en
+              <em>Ejecutar revisión ahora</em> arriba para empezar.
+            </p>
+          } @else {
+            <p class="muted">
+              No hay cartas que revisar en este momento. La próxima revisión semanal se
+              ejecutará automáticamente.
+            </p>
+          }
+        </div>
+      </div>
+    }
+  }
+</div>

@@ -22,6 +22,9 @@ export type Database = {
           maintenance_message: string | null
           maintenance_mode: boolean
           order_notification_recipients: string
+          price_review_enabled: boolean
+          price_review_floor_crc: number
+          price_review_threshold_pct: number
           sinpe_phone: string | null
           updated_at: string
           whatsapp_number: string | null
@@ -33,6 +36,9 @@ export type Database = {
           maintenance_message?: string | null
           maintenance_mode?: boolean
           order_notification_recipients?: string
+          price_review_enabled?: boolean
+          price_review_floor_crc?: number
+          price_review_threshold_pct?: number
           sinpe_phone?: string | null
           updated_at?: string
           whatsapp_number?: string | null
@@ -44,6 +50,9 @@ export type Database = {
           maintenance_message?: string | null
           maintenance_mode?: boolean
           order_notification_recipients?: string
+          price_review_enabled?: boolean
+          price_review_floor_crc?: number
+          price_review_threshold_pct?: number
           sinpe_phone?: string | null
           updated_at?: string
           whatsapp_number?: string | null
@@ -517,6 +526,113 @@ export type Database = {
           },
         ]
       }
+      price_check_runs: {
+        Row: {
+          error: string | null
+          finished_at: string | null
+          flagged_count: number
+          id: string
+          priced_count: number
+          scanned_count: number
+          started_at: string
+          trigger: string
+        }
+        Insert: {
+          error?: string | null
+          finished_at?: string | null
+          flagged_count?: number
+          id?: string
+          priced_count?: number
+          scanned_count?: number
+          started_at?: string
+          trigger: string
+        }
+        Update: {
+          error?: string | null
+          finished_at?: string | null
+          flagged_count?: number
+          id?: string
+          priced_count?: number
+          scanned_count?: number
+          started_at?: string
+          trigger?: string
+        }
+        Relationships: []
+      }
+      price_reviews: {
+        Row: {
+          card_ref: string
+          checked_at: string
+          diff_pct: number
+          exchange_rate: number
+          ignored_at: string | null
+          market_crc: number
+          market_updated_at: string | null
+          market_usd: number
+          product_id: string
+          store_price: number
+          suggested_price: number
+          tcgplayer_product_id: number | null
+        }
+        Insert: {
+          card_ref: string
+          checked_at?: string
+          diff_pct: number
+          exchange_rate: number
+          ignored_at?: string | null
+          market_crc: number
+          market_updated_at?: string | null
+          market_usd: number
+          product_id: string
+          store_price: number
+          suggested_price: number
+          tcgplayer_product_id?: number | null
+        }
+        Update: {
+          card_ref?: string
+          checked_at?: string
+          diff_pct?: number
+          exchange_rate?: number
+          ignored_at?: string | null
+          market_crc?: number
+          market_updated_at?: string | null
+          market_usd?: number
+          product_id?: string
+          store_price?: number
+          suggested_price?: number
+          tcgplayer_product_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "available_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products_search"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "rifas_listing"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_card_types: {
         Row: {
           card_type_id: string
@@ -593,6 +709,7 @@ export type Database = {
           name: string
           pokemon_name: string | null
           price: number
+          price_checked_at: string | null
           quantity: number
           rarity: string | null
           regulation_mark: string | null
@@ -626,6 +743,7 @@ export type Database = {
           name: string
           pokemon_name?: string | null
           price: number
+          price_checked_at?: string | null
           quantity?: number
           rarity?: string | null
           regulation_mark?: string | null
@@ -659,6 +777,7 @@ export type Database = {
           name?: string
           pokemon_name?: string | null
           price?: number
+          price_checked_at?: string | null
           quantity?: number
           rarity?: string | null
           regulation_mark?: string | null
@@ -1269,6 +1388,65 @@ export type Database = {
         }[]
       }
       admin_dashboard_stats: { Args: never; Returns: Json }
+      admin_price_review_accept: {
+        Args: { p_new_price: number; p_product_id: string }
+        Returns: undefined
+      }
+      admin_price_review_finish: {
+        Args: {
+          p_error?: string
+          p_flagged: number
+          p_priced: number
+          p_run_id: string
+          p_scanned: number
+        }
+        Returns: undefined
+      }
+      admin_price_review_ignore: {
+        Args: { p_product_id: string }
+        Returns: undefined
+      }
+      admin_price_review_next: {
+        Args: never
+        Returns: {
+          card_number: string
+          card_ref: string
+          checked_at: string
+          condition: string
+          diff_pct: number
+          exchange_rate: number
+          image_url: string
+          language: string
+          market_crc: number
+          market_updated_at: string
+          market_usd: number
+          product_id: string
+          product_name: string
+          product_slug: string
+          set_code: string
+          set_id: string
+          set_name: string
+          store_price: number
+          suggested_price: number
+          tcgplayer_product_id: number
+          variant: string
+        }[]
+      }
+      admin_price_review_start: { Args: { p_trigger: string }; Returns: string }
+      admin_price_review_summary: {
+        Args: never
+        Returns: {
+          last_run_finished: string
+          last_run_flagged: number
+          last_run_id: string
+          last_run_priced: number
+          last_run_scanned: number
+          last_run_started: string
+          last_run_trigger: string
+          pending_count: number
+          total_flagged: number
+        }[]
+      }
       admin_raffles_summary: {
         Args: never
         Returns: {
@@ -1287,6 +1465,18 @@ export type Database = {
           status: string
           winner_name: string
         }[]
+      }
+      admin_record_price_check: {
+        Args: {
+          p_exchange_rate: number
+          p_market_updated_at: string
+          p_market_usd: number
+          p_product_id: string
+          p_store_price: number
+          p_tcgplayer_product_id?: number
+          p_threshold_pct: number
+        }
+        Returns: boolean
       }
       attach_payment_proof: {
         Args: { p_email: string; p_file_path: string; p_order_id: string }

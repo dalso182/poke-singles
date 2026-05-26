@@ -22,6 +22,9 @@ hosted on SiteGround. The OpenCart site stays live until the new one ships.
   Google OAuth, image picker over a server-side PHP listing, TCGdex-driven add-product flow
 - ✅ Admin reports (`/admin/reports`): per-customer orders, customer activity log
   (login / order / signup, with IP), storefront search log, and coupon usage — all date-filterable
+- ✅ Admin price review (`/admin/price-review`): card-by-card triage of NM-singles whose store
+  price drifts ≥ threshold % from the TCGplayer market signal. Manual button + weekly cron
+  (Mondays 04:00 CR) populate the same queue; Aceptar (edit + commit) / Ignorar per card
 - ✅ Customer storefront: home (hero + recent + featured rails), `/products`,
   `/products/:slug` detail with TCGdex Card data (attacks, abilities, weaknesses, illustrator),
   `/buscar` search (substring + 4 sort modes), hover-preview overlay, condition pills, type icons
@@ -106,7 +109,8 @@ Deploy details: `scripts/deploy.mjs` reads `.env.local` (gitignored — copy fro
 | `/admin/raffles` | Raffles | Activas / Completadas toggle, "Agregar rifa" |
 | `/admin/raffles/:id` | RaffleDetail | Participants + payment status, draw winner (blocked until paid), copy names for the wheel |
 | `/admin/reports` | Reports | 4 tabs: customer orders, activity log, searches, coupon usage — date-filterable |
-| `/admin/config` | AdminConfig | Exchange rate, maintenance mode |
+| `/admin/price-review` | PriceReview | Card-by-card triage of NM-singles whose price drifts from TCGplayer market (manual + weekly cron) |
+| `/admin/config` | AdminConfig | Exchange rate, maintenance mode, price-review settings |
 | `/library` | Library | Designer reference (no app chrome) |
 
 ## Deploying

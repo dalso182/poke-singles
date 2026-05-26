@@ -49,6 +49,7 @@ import { ProductsService } from '../../core/catalog/products.service';
 import { RafflesService } from '../../core/catalog/raffles.service';
 import { SetsService } from '../../core/catalog/sets.service';
 import { TcgdexCardsService } from '../../core/catalog/tcgdex-cards.service';
+import { firstTcgplayerVariant, tcgplayerMarketUsd } from '../../core/catalog/tcgplayer-pricing';
 import { AppSettingsService } from '../../core/settings/app-settings.service';
 import { LocalStorageService } from '../../core/storage/local-storage.service';
 import {
@@ -147,7 +148,7 @@ export class AddProduct {
   /** Direct TCGplayer product URL for the picked card, when it has pricing data. */
   protected readonly tcgplayerUrl = computed(() => {
     const card = this.selectedCard();
-    const id = card ? this.firstTcgplayerVariant(card)?.productId : null;
+    const id = card ? firstTcgplayerVariant(card)?.productId : null;
     return id ? `https://www.tcgplayer.com/product/${id}` : null;
   });
   protected readonly manualMode = signal(false);
@@ -343,7 +344,7 @@ export class AddProduct {
     // rounded up to the nearest ₡100. Skipped silently if the card has no
     // pricing or no exchange rate is configured — the admin can still type it.
     try {
-      const usd = this.tcgplayerMarketUsd(card);
+      const usd = tcgplayerMarketUsd(card);
       if (usd) {
         const { exchange_rate_usd_crc: rate } = await this.settings.get();
         if (rate && rate > 0) {
@@ -373,29 +374,6 @@ export class AddProduct {
     } catch (err) {
       this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
     }
-  }
-
-  /** First TCGplayer variant object on the card payload (skips metadata keys). */
-  private firstTcgplayerVariant(
-    card: Card,
-  ): { productId?: number | null; marketPrice?: number | null } | null {
-    const tp = (card as unknown as {
-      pricing?: { tcgplayer?: Record<string, unknown> };
-    }).pricing?.tcgplayer;
-    if (!tp) return null;
-    for (const [key, val] of Object.entries(tp)) {
-      if (key === 'updated' || key === 'unit') continue;
-      if (val && typeof val === 'object') {
-        return val as { productId?: number | null; marketPrice?: number | null };
-      }
-    }
-    return null;
-  }
-
-  /** First available TCGplayer market price (USD) on the card payload, if any. */
-  private tcgplayerMarketUsd(card: Card): number | null {
-    const price = this.firstTcgplayerVariant(card)?.marketPrice;
-    return typeof price === 'number' && price > 0 ? price : null;
   }
 
   /** Pre-fill with the first available variant, preferring `normal` if present. */

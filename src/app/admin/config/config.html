@@ -79,6 +79,46 @@ Cédula jurídica: 3-101-…"
       </app-form-grid>
     </app-form-section>
 
+    <app-form-section title="Revisión de precios">
+      <p class="muted admin-config__hint">
+        Solo cartas <strong>singles en NM (Near Mint)</strong> con precio ≥ piso son revisadas.
+        Se compara contra el precio de mercado de TCGplayer (que es siempre NM) convertido con
+        el tipo de cambio configurado. Las cartas que difieran (en cualquier dirección) por
+        encima del umbral pasan a la cola <em>Revisión de precios</em>. La revisión semanal se
+        ejecuta automáticamente y también puede dispararse manualmente desde esa pantalla.
+      </p>
+      <app-form-grid [cols]="2">
+        <app-labeled-toggle formControlName="price_review_enabled" style="grid-column: span 2">
+          Activar revisión semanal
+        </app-labeled-toggle>
+        <mat-form-field appearance="outline" class="is-mono">
+          <mat-label>Umbral de desviación</mat-label>
+          <input
+            matInput
+            type="number"
+            formControlName="price_review_threshold_pct"
+            min="0.01"
+            max="100"
+            step="0.5"
+            placeholder="10"
+          />
+          <span matTextSuffix>%</span>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="is-mono">
+          <mat-label>Piso de valor</mat-label>
+          <input
+            matInput
+            type="number"
+            formControlName="price_review_floor_crc"
+            min="0"
+            step="500"
+            placeholder="5000"
+          />
+          <span matTextPrefix>₡&nbsp;</span>
+        </mat-form-field>
+      </app-form-grid>
+    </app-form-section>
+
     <app-form-section title="Modo mantenimiento">
       <p class="muted admin-config__hint">
         Cuando esté activo, la tienda mostrará un mensaje y no aceptará pedidos. La lógica del

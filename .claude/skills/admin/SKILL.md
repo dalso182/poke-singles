@@ -8,8 +8,10 @@ description: >-
   (list with filters + soft-delete-with-undo, add/edit form), the raffles admin (Activas/
   Completadas list, RaffleDetail with participants/payment/draw), the dashboard (KPI tiles +
   live visitor count + 30-day trend sparklines + recent orders), the customers admin
-  (`/admin/customers` list + per-customer detail), `/admin/config` (exchange rate,
-  maintenance), and the server-side PHP image-picker endpoints. Trigger this for admin
+  (`/admin/customers` list + per-customer detail), the price-review queue
+  (`/admin/price-review` card-by-card triage against TCGplayer market), `/admin/config`
+  (exchange rate, maintenance, price-review settings), and the server-side PHP image-picker
+  endpoints. Trigger this for admin
   routing/guards, the TCGdex-driven add-product flow, and the image browser dialog. For the
   RPCs, RLS, and tables behind these screens, pair with the `database` skill.
 ---
@@ -39,7 +41,8 @@ Admin status = `app_metadata.role === 'admin'` (→ `database` skill for `is_adm
 | `/admin/customers` | Customers | list: search (name/email/phone) + pagination, order_count / total_spent / last_order |
 | `/admin/customers/:id` | CustomerDetail | profile + saved address + stats + order history (rows → `/admin/orders/:id`) |
 | `/admin/reports` | Reports | 4-tab hub: Pedidos por cliente, Actividad de clientes, Búsquedas, Cupones (see Reports below) |
-| `/admin/config` | AdminConfig | exchange rate, maintenance flag |
+| `/admin/price-review` | PriceReview | Card-by-card triage of products whose store price drifts from TCGplayer market (see Price review below) |
+| `/admin/config` | AdminConfig | exchange rate, maintenance flag, price-review settings |
 
 ## Shared table system
 
@@ -185,6 +188,64 @@ Mirrors the `customers`/`orders` screen patterns (signals + debounce + effect �
 data collection (event tables, `log_activity`/`log_search`/`client_ip`, `place_order_v8`) and
 the report RPCs live in the `database` skill. Search logging is fired from the storefront header
 box; login/registration logging from `AuthService` — both → `database` (Reports) / `storefront`.
+
+## Price review
+
+`/admin/price-review` (PriceReview) is a **card-by-card triage surface** — not a paginated
+table — for products whose store price has drifted from the TCGplayer market signal. One
+flagged card at a time: image (180×237) on the left, identity + facts + commit on the right,
+centered with `max-width: 700px` so it doesn't stretch on wide monitors. Lives at its own
+top-level admin route (a feature, not a sub-report) with a `price_check` icon in the sidenav,
+right after Reportes.
+
+**Run flow.** Page-header button "Ejecutar revisión ahora" opens an **options panel** above the
+card with the threshold % and floor ₡ pre-filled from `app_settings.price_review_*`; a live
+qualifying-count line ("N cartas singles en NM serán revisadas con este piso") updates as the
+floor changes (250 ms debounce). Whatever the admin enters there is used **for that one run
+only** — `app_settings` is not touched. "Iniciar revisión" kicks off
+`ReportsService.runPriceReviewNow(progress, overrides)`; the header swaps to a progress chip
+`scanned / total · flagged` while the loop fetches each card from TCGdex and writes to
+`price_reviews` via `admin_record_price_check`. Three-state machine in the component:
+`idle | configuring | running`.
+
+**Scope (intentional + visible).** The check considers only **active singles in NM condition
+with `card_ref` and `price ≥ floor`**. The runner pre-fetches the singles category id via
+`from('categories').eq('slug', 'singles')` once per session (memoized). A muted line under the
+page header reads "Solo cartas singles en NM (Near Mint)" so the admin doesn't wonder why
+LP/MP stock never shows up. Same scope on the cron path's edge function. (TCGplayer's published
+`marketPrice` is NM by convention — comparing other conditions to it generates false positives.)
+
+**Card body.** Two-column grid (`auto | minmax(0, 1fr)`). Left: `app-thumb` 180px. Right:
+identity (name, full set name on its own line, then `card_number · variant · condition · language`),
+a facts row with three cells sharing one baseline (`Tu precio` / `Mercado (TCGplayer)` /
+`Diferencia`) where the money values are bumped to 19px via a local `::ng-deep .money` override
+so they sit on the same grid; the Diferencia cell stacks the **CRC delta** as the primary value
+("+₡20 905") with the **percentage pill** below as a secondary qualifier (red = over, amber =
+under, color carries direction). A small "**↗** Ver en TCGplayer" link sits inline next to the
+Mercado price — prefers the deep `/product/<id>` link when `tcgplayer_product_id` was
+snapshotted on the row, falls back to a search URL composed of `name + card_number + set_name`
+when TCGdex has no productId for that card (older e-card / promo sets). Below the card sits a
+muted **`REVISANDO CARTA X DE Y`** counter; Y is the queue size when the batch started (anchored
+once, doesn't shrink as cards are processed), reset to the new pending count after a fresh run.
+
+**Commit row** (full-width column under the facts): a `mat-form-field` "Precio sugerido"
+pre-filled with the row's `suggested_price` (already rounded to the nearest ₡100), then
+Ignorar / Aceptar buttons split with `justify-content: space-between` — Ignorar pinned to the
+left edge, Aceptar to the right — so they can't be confused under a quick click. Aceptar
+commits whatever value is in the input (editable before accepting); Ignorar hides the row
+until the next check rebuilds the queue.
+
+**Pieces:**
+- `src/app/admin/price-review/price-review.{ts,html,scss}` — the component.
+- `src/app/core/reports/reports.service.ts` — runner + `priceReviewSummary` / `priceReviewNext`
+  / `priceReviewIgnore` / `priceReviewAccept` / `priceReviewQualifyingCount` + a memoized
+  `singlesCategoryId()` helper.
+- `src/app/core/catalog/tcgplayer-pricing.ts` — shared `firstTcgplayerVariant` /
+  `tcgplayerMarketUsd` / `tcgplayerUpdatedAt` helpers (extracted from add-product so both the
+  suggested-price autofill and the runner read the SAME data the same way).
+- `/admin/config` → new "Revisión de precios" form section: enabled toggle, threshold %,
+  floor ₡. Helper text spells out the NM-only scope.
+- DB + cron + edge function → `database` skill.
 
 ## Image picker (admin)
 

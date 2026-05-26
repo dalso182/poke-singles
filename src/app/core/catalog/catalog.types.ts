@@ -837,6 +837,12 @@ export interface AppSettingsRow {
   whatsapp_number: string | null;
   bank_account_info: string | null;
   order_notification_recipients: string;
+  /** Whether the weekly price-review check runs (cron + manual button). */
+  price_review_enabled: boolean;
+  /** Deviation threshold (e.g. 10.00 = 10%) above which a card lands in the review queue. */
+  price_review_threshold_pct: number;
+  /** Only products with `price >= this floor` (CRC) are considered for review. */
+  price_review_floor_crc: number;
   updated_at: string;
 }
 
@@ -850,5 +856,67 @@ export type AppSettingsUpdate = Partial<
     | 'whatsapp_number'
     | 'bank_account_info'
     | 'order_notification_recipients'
+    | 'price_review_enabled'
+    | 'price_review_threshold_pct'
+    | 'price_review_floor_crc'
   >
 >;
+
+// ─── Price-review report ───────────────────────────────────────────────────
+
+/** One card being reviewed in the "Precios fuera de rango" triage screen. */
+export interface PriceReviewCard {
+  product_id: string;
+  card_ref: string;
+  product_name: string;
+  product_slug: string;
+  image_url: string | null;
+  set_id: string | null;
+  set_code: string | null;
+  set_name: string | null;
+  card_number: string | null;
+  language: string | null;
+  condition: string | null;
+  variant: string | null;
+  /** Snapshot of `products.price` (CRC) at check time. */
+  store_price: number;
+  /** TCGplayer marketPrice (USD) at check time. */
+  market_usd: number;
+  /** Snapshot of the USD→CRC exchange rate at check time. */
+  exchange_rate: number;
+  /** market_usd × exchange_rate, rounded to 2dp. */
+  market_crc: number;
+  /** market_crc rounded up to the nearest ₡100 (same rule as add-product). */
+  suggested_price: number;
+  /** Signed: positive = store above market, negative = store below market. */
+  diff_pct: number;
+  /** `card.pricing.tcgplayer.updated` when present — for "as of …" UI labels. */
+  market_updated_at: string | null;
+  checked_at: string;
+  /** Snapshot of `card.pricing.tcgplayer.<variant>.productId` — used to build the
+   *  TCGplayer deep link. Null when the card has no TCGplayer mapping. */
+  tcgplayer_product_id: number | null;
+}
+
+/** Header data for the price-review screen (one row, always present). */
+export interface PriceReviewSummary {
+  /** Cards still awaiting a decision in the current run. */
+  pending_count: number;
+  /** All flagged cards including those ignored — useful as a denominator. */
+  total_flagged: number;
+  last_run_id: string | null;
+  last_run_trigger: 'manual' | 'cron' | null;
+  last_run_started: string | null;
+  last_run_finished: string | null;
+  last_run_scanned: number | null;
+  last_run_priced: number | null;
+  last_run_flagged: number | null;
+}
+
+/** Live progress published by the client-side `runPriceReviewNow()` runner. */
+export interface PriceReviewProgress {
+  scanned: number;
+  priced: number;
+  flagged: number;
+  total: number;
+}

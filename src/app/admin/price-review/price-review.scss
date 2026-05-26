@@ -1,0 +1,380 @@
+.price-review {
+  display: block;
+
+  &__last-run {
+    margin: -8px 0 4px;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    letter-spacing: 0.3px;
+    color: var(--text-secondary);
+
+    strong {
+      color: var(--text-primary);
+    }
+
+    .muted {
+      color: var(--text-tertiary);
+    }
+  }
+
+  // Scope reminder under the page header — what the check actually filters on.
+  &__scope {
+    margin: 0 0 16px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.4px;
+    color: var(--text-tertiary);
+  }
+
+  &__progress {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    background: var(--surface-tonal);
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+  }
+
+  &__spinner {
+    animation: price-review-spin 1.2s linear infinite;
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: var(--accent-amber);
+  }
+
+  // ─── Options panel ──────────────────────────────────────────────────────
+  &__options {
+    background: var(--surface-card);
+    border: 1px solid var(--border-subtle);
+    border-left: 3px solid var(--accent-amber);
+    border-radius: 10px;
+    padding: 18px 22px 14px;
+    margin-bottom: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  &__options-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 10px;
+
+    strong {
+      font-family: var(--font-brand);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .muted {
+      font-family: var(--font-brand);
+      font-size: 12.5px;
+      color: var(--text-secondary);
+
+      em {
+        font-style: normal;
+        font-family: var(--font-mono);
+        font-size: 11.5px;
+        color: var(--text-primary);
+      }
+    }
+  }
+
+  &__options-row {
+    display: grid;
+    grid-template-columns: 200px 220px 1fr;
+    align-items: center;
+    gap: 16px;
+  }
+
+  &__field-pct,
+  &__field-floor {
+    margin: 0;
+  }
+
+  &__qualifying {
+    font-family: var(--font-brand);
+    font-size: 13.5px;
+    color: var(--text-secondary);
+
+    strong {
+      font-family: var(--font-mono);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-right: 4px;
+    }
+
+    .muted {
+      color: var(--text-tertiary);
+      font-size: 12.5px;
+    }
+  }
+
+  &__options-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  // ─── Two-column review surface ──────────────────────────────────────────
+  // Left column = card image (180px wide → ~238px tall). Right column = info
+  // stacked top-down: identity → facts row → commit row. The surface is
+  // centered on the page (max-width) so it doesn't stretch the whole admin
+  // content area on wide monitors.
+  &__card {
+    background: var(--surface-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 22px 26px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    column-gap: 28px;
+    max-width: 700px;
+    margin: 0 auto;
+
+    // Bump the money values inside the facts row — they're the most-read
+    // numbers on this surface. Override the Money component's local 12.5px.
+    ::ng-deep .money {
+      font-size: 19px;
+      letter-spacing: 0.1px;
+    }
+  }
+
+  &__thumb {
+    align-self: start;
+  }
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 0;
+  }
+
+  // ─── Identity (name + meta) ─────────────────────────────────────────────
+  &__id {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  &__name {
+    margin: 0;
+    font-family: var(--font-brand);
+    font-size: 21px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.3px;
+  }
+
+  // Set name on its own line — full text, brand font, slightly more prominent
+  // than the mono meta row beneath it so the printing is obvious at a glance.
+  &__set {
+    font-family: var(--font-brand);
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  &__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 6px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    letter-spacing: 0.3px;
+    color: var(--text-secondary);
+  }
+
+  // ─── Facts row (tu precio / mercado / diff) ─────────────────────────────
+  &__facts-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px 36px;
+    align-items: flex-start;
+  }
+
+  &__fact {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+
+    &--diff {
+      // Pill is shorter than the money values; nudge its label/value alignment
+      // so the row reads horizontally aligned.
+      align-self: stretch;
+    }
+  }
+
+  &__fact-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+
+  // Signed CRC delta in the Diferencia cell — sits in the same baseline slot
+  // as Tu precio / Mercado above, so the three big mono numbers read across
+  // the row. The pill below qualifies the direction; the amount is primary.
+  // Matches the ::ng-deep .money override (19px / 700 / mono).
+  &__diff-crc {
+    font-family: var(--font-mono);
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: 0.1px;
+    color: var(--text-primary);
+  }
+
+  // Pill below the amount — give it a touch of breathing room from the
+  // larger number above so it reads as a secondary annotation, not a sibling.
+  &__fact--diff app-pill {
+    margin-top: 4px;
+    align-self: flex-start;
+  }
+
+  &__market {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  // Subtle icon-link next to the TCGplayer price. Sized small so it doesn't
+  // compete with the money value; tints blue on hover so it reads as a link.
+  &__tcg-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    color: var(--text-tertiary);
+    text-decoration: none;
+    transition: color 0.12s ease, background 0.12s ease;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--brand-blue);
+      background: var(--brand-blue-soft);
+    }
+
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+      line-height: 16px;
+    }
+  }
+
+  &__usd {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+  }
+
+  &__as-of {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-tertiary);
+  }
+
+  // ─── Commit (suggested price input above, action buttons below) ─────────
+  &__commit {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-top: auto;
+  }
+
+  &__price-field {
+    width: 220px;
+    margin: 0;
+  }
+
+  // Ignorar pinned to the left, Aceptar pinned to the right — maximum
+  // separation so the admin can't slip and confirm when they meant to skip.
+  &__actions {
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+  }
+
+  // "Revisando carta X de Y" — sits just below the card surface, centered.
+  // Anchored to the same max-width as the card so it visually belongs to it.
+  &__progress-counter {
+    max-width: 700px;
+    margin: 10px auto 0;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    letter-spacing: 0.5px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+  }
+
+  // ─── Empty state ────────────────────────────────────────────────────────
+  // Same centered footprint as the active card so they swap cleanly.
+  &__empty {
+    background: var(--surface-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 32px 24px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 18px;
+    align-items: center;
+    max-width: 920px;
+    margin: 0 auto;
+  }
+
+  &__empty-icon {
+    font-size: 40px;
+    width: 40px;
+    height: 40px;
+    color: var(--success);
+  }
+
+  &__empty-text {
+    strong {
+      display: block;
+      font-family: var(--font-brand);
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    p {
+      margin: 6px 0 0;
+      font-family: var(--font-brand);
+      font-size: 13px;
+      color: var(--text-secondary);
+
+      em {
+        font-style: normal;
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+    }
+  }
+}
+
+@keyframes price-review-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

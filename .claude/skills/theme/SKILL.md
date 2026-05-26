@@ -35,6 +35,22 @@ Plex Mono, density `-1`.
   `#B91C1C` error. Don't hand-edit — regenerate if the seeds change.
 - **`_brand-tokens.scss`** holds `:root` vars for things outside Material's palette:
   `--brand-red`, `--accent-amber`, surfaces, semantic states, fonts.
+
+### Surface palette (use these, never invent `--surface`)
+
+There is **no `--surface` token** — `var(--surface)` resolves to nothing and the element
+inherits whatever the parent had (usually the page bg), so cards look slightly off-white
+instead of white. Use the right one:
+
+| Token | Hex | Use for |
+|---|---|---|
+| `--surface-page` | `#fbfaf7` | The page background itself. Never set this on a child — it's already inherited. |
+| `--surface-card` | `#ffffff` | **Any raised "card" surface** — admin cards, the option panel, info boxes, the cart drawer, the product detail panels. This is the default for anything that should read as "white card on the page". |
+| `--surface-tonal` | `#f4f2ed` | Subtle inset surfaces — table header rows, disabled form-field bg, progress chips, empty-state secondary panels. |
+| `--surface-tonal-2` | `#eae7df` | One step deeper than `--surface-tonal` (rarely needed; reserved for hover/active on tonal surfaces). |
+
+If you're styling a card-shaped surface and reach for `var(--surface)`, that's a bug —
+the convention everywhere else is `var(--surface-card)`.
 - **`_material-overrides.scss`** uses M3 mixins (`mat.button-overrides`, `mat.card-overrides`):
   4px button radius, 8px card radius, uppercase 12px tracked button labels.
 - **`_brand-utilities.scss`** provides `.brand-bar`, `.brand-eyebrow`, `.brand-mono`,

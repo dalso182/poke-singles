@@ -101,6 +101,7 @@ export class AdminShell implements OnInit {
     { label: 'Pedidos', icon: 'receipt_long', path: '/admin/orders', count: this.pendingOrderCount, badgeTone: 'amber' },
     { label: 'Clientes', icon: 'groups', path: '/admin/customers' },
     { label: 'Reportes', icon: 'analytics', path: '/admin/reports' },
+    { label: 'Revisión de precios', icon: 'price_check', path: '/admin/price-review' },
     { label: 'Páginas', icon: 'description', path: '/admin/pages' },
     { label: 'Library', icon: 'palette', path: '/library', exact: true },
     { label: 'Configuración', icon: 'settings', path: '/admin/config' },

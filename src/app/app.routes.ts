@@ -103,6 +103,11 @@ export const routes: Routes = [
           import('./admin/reports/reports').then((m) => m.Reports),
       },
       {
+        path: 'price-review',
+        loadComponent: () =>
+          import('./admin/price-review/price-review').then((m) => m.PriceReview),
+      },
+      {
         path: 'sets',
         loadComponent: () => import('./admin/sets/sets').then((m) => m.Sets),
       },

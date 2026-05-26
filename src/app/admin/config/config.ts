@@ -60,6 +60,15 @@ export class AdminConfig {
     whatsapp_number: [''],
     bank_account_info: [''],
     order_notification_recipients: [''],
+    price_review_enabled: [true],
+    price_review_threshold_pct: [
+      10 as number,
+      [Validators.required, Validators.min(0.01), Validators.max(100)],
+    ],
+    price_review_floor_crc: [
+      5000 as number,
+      [Validators.required, Validators.min(0)],
+    ],
   });
 
   constructor() {
@@ -79,6 +88,9 @@ export class AdminConfig {
         whatsapp_number: row.whatsapp_number ?? '',
         bank_account_info: row.bank_account_info ?? '',
         order_notification_recipients: row.order_notification_recipients ?? '',
+        price_review_enabled: row.price_review_enabled,
+        price_review_threshold_pct: row.price_review_threshold_pct,
+        price_review_floor_crc: row.price_review_floor_crc,
       });
       this.form.markAsPristine();
     } catch (err) {
@@ -104,6 +116,9 @@ export class AdminConfig {
         whatsapp_number: raw.whatsapp_number?.trim() || null,
         bank_account_info: raw.bank_account_info?.trim() || null,
         order_notification_recipients: (raw.order_notification_recipients ?? '').trim(),
+        price_review_enabled: !!raw.price_review_enabled,
+        price_review_threshold_pct: Number(raw.price_review_threshold_pct),
+        price_review_floor_crc: Number(raw.price_review_floor_crc),
       });
       this.current.set(updated);
       this.form.markAsPristine();

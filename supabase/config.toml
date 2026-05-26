@@ -63,3 +63,9 @@ verify_jwt = false
 # function reads the raffle + participants via service-role.
 [functions.send-raffle-result]
 verify_jwt = false
+
+# Weekly TCG market-price check. Fired by the `price-check-weekly` pg_cron
+# job via pg_net (no session JWT), and self-chains for catalogs that need
+# more than one wall-clock window per sweep.
+[functions.price-check]
+verify_jwt = false
