@@ -161,6 +161,14 @@
   }
 }
 
+// Sealed products (no card_number) aren't 5:7 — show the whole box, don't crop.
+.cart-page__thumb--contain img {
+  object-fit: contain;
+  padding: 4px;
+  box-sizing: border-box;
+  background: var(--surface-card);
+}
+
 .cart-page__line-body {
   min-width: 0;
   display: flex;
@@ -334,38 +342,6 @@
   text-align: center;
 }
 
-.cart-page__coupon {
-  display: flex;
-  gap: 8px;
-  align-items: flex-start;
-  margin: 4px 0;
-
-  mat-form-field {
-    flex: 1;
-  }
-
-  button {
-    margin-top: 2px; // align with the form-field outline top
-  }
-}
-
-.cart-page__applied-coupon {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 6px 12px;
-  background: var(--surface-tonal);
-  border-radius: 6px;
-  margin: 4px 0;
-
-  span {
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.6px;
-  }
-}
-
 .cart-page__summary-row--discount {
   dd {
     font-family: var(--font-brand);
@@ -412,6 +388,14 @@
     object-fit: cover;
     display: block;
   }
+}
+
+// Sealed products (no card_number) aren't 5:7 — show the whole box, don't crop.
+.cart-page__card-image--contain img {
+  object-fit: contain;
+  padding: 6px;
+  box-sizing: border-box;
+  background: var(--surface-card);
 }
 
 .cart-page__card-condition {
@@ -474,4 +458,63 @@
   margin: 0;
   font-size: 11px;
   color: var(--text-tertiary);
+}
+
+// ---- Per-line coupon discount -----------------------------------------
+// Reuses the sale-price utilities (.price--original strike / .price--sale
+// amber) from _brand-utilities. Amber only — never brand red.
+
+// Lines a FIXED_ON_THRESHOLD coupon counts toward its threshold get a quiet
+// accent (no per-item price change for fixed coupons).
+.cart-page__line--eligible {
+  box-shadow: inset 3px 0 0 var(--accent-amber);
+}
+
+.cart-page__card--eligible {
+  border-color: var(--accent-amber);
+}
+
+// "Cupón no aplica" — shown on lines a category-scoped coupon skips.
+.cart-page__coupon-na,
+.cart-page__card-na {
+  margin: 2px 0 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+
+// Unit price: struck original + amber net, inline.
+.cart-page__unit-price--discounted {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+
+  .price--original {
+    margin-left: 0;
+    font-size: 12px;
+  }
+}
+
+// Line total + grid card price: struck original on top, amber net below.
+.cart-page__line-amount--discounted,
+.cart-page__card-price--discounted {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+
+  .price--original {
+    margin-left: 0;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .price--sale {
+    font-size: 18px;
+    font-weight: 800;
+  }
+}
+
+.cart-page__line-amount--discounted {
+  align-items: flex-end;
 }

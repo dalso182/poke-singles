@@ -81,6 +81,14 @@
   }
 }
 
+// Sealed products (no card_number) aren't 5:7 — show the whole box, don't crop.
+.cart-drawer__thumb--contain img {
+  object-fit: contain;
+  padding: 3px;
+  box-sizing: border-box;
+  background: var(--surface-card);
+}
+
 .cart-drawer__line-body {
   flex: 1;
   display: flex;
@@ -219,4 +227,35 @@
   font-weight: 600;
   letter-spacing: 0.5px;
   margin-bottom: 4px;
+}
+
+// ---- Per-line coupon discount -----------------------------------------
+// Reuses .price--original / .price--sale (amber) from _brand-utilities.
+
+// Eligible lines for a FIXED_ON_THRESHOLD coupon (highlight only — fixed
+// coupons don't get a per-item price).
+.cart-drawer__line--eligible {
+  box-shadow: inset 3px 0 0 var(--accent-amber);
+}
+
+// Discounted line total: amber net on top, struck original below.
+.cart-drawer__line-price--discounted {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.15;
+
+  .price--original {
+    margin-left: 0;
+    font-size: 11px;
+    font-weight: 500;
+  }
+}
+
+// "Cupón no aplica" — shown on lines a category-scoped coupon skips.
+.cart-drawer__coupon-na {
+  margin: 4px 0 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
 }

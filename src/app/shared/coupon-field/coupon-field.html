@@ -1,0 +1,34 @@
+@if (appliedCoupon(); as coupon) {
+  <div
+    class="coupon-field__applied"
+    [class.coupon-field__applied--compact]="variant() === 'compact'"
+  >
+    <span class="brand-mono">
+      {{ coupon.code }}@if (coupon.type === 'PERCENTAGE') { ({{ coupon.discount_value }}%) }
+    </span>
+    <button mat-icon-button type="button" (click)="onRemove()" aria-label="Quitar cupón">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+} @else {
+  <form
+    class="coupon-field__form"
+    [class.coupon-field__form--compact]="variant() === 'compact'"
+    [formGroup]="form"
+    (ngSubmit)="onApply()"
+  >
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Código de cupón</mat-label>
+      <input matInput formControlName="code" autocomplete="off" />
+      @if (error()) {
+        <mat-error>{{ error() }}</mat-error>
+      }
+      @if (!isSignedIn() && !error()) {
+        <mat-hint>Inicia sesión para usar un cupón.</mat-hint>
+      }
+    </mat-form-field>
+    <button mat-stroked-button type="submit" [disabled]="!isSignedIn() || applying()">
+      {{ applying() ? 'Aplicando…' : 'Aplicar' }}
+    </button>
+  </form>
+}

@@ -18,6 +18,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AuthService } from '../../core/auth/auth.service';
 import { ProfilesService } from '../../core/auth/profiles.service';
 import { CartService } from '../../core/cart/cart.service';
+import { CouponField } from '../../shared/coupon-field/coupon-field';
 import { OrdersService } from '../../core/orders/orders.service';
 import { ShippingMethodsService } from '../../core/catalog/shipping-methods.service';
 import type {
@@ -33,6 +34,7 @@ import type {
   imports: [
     ReactiveFormsModule,
     DecimalPipe,
+    CouponField,
     MatButtonModule,
     MatCardModule,
     MatFormFieldModule,

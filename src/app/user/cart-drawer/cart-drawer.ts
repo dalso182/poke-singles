@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { CartService } from '../../core/cart/cart.service';
+import { CouponField } from '../../shared/coupon-field/coupon-field';
 import { CardConditionsDialogService } from '../../core/preview/card-conditions-dialog.service';
 import type { CartLine } from '../../core/catalog/catalog.types';
 
@@ -15,6 +16,7 @@ import type { CartLine } from '../../core/catalog/catalog.types';
   imports: [
     RouterLink,
     DecimalPipe,
+    CouponField,
     MatButtonModule,
     MatIconModule,
     MatSnackBarModule,
@@ -68,6 +70,12 @@ export class CartDrawer {
 
   protected async onRemove(line: CartLine): Promise<void> {
     await this.cart.remove(line.product_id);
+  }
+
+  /** Per-line coupon effect (struck/discounted price, scope flags) or
+   *  undefined when no coupon is applied. See CartService.lineCoupon. */
+  protected linePricing(line: CartLine) {
+    return this.cart.lineCoupon().get(line.product_id);
   }
 
   protected conditionClass(condition: string | null): string {

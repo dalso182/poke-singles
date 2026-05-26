@@ -16,8 +16,14 @@
 } @else {
   <ul class="cart-drawer__lines">
     @for (line of items(); track line.product_id) {
-      <li class="cart-drawer__line">
-        <a [routerLink]="['/products', line.slug]" (click)="close()" class="cart-drawer__thumb">
+      @let lc = linePricing(line);
+      <li class="cart-drawer__line" [class.cart-drawer__line--eligible]="lc?.highlight">
+        <a
+          [routerLink]="['/products', line.slug]"
+          (click)="close()"
+          class="cart-drawer__thumb"
+          [class.cart-drawer__thumb--contain]="!line.card_number"
+        >
           @if (line.image_url) {
             <img [src]="line.image_url" [alt]="line.name" loading="lazy" />
           }
@@ -64,8 +70,16 @@
                 <mat-icon>add</mat-icon>
               </button>
             </div>
-            <span class="cart-drawer__line-price">
-              ₡{{ line.price * line.quantity | number: '1.0-0' }}
+            <span
+              class="cart-drawer__line-price"
+              [class.cart-drawer__line-price--discounted]="lc && lc.discounted"
+            >
+              @if (lc && lc.discounted) {
+                <span class="price--original">₡{{ line.price * line.quantity | number: '1.0-0' }}</span>
+                <span class="price--sale">₡{{ lc.netLineTotal | number: '1.0-0' }}</span>
+              } @else {
+                ₡{{ line.price * line.quantity | number: '1.0-0' }}
+              }
             </span>
             <button
               mat-icon-button
@@ -77,6 +91,9 @@
               <mat-icon>delete_outline</mat-icon>
             </button>
           </div>
+          @if (lc && !lc.inScope) {
+            <p class="cart-drawer__coupon-na">Cupón no aplica</p>
+          }
           @if (line.quantity >= line.stock) {
             <p class="cart-drawer__stock-hint">Stock disponible: {{ line.stock }}</p>
           }
@@ -86,11 +103,10 @@
   </ul>
 
   <footer class="cart-drawer__footer">
-    @if (appliedCoupon(); as coupon) {
+    <app-coupon-field variant="compact" />
+    @if (appliedCoupon()) {
       <div class="cart-drawer__applied-coupon">
-        <span class="brand-mono">
-          {{ coupon.code }}@if (coupon.type === 'PERCENTAGE') { ({{ coupon.discount_value }}%) }
-        </span>
+        <span>Descuento</span>
         <span class="price--sale">−₡{{ discount() | number: '1.0-0' }}</span>
       </div>
     }

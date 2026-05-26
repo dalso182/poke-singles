@@ -201,7 +201,7 @@
         <ul class="co-lines">
           @for (line of items(); track line.product_id) {
             <li class="co-line">
-              <div class="co-line-thumb">
+              <div class="co-line-thumb" [class.co-line-thumb--contain]="!line.card_number">
                 @if (line.image_url) {
                   <img [src]="line.image_url" [alt]="line.name" loading="lazy" />
                 } @else {
@@ -265,6 +265,8 @@
             </dd>
           </dl>
         </div>
+
+        <app-coupon-field />
 
         <div class="co-slab">
           <div class="co-total">

@@ -8,6 +8,7 @@ import type {
   CartItemRow,
   CartLine,
   CouponErrorCode,
+  LineCoupon,
   ProductRow,
   SetRow,
   ValidateCouponResult,
@@ -71,6 +72,81 @@ export class CartService {
   readonly total = computed(() =>
     Math.max(0, this.subtotal() - this.discount()),
   );
+
+  /** Per-line decomposition of the applied coupon, keyed by product_id. Lets
+   *  the cart UI show the new price on each item and flag the lines a
+   *  category-scoped coupon skips. Empty map when no coupon is applied (the
+   *  templates then fall back to plain prices).
+   *
+   *  PERCENTAGE coupons distribute the already-rounded `discount()` across the
+   *  in-scope lines proportionally to their value, with a largest-remainder
+   *  fix-up so the per-line amounts sum *exactly* to `discount()` — the summary
+   *  and the lines never drift, and the server-side total is untouched.
+   *  FIXED_ON_THRESHOLD coupons aren't naturally per-item, so eligible lines
+   *  are only highlighted; the discount stays the single summary line. */
+  readonly lineCoupon = computed<Map<string, LineCoupon>>(() => {
+    const map = new Map<string, LineCoupon>();
+    const coupon = this._appliedCoupon();
+    if (!coupon) return map;
+
+    const items = this._items();
+    const cats = coupon.category_ids;
+    const allow = cats && cats.length > 0 ? new Set(cats) : null;
+    const inScope = (l: CartLine) => !allow || allow.has(l.category_id);
+
+    // Baseline: every line in/out of scope, no price change.
+    for (const l of items) {
+      map.set(l.product_id, {
+        inScope: inScope(l),
+        discounted: false,
+        highlight: false,
+        lineDiscount: 0,
+        netLineTotal: l.price * l.quantity,
+        netUnit: l.price,
+      });
+    }
+
+    if (coupon.type === 'FIXED_ON_THRESHOLD') {
+      // Highlight the eligible lines only when the discount actually applies.
+      if (this.discount() > 0) {
+        for (const l of items) {
+          if (inScope(l)) map.get(l.product_id)!.highlight = true;
+        }
+      }
+      return map;
+    }
+
+    // PERCENTAGE: spread discount() across the in-scope lines by value.
+    const target = this.discount();
+    const eligible = items.filter(inScope);
+    const eligibleTotal = eligible.reduce((s, l) => s + l.price * l.quantity, 0);
+    if (target <= 0 || eligibleTotal <= 0) return map;
+
+    const parts = eligible.map((l) => {
+      const lineTotal = l.price * l.quantity;
+      const exactCents = ((target * lineTotal) / eligibleTotal) * 100;
+      const cents = Math.floor(exactCents);
+      return { l, lineTotal, cents, rem: exactCents - cents };
+    });
+    // Hand the rounding residue to the largest fractional remainders so the
+    // per-line cents add up to the rounded total exactly.
+    let residue = Math.round(target * 100) - parts.reduce((s, p) => s + p.cents, 0);
+    parts.sort((a, b) => b.rem - a.rem);
+    for (let i = 0; i < parts.length && residue > 0; i++, residue--) {
+      parts[i].cents += 1;
+    }
+
+    for (const p of parts) {
+      const lineDiscount = p.cents / 100;
+      const netLineTotal = p.lineTotal - lineDiscount;
+      const entry = map.get(p.l.product_id)!;
+      entry.discounted = lineDiscount > 0;
+      entry.lineDiscount = lineDiscount;
+      entry.netLineTotal = netLineTotal;
+      entry.netUnit = netLineTotal / p.l.quantity;
+    }
+    return map;
+  });
 
   /** Portion of the cart a coupon's discount applies to. When the coupon has
    *  no category targeting (null/empty), that's the whole subtotal; otherwise

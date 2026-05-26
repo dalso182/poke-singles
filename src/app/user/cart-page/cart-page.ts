@@ -1,17 +1,14 @@
 import { Component, effect, inject, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { AuthService } from '../../core/auth/auth.service';
 import { CartService } from '../../core/cart/cart.service';
+import { CouponField } from '../../shared/coupon-field/coupon-field';
 import { CardConditionsDialogService } from '../../core/preview/card-conditions-dialog.service';
 import { LocalStorageService } from '../../core/storage/local-storage.service';
 import { mapCouponError } from '../../core/catalog/coupon-errors';
@@ -26,12 +23,10 @@ const VIEW_STORAGE_KEY = 'cart:view';
   imports: [
     RouterLink,
     DecimalPipe,
-    ReactiveFormsModule,
+    CouponField,
     MatButtonModule,
     MatButtonToggleModule,
-    MatFormFieldModule,
     MatIconModule,
-    MatInputModule,
     MatProgressBarModule,
     MatSnackBarModule,
     MatTooltipModule,
@@ -47,7 +42,6 @@ export class CartPage {
     event.stopPropagation();
     void this.conditionsDialog.open();
   }
-  private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly snack = inject(MatSnackBar);
   private readonly storage = inject(LocalStorageService);
@@ -61,19 +55,6 @@ export class CartPage {
   protected readonly appliedCoupon = this.cart.appliedCoupon;
   protected readonly discount = this.cart.discount;
   protected readonly total = this.cart.total;
-  protected readonly isSignedIn = this.auth.isSignedIn;
-
-  // FormGroup wrapper is required so Angular's FormGroupDirective binds to
-  // the <form> and `(ngSubmit)` actually fires. Without it, ReactiveFormsModule
-  // alone leaves <form> bare and the browser does a native submit → page reload.
-  protected readonly couponForm = new FormGroup({
-    code: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.minLength(3)],
-    }),
-  });
-  protected readonly couponError = signal<string>('');
-  protected readonly applyingCoupon = signal(false);
 
   constructor() {
     effect(() => this.storage.set(VIEW_STORAGE_KEY, this.view()));
@@ -103,34 +84,6 @@ export class CartPage {
     void this.router.navigate(['/checkout']);
   }
 
-  protected async onApplyCoupon(): Promise<void> {
-    if (!this.isSignedIn()) {
-      this.couponError.set(mapCouponError('AUTH_REQUIRED'));
-      return;
-    }
-    if (this.couponForm.invalid || this.applyingCoupon()) {
-      this.couponForm.markAllAsTouched();
-      return;
-    }
-    this.applyingCoupon.set(true);
-    this.couponError.set('');
-    try {
-      const result = await this.cart.applyCoupon(this.couponForm.controls.code.value);
-      if (result.error) {
-        this.couponError.set(mapCouponError(result.error, result.gap));
-        return;
-      }
-      this.couponForm.reset();
-      this.snack.open('Cupón aplicado', 'OK', { duration: 2500 });
-    } finally {
-      this.applyingCoupon.set(false);
-    }
-  }
-
-  protected async onRemoveCoupon(): Promise<void> {
-    await this.cart.removeCoupon();
-  }
-
   protected async onIncrement(line: CartLine): Promise<void> {
     if (line.quantity >= line.stock) return;
     const { error } = await this.cart.setQuantity(line.product_id, line.quantity + 1);
@@ -149,6 +102,12 @@ export class CartPage {
   protected async onClear(): Promise<void> {
     if (!confirm('¿Vaciar el carrito?')) return;
     await this.cart.clear();
+  }
+
+  /** Per-line coupon effect (struck/discounted price, scope flags) or
+   *  undefined when no coupon is applied. See CartService.lineCoupon. */
+  protected linePricing(line: CartLine) {
+    return this.cart.lineCoupon().get(line.product_id);
   }
 
   protected conditionClass(condition: string | null): string {

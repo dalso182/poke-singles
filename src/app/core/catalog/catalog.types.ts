@@ -315,6 +315,26 @@ export interface AppliedCoupon {
   category_ids: string[] | null;
 }
 
+/** Per-line view of how the applied coupon affects one cart line. Built by
+ *  CartService.lineCoupon and keyed by product_id so the cart UI can show the
+ *  new price on each item and flag the lines a scoped coupon skips. */
+export interface LineCoupon {
+  /** Line falls within the coupon's category scope (always true when the
+   *  coupon has no category targeting). */
+  inScope: boolean;
+  /** Render a per-line discounted price (PERCENTAGE coupons only). */
+  discounted: boolean;
+  /** In scope but no per-line price change — used to highlight the lines a
+   *  FIXED_ON_THRESHOLD coupon counts toward its threshold. */
+  highlight: boolean;
+  /** Amount taken off this line's total (0 when not discounted). */
+  lineDiscount: number;
+  /** line.price * quantity − lineDiscount. */
+  netLineTotal: number;
+  /** Display-only per-unit price after the discount. */
+  netUnit: number;
+}
+
 /** Admin row for the coupons table. Mirrors the DB shape. */
 export interface CouponRow {
   id: string;

@@ -323,6 +323,14 @@
   }
 }
 
+// Sealed products (no card_number) aren't 5:7 — show the whole box, don't crop.
+.co-line-thumb--contain img {
+  object-fit: contain;
+  padding: 2px;
+  box-sizing: border-box;
+  background: var(--surface-card);
+}
+
 .co-line-qty {
   position: absolute;
   top: -6px;
