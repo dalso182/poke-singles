@@ -140,7 +140,14 @@
       <div class="spec-grid">
         <div class="spec">
           <div class="spec-label">Condición</div>
-          <div class="spec-value" [class.is-dash]="!p.condition">{{ p.condition | orDash }}</div>
+          <div
+            class="spec-value"
+            [class.is-dash]="!p.condition"
+            [class.condition-pill--nm]="p.condition === 'NM'"
+            [class.condition-pill--lp]="p.condition === 'LP'"
+            [class.condition-pill--mp]="p.condition === 'MP'"
+            [class.condition-pill--hp]="p.condition === 'HP' || p.condition === 'DMG'"
+          >{{ p.condition | orDash }}</div>
           @if (conditionSub(p.condition); as sub) {
             <div class="spec-sub">{{ sub }}</div>
           }
