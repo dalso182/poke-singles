@@ -18,6 +18,7 @@ import { SetFilter } from '../../shared/filters-bar/set-filter/set-filter';
 import { CardTypeFilter } from '../../shared/filters-bar/card-type-filter/card-type-filter';
 import { SortSelect } from '../../shared/sort-select/sort-select';
 import { ProductCard } from '../../shared/product-card/product-card';
+import { LoadMore } from '../../shared/load-more/load-more';
 
 @Component({
   selector: 'app-search-results',
@@ -31,6 +32,7 @@ import { ProductCard } from '../../shared/product-card/product-card';
     CardTypeFilter,
     SortSelect,
     ProductCard,
+    LoadMore,
   ],
   templateUrl: './search-results.html',
   styleUrl: './search-results.scss',
@@ -65,6 +67,14 @@ export class SearchResults {
 
   protected readonly results = signal<ProductSearchRow[]>([]);
   protected readonly loading = signal(false);
+  /** Current page held in the grid (1-based). In-component only — never a URL
+   *  param. The fetch effect drops it back to 1; loadMore() bumps it. */
+  protected readonly page = signal(1);
+  /** True while loadMore() is fetching the next page (drives the button spinner). */
+  protected readonly loadingMore = signal(false);
+  /** Whether another page might exist — set from `rows.length === PAGE_SIZE`
+   *  after each fetch. Drives whether the "Cargar más" button is shown. */
+  protected readonly hasMore = signal(false);
 
   /** Resolves the URL's raw `sort` param to a known SortKey, falling back to
    *  the per-context default (relevance with a query, recent without). */
@@ -128,16 +138,50 @@ export class SearchResults {
       const { rows } = await this.products.search({
         q,
         sort,
-        pageSize: 60,
+        pageSize: PAGE_SIZE,
         setIds: setIds.length > 0 ? setIds : undefined,
         cardTypeIds: cardTypeIds.length > 0 ? cardTypeIds : undefined,
       });
       this.results.set(rows);
+      this.page.set(1);
+      this.hasMore.set(rows.length === PAGE_SIZE);
     } catch (err) {
       this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
       this.results.set([]);
+      this.hasMore.set(false);
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  /** Fetch the next page and append it to the results. The fetch effect owns
+   *  page 1 + query/filter changes; this only ever grows the current set. */
+  protected async loadMore(): Promise<void> {
+    if (this.loadingMore() || this.loading() || !this.hasMore()) return;
+    const next = this.page() + 1;
+    this.loadingMore.set(true);
+    try {
+      const setIds = this.selectedSetIds();
+      const cardTypeIds = this.selectedCardTypeIds();
+      const { rows } = await this.products.search({
+        q: this.q().trim(),
+        sort: this.normalizedSort(),
+        pageSize: PAGE_SIZE,
+        page: next,
+        setIds: setIds.length > 0 ? setIds : undefined,
+        cardTypeIds: cardTypeIds.length > 0 ? cardTypeIds : undefined,
+      });
+      // Stale-append guard: if the query/filters changed mid-load the fetch
+      // effect reset page() to 1, so these rows are stale — drop them.
+      if (this.page() + 1 === next) {
+        this.results.update((prev) => [...prev, ...rows]);
+        this.page.set(next);
+        this.hasMore.set(rows.length === PAGE_SIZE);
+      }
+    } catch (err) {
+      this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
+    } finally {
+      this.loadingMore.set(false);
     }
   }
 
@@ -176,6 +220,10 @@ export class SearchResults {
     return 'Error desconocido';
   }
 }
+
+/** Rows fetched per page. A full page means another might exist (hasMore);
+ *  a short page is the end. Keep in sync with CardList. */
+const PAGE_SIZE = 60;
 
 function parseIdList(raw: string | undefined): string[] {
   const s = (raw ?? '').trim();

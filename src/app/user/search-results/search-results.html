@@ -70,3 +70,7 @@
     <app-product-card [card]="card" />
   }
 </div>
+
+@if (hasMore()) {
+  <app-load-more [loading]="loadingMore()" (loadMore)="loadMore()" />
+}

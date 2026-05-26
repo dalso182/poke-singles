@@ -52,6 +52,19 @@ query. Both pages bind `sort` to the URL param and resolve via `normalizeSort()`
 (`catalog.types.ts`). Header search input + magnifier → `Router.navigate(['/buscar'], { q })`.
 Both pages call the `search_products` RPC server-side (→ `database` skill for the RPC contract).
 
+**Load more (paging).** Both grids fetch 60 rows per page and append the next via
+`<app-load-more>` (`src/app/shared/load-more/`) — a centered "Cargar más" button rendered
+below the grid when `hasMore()` is true. Each surface owns an in-component `page` /
+`loadingMore` / `hasMore` triplet — **no `?page=` URL param** (sidesteps the
+`withComponentInputBinding` undefined-default footgun and avoids deep-link refetch of
+pages 1..n that the single-page RPC can't do in one call). `hasMore` is the
+`rows.length === PAGE_SIZE` heuristic — no count RPC, so the button hides the moment a
+short page comes back (and one harmless empty fetch closes out result sets that are an
+exact multiple of 60). A filter/sort/q change runs the existing refetch effect which
+resets `page` to 1; a stale-append guard inside `loadMore()` (`this.page() + 1 === next`
+re-check after the await) protects against a slow page-2 landing on a freshly reset
+page-1.
+
 ## Hover preview
 
 A single `<app-card-preview-overlay>` mounted once in UserShell handles hover-zoom on every
