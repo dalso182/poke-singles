@@ -94,6 +94,9 @@ a.kpi:hover {
 .kpi--orders    { --kpi-accent: var(--mat-sys-primary); }
 .kpi--sales     { --kpi-accent: var(--success); }
 .kpi--customers { --kpi-accent: var(--accent-amber); }
+// Indigo for stored-value / assets — distinct from the four other accents and
+// deliberately NOT brand red (reserved for brand bar, sale prices, sold-out).
+.kpi--inventory { --kpi-accent: #4338ca; }
 // Teal reads as a live / info accent — deliberately NOT brand red, which stays
 // reserved for the brand bar, sale prices, and the sold-out badge.
 .kpi--online    { --kpi-accent: #0f766e; }

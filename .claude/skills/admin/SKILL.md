@@ -95,14 +95,16 @@ KPI cards, monogram avatar) + the `.app-table` order history — no new componen
 
 ## Dashboard
 
-`/admin/` (AdminDashboard) leads with four KPI tiles — **Total Orders, Total Sales, Total
-Customers, People Online** — then a 2-up panel grid: 30-day **sales/orders trend**
-sparklines, a **recent-orders** panel, and two customer panels — **Últimos registros**
+`/admin/` (AdminDashboard) leads with five KPI tiles — **Total Orders, Total Sales, Total
+Customers, Inventory Value, People Online** — then a 2-up panel grid: 30-day **sales/orders
+trend** sparklines, a **recent-orders** panel, and two customer panels — **Últimos registros**
 (newest sign-ups, by `created_at`, shows registration date) and **Actividad reciente**
 (most recently active, by `last_sign_in_at`, shows last-login `d/MM HH:mm` or "Nunca").
-The original operational tiles (pending orders, active raffles incl. a "¡Sorteo hoy!"
-amber alert) sit below. Tiles use the allowed palette (blue/green/amber/teal) —
-**never brand red** (→ `theme` skill).
+**Inventory Value** ("Valor de inventario") shows `₡<compact>` of `sum(price × quantity)` over
+active, in-stock products — non-clickable (no inventory drilldown route). The original
+operational tiles (pending orders, active raffles incl. a "¡Sorteo hoy!" amber alert) sit
+below. Tiles use the allowed palette (blue/green/amber/indigo/teal) — **never brand red**
+(→ `theme` skill).
 
 - **Headline data** comes from one RPC, `admin_dashboard_stats()` (totals + 30-day series),
   via `DashboardService` (`src/app/core/dashboard/`). → `database` skill.

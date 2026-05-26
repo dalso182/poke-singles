@@ -157,8 +157,10 @@ back the back-office reporting screens. The customer ones read **`auth.users`** 
 which isn't exposed over PostgREST — so they must be RPCs, not view/REST reads.
 
 - `admin_dashboard_stats()` → `jsonb`: `total_orders`, `total_sales`, `total_customers`,
-  `pending_orders`, and a gap-filled 30-day `series` of `{d, orders, sales}`. "Sales" =
-  realized revenue (paid/shipped/completed); counts exclude cancelled. Day buckets use the
+  `pending_orders`, `inventory_value`, and a gap-filled 30-day `series` of `{d, orders, sales}`.
+  "Sales" = realized revenue (paid/shipped/completed); counts exclude cancelled.
+  `inventory_value` = `sum(price * quantity)` over products where `active = true AND quantity > 0`
+  (hidden + out-of-stock SKUs aren't realizable inventory). Day buckets use the
   `America/Costa_Rica` calendar so they line up with the store's local "today".
 - `admin_customers(p_search, p_limit, p_offset, p_sort)` → table of registered accounts
   (`profiles` ⨝ `auth.users`) with `last_sign_in_at` (Auth's last-login), `order_count`
@@ -173,7 +175,9 @@ which isn't exposed over PostgREST — so they must be RPCs, not view/REST reads
 Migrations: `20260525002200_admin_dashboard_stats.sql`, `20260525002300_admin_customers.sql`,
 `20260525002500_admin_customers_last_sign_in.sql` (adds `last_sign_in_at` + `p_sort`; adding a
 `RETURNS TABLE` column forced a drop+recreate of `admin_customers`, recreated 4-arg-with-default
-so the existing 3-named-arg call still resolves).
+so the existing 3-named-arg call still resolves),
+`20260525003400_admin_dashboard_stats_inventory.sql` (adds `inventory_value` — single round trip
+preserved by extending the same RPC's payload).
 These return `jsonb`/`table`, so the Angular side hand-types the shapes in `catalog.types.ts`
 (`DashboardStats`, `CustomerRow`/`CustomerDetail`) and calls them via `(client as any).rpc(...)`
 — a `db:types:dev` regen isn't required for them. UI homes → `admin` skill.

@@ -7,6 +7,7 @@ const EMPTY_STATS: DashboardStats = {
   total_sales: 0,
   total_customers: 0,
   pending_orders: 0,
+  inventory_value: 0,
   series: [],
 };
 
@@ -34,6 +35,7 @@ export class DashboardService {
       total_sales: Number(stats.total_sales) || 0,
       total_customers: Number(stats.total_customers) || 0,
       pending_orders: Number(stats.pending_orders) || 0,
+      inventory_value: Number(stats.inventory_value) || 0,
       series: (stats.series ?? []).map((b) => ({
         d: b.d,
         orders: Number(b.orders) || 0,

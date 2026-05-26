@@ -547,6 +547,9 @@ export interface DashboardStats {
   total_sales: number;
   total_customers: number;
   pending_orders: number;
+  /** Money currently sitting in stock: sum(price * quantity) over products
+   *  where active = true AND quantity > 0. */
+  inventory_value: number;
   series: DashboardDailyBucket[];
 }
 
