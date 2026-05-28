@@ -29,6 +29,15 @@
         <input matInput type="number" formControlName="sort_order" min="0" />
       </mat-form-field>
       <app-labeled-toggle formControlName="requires_address">Requiere dirección</app-labeled-toggle>
+      <mat-form-field appearance="outline" class="shipping-methods__cat-field">
+        <mat-label>Categorías permitidas</mat-label>
+        <mat-select formControlName="allowed_category_ids" multiple panelClass="admin-form-overlay">
+          @for (c of categories(); track c.id) {
+            <mat-option [value]="c.id">{{ c.name }}</mat-option>
+          }
+        </mat-select>
+        <mat-hint>Vacío = disponible para todas las categorías.</mat-hint>
+      </mat-form-field>
       <app-btn variant="primary" [disabled]="addForm.invalid || saving() === '__new__'" (click)="onAdd()">
         Crear
       </app-btn>
@@ -96,6 +105,28 @@
             (valueChange)="setNum(row.id, 'sort_order', $event)"
             [disabled]="!!row.deleted_at"
           />
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="allowed_categories">
+        <th mat-header-cell *matHeaderCellDef>Categorías</th>
+        <td mat-cell *matCellDef="let row">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="shipping-methods__cat-cell">
+            <mat-select
+              multiple
+              [value]="categoryIdsVal(row.id)"
+              (selectionChange)="setCategoryIds(row.id, $event.value)"
+              [disabled]="!!row.deleted_at"
+              panelClass="admin-form-overlay"
+            >
+              @for (c of categories(); track c.id) {
+                <mat-option [value]="c.id">{{ c.name }}</mat-option>
+              }
+            </mat-select>
+            @if (categoryIdsVal(row.id).length === 0) {
+              <mat-hint>Todas</mat-hint>
+            }
+          </mat-form-field>
         </td>
       </ng-container>
 

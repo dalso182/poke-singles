@@ -4,10 +4,12 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
+import { CategoriesService } from '../../core/catalog/categories.service';
 import { ShippingMethodsService } from '../../core/catalog/shipping-methods.service';
-import type { ShippingMethodRow } from '../../core/catalog/catalog.types';
+import type { CategoryRow, ShippingMethodRow } from '../../core/catalog/catalog.types';
 import { PageHeader } from '../../shared/table/page-header/page-header';
 import { PillTabs, type TabItem } from '../../shared/table/tabs/pill-tabs/pill-tabs';
 import { TableCard } from '../../shared/table/table-card/table-card';
@@ -28,6 +30,7 @@ type ShippingFilter = 'active' | 'inactive' | 'deleted';
     MatIconModule,
     MatInputModule,
     MatProgressBarModule,
+    MatSelectModule,
     MatSnackBarModule,
     MatTableModule,
     PageHeader,
@@ -46,9 +49,11 @@ type ShippingFilter = 'active' | 'inactive' | 'deleted';
 export class ShippingMethods {
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(ShippingMethodsService);
+  private readonly categoriesService = inject(CategoriesService);
   private readonly snack = inject(MatSnackBar);
 
   protected readonly rows = signal<ShippingMethodRow[]>([]);
+  protected readonly categories = signal<CategoryRow[]>([]);
   protected readonly loading = signal(false);
   protected readonly saving = signal<string | null>(null);
   protected readonly addOpen = signal(false);
@@ -58,6 +63,7 @@ export class ShippingMethods {
     'description',
     'price',
     'sort_order',
+    'allowed_categories',
     'requires_address',
     'is_active',
     'actions',
@@ -69,6 +75,7 @@ export class ShippingMethods {
     price: [0, [Validators.required, Validators.min(0)]],
     sort_order: [0, [Validators.required, Validators.min(0)]],
     requires_address: [true],
+    allowed_category_ids: [[] as string[]],
   });
 
   protected readonly editForms = new Map<string, FormGroup>();
@@ -103,8 +110,12 @@ export class ShippingMethods {
   protected async refresh(): Promise<void> {
     this.loading.set(true);
     try {
-      const rows = await this.service.list({ includeDeleted: true });
+      const [rows, categories] = await Promise.all([
+        this.service.list({ includeDeleted: true }),
+        this.categoriesService.list({ activeOnly: true }),
+      ]);
       this.rows.set(rows);
+      this.categories.set(categories);
       this.editForms.clear();
       for (const row of rows) {
         this.editForms.set(
@@ -115,6 +126,7 @@ export class ShippingMethods {
             price: [row.price, [Validators.required, Validators.min(0)]],
             sort_order: [row.sort_order, [Validators.required, Validators.min(0)]],
             requires_address: [row.requires_address],
+            allowed_category_ids: [[...(row.allowed_category_ids ?? [])]],
           }),
         );
       }
@@ -153,6 +165,19 @@ export class ShippingMethods {
     c.markAsDirty();
   }
 
+  /** Selected category-id list for a row's edit form (mat-select [value]). */
+  protected categoryIdsVal(id: string): string[] {
+    const v = this.formFor(id).get('allowed_category_ids')!.value;
+    return Array.isArray(v) ? (v as string[]) : [];
+  }
+
+  /** Push the multi-select's selection back into the row's form control. */
+  protected setCategoryIds(id: string, value: string[]): void {
+    const c = this.formFor(id).get('allowed_category_ids')!;
+    c.setValue([...value]);
+    c.markAsDirty();
+  }
+
   protected onFilterChange(next: string): void {
     if (next === 'active' || next === 'inactive' || next === 'deleted') {
       this.filter.set(next);
@@ -170,8 +195,18 @@ export class ShippingMethods {
         price: Number(raw.price),
         sort_order: Number(raw.sort_order),
         requires_address: !!raw.requires_address,
+        allowed_category_ids: Array.isArray(raw.allowed_category_ids)
+          ? raw.allowed_category_ids
+          : [],
       });
-      this.addForm.reset({ name: '', description: '', price: 0, sort_order: 0, requires_address: true });
+      this.addForm.reset({
+        name: '',
+        description: '',
+        price: 0,
+        sort_order: 0,
+        requires_address: true,
+        allowed_category_ids: [],
+      });
       this.addOpen.set(false);
       await this.refresh();
       this.snack.open('Método de envío creado', 'OK', { duration: 3000 });
@@ -194,6 +229,9 @@ export class ShippingMethods {
         price: Number(raw.price),
         sort_order: Number(raw.sort_order),
         requires_address: !!raw.requires_address,
+        allowed_category_ids: Array.isArray(raw.allowed_category_ids)
+          ? raw.allowed_category_ids
+          : [],
       });
       this.snack.open('Método actualizado', 'OK', { duration: 3000 });
       await this.refresh();

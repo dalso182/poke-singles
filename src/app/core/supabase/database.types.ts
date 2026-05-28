@@ -1004,6 +1004,7 @@ export type Database = {
       }
       shipping_methods: {
         Row: {
+          allowed_category_ids: string[]
           created_at: string
           deleted_at: string | null
           description: string | null
@@ -1016,6 +1017,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          allowed_category_ids?: string[]
           created_at?: string
           deleted_at?: string | null
           description?: string | null
@@ -1028,6 +1030,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          allowed_category_ids?: string[]
           created_at?: string
           deleted_at?: string | null
           description?: string | null

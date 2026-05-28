@@ -381,6 +381,8 @@ export interface ShippingMethodRow {
   price: number;
   sort_order: number;
   is_active: boolean;
+  /** Allow-list of category ids this method serves; empty = all categories. */
+  allowed_category_ids: string[];
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
@@ -393,6 +395,7 @@ export interface ShippingMethodInsert {
   price: number;
   sort_order?: number;
   is_active?: boolean;
+  allowed_category_ids?: string[];
 }
 
 export type ShippingMethodUpdate = Partial<ShippingMethodInsert> & {

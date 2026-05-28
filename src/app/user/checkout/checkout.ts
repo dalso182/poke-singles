@@ -67,6 +67,28 @@ export class Checkout implements OnInit {
   protected readonly loading = signal(true);
   protected readonly placing = signal(false);
 
+  /** Distinct category_ids across the current cart — drives which shipping
+   *  methods are offered. Empty until cart hydrates. */
+  protected readonly cartCategoryIds = computed<string[]>(() => {
+    const seen = new Set<string>();
+    for (const line of this.items()) {
+      if (line.category_id) seen.add(line.category_id);
+    }
+    return Array.from(seen);
+  });
+
+  /** Shipping methods filtered by the current cart's categories. A method is
+   *  offered when its `allowed_category_ids` is empty (unrestricted) or every
+   *  distinct cart category appears in it. */
+  protected readonly visibleShippingMethods = computed<ShippingMethodRow[]>(() => {
+    const cartCats = this.cartCategoryIds();
+    return this.shippingMethods().filter((m) => {
+      const allowed = m.allowed_category_ids ?? [];
+      if (allowed.length === 0) return true;
+      return cartCats.every((c) => allowed.includes(c));
+    });
+  });
+
   /** Tracks the radio-group value so computed signals react to changes
    *  (form `valueChanges` is hooked in the constructor below). */
   protected readonly selectedShippingMethodId = signal<string>('');
@@ -146,6 +168,20 @@ export class Checkout implements OnInit {
       this.selectedPaymentMethod.set(v as PaymentMethod);
     });
 
+    // Keep the selected shipping method consistent with the filtered list:
+    // when a cart edit hides the current selection, fall back to the first
+    // visible method (or clear it if none remain). Also lets the initial
+    // bootstrap below seed a valid default once items + methods have loaded.
+    effect(() => {
+      const visible = this.visibleShippingMethods();
+      const current = this.selectedShippingMethodId();
+      if (current && visible.some((m) => m.id === current)) return;
+      const next = visible[0]?.id ?? '';
+      if (next !== current) {
+        this.form.controls['shipping_method_id'].setValue(next);
+      }
+    });
+
     // Toggle address-field validators based on whether the editable form
     // is actually rendered. The form is shown when either (a) the user
     // explicitly switched to 'custom' mode, or (b) they have no saved
@@ -202,10 +238,8 @@ export class Checkout implements OnInit {
         this.prefillFromProfile(),
       ]);
       this.shippingMethods.set(methods);
-      // Default-select the first shipping method.
-      if (methods.length > 0 && !this.form.controls['shipping_method_id'].value) {
-        this.form.controls['shipping_method_id'].setValue(methods[0].id);
-      }
+      // Default-selection is handled by the effect in the constructor, which
+      // picks the first method visible given the current cart contents.
     } catch (err) {
       this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
     } finally {
@@ -306,6 +340,8 @@ export class Checkout implements OnInit {
       case 'ADDRESS_REQUIRED':     return 'Necesitamos tu dirección de envío.';
       case 'INVALID_PAYMENT':      return 'Selecciona un método de pago.';
       case 'INVALID_SHIPPING':    return 'Selecciona un método de envío válido.';
+      case 'SHIPPING_NOT_ALLOWED_FOR_CART':
+        return 'El método de envío elegido no es válido para los productos en tu carrito. Selecciona otro.';
       case 'PRODUCT_GONE':
       case 'PRODUCT_UNAVAILABLE':  return 'Una de tus cartas ya no está disponible. Ajusta el carrito.';
       case 'INSUFFICIENT_STOCK':   return 'Una de tus cartas se agotó mientras pagabas. Ajusta el carrito.';

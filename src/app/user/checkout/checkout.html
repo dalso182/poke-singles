@@ -49,9 +49,14 @@
         </header>
         @if (shippingMethods().length === 0) {
           <p class="muted">No hay métodos de envío configurados. Contáctanos.</p>
+        } @else if (visibleShippingMethods().length === 0) {
+          <p class="muted">
+            No tenemos un método de envío disponible para esta combinación de productos. Escríbenos por
+            WhatsApp para coordinar la entrega.
+          </p>
         } @else {
           <mat-radio-group formControlName="shipping_method_id" class="co-options">
-            @for (method of shippingMethods(); track method.id) {
+            @for (method of visibleShippingMethods(); track method.id) {
               <mat-radio-button
                 [value]="method.id"
                 class="co-option"
