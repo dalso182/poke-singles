@@ -95,7 +95,7 @@ Deploy details: `scripts/deploy.mjs` reads `.env.local` (gitignored — copy fro
 | `/buscar` | SearchResults | URL-bound search (`q`) + sort (`relevance` / `price-asc` / `price-desc` / `recent`) |
 | `/rifas` | Rifas | Raffles — Activas / Completadas tabs, buy entries, winner display |
 | `/cart` | CartPage | Line items, quantity edit, list / grid views, coupon input, summary |
-| `/account` | Account | Read-only email + editable name/phone + sign out (`customerGuard`) |
+| `/account` | Account | Two-column: profile rail + name/phone/address editor, order history, Poke-Monedas (loyalty) balance, sign out (`customerGuard`) |
 | `/admin` | AdminShell | Requires admin role; uses Google OAuth |
 | `/admin/` | Dashboard | Admin home (default after `/admin`) |
 | `/admin/products` | ProductsList | Paginated table with search + filters |

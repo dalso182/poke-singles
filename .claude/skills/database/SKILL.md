@@ -7,7 +7,8 @@ description: >-
   get_my_applied_coupon, place_order, cancel_order, draw_raffle, admin_dashboard_stats,
   admin_customers), edge functions, the
   schema (products, categories, sets, card_types, profiles, cart_items, carts, coupons,
-  coupon_redemptions, raffles, tcgdex_cards, app_settings), regenerating database.types.ts,
+  coupon_redemptions, raffles, tcgdex_cards, app_settings, loyalty_transactions),
+  regenerating database.types.ts,
   the SupabaseService client, the TCGdex SDK wrapper, or the coupon/raffle business logic.
   Trigger this even when the request sounds UI-shaped ("why does the coupon drop?", "add a
   filter to search") if the answer lives in a view, RPC, or policy. When in doubt about how
@@ -188,7 +189,7 @@ These return `jsonb`/`table`, so the Angular side hand-types the shapes in `cata
 
 ## Reports (data side)
 
-The admin **Reportes** hub (`/admin/reports`, 4 tabs) is backed by four `security definer` +
+The admin **Reportes** hub (`/admin/reports`, 5 tabs) is backed by five `security definer` +
 `is_admin()` RPCs (granted to `authenticated`), each returning a `table` with `count(*) over()`
 as `total_count` and optional `America/Costa_Rica`-day date filters, hand-typed in
 `catalog.types.ts` and called via `(client as any).rpc(...)`:
@@ -205,6 +206,10 @@ as `total_count` and optional `America/Costa_Rica`-day date filters, hand-typed 
   per-coupon usage over **non-cancelled** orders (`coupons` ⨝ `orders` on `coupon_id`):
   `order_count`, `total_discount` (discount given), `total_revenue` (orders' total) — all over
   the same set so the row reconciles; only coupons used in range.
+- `admin_loyalty_transactions_report(p_search, p_date_start, p_date_end, p_limit, p_offset,
+  p_sort)` — every `loyalty_transactions` row joined to customer (`profiles` + `auth.users`
+  email) + source `orders.order_number`; `p_search` matches name/email, sort
+  `created`/`amount`. See Loyalty points below.
 
 **Data collection + server-side IP.** `client_ip()` reads the client IP from PostgREST's
 forwarded `request.headers` (`x-forwarded-for`, first hop), null-safe — only meaningful through
@@ -214,6 +219,30 @@ fire-and-forget from `AuthService` on `SIGNED_IN` and after `signUp`) and by `pl
 (`order_created`). `search_log` is written by `log_search` (see Search). Both event tables have
 RLS **enabled with no policies** (definer writers + admin readers only). Migrations
 `20260525002600`–`20260525003300`. UI homes → `admin` skill.
+
+## Loyalty points (data side)
+
+Customers earn points on confirmed orders. Source of truth is the **`loyalty_transactions`**
+ledger (signed `integer amount`; `kind` ∈ `earn`/`reversal`/`adjust`; nullable `order_id`).
+Balance = `SUM(amount)` per user — no cached column, so it may legitimately go **negative**.
+RLS: `loyalty_self_read` (own rows) + `loyalty_admin_all`; **no INSERT policy** — only the
+definer trigger writes.
+
+`award_or_reverse_loyalty_points()` is **one `AFTER UPDATE OF status` trigger on `orders`**
+that covers both money paths (the pending→paid direct UPDATE *and* `cancel_order`'s final
+UPDATE — no app/RPC change needed):
+- **Award** on first transition into `paid`: `floor((subtotal − discount_amount) /
+  loyalty_colones_per_point)` (net merchandise, **shipping excluded**). Idempotent (skips if
+  an `earn` row already exists); guests (`user_id IS NULL`) skipped; gated by
+  `loyalty_enabled`.
+- **Reversal** on transition into `cancelled`: inserts `−(earned)` once. Independent of the
+  enabled flag and of current balance (can go negative if already spent).
+
+Two `app_settings` columns drive it: `loyalty_enabled` (bool) + `loyalty_colones_per_point`
+(numeric, ₡ per point; 1000 = 1 pt/₡1000). Admin report RPC above; customer reads go through
+`LoyaltyService` (`src/app/core/loyalty/`) direct table queries (RLS-scoped). Migration
+`20260528000000_loyalty_points.sql`. **Redemption/spending is a later phase** — only `earn`
+and `reversal` are written now (`adjust` reserved).
 
 ## Realtime presence ("people online")
 

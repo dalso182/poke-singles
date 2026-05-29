@@ -2,8 +2,6 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DecimalPipe, DatePipe } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -12,7 +10,13 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AuthService } from '../../core/auth/auth.service';
 import { ProfilesService } from '../../core/auth/profiles.service';
 import { OrdersService } from '../../core/orders/orders.service';
-import type { OrderRow, ProfileRow, ShippingAddress } from '../../core/catalog/catalog.types';
+import { LoyaltyService } from '../../core/loyalty/loyalty.service';
+import type {
+  LoyaltyTransactionRow,
+  OrderRow,
+  ProfileRow,
+  ShippingAddress,
+} from '../../core/catalog/catalog.types';
 
 @Component({
   selector: 'app-account',
@@ -21,8 +25,6 @@ import type { OrderRow, ProfileRow, ShippingAddress } from '../../core/catalog/c
     DatePipe,
     ReactiveFormsModule,
     RouterLink,
-    MatButtonModule,
-    MatCardModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
@@ -37,14 +39,30 @@ export class Account implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly profiles = inject(ProfilesService);
   private readonly orders = inject(OrdersService);
+  private readonly loyalty = inject(LoyaltyService);
   private readonly snack = inject(MatSnackBar);
   private readonly router = inject(Router);
 
   protected readonly profile = signal<ProfileRow | null>(null);
   protected readonly myOrders = signal<OrderRow[]>([]);
+  protected readonly points = signal(0);
+  protected readonly pointsHistory = signal<LoyaltyTransactionRow[]>([]);
   protected readonly loading = signal(false);
   protected readonly saving = signal(false);
   protected readonly email = computed(() => this.auth.currentUser()?.email ?? '');
+
+  /** Rail name: the saved full name, else the email's local part, else a generic label. */
+  protected readonly displayName = computed(() => {
+    const name = this.profile()?.full_name?.trim();
+    if (name) return name;
+    return this.email().split('@')[0] || 'Cliente';
+  });
+
+  /** Single-letter avatar fallback. */
+  protected readonly initial = computed(() => this.displayName().charAt(0).toUpperCase() || 'C');
+
+  /** Which rail nav item is highlighted; driven by clicking a nav link. */
+  protected readonly activeSection = signal<'datos' | 'direccion' | 'pedidos' | 'puntos'>('datos');
 
   protected readonly form: FormGroup = this.fb.nonNullable.group({
     full_name: [''],
@@ -67,13 +85,17 @@ export class Account implements OnInit {
       // come back empty on a hard refresh. customerGuard awaits this too,
       // but defensive here in case the page is reached without the guard.
       await this.auth.ready;
-      const [profile, orders] = await Promise.all([
+      const [profile, orders, points, pointsHistory] = await Promise.all([
         this.profiles.getMine(),
         this.orders.getMyOrders().catch(() => [] as OrderRow[]),
+        this.loyalty.getMyBalance().catch(() => 0),
+        this.loyalty.getMyHistory().catch(() => [] as LoyaltyTransactionRow[]),
       ]);
       console.debug('[account] profile fetched', profile);
       this.profile.set(profile);
       this.myOrders.set(orders);
+      this.points.set(points);
+      this.pointsHistory.set(pointsHistory);
       if (profile) {
         const addr = profile.default_shipping_address;
         this.form.patchValue({
@@ -106,6 +128,25 @@ export class Account implements OnInit {
 
   protected shortRef(orderNumber: number): string {
     return `#${orderNumber}`;
+  }
+
+  /** Rail nav: highlight the target and smooth-scroll its section into view. */
+  protected scrollToSection(
+    el: HTMLElement,
+    key: 'datos' | 'direccion' | 'pedidos' | 'puntos',
+  ): void {
+    this.activeSection.set(key);
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /** Falls back to a kind label when a transaction has no description. */
+  protected pointsLabel(tx: LoyaltyTransactionRow): string {
+    if (tx.description) return tx.description;
+    switch (tx.kind) {
+      case 'earn':     return 'Puntos ganados';
+      case 'reversal': return 'Puntos revertidos';
+      case 'adjust':   return 'Ajuste';
+    }
   }
 
   protected async onSave(): Promise<void> {

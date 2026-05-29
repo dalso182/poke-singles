@@ -119,6 +119,33 @@ Cédula jurídica: 3-101-…"
       </app-form-grid>
     </app-form-section>
 
+    <app-form-section title="Puntos de fidelidad">
+      <p class="muted admin-config__hint">
+        Los pedidos otorgan puntos cuando pasan a <strong>Pagado</strong>. Se calculan sobre el
+        monto neto en mercadería (subtotal − descuento, <em>sin incluir el envío</em>). Si un
+        pedido pagado se cancela, los puntos otorgados se revierten. La canasta de canje de puntos
+        llegará en una fase posterior.
+      </p>
+      <app-form-grid [cols]="2">
+        <app-labeled-toggle formControlName="loyalty_enabled" style="grid-column: span 2">
+          Activar puntos de fidelidad
+        </app-labeled-toggle>
+        <mat-form-field appearance="outline" class="is-mono">
+          <mat-label>Colones por punto</mat-label>
+          <input
+            matInput
+            type="number"
+            formControlName="loyalty_colones_per_point"
+            min="1"
+            step="100"
+            placeholder="1000"
+          />
+          <span matTextPrefix>₡&nbsp;</span>
+          <mat-hint>1 punto por cada ₡1000 gastados (sin envío).</mat-hint>
+        </mat-form-field>
+      </app-form-grid>
+    </app-form-section>
+
     <app-form-section title="Modo mantenimiento">
       <p class="muted admin-config__hint">
         Cuando esté activo, la tienda mostrará un mensaje y no aceptará pedidos. La lógica del

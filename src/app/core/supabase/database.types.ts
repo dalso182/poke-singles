@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       app_settings: {
@@ -19,6 +44,8 @@ export type Database = {
           bank_account_info: string | null
           exchange_rate_usd_crc: number | null
           id: boolean
+          loyalty_colones_per_point: number
+          loyalty_enabled: boolean
           maintenance_message: string | null
           maintenance_mode: boolean
           order_notification_recipients: string
@@ -33,6 +60,8 @@ export type Database = {
           bank_account_info?: string | null
           exchange_rate_usd_crc?: number | null
           id?: boolean
+          loyalty_colones_per_point?: number
+          loyalty_enabled?: boolean
           maintenance_message?: string | null
           maintenance_mode?: boolean
           order_notification_recipients?: string
@@ -47,6 +76,8 @@ export type Database = {
           bank_account_info?: string | null
           exchange_rate_usd_crc?: number | null
           id?: boolean
+          loyalty_colones_per_point?: number
+          loyalty_enabled?: boolean
           maintenance_message?: string | null
           maintenance_mode?: boolean
           order_notification_recipients?: string
@@ -345,6 +376,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "customer_activity_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loyalty_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          kind: string
+          order_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          kind: string
+          order_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          kind?: string
+          order_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_transactions_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
@@ -1391,6 +1460,29 @@ export type Database = {
         }[]
       }
       admin_dashboard_stats: { Args: never; Returns: Json }
+      admin_loyalty_transactions_report: {
+        Args: {
+          p_date_end?: string
+          p_date_start?: string
+          p_limit?: number
+          p_offset?: number
+          p_search?: string
+          p_sort?: string
+        }
+        Returns: {
+          amount: number
+          created_at: string
+          customer_email: string
+          customer_name: string
+          description: string
+          id: string
+          kind: string
+          order_id: string
+          order_number: number
+          total_count: number
+          user_id: string
+        }[]
+      }
       admin_price_review_accept: {
         Args: { p_new_price: number; p_product_id: string }
         Returns: undefined
@@ -1756,6 +1848,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },

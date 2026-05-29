@@ -40,9 +40,9 @@ Admin status = `app_metadata.role === 'admin'` (→ `database` skill for `is_adm
 | `/admin/raffles/:id` | RaffleDetail | participants + payment, draw winner |
 | `/admin/customers` | Customers | list: search (name/email/phone) + pagination, order_count / total_spent / last_order |
 | `/admin/customers/:id` | CustomerDetail | profile + saved address + stats + order history (rows → `/admin/orders/:id`) |
-| `/admin/reports` | Reports | 4-tab hub: Pedidos por cliente, Actividad de clientes, Búsquedas, Cupones (see Reports below) |
+| `/admin/reports` | Reports | 5-tab hub: Pedidos por cliente, Actividad de clientes, Búsquedas, Cupones, Puntos (see Reports below) |
 | `/admin/price-review` | PriceReview | Card-by-card triage of products whose store price drifts from TCGplayer market (see Price review below) |
-| `/admin/config` | AdminConfig | exchange rate, maintenance flag, price-review settings |
+| `/admin/config` | AdminConfig | exchange rate, maintenance flag, price-review settings, loyalty points ratio |
 
 ## Shared table system
 
@@ -172,7 +172,7 @@ Guests who checked out without an account don't appear here — they live in the
 ## Reports
 
 `/admin/reports` (Reports) is a tabbed hub — a `app-page-header` + `app-pill-tabs` switcher over
-four self-contained read-only report components, each reusing the shared table system +
+five self-contained read-only report components, each reusing the shared table system +
 `app-date-range` filter and backed by `ReportsService` (`src/app/core/reports/`):
 
 - **Pedidos por cliente** — per-customer order totals (# orders, # products, total spent);
@@ -183,6 +183,9 @@ four self-contained read-only report components, each reusing the shared table s
   filter by customer type (Todos / Registrados / Invitados), keyword, customer, date, IP.
 - **Cupones** — per-coupon usage (# orders, total **discount given**, total **order revenue**)
   with an **Editar** action → that coupon's edit page.
+- **Puntos** — every loyalty-points transaction (date · customer · email · tipo · signed
+  points · source pedido); customer search + date range; sort recientes / mayor cantidad.
+  Reversals (negative) render in the Danger error color. Data side → `database` skill.
 
 Mirrors the `customers`/`orders` screen patterns (signals + debounce + effect → refresh). The
 data collection (event tables, `log_activity`/`log_search`/`client_ip`, `place_order_v8`) and

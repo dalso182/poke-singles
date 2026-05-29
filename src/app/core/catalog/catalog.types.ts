@@ -737,6 +737,56 @@ export interface CouponReportResult {
   pageSize: number;
 }
 
+// ---- Loyalty points ----
+
+export type LoyaltyTransactionKind = 'earn' | 'reversal' | 'adjust';
+
+/** One row of the customer-facing loyalty ledger (RLS-scoped to self). `amount`
+ *  is signed: positive earned, negative reversed/(later) redeemed. Balance is
+ *  the SUM of `amount` across a user's rows — may be negative. */
+export interface LoyaltyTransactionRow {
+  id: string;
+  user_id: string;
+  order_id: string | null;
+  amount: number;
+  kind: LoyaltyTransactionKind;
+  description: string | null;
+  created_at: string;
+}
+
+/** One row of admin_loyalty_transactions_report(): a ledger entry with the
+ *  customer and source-order context joined in. */
+export interface LoyaltyReportRow {
+  id: string;
+  user_id: string;
+  customer_name: string | null;
+  customer_email: string | null;
+  order_id: string | null;
+  order_number: number | null;
+  amount: number;
+  kind: LoyaltyTransactionKind;
+  description: string | null;
+  created_at: string;
+}
+
+export interface LoyaltyReportParams {
+  /** Matches customer name or email (ilike contains). */
+  search?: string;
+  dateStart?: string | null;
+  dateEnd?: string | null;
+  /** 'created' (newest, default) | 'amount' (largest first). */
+  sort?: 'created' | 'amount';
+  page?: number;
+  pageSize?: number;
+}
+
+export interface LoyaltyReportResult {
+  rows: LoyaltyReportRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 // Row shape returned by the `products_search` view / `search_products` RPC.
 // Mirrors `ProductRow` minus a few admin-only columns and adds the joined
 // set fields plus `search_text` / `card_type_names`.
@@ -846,6 +896,10 @@ export interface AppSettingsRow {
   price_review_threshold_pct: number;
   /** Only products with `price >= this floor` (CRC) are considered for review. */
   price_review_floor_crc: number;
+  /** Whether orders award loyalty points when they reach the 'paid' state. */
+  loyalty_enabled: boolean;
+  /** Colones of net merchandise (subtotal − discount) that earn 1 point. 1000 = 1 pt/₡1000. */
+  loyalty_colones_per_point: number;
   updated_at: string;
 }
 
@@ -862,6 +916,8 @@ export type AppSettingsUpdate = Partial<
     | 'price_review_enabled'
     | 'price_review_threshold_pct'
     | 'price_review_floor_crc'
+    | 'loyalty_enabled'
+    | 'loyalty_colones_per_point'
   >
 >;
 

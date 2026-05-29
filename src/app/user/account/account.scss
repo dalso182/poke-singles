@@ -1,120 +1,618 @@
+// Navy primary + hover + blue-soft: no global tokens for the latter two, so
+// scoped literals mirror checkout (.co-confirm / .co-option--active).
+$navy: var(--mat-sys-primary, #1e3a8a);
+$navy-dark: #172e6e;
+$blue-soft: #e8edf8;
+
 .account {
+  max-width: 1080px;
+  margin-inline: auto;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  max-width: 720px;
+  gap: 20px;
 }
 
+// ───────── Page header ─────────
 .account__header {
-  padding-bottom: 8px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
 
-  h1 {
-    margin: 6px 0 0;
-    font-family: var(--font-brand);
-    font-size: 28px;
-    font-weight: 800;
-    letter-spacing: -0.5px;
+.account__title h1 {
+  margin: 6px 0 0;
+  font-family: var(--font-brand);
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: -1.6px;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+// ───────── Two-column layout ─────────
+.account__layout {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 28px;
+  align-items: flex-start;
+}
+
+.account__rail {
+  position: sticky;
+  top: 16px;
+}
+
+.account__content {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+// ───────── Profile rail ─────────
+.acc-rail-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.acc-identity {
+  padding: 24px 22px;
+  text-align: center;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.acc-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  margin: 0 auto;
+  background: $navy;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-brand);
+  font-size: 26px;
+  font-weight: 800;
+  box-shadow: 0 8px 18px -8px rgba(30, 58, 138, 0.5);
+}
+
+.acc-identity-name {
+  margin-top: 12px;
+  font-family: var(--font-brand);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  color: var(--text-primary);
+}
+
+.acc-identity-email {
+  margin-top: 3px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  word-break: break-word;
+}
+
+.acc-since {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 4px 10px;
+  background: var(--surface-tonal);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+
+  mat-icon {
+    font-size: 13px;
+    width: 13px;
+    height: 13px;
+    color: var(--accent-amber);
+  }
+
+  .brand-mono {
+    font-size: 10px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
   }
 }
 
-.account__form {
+.acc-nav {
+  padding: 8px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 2px;
 }
 
-.account__panel {
+.acc-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px;
+  border-radius: 9px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: background 0.12s ease, color 0.12s ease;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+  }
+
+  &:hover {
+    background: var(--surface-tonal);
+  }
+
+  &.is-active {
+    background: $blue-soft;
+    color: $navy;
+
+    .acc-nav-label {
+      font-weight: 700;
+    }
+
+    .acc-nav-num {
+      color: $navy;
+    }
+  }
+}
+
+.acc-nav-coin {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.acc-nav-label {
+  flex: 1;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.acc-nav-num {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--text-tertiary);
+  opacity: 0.85;
+}
+
+.acc-rail-foot {
   padding: 8px;
+  border-top: 1px solid var(--border-subtle);
 }
 
+// Logout uses Danger red (--danger), NOT brand red — brand red is reserved
+// for the brand-bar, sale prices, and the AGOTADA badge (see theme skill).
+.acc-logout {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--font-brand);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--danger);
+  transition: background 0.12s ease;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  &:hover {
+    background: color-mix(in srgb, var(--danger) 8%, transparent);
+  }
+}
+
+// ───────── Section card ─────────
+.acc-panel {
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 24px 26px;
+  scroll-margin-top: 16px;
+}
+
+.acc-panel-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.acc-icon {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  margin-top: 2px;
+  border-radius: 10px;
+  background: var(--surface-tonal);
+  border: 1px solid var(--border-subtle);
+  color: $navy;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.acc-icon--coin img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  display: block;
+}
+
+.acc-panel-titles {
+  flex: 1;
+  min-width: 0;
+
+  h2 {
+    margin: 4px 0 0;
+    font-family: var(--font-brand);
+    font-size: 21px;
+    font-weight: 800;
+    letter-spacing: -0.6px;
+    color: var(--text-primary);
+  }
+}
+
+.acc-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: var(--accent-amber);
+}
+
+.acc-sub {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.acc-panel-action {
+  flex: 0 0 auto;
+  font-size: 10px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.muted {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+// ───────── Form grid (Material fields kept as-is) ─────────
 .account__grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px 16px;
+  gap: 16px;
 }
 
 .account__full {
   grid-column: 1 / -1;
 }
 
-.account__placeholder {
-  background: var(--surface-tonal);
+// ───────── Orders ─────────
+.acc-orders {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
 
-  p.muted {
-    color: var(--text-secondary);
-    margin: 4px 0 12px;
-    font-size: 14px;
+.acc-order {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto auto;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  background: var(--surface-page);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  text-decoration: none;
+  transition: border-color 0.12s ease, background 0.12s ease;
+
+  &:hover {
+    border-color: var(--border-strong);
+    background: var(--surface-card);
   }
 }
 
-.account__actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  padding-top: 8px;
+.acc-order-ref {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
 }
 
-.account__orders {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+// .order-status pill is defined in _brand-utilities.scss; pin its placement here.
+.acc-order .order-status {
+  justify-self: start;
+}
+
+.acc-order-spacer {
+  min-width: 0;
+}
+
+.acc-order-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+}
+
+.acc-order-date {
+  font-size: 10.5px;
+  letter-spacing: 0.5px;
+  text-transform: none;
+  color: var(--text-tertiary);
+}
+
+.acc-order-total {
+  margin-top: 2px;
+  font-family: var(--font-brand);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: var(--text-primary);
+}
+
+.acc-order-chev {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: var(--text-tertiary);
+}
+
+// ───────── Points ─────────
+.acc-points-hero {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 20px 22px;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f7f1de 0%, #fdf8e9 100%);
+  border: 1px solid #f0dca4;
+}
+
+.acc-points-balance {
+  font-family: var(--font-brand);
+  font-size: 52px;
+  font-weight: 800;
+  letter-spacing: -2.5px;
+  line-height: 1;
+  color: var(--text-primary);
+
+  // Negative balance (a reversal beyond what was spent) → Danger, never brand red.
+  .acc-points-hero--negative & {
+    color: var(--danger);
+  }
+}
+
+.acc-points-unit {
+  font-size: 10px;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: #8a6209;
+}
+
+.acc-points-head {
+  margin: 4px 2px 10px;
+  font-size: 10px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.acc-points-log {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.account__order {
+.acc-points-row {
   display: grid;
-  grid-template-columns: 140px 1fr 120px 110px;
+  grid-template-columns: auto 1fr auto auto;
   align-items: center;
-  gap: 12px;
-  padding: 8px 12px;
+  gap: 14px;
+  padding: 12px 16px;
+  background: var(--surface-page);
   border: 1px solid var(--border-subtle);
-  border-radius: 6px;
+  border-radius: 10px;
+}
 
-  a {
-    color: var(--mat-sys-primary);
-    text-decoration: none;
+.acc-points-spark {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-amber-soft);
+  color: var(--success);
 
-    &:hover {
-      text-decoration: underline;
-    }
+  mat-icon {
+    font-size: 15px;
+    width: 15px;
+    height: 15px;
+  }
+
+  &--negative {
+    background: color-mix(in srgb, var(--danger) 12%, transparent);
+    color: var(--danger);
   }
 }
 
-.account__order-ref {
+.acc-points-desc {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.acc-points-date {
+  font-size: 10.5px;
+  letter-spacing: 0.5px;
+  text-transform: none;
+  color: var(--text-tertiary);
+}
+
+.acc-points-amount {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--success);
+
+  &--negative {
+    color: var(--danger);
+  }
+}
+
+// ───────── Sticky save bar ─────────
+.acc-savebar {
+  position: sticky;
+  bottom: 0;
+  margin-top: 8px;
+  padding: 16px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid transparent;
+  transition: background 0.2s ease, border-color 0.2s ease;
+
+  &.is-dirty {
+    background: rgba(251, 250, 247, 0.92);
+    backdrop-filter: blur(8px);
+    border-top-color: var(--border-subtle);
+  }
+}
+
+.acc-savebar-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+
+  .is-dirty & {
+    color: var(--accent-amber);
+  }
+}
+
+.acc-savebar-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--success);
+  box-shadow: 0 0 0 4px var(--success-soft, #e6f4ea);
+
+  .is-dirty & {
+    background: var(--accent-amber);
+    box-shadow: 0 0 0 4px var(--accent-amber-soft);
+  }
+}
+
+.acc-save-btn {
+  height: 48px;
+  padding: 0 28px;
+  border: none;
+  border-radius: 10px;
+  background: $navy;
+  color: #fff;
+  font-family: var(--font-brand);
   font-size: 13px;
   font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 8px 20px -8px rgba(30, 58, 138, 0.55);
+  transition: background 0.15s ease, transform 0.1s ease;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover:not(:disabled) {
+    background: $navy-dark;
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.99);
+  }
+
+  &:disabled {
+    background: var(--surface-tonal);
+    color: var(--text-tertiary);
+    box-shadow: none;
+    cursor: not-allowed;
+  }
 }
 
-// .order-status pill itself is defined in _brand-utilities.scss; this just
-// pins where the pill sits in the per-order grid.
-.account__orders .order-status {
-  justify-self: start;
-}
+// ───────── Responsive ─────────
+@media (max-width: 900px) {
+  .account__layout {
+    grid-template-columns: 1fr;
+  }
 
-.account__order-date {
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.account__order-total {
-  font-family: var(--font-brand);
-  font-weight: 700;
-  text-align: right;
+  .account__rail {
+    position: static;
+  }
 }
 
 @media (max-width: 600px) {
-  .account__order {
-    grid-template-columns: 1fr 1fr;
+  .account__title h1 {
+    font-size: 32px;
+  }
+
+  .account__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .acc-order {
+    grid-template-columns: 1fr auto;
     grid-template-areas:
       'ref status'
-      'date total';
+      'meta meta';
+    gap: 10px;
 
-    a { grid-area: ref; }
+    .acc-order-ref { grid-area: ref; }
     .order-status { grid-area: status; justify-self: end; }
-    .account__order-date { grid-area: date; }
-    .account__order-total { grid-area: total; }
+    .acc-order-spacer { display: none; }
+    .acc-order-meta {
+      grid-area: meta;
+      flex-direction: row;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .acc-order-chev { display: none; }
   }
 }

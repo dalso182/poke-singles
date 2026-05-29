@@ -5,6 +5,7 @@ import { CustomerOrdersReport } from './customer-orders-report/customer-orders-r
 import { CustomerActivityReport } from './customer-activity-report/customer-activity-report';
 import { CustomerSearchesReport } from './customer-searches-report/customer-searches-report';
 import { CouponsReport } from './coupons-report/coupons-report';
+import { LoyaltyReport } from './loyalty-report/loyalty-report';
 
 /** Admin "Reportes" hub. A page header + a report-type switcher; each report is
  *  a self-contained child (own filters / table / pagination). */
@@ -17,6 +18,7 @@ import { CouponsReport } from './coupons-report/coupons-report';
     CustomerActivityReport,
     CustomerSearchesReport,
     CouponsReport,
+    LoyaltyReport,
   ],
   templateUrl: './reports.html',
   styleUrl: './reports.scss',
@@ -28,5 +30,6 @@ export class Reports {
     { key: 'activity', label: 'Actividad de clientes' },
     { key: 'searches', label: 'Búsquedas' },
     { key: 'coupons', label: 'Cupones' },
+    { key: 'loyalty', label: 'Puntos' },
   ];
 }

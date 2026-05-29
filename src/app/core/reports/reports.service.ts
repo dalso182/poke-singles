@@ -21,6 +21,9 @@ import type {
   CustomerSearchParams,
   CustomerSearchResult,
   CustomerSearchRow,
+  LoyaltyReportParams,
+  LoyaltyReportResult,
+  LoyaltyReportRow,
   PriceReviewCard,
   PriceReviewProgress,
   PriceReviewSummary,
@@ -215,6 +218,47 @@ export class ReportsService {
       order_count: Number(r.order_count) || 0,
       total_discount: Number(r.total_discount) || 0,
       total_revenue: Number(r.total_revenue) || 0,
+    }));
+    const total = rpcRows.length > 0 ? Number(rpcRows[0].total_count) || 0 : 0;
+    return { rows, total, page, pageSize };
+  }
+
+  /** Admin "Puntos" report. Backed by the admin_loyalty_transactions_report RPC
+   *  (security definer + is_admin guard). Lists every points ledger entry. */
+  async listLoyaltyTransactions(
+    params: LoyaltyReportParams = {},
+  ): Promise<LoyaltyReportResult> {
+    const page = Math.max(1, params.page ?? 1);
+    const pageSize = Math.max(1, Math.min(200, params.pageSize ?? 50));
+    const { data, error } = await (this.supabase.client as any).rpc(
+      'admin_loyalty_transactions_report',
+      {
+        p_search: params.search?.trim() ?? '',
+        p_date_start: params.dateStart ?? null,
+        p_date_end: params.dateEnd ?? null,
+        p_limit: pageSize,
+        p_offset: (page - 1) * pageSize,
+        p_sort: params.sort ?? 'created',
+      },
+    );
+    if (error) {
+      console.error('[reports] admin_loyalty_transactions_report', error);
+      throw error;
+    }
+    const rpcRows = (data ?? []) as (LoyaltyReportRow & {
+      total_count: number | string;
+    })[];
+    const rows: LoyaltyReportRow[] = rpcRows.map((r) => ({
+      id: r.id,
+      user_id: r.user_id,
+      customer_name: r.customer_name,
+      customer_email: r.customer_email,
+      order_id: r.order_id,
+      order_number: r.order_number == null ? null : Number(r.order_number),
+      amount: Number(r.amount) || 0,
+      kind: r.kind,
+      description: r.description,
+      created_at: r.created_at,
     }));
     const total = rpcRows.length > 0 ? Number(rpcRows[0].total_count) || 0 : 0;
     return { rows, total, page, pageSize };

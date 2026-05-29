@@ -69,6 +69,11 @@ export class AdminConfig {
       5000 as number,
       [Validators.required, Validators.min(0)],
     ],
+    loyalty_enabled: [false],
+    loyalty_colones_per_point: [
+      1000 as number,
+      [Validators.required, Validators.min(1)],
+    ],
   });
 
   constructor() {
@@ -91,6 +96,8 @@ export class AdminConfig {
         price_review_enabled: row.price_review_enabled,
         price_review_threshold_pct: row.price_review_threshold_pct,
         price_review_floor_crc: row.price_review_floor_crc,
+        loyalty_enabled: row.loyalty_enabled,
+        loyalty_colones_per_point: row.loyalty_colones_per_point,
       });
       this.form.markAsPristine();
     } catch (err) {
@@ -119,6 +126,8 @@ export class AdminConfig {
         price_review_enabled: !!raw.price_review_enabled,
         price_review_threshold_pct: Number(raw.price_review_threshold_pct),
         price_review_floor_crc: Number(raw.price_review_floor_crc),
+        loyalty_enabled: !!raw.loyalty_enabled,
+        loyalty_colones_per_point: Number(raw.loyalty_colones_per_point),
       });
       this.current.set(updated);
       this.form.markAsPristine();

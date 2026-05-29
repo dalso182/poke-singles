@@ -112,8 +112,16 @@ normal cart → checkout pipeline. Data side → `database` skill.
 
 ## Account + auth UI
 
-`/account` (gated by `customerGuard`) lets the user edit `full_name` + `phone` and sign out;
-the shipping-address editor is a stub awaiting checkout. `AuthService`
+`/account` (gated by `customerGuard`) is a **two-column layout** (Vault Light design handoff):
+a sticky profile rail on the left (avatar/name/email, "Cliente desde", a 01–04 section nav that
+smooth-scrolls, and the **Cerrar sesión** button — in Danger red, **not** brand red) and four
+content cards on the right. The user edits `full_name` + `phone` (locked email) and the saved
+shipping address (`default_shipping_address`: line1/line2/city/province/notes), reviews order
+history (rows → `/checkout/confirmation/:id`), and sees the **"Poke-Monedas"** card (renamed
+from "Mis puntos"; coin icon = `assets/images/coin-sm.png`) — loyalty balance + recent ledger
+via `LoyaltyService` (`src/app/core/loyalty/`, RLS-scoped to self); a negative balance renders
+in the Material error color, **not** brand red (data side → `database` skill). A sticky,
+dirty-aware save bar at the bottom enables only when the form is dirty. `AuthService`
 (`src/app/core/auth/auth.service.ts`) wraps `signInWithMagicLink(email)` (recommended; doubles
 as signup), `signInWithPassword(email, password)`, and `signInWithGoogle()`. The shared
 `LoginDialog` (`src/app/auth/login-dialog/`) lays them out in that order — magic link primary,
