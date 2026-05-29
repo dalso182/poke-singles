@@ -90,34 +90,322 @@
   margin-left: 2px;
 }
 
-.header-profile-btn {
-  // Force the avatar/initials to fill the icon-button slot the same way
-  // a 24px mat-icon does — keeps the row vertically aligned with the cart
-  // and social icons.
-  .header-initials,
-  .header-avatar {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    flex: 0 0 auto;
-  }
+// ───────── Account dropdown ─────────
+.acct {
+  position: relative;
+  display: inline-flex;
+}
 
-  .header-initials {
-    background: var(--mat-sys-primary);
-    color: var(--mat-sys-on-primary);
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    line-height: 1;
-  }
+.acct-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 8px 4px 4px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
 
-  .header-avatar {
+  .acct--open & {
+    background: #e8edf8; // blue-soft (no global token; matches checkout)
+    border-color: #c6d4f0;
+  }
+}
+
+.acct-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: var(--mat-sys-primary, #1e3a8a);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-brand);
+  font-size: 13px;
+  font-weight: 800;
+  flex: 0 0 auto;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
     object-fit: cover;
-    background: var(--mat-sys-surface-variant);
   }
+}
+
+.acct-caret {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  color: var(--text-secondary);
+  transition: transform 0.15s ease;
+
+  .acct--open & {
+    transform: rotate(180deg);
+  }
+}
+
+// Full-screen catcher so an outside click closes the popover (no doc listeners).
+.acct-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+
+.acct-pop {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 288px;
+  z-index: 50;
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  box-shadow:
+    0 18px 44px -16px rgba(21, 21, 26, 0.34),
+    0 4px 10px -6px rgba(21, 21, 26, 0.18);
+  animation: acct-pop-in 0.14s ease-out;
+}
+
+@keyframes acct-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .acct-pop {
+    animation: none;
+  }
+}
+
+.acct-tip {
+  position: absolute;
+  top: -6px;
+  right: 22px;
+  width: 12px;
+  height: 12px;
+  background: var(--surface-card);
+  border-left: 1px solid var(--border-subtle);
+  border-top: 1px solid var(--border-subtle);
+  transform: rotate(45deg);
+}
+
+// Identity header
+.acct-id {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 16px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.acct-id-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: var(--mat-sys-primary, #1e3a8a);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-brand);
+  font-size: 18px;
+  font-weight: 800;
+  flex: 0 0 auto;
+  overflow: hidden;
+  box-shadow: 0 6px 14px -6px rgba(30, 58, 138, 0.55);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.acct-id-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.acct-id-name {
+  font-family: var(--font-brand);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.acct-id-email {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// Poke-Coins row
+.acct-coins-wrap {
+  padding: 12px 16px;
+}
+
+.acct-coins {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid #f0dca4;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f7f1de 0%, #fdf8e9 100%);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.acct-coins-medal {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+.acct-coins-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.acct-coins-label {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: #8a6209;
+  font-weight: 600;
+}
+
+.acct-coins-bal {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  margin-top: 1px;
+}
+
+.acct-coins-num {
+  font-family: var(--font-brand);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.acct-coins-unit {
+  font-size: 11.5px;
+  color: #8a6209;
+  font-weight: 600;
+}
+
+.acct-coins-redeem {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  background: #fff;
+  border: 1px solid #f0dca4;
+  border-radius: 999px;
+  color: #8a6209;
+  font-size: 9.5px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-weight: 700;
+
+  mat-icon {
+    font-size: 13px;
+    width: 13px;
+    height: 13px;
+  }
+}
+
+// Menu items
+.acct-items {
+  padding: 0 8px 8px;
+}
+
+.acct-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--text-primary);
+  font-family: var(--font-brand);
+  font-size: 13.5px;
+  font-weight: 600;
+  transition: background 0.12s ease;
+
+  &:hover {
+    background: var(--surface-tonal);
+  }
+}
+
+.acct-item-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: var(--text-secondary);
+  flex: 0 0 auto;
+}
+
+.acct-item-label {
+  flex: 1;
+  text-align: left;
+}
+
+.acct-item-chev {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  color: var(--text-tertiary);
+  opacity: 0;
+  transition: opacity 0.12s ease;
+
+  .acct-item:hover & {
+    opacity: 1;
+  }
+}
+
+// Logout: Danger red, NOT brand red (brand-red rule — see theme skill).
+.acct-item--danger {
+  color: var(--danger);
+
+  .acct-item-icon {
+    color: var(--danger);
+  }
+
+  &:hover {
+    background: #fcedee;
+  }
+}
+
+.acct-divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 6px 8px;
 }
 
 .spacer {

@@ -388,13 +388,26 @@ $blue-soft: #e8edf8;
 // ───────── Points ─────────
 .acc-points-hero {
   display: flex;
-  align-items: baseline;
-  gap: 12px;
+  align-items: center;
+  gap: 16px;
   padding: 20px 22px;
   margin-bottom: 16px;
   border-radius: 12px;
   background: linear-gradient(135deg, #f7f1de 0%, #fdf8e9 100%);
   border: 1px solid #f0dca4;
+}
+
+.acc-points-coin {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.acc-points-figure {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 12px;
 }
 
 .acc-points-balance {

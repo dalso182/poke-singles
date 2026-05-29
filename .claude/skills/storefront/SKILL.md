@@ -121,7 +121,14 @@ history (rows → `/checkout/confirmation/:id`), and sees the **"Poke-Monedas"**
 from "Mis puntos"; coin icon = `assets/images/coin-sm.png`) — loyalty balance + recent ledger
 via `LoyaltyService` (`src/app/core/loyalty/`, RLS-scoped to self); a negative balance renders
 in the Material error color, **not** brand red (data side → `database` skill). A sticky,
-dirty-aware save bar at the bottom enables only when the form is dirty. `AuthService`
+dirty-aware save bar at the bottom enables only when the form is dirty.
+
+The **header account dropdown** (`src/app/user/header/`, signed-in only) is a custom popover
+(not `mat-menu`): avatar trigger → identity header, a gold **Poke-Coins** balance row (coin icon
++ `LoyaltyService.getMyBalance()`, lazy-loaded on first open, links to `/account`; carries a
+"Canjear" placeholder chip since redemption isn't live), then Mi cuenta, Panel admin (admins),
+and a Danger-red Cerrar sesión. Outside-click closes via a fixed backdrop; not-signed-in keeps
+the plain person-icon → login button. `AuthService`
 (`src/app/core/auth/auth.service.ts`) wraps `signInWithMagicLink(email)` (recommended; doubles
 as signup), `signInWithPassword(email, password)`, and `signInWithGoogle()`. The shared
 `LoginDialog` (`src/app/auth/login-dialog/`) lays them out in that order — magic link primary,

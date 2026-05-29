@@ -198,8 +198,11 @@
         </header>
 
         <div class="acc-points-hero" [class.acc-points-hero--negative]="points() < 0">
-          <span class="acc-points-balance">{{ points() | number: '1.0-0' }}</span>
-          <span class="acc-points-unit brand-mono">{{ points() === 1 ? 'moneda' : 'monedas' }}</span>
+          <img class="acc-points-coin" src="assets/images/coin-sm.png" alt="" />
+          <span class="acc-points-figure">
+            <span class="acc-points-balance">{{ points() | number: '1.0-0' }}</span>
+            <span class="acc-points-unit brand-mono">{{ points() === 1 ? 'moneda' : 'monedas' }}</span>
+          </span>
         </div>
 
         @if (pointsHistory().length === 0) {

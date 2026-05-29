@@ -1,16 +1,16 @@
-import { Component, inject, output } from '@angular/core';
+import { Component, inject, output, signal } from '@angular/core';
 import { RouterLink, Router } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../core/auth/auth.service';
 import { CartService } from '../../core/cart/cart.service';
+import { LoyaltyService } from '../../core/loyalty/loyalty.service';
 import { SearchLogService } from '../../core/search-log/search-log.service';
 import { SocialIcons } from '../../shared/social-icons/social-icons';
 
@@ -23,7 +23,6 @@ import { SocialIcons } from '../../shared/social-icons/social-icons';
     MatButtonModule,
     MatInputModule,
     MatFormFieldModule,
-    MatMenuModule,
     MatTooltipModule,
     SocialIcons,
   ],
@@ -36,6 +35,7 @@ export class Header {
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
   private readonly cart = inject(CartService);
+  private readonly loyalty = inject(LoyaltyService);
   private readonly searchLog = inject(SearchLogService);
   private readonly dialog = inject(MatDialog);
   private readonly snack = inject(MatSnackBar);
@@ -44,6 +44,33 @@ export class Header {
   protected readonly isSignedIn = this.auth.isSignedIn;
   protected readonly isAdmin = this.auth.isAdmin;
   protected readonly cartCount = this.cart.itemCount;
+
+  /** Account dropdown open state. */
+  protected readonly menuOpen = signal(false);
+  /** Poke-Coins (loyalty) balance, lazy-loaded the first time the menu opens. */
+  protected readonly points = signal(0);
+  private pointsLoaded = false;
+
+  protected toggleMenu(): void {
+    const next = !this.menuOpen();
+    this.menuOpen.set(next);
+    if (next && this.isSignedIn() && !this.pointsLoaded) {
+      this.pointsLoaded = true;
+      void this.loadPoints();
+    }
+  }
+
+  protected closeMenu(): void {
+    this.menuOpen.set(false);
+  }
+
+  private async loadPoints(): Promise<void> {
+    try {
+      this.points.set(await this.loyalty.getMyBalance());
+    } catch {
+      // Balance is non-critical header chrome — leave it at 0 on failure.
+    }
+  }
 
   // Tooltip content shown on hover of the search-help icon. Lists every
   // field the search-text bucket covers so customers know what to type.
@@ -76,10 +103,14 @@ export class Header {
   }
 
   protected async signOut(): Promise<void> {
+    this.closeMenu();
     const { error } = await this.auth.signOut();
     if (error) {
       this.snack.open(error, 'OK', { duration: 4000 });
     } else {
+      // Reset the cached balance so a re-login fetches the new user's total.
+      this.pointsLoaded = false;
+      this.points.set(0);
       this.snack.open('Sesión cerrada', 'OK', { duration: 2500 });
     }
   }

@@ -43,52 +43,106 @@
       }
     </button>
 
-    <button
-      mat-icon-button
-      [matMenuTriggerFor]="profileMenu"
-      [attr.aria-label]="isSignedIn() ? 'Cuenta' : 'Iniciar sesión'"
-      class="header-profile-btn"
-    >
-      @if (isSignedIn()) {
-        @if (userAvatarUrl(); as url) {
-          <img [src]="url" alt="" class="header-avatar" referrerpolicy="no-referrer" />
-        } @else {
-          <span class="header-initials">{{ userInitials() }}</span>
-        }
-      } @else {
+    @if (!isSignedIn()) {
+      <button
+        mat-icon-button
+        type="button"
+        (click)="openLogin()"
+        aria-label="Iniciar sesión"
+        class="header-profile-btn"
+      >
         <mat-icon>person</mat-icon>
-      }
-    </button>
+      </button>
+    } @else {
+      <div class="acct" [class.acct--open]="menuOpen()">
+        <button
+          type="button"
+          class="acct-trigger"
+          aria-haspopup="menu"
+          [attr.aria-expanded]="menuOpen()"
+          aria-label="Cuenta"
+          (click)="toggleMenu()"
+        >
+          <span class="acct-avatar">
+            @if (userAvatarUrl(); as url) {
+              <img [src]="url" alt="" referrerpolicy="no-referrer" />
+            } @else {
+              {{ userInitials() }}
+            }
+          </span>
+          <mat-icon class="acct-caret">expand_more</mat-icon>
+        </button>
 
-    <mat-menu #profileMenu="matMenu" xPosition="before">
-      @if (!isSignedIn()) {
-        <button mat-menu-item (click)="openLogin()">
-          <mat-icon>login</mat-icon>
-          <span>Ingresar</span>
-        </button>
-      } @else {
-        <div class="header-menu-user" mat-menu-item disabled>
-          <span class="header-menu-name">{{ userDisplayName() }}</span>
-          @if (isAdmin()) {
-            <span class="header-menu-role brand-eyebrow">Admin</span>
-          }
-        </div>
-        <a mat-menu-item routerLink="/account">
-          <mat-icon>account_circle</mat-icon>
-          <span>Mi cuenta</span>
-        </a>
-        @if (isAdmin()) {
-          <a mat-menu-item routerLink="/admin">
-            <mat-icon>shield_person</mat-icon>
-            <span>Panel admin</span>
-          </a>
+        @if (menuOpen()) {
+          <div class="acct-backdrop" (click)="closeMenu()"></div>
+
+          <div class="acct-pop" role="menu">
+            <span class="acct-tip"></span>
+
+            <!-- Identity -->
+            <div class="acct-id">
+              <span class="acct-id-avatar">
+                @if (userAvatarUrl(); as url) {
+                  <img [src]="url" alt="" referrerpolicy="no-referrer" />
+                } @else {
+                  {{ userInitials() }}
+                }
+              </span>
+              <div class="acct-id-text">
+                <div class="acct-id-name">{{ userDisplayName() }}</div>
+                @if (currentUser()?.email; as email) {
+                  <div class="acct-id-email">{{ email }}</div>
+                }
+              </div>
+            </div>
+
+            <!-- Poke-Coins -->
+            <div class="acct-coins-wrap">
+              <a routerLink="/account" class="acct-coins" (click)="closeMenu()">
+                <img class="acct-coins-medal" src="assets/images/coin-sm.png" alt="" />
+                <span class="acct-coins-text">
+                  <span class="acct-coins-label brand-mono">Poke-Coins</span>
+                  <span class="acct-coins-bal">
+                    <span class="acct-coins-num">{{ points() }}</span>
+                    <span class="acct-coins-unit">coins</span>
+                  </span>
+                </span>
+                <span class="acct-coins-redeem brand-mono">
+                  <mat-icon>redeem</mat-icon>
+                  Canjear
+                </span>
+              </a>
+            </div>
+
+            <!-- Items -->
+            <div class="acct-items">
+              <a routerLink="/account" role="menuitem" class="acct-item" (click)="closeMenu()">
+                <mat-icon class="acct-item-icon">account_circle</mat-icon>
+                <span class="acct-item-label">Mi cuenta</span>
+                <mat-icon class="acct-item-chev">chevron_right</mat-icon>
+              </a>
+              @if (isAdmin()) {
+                <a routerLink="/admin" role="menuitem" class="acct-item" (click)="closeMenu()">
+                  <mat-icon class="acct-item-icon">shield_person</mat-icon>
+                  <span class="acct-item-label">Panel admin</span>
+                  <mat-icon class="acct-item-chev">chevron_right</mat-icon>
+                </a>
+              }
+              <div class="acct-divider"></div>
+              <button
+                type="button"
+                role="menuitem"
+                class="acct-item acct-item--danger"
+                (click)="signOut()"
+              >
+                <mat-icon class="acct-item-icon">logout</mat-icon>
+                <span class="acct-item-label">Cerrar sesión</span>
+              </button>
+            </div>
+          </div>
         }
-        <button mat-menu-item (click)="signOut()">
-          <mat-icon>logout</mat-icon>
-          <span>Cerrar sesión</span>
-        </button>
-      }
-    </mat-menu>
+      </div>
+    }
 
     <app-social-icons class="header-social" />
 
