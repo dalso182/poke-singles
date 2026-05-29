@@ -3,174 +3,315 @@
 }
 
 @if (notFound()) {
-  <mat-card class="confirmation__not-found">
-    <mat-card-content>
-      <p>No encontramos este pedido.</p>
-      <a mat-stroked-button routerLink="/products">Volver al catálogo</a>
-    </mat-card-content>
-  </mat-card>
+  <div class="confirmation__not-found">
+    <p>No encontramos este pedido.</p>
+    <a mat-stroked-button routerLink="/products">Volver al catálogo</a>
+  </div>
 }
 
 @if (order(); as o) {
+  <!-- ───────── Success header ───────── -->
   <header class="confirmation__header">
-    <span class="brand-eyebrow">Pedido</span>
-    <h1>¡Recibimos tu pedido!</h1>
-    <p class="muted">
-      Referencia: <strong class="brand-mono">{{ shortRef() }}</strong>
-    </p>
+    <span class="confirmation__ring">
+      <svg viewBox="0 0 32 32" width="30" height="30" fill="none" stroke="currentColor"
+           stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path class="confirmation__ring-check" d="M8 16.5l5 5L24 10" />
+      </svg>
+    </span>
+    <div class="confirmation__head-text">
+      <div class="brand-eyebrow">Pedido —</div>
+      <h1>¡Recibimos tu pedido!</h1>
+      <p class="muted">
+        Referencia <strong class="brand-mono">{{ shortRef() }}</strong>
+        · Te enviamos copia a <strong>{{ o.customer_email }}</strong>
+      </p>
+    </div>
   </header>
 
   <div class="confirmation__layout">
     <div class="confirmation__main">
 
+      <!-- ───────── 01 · Cómo pagar ───────── -->
       @if (o.payment_method === 'sinpe_or_transfer') {
-        <mat-card class="confirmation__panel">
-          <mat-card-header>
-            <mat-card-title>Cómo pagar</mat-card-title>
-            <mat-card-subtitle>SINPE Móvil o transferencia bancaria</mat-card-subtitle>
-          </mat-card-header>
-          <mat-card-content class="confirmation__pay">
-            <p>
-              <strong>SINPE Móvil:</strong> {{ settingsRow()?.sinpe_phone || '+506 6345-2039' }}
-            </p>
-            @if (settingsRow()?.bank_account_info; as bank) {
-              <p class="confirmation__bank">
-                <strong>Transferencia bancaria:</strong>
+        <section class="confirmation__panel">
+          <header class="confirmation__panel-head">
+            <div class="confirmation__panel-titles">
+              <div class="brand-eyebrow">01 —</div>
+              <h2>Cómo pagar</h2>
+              <p class="confirmation__sub">
+                SINPE Móvil o transferencia bancaria. Apartamos tus cartas mientras confirmamos.
               </p>
-              <pre class="confirmation__bank-pre">{{ bank }}</pre>
-            }
-            <p class="confirmation__amount">
-              Monto: <strong>₡{{ o.total | number: '1.0-0' }}</strong>
-            </p>
-            <p class="muted">
-              Incluye <strong class="brand-mono">{{ shortRef() }}</strong> en la nota del pago.
-            </p>
-            <p class="confirmation__warning">
+            </div>
+            <span class="confirmation__pill">
               <mat-icon>schedule</mat-icon>
-              El pedido se libera si no recibimos el comprobante en 4 horas.
-            </p>
+              <span class="brand-mono">Pago pendiente</span>
+            </span>
+          </header>
 
-            @if (proofUploaded()) {
-              <div class="confirmation__proof-status">
-                <mat-icon>check_circle</mat-icon>
-                Comprobante recibido. Te contactaremos cuando lo verifiquemos.
-              </div>
-            } @else if (whatsappAcknowledged()) {
-              <div class="confirmation__proof-status">
-                <mat-icon>chat</mat-icon>
-                Marcamos tu pedido como enviado por WhatsApp. Te contactaremos pronto.
-              </div>
-            } @else {
-              <div class="confirmation__cta">
-                <label mat-flat-button color="primary" class="confirmation__upload">
-                  <mat-icon>upload</mat-icon>
-                  {{ uploading() ? 'Subiendo…' : 'Adjuntar comprobante' }}
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,application/pdf"
-                    (change)="onProofSelected($event)"
-                    [disabled]="uploading()"
-                    hidden
-                  />
-                </label>
-                <a
-                  mat-stroked-button
-                  [href]="whatsappLink()"
-                  target="_blank"
-                  rel="noopener"
-                  class="confirmation__whatsapp"
+          <!-- Payment data slab -->
+          <div class="confirmation__slab">
+            <div class="confirmation__slab-cell">
+              <div class="confirmation__micro brand-mono">SINPE Móvil</div>
+              <div class="confirmation__sinpe-row">
+                <span class="confirmation__sinpe-num">{{ sinpeDisplay() }}</span>
+                <button
+                  type="button"
+                  class="confirmation__copy"
+                  [class.is-copied]="copiedSinpe()"
+                  (click)="copySinpe()"
                 >
-                  <mat-icon>open_in_new</mat-icon>
-                  Enviar comprobante por WhatsApp
-                </a>
+                  <mat-icon>{{ copiedSinpe() ? 'check' : 'content_copy' }}</mat-icon>
+                  {{ copiedSinpe() ? 'Copiado' : 'Copiar' }}
+                </button>
               </div>
-              <button
-                mat-button
-                type="button"
-                class="confirmation__sent-via"
-                (click)="onMarkSentByWhatsApp()"
+              <div class="confirmation__payee">A nombre de <strong>Poke-Singles CR</strong></div>
+            </div>
+            <div class="confirmation__slab-cell confirmation__slab-cell--amount">
+              <div class="confirmation__micro brand-mono">Monto exacto</div>
+              <div class="confirmation__amount">₡{{ o.total | number: '1.0-0' }}</div>
+              <div class="confirmation__note">
+                Incluí <span class="brand-mono">{{ shortRef() }}</span> en la nota del pago.
+              </div>
+            </div>
+          </div>
+
+          @if (settingsRow()?.bank_account_info; as bank) {
+            <p class="confirmation__bank-label brand-mono">Transferencia bancaria</p>
+            <pre class="confirmation__bank-pre">{{ bank }}</pre>
+          }
+
+          <!-- Release-timer warning -->
+          <div class="confirmation__warning">
+            <mat-icon>schedule</mat-icon>
+            <span>
+              El pedido se libera si no recibimos el comprobante en <strong>4 horas</strong>.
+              Te avisamos por WhatsApp al confirmar.
+            </span>
+          </div>
+
+          <!-- Comprobante actions -->
+          @if (proofUploaded()) {
+            <div class="confirmation__proof-status">
+              <mat-icon>check_circle</mat-icon>
+              Comprobante recibido. Te contactaremos cuando lo verifiquemos.
+            </div>
+          } @else if (whatsappAcknowledged()) {
+            <div class="confirmation__proof-status">
+              <mat-icon>chat</mat-icon>
+              Marcamos tu pedido como enviado por WhatsApp. Te contactaremos pronto.
+            </div>
+          } @else {
+            <div class="confirmation__cta">
+              <label class="confirmation__upload" [class.is-uploading]="uploading()">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  (change)="onProofSelected($event)"
+                  [disabled]="uploading()"
+                  hidden
+                />
+                <mat-icon>{{ uploading() ? 'hourglass_top' : 'upload' }}</mat-icon>
+                <span>{{ uploading() ? 'Subiendo…' : 'Adjuntar comprobante' }}</span>
+              </label>
+              <a
+                class="confirmation__whatsapp"
+                [href]="whatsappLink()"
+                target="_blank"
+                rel="noopener"
               >
-                Ya envié el comprobante por WhatsApp
-              </button>
-            }
-          </mat-card-content>
-        </mat-card>
+                <mat-icon>chat</mat-icon>
+                <span>Enviar comprobante por WhatsApp</span>
+                <mat-icon class="confirmation__whatsapp-ext">open_in_new</mat-icon>
+              </a>
+            </div>
+            <button
+              type="button"
+              class="confirmation__sent-via"
+              (click)="onMarkSentByWhatsApp()"
+            >
+              <span class="confirmation__check-box"><mat-icon>check</mat-icon></span>
+              Ya envié el comprobante por WhatsApp
+            </button>
+          }
+        </section>
       } @else {
-        <mat-card class="confirmation__panel">
-          <mat-card-header>
-            <mat-card-title>Te enviaremos un enlace de pago</mat-card-title>
-          </mat-card-header>
-          <mat-card-content>
-            <p>
-              Te contactaremos al teléfono <strong>{{ o.customer_phone }}</strong>
-              con el enlace de pago.
-            </p>
-            <p class="confirmation__warning">
+        <section class="confirmation__panel">
+          <header class="confirmation__panel-head">
+            <div class="confirmation__panel-titles">
+              <div class="brand-eyebrow">01 —</div>
+              <h2>Te enviaremos un enlace de pago</h2>
+            </div>
+            <span class="confirmation__pill">
               <mat-icon>schedule</mat-icon>
-              El pedido se libera si no recibimos confirmación en 4 horas.
-            </p>
+              <span class="brand-mono">Pago pendiente</span>
+            </span>
+          </header>
+          <p class="muted">
+            Te contactaremos al teléfono <strong>{{ o.customer_phone }}</strong>
+            con el enlace de pago.
+          </p>
+          <div class="confirmation__warning">
+            <mat-icon>schedule</mat-icon>
+            <span>El pedido se libera si no recibimos confirmación en <strong>4 horas</strong>.</span>
+          </div>
+          <div class="confirmation__cta">
             <a
-              mat-stroked-button
+              class="confirmation__whatsapp"
               [href]="whatsappLink()"
               target="_blank"
               rel="noopener"
             >
-              <mat-icon>open_in_new</mat-icon>
-              Contactarnos por WhatsApp
+              <mat-icon>chat</mat-icon>
+              <span>Contactarnos por WhatsApp</span>
+              <mat-icon class="confirmation__whatsapp-ext">open_in_new</mat-icon>
             </a>
-          </mat-card-content>
-        </mat-card>
+          </div>
+        </section>
       }
 
-      <mat-card class="confirmation__panel">
-        <mat-card-header>
-          <mat-card-title>Datos de envío</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <p><strong>{{ o.customer_name }}</strong></p>
-          <p>{{ o.customer_email }} · {{ o.customer_phone }}</p>
-          @if (o.shipping_address; as addr) {
-            <p>{{ addr.line1 }}{{ addr.line2 ? ', ' + addr.line2 : '' }}</p>
-            <p>{{ addr.city }}, {{ addr.province }}</p>
-            @if (addr.notes) { <p class="muted">{{ addr.notes }}</p> }
-          }
-          <p class="muted">{{ o.shipping_method_name }}</p>
-        </mat-card-content>
-      </mat-card>
+      <!-- ───────── 02 · Datos de envío ───────── -->
+      <section class="confirmation__panel">
+        <header class="confirmation__panel-head">
+          <div class="confirmation__panel-titles">
+            <div class="brand-eyebrow">02 —</div>
+            <h2>Datos de envío</h2>
+          </div>
+        </header>
 
+        <div class="confirmation__ship-method">
+          <span class="confirmation__ship-icon">
+            <mat-icon>{{ o.shipping_address ? 'place' : 'storefront' }}</mat-icon>
+          </span>
+          <div>
+            <div class="confirmation__ship-title">{{ o.shipping_method_name }}</div>
+            @if (o.shipping_address; as addr) {
+              <div class="confirmation__ship-detail">
+                {{ addr.line1 }}{{ addr.line2 ? ', ' + addr.line2 : '' }} · {{ addr.city }}, {{ addr.province }}
+              </div>
+              @if (addr.notes) {
+                <div class="confirmation__ship-detail muted">{{ addr.notes }}</div>
+              }
+            }
+          </div>
+        </div>
+
+        <div class="confirmation__divider"></div>
+
+        <div class="confirmation__fields">
+          <div class="confirmation__field">
+            <div class="confirmation__micro brand-mono">Cliente</div>
+            <div class="confirmation__field-val">{{ o.customer_name }}</div>
+          </div>
+          <div class="confirmation__field">
+            <div class="confirmation__micro brand-mono">Teléfono</div>
+            <div class="confirmation__field-val brand-mono">{{ o.customer_phone }}</div>
+          </div>
+          <div class="confirmation__field confirmation__field--full">
+            <div class="confirmation__micro brand-mono">Correo</div>
+            <div class="confirmation__field-val">{{ o.customer_email }}</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer links -->
+      <div class="confirmation__foot-links">
+        <a routerLink="/products" class="brand-mono">← Seguir comprando</a>
+        @if (auth.isSignedIn()) {
+          <a routerLink="/account" class="brand-mono">Ver mis pedidos →</a>
+        }
+      </div>
     </div>
 
+    <!-- ───────── Order summary ───────── -->
     <aside class="confirmation__summary">
       <div class="confirmation__summary-card">
-        <h2>Tu pedido</h2>
+        <div class="confirmation__strip"></div>
+        <div class="confirmation__summary-head">
+          <div>
+            <div class="brand-eyebrow">Resumen —</div>
+            <h2>Tu pedido</h2>
+          </div>
+          <span class="brand-mono confirmation__summary-ref">{{ shortRef() }}</span>
+        </div>
+
         <ul class="confirmation__items">
           @for (line of items(); track line.id) {
             <li class="confirmation__item">
-              @if (line.product_image_url) {
-                <img [src]="line.product_image_url" [alt]="line.product_name" loading="lazy" />
-              }
+              <div class="confirmation__thumb">
+                @if (line.product_image_url) {
+                  <img [src]="line.product_image_url" [alt]="line.product_name" loading="lazy" />
+                } @else {
+                  <span class="confirmation__thumb-ph"></span>
+                }
+                <span class="confirmation__qty">{{ line.quantity }}</span>
+              </div>
               <div class="confirmation__item-body">
                 <span class="confirmation__item-name">{{ line.product_name }}</span>
-                <span class="muted confirmation__item-meta">x{{ line.quantity }}</span>
+                @if (line.product_set_name || line.product_card_number) {
+                  <span class="confirmation__item-meta brand-mono">
+                    {{ line.product_set_name
+                    }}{{ line.product_card_number ? ' · #' + line.product_card_number : '' }}
+                  </span>
+                }
+                @if (line.product_condition) {
+                  <span [class]="conditionClass(line.product_condition)">
+                    {{ line.product_condition }}
+                  </span>
+                }
               </div>
-              <span class="confirmation__item-price">
-                ₡{{ line.line_total | number: '1.0-0' }}
-              </span>
+              <span class="confirmation__item-price">₡{{ line.line_total | number: '1.0-0' }}</span>
             </li>
           }
         </ul>
-        <dl class="confirmation__row"><dt>Subtotal</dt><dd>₡{{ o.subtotal | number: '1.0-0' }}</dd></dl>
-        @if (o.discount_amount > 0) {
+
+        <div class="confirmation__totals">
           <dl class="confirmation__row">
-            <dt>{{ o.coupon_code }}</dt>
-            <dd class="price--sale">−₡{{ o.discount_amount | number: '1.0-0' }}</dd>
+            <dt>Subtotal · {{ itemCount() }} carta{{ itemCount() === 1 ? '' : 's' }}</dt>
+            <dd>₡{{ o.subtotal | number: '1.0-0' }}</dd>
           </dl>
-        }
-        <dl class="confirmation__row"><dt>Envío</dt><dd>₡{{ o.shipping_amount | number: '1.0-0' }}</dd></dl>
-        <dl class="confirmation__row confirmation__row--total">
-          <dt>Total</dt>
-          <dd>₡{{ o.total | number: '1.0-0' }}</dd>
-        </dl>
+          @if (o.discount_amount > 0) {
+            <dl class="confirmation__row">
+              <dt>{{ o.coupon_code }}</dt>
+              <dd class="price--sale">−₡{{ o.discount_amount | number: '1.0-0' }}</dd>
+            </dl>
+          }
+          <dl class="confirmation__row">
+            <dt>Envío</dt>
+            <dd>
+              @if (o.shipping_amount === 0) {
+                <span class="confirmation__free">Gratis</span>
+              } @else {
+                ₡{{ o.shipping_amount | number: '1.0-0' }}
+              }
+            </dd>
+          </dl>
+        </div>
+
+        <div class="confirmation__total-slab">
+          <span class="brand-mono">Total</span>
+          <div class="confirmation__total-figure">
+            <div class="confirmation__total-amount">₡{{ o.total | number: '1.0-0' }}</div>
+            <div class="brand-mono confirmation__iva">IVA incluido</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Poke-Monedas earned -->
+      @if (coinsToEarn() > 0) {
+        <div class="confirmation__coins">
+          <img src="assets/images/coin-sm.png" alt="" class="confirmation__coins-medal" />
+          <div>
+            <div class="confirmation__coins-line">
+              Ganás <strong>+{{ coinsToEarn() | number: '1.0-0' }} Poke-Monedas</strong> al confirmar
+            </div>
+            <div class="confirmation__coins-sub">Se acreditan cuando validamos tu pago.</div>
+          </div>
+        </div>
+      }
+
+      <div class="confirmation__help brand-mono">
+        ¿Dudas? Escríbenos al
+        <a [href]="whatsappContactLink()" target="_blank" rel="noopener">{{ whatsappDisplay() }}</a>
       </div>
     </aside>
   </div>

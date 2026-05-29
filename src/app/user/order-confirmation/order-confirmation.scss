@@ -1,3 +1,8 @@
+// WhatsApp brand green + amber pill text: no global tokens, so scoped literals.
+$wa: #25d366;
+$pill-text: #8a6209;
+$pill-border: #f0dca4;
+
 .muted {
   color: var(--text-secondary);
   margin: 0;
@@ -5,248 +10,775 @@
 
 .confirmation__not-found {
   max-width: 480px;
+  margin: 32px auto;
   text-align: center;
+  padding: 32px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
 
   p {
     margin: 0 0 16px;
   }
 }
 
+// ───────── Success header ─────────
 .confirmation__header {
-  margin-bottom: 24px;
-  max-width: 1000px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  max-width: 1180px;
   margin-inline: auto;
+  padding: 40px 0 28px;
 
   h1 {
-    margin: 6px 0 4px;
+    margin: 6px 0 0;
     font-family: var(--font-brand);
-    font-size: 28px;
+    font-size: 38px;
     font-weight: 800;
-    letter-spacing: -0.5px;
+    letter-spacing: -1.6px;
+    line-height: 1;
+    color: var(--text-primary);
   }
 }
 
+.confirmation__head-text .muted {
+  margin-top: 8px;
+}
+
+.confirmation__ring {
+  flex: 0 0 auto;
+  width: 60px;
+  height: 60px;
+  border-radius: 999px;
+  background: var(--success-soft, #e6f4ea);
+  border: 1px solid #bcdec8;
+  color: var(--success);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  animation: confirmation-ring-pop 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+
+.confirmation__ring-check {
+  stroke-dasharray: 36;
+  stroke-dashoffset: 36;
+  animation: confirmation-draw-check 0.4s ease-out 0.25s forwards;
+}
+
+@keyframes confirmation-ring-pop {
+  from { transform: scale(0.4); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes confirmation-draw-check {
+  to { stroke-dashoffset: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confirmation__ring { animation: none; }
+  .confirmation__ring-check { animation: none; stroke-dashoffset: 0; }
+}
+
+// ───────── Layout ─────────
 .confirmation__layout {
   display: grid;
-  grid-template-columns: minmax(0, 600px) 360px;
-  gap: 24px;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 28px;
   align-items: start;
-  max-width: 1000px;
+  max-width: 1180px;
   margin-inline: auto;
-}
-
-@media (max-width: 980px) {
-  .confirmation__layout {
-    grid-template-columns: 1fr;
-    max-width: 600px;
-  }
+  padding-bottom: 48px;
 }
 
 .confirmation__main {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 }
 
+// ───────── Section card ─────────
 .confirmation__panel {
-  padding: 8px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 24px 26px;
 }
 
-.confirmation__pay {
+.confirmation__panel-head {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 18px;
+}
 
-  p { margin: 0; }
+.confirmation__panel-titles {
+  flex: 1;
+  min-width: 0;
+
+  h2 {
+    margin: 4px 0 0;
+    font-family: var(--font-brand);
+    font-size: 21px;
+    font-weight: 800;
+    letter-spacing: -0.6px;
+    color: var(--text-primary);
+  }
+}
+
+.confirmation__sub {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.confirmation__pill {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--accent-amber-soft);
+  border: 1px solid $pill-border;
+  border-radius: 999px;
+  color: $pill-text;
+
+  .brand-mono {
+    font-size: 10px;
+    letter-spacing: 1.2px;
+    font-weight: 700;
+    color: $pill-text;
+  }
+
+  mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+  }
+}
+
+// ───────── Mono micro-label ─────────
+.confirmation__micro {
+  font-size: 9.5px;
+  letter-spacing: 1.6px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+
+// ───────── Payment slab ─────────
+.confirmation__slab {
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.confirmation__slab-cell {
+  padding: 16px 18px;
+
+  &:first-child {
+    border-right: 1px solid var(--border-subtle);
+  }
+
+  &--amount {
+    background: var(--surface-tonal);
+  }
+}
+
+.confirmation__sinpe-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.confirmation__sinpe-num {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  color: var(--text-primary);
+}
+
+.confirmation__copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 7px;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-weight: 700;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+
+  mat-icon {
+    font-size: 13px;
+    width: 13px;
+    height: 13px;
+  }
+
+  &.is-copied {
+    background: var(--success-soft, #e6f4ea);
+    border-color: #bcdec8;
+    color: var(--success);
+  }
+}
+
+.confirmation__payee {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 8px;
+}
+
+.confirmation__amount {
+  font-family: var(--font-brand);
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -1.2px;
+  line-height: 1;
+  color: var(--text-primary);
+  margin-top: 4px;
+}
+
+.confirmation__note {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 8px;
+
+  .brand-mono {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-transform: none;
+  }
+}
+
+.confirmation__bank-label {
+  margin: 14px 0 4px;
+  font-size: 9.5px;
+  letter-spacing: 1.6px;
+  font-weight: 600;
+  color: var(--text-tertiary);
 }
 
 .confirmation__bank-pre {
   background: var(--surface-tonal);
-  padding: 8px 12px;
-  border-radius: 6px;
+  padding: 10px 12px;
+  border-radius: 8px;
   font-family: var(--font-mono);
   font-size: 12px;
   white-space: pre-wrap;
-  margin: 4px 0 8px;
+  margin: 0;
+  color: var(--text-primary);
 }
 
-.confirmation__amount {
-  font-size: 18px;
-  margin: 4px 0 0 !important;
-
-  strong {
-    font-family: var(--font-brand);
-    font-size: 22px;
-    font-weight: 800;
-  }
-}
-
+// ───────── Warning ─────────
 .confirmation__warning {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 11px 14px;
   background: var(--accent-amber-soft);
-  color: var(--text-primary);
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-size: 13px;
-  margin: 12px 0 !important;
+  border: 1px solid $pill-border;
+  border-radius: 10px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #5e4408;
 
   mat-icon {
-    font-size: 18px;
-    width: 18px;
-    height: 18px;
+    flex: 0 0 auto;
+    font-size: 15px;
+    width: 15px;
+    height: 15px;
     color: var(--accent-amber);
   }
 }
 
-.confirmation__cta {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-top: 12px;
-}
-
-.confirmation__upload {
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.confirmation__sent-via {
-  margin-top: 8px;
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
+// ───────── Comprobante actions ─────────
 .confirmation__proof-status {
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-top: 14px;
+  padding: 12px 14px;
   background: var(--surface-tonal);
-  padding: 12px;
-  border-radius: 6px;
-  margin-top: 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--text-primary);
 
   mat-icon {
     color: var(--success);
   }
 }
 
+.confirmation__cta {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.confirmation__upload,
+.confirmation__whatsapp {
+  flex: 1 1 200px;
+  height: 48px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  font-family: var(--font-brand);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.confirmation__upload {
+  border: 1.5px dashed var(--border-strong);
+  background: var(--surface-page);
+  color: var(--text-primary);
+  transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+
+  &.is-uploading {
+    border-style: solid;
+    border-color: var(--success);
+    background: var(--success-soft, #e6f4ea);
+    color: var(--success);
+  }
+
+  span {
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.confirmation__whatsapp {
+  border: none;
+  background: $wa;
+  color: #fff;
+  text-decoration: none;
+  box-shadow: 0 8px 18px -8px rgba(37, 211, 102, 0.6);
+}
+
+.confirmation__whatsapp-ext {
+  opacity: 0.85;
+}
+
+.confirmation__sent-via {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  margin-top: 14px;
+  padding: 4px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+.confirmation__check-box {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: 1.5px solid var(--border-strong);
+  background: var(--surface-card);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+
+  mat-icon {
+    font-size: 13px;
+    width: 13px;
+    height: 13px;
+  }
+}
+
+// ───────── Datos de envío ─────────
+.confirmation__ship-method {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.confirmation__ship-icon {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--surface-tonal);
+  border: 1px solid var(--border-subtle);
+  color: var(--mat-sys-primary, #1e3a8a);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.confirmation__ship-title {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  color: var(--text-primary);
+}
+
+.confirmation__ship-detail {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.confirmation__divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 16px 0;
+}
+
+.confirmation__fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.confirmation__field--full {
+  grid-column: 1 / -1;
+}
+
+.confirmation__field-val {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 3px;
+  word-break: break-word;
+
+  &.brand-mono {
+    text-transform: none;
+    font-size: 13.5px;
+    letter-spacing: 0;
+    color: var(--text-primary);
+  }
+}
+
+// ───────── Footer links ─────────
+.confirmation__foot-links {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px;
+
+  a {
+    font-size: 10.5px;
+    letter-spacing: 1.5px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-decoration: none;
+  }
+}
+
+// ───────── Order summary ─────────
 .confirmation__summary {
   position: sticky;
-  top: 16px;
+  top: 88px;
+  align-self: start;
 }
 
 .confirmation__summary-card {
   background: var(--surface-card);
   border: 1px solid var(--border-subtle);
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.confirmation__strip {
+  height: 3px;
+  background: linear-gradient(90deg, var(--brand-red), var(--accent-amber), var(--brand-red));
+}
+
+.confirmation__summary-head {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 20px 22px 0;
 
   h2 {
-    margin: 0;
+    margin: 3px 0 0;
     font-family: var(--font-brand);
-    font-size: 16px;
+    font-size: 18px;
     font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    color: var(--text-secondary);
+    letter-spacing: -0.4px;
+    color: var(--text-primary);
   }
+}
+
+.confirmation__summary-ref {
+  font-size: 10px;
+  letter-spacing: 1.4px;
 }
 
 .confirmation__items {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 14px 22px 4px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  max-height: 320px;
-  overflow-y: auto;
+  gap: 14px;
 }
 
 .confirmation__item {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.confirmation__thumb {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.confirmation__thumb img,
+.confirmation__thumb-ph {
+  display: block;
+  width: 56px;
+  height: 78px;
+  border-radius: 5px;
+  object-fit: cover;
+  box-shadow: 0 4px 10px -4px rgba(21, 21, 26, 0.3);
+}
+
+.confirmation__thumb-ph {
+  background: linear-gradient(135deg, #1b5e8a, #2f9ad1, #7ad0e8);
+  border: 1.5px solid rgba(255, 255, 255, 0.6);
+}
+
+.confirmation__qty {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--text-primary);
+  color: #fff;
+  border: 2px solid #fff;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--border-subtle);
-
-  &:last-child {
-    border-bottom: 0;
-  }
-
-  img {
-    width: 47px;
-    height: 65px;
-    object-fit: cover;
-    border-radius: 4px;
-  }
+  justify-content: center;
 }
 
 .confirmation__item-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
   min-width: 0;
 }
 
 .confirmation__item-name {
+  display: block;
   font-size: 13px;
-  font-weight: 600;
-  line-height: 1.2;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  line-height: 1.25;
+  color: var(--text-primary);
 }
 
 .confirmation__item-meta {
-  font-size: 11px;
+  display: block;
+  font-size: 9.5px;
+  letter-spacing: 1.2px;
+  margin-top: 4px;
+}
+
+// Shared .condition-pill (global) sits flush-left under the meta line, not
+// inline-after-text, so drop its default left margin and lift it onto its row.
+.confirmation__item-body .condition-pill {
+  margin-left: 0;
+  margin-top: 6px;
 }
 
 .confirmation__item-price {
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
   font-family: var(--font-brand);
+  color: var(--text-primary);
+}
+
+.confirmation__totals {
+  padding: 14px 22px;
+  margin-top: 14px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .confirmation__row {
   display: flex;
-  justify-content: space-between;
   align-items: baseline;
+  justify-content: space-between;
   margin: 0;
+  font-size: 13px;
 
   dt {
     color: var(--text-secondary);
-    font-size: 13px;
   }
 
   dd {
     margin: 0;
-    font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.confirmation__free {
+  color: var(--success);
+  font-weight: 700;
+}
+
+.confirmation__total-slab {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 18px 22px;
+  background: var(--surface-tonal);
+  border-top: 1px solid var(--border-subtle);
+
+  .brand-mono {
+    font-size: 11px;
+    letter-spacing: 1.8px;
+    font-weight: 700;
+    color: var(--text-secondary);
+  }
+}
+
+.confirmation__total-figure {
+  text-align: right;
+}
+
+.confirmation__total-amount {
+  font-family: var(--font-brand);
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.confirmation__iva {
+  font-size: 9.5px;
+  letter-spacing: 1px;
+  margin-top: 4px;
+}
+
+// ───────── Poke-Monedas earned ─────────
+.confirmation__coins {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f7f1de 0%, #fdf8e9 100%);
+  border: 1px solid $pill-border;
+}
+
+.confirmation__coins-medal {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.confirmation__coins-line {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #5e4408;
+}
+
+.confirmation__coins-sub {
+  font-size: 11px;
+  color: $pill-text;
+  margin-top: 1px;
+}
+
+.confirmation__help {
+  margin-top: 14px;
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 1px;
+
+  a {
+    color: $wa;
+    font-weight: 700;
+    text-decoration: none;
+
+    &:hover { text-decoration: underline; }
+  }
+}
+
+// ───────── Responsive ─────────
+@media (max-width: 980px) {
+  .confirmation__layout {
+    grid-template-columns: 1fr;
+    max-width: 620px;
   }
 
-  &--total {
-    border-top: 1px solid var(--border-subtle);
-    padding-top: 12px;
-    margin-top: 4px;
+  .confirmation__summary {
+    position: static;
+  }
 
-    dt {
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      font-weight: 600;
-    }
+  .confirmation__header {
+    padding: 28px 0 20px;
 
-    dd {
-      font-family: var(--font-brand);
-      font-size: 22px;
-      font-weight: 800;
-    }
+    h1 { font-size: 30px; }
+  }
+}
+
+@media (max-width: 640px) {
+  .confirmation__slab {
+    grid-template-columns: 1fr;
+  }
+
+  .confirmation__slab-cell:first-child {
+    border-right: none;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .confirmation__upload,
+  .confirmation__whatsapp {
+    flex: 1 1 100%;
+  }
+
+  .confirmation__fields {
+    grid-template-columns: 1fr;
   }
 }

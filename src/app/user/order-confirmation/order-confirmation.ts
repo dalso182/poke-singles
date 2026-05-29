@@ -1,8 +1,7 @@
-import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
+import { Component, OnInit, PLATFORM_ID, computed, inject, input, signal } from '@angular/core';
+import { DecimalPipe, isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -11,13 +10,21 @@ import { AppSettingsService } from '../../core/settings/app-settings.service';
 import { OrdersService, WHATSAPP_PROOF_SENTINEL } from '../../core/orders/orders.service';
 import type { AppSettingsRow, OrderItemRow, OrderRow } from '../../core/catalog/catalog.types';
 
+/** Strip a leading Costa Rica country code and hyphens for display:
+ *  "+506 6345-2039" → "6345 2039". */
+function toLocalNumber(raw: string): string {
+  return raw
+    .replace(/^\s*\+?506[\s-]*/, '')
+    .replace(/-/g, ' ')
+    .trim();
+}
+
 @Component({
   selector: 'app-order-confirmation',
   imports: [
     RouterLink,
     DecimalPipe,
     MatButtonModule,
-    MatCardModule,
     MatIconModule,
     MatProgressBarModule,
     MatSnackBarModule,
@@ -30,10 +37,11 @@ export class OrderConfirmation implements OnInit {
   readonly email = input<string>('');
 
   private readonly orders = inject(OrdersService);
-  private readonly auth = inject(AuthService);
+  protected readonly auth = inject(AuthService);
   private readonly settings = inject(AppSettingsService);
   private readonly snack = inject(MatSnackBar);
   private readonly router = inject(Router);
+  private readonly platformId = inject(PLATFORM_ID);
 
   protected readonly order = signal<OrderRow | null>(null);
   protected readonly items = signal<OrderItemRow[]>([]);
@@ -41,10 +49,41 @@ export class OrderConfirmation implements OnInit {
   protected readonly loading = signal(true);
   protected readonly notFound = signal(false);
   protected readonly uploading = signal(false);
+  protected readonly copiedSinpe = signal(false);
 
   protected readonly shortRef = computed<string>(() => {
     const num = this.order()?.order_number;
     return num != null ? `#${num}` : '';
+  });
+
+  /** Total cartas across the order (sum of line quantities). */
+  protected readonly itemCount = computed<number>(() =>
+    this.items().reduce((n, l) => n + l.quantity, 0),
+  );
+
+  /** Condition code → traffic-light pill classes (NM green … HP/DMG red).
+   *  Mirrors ProductCard.conditionClass so the coloring stays consistent. */
+  protected conditionClass(condition: string | null): string {
+    if (!condition) return '';
+    const code = condition.toUpperCase();
+    let modifier = '';
+    if (code === 'NM') modifier = 'condition-pill--nm';
+    else if (code === 'LP') modifier = 'condition-pill--lp';
+    else if (code === 'MP') modifier = 'condition-pill--mp';
+    else if (code === 'HP' || code === 'DMG') modifier = 'condition-pill--hp';
+    return `condition-pill ${modifier}`;
+  }
+
+  /** Preview of Poke-Monedas this order will earn once payment is validated.
+   *  Mirrors the earn trigger: floor((subtotal − discount) / colones-per-point),
+   *  gated by the loyalty flag. Guests (no user_id) never earn. */
+  protected readonly coinsToEarn = computed<number>(() => {
+    const o = this.order();
+    const s = this.settingsRow();
+    if (!o || !s?.loyalty_enabled || o.user_id == null) return 0;
+    const per = Number(s.loyalty_colones_per_point) || 0;
+    if (per <= 0) return 0;
+    return Math.floor(Math.max(o.subtotal - (o.discount_amount ?? 0), 0) / per);
   });
 
   protected readonly proofUploaded = computed<boolean>(() => {
@@ -64,6 +103,19 @@ export class OrderConfirmation implements OnInit {
     );
     return `https://wa.me/${num}?text=${text}`;
   });
+
+  /** SINPE number for display — local format, no country code or hyphen. */
+  protected readonly sinpeDisplay = computed<string>(() =>
+    toLocalNumber(this.settingsRow()?.sinpe_phone || '+506 6345-2039'),
+  );
+
+  /** WhatsApp number for the "¿Dudas?" help line — local format + plain wa.me link. */
+  protected readonly whatsappDisplay = computed<string>(() =>
+    toLocalNumber(this.settingsRow()?.whatsapp_number || '+506 6345-2039'),
+  );
+  protected readonly whatsappContactLink = computed<string>(
+    () => `https://wa.me/${(this.settingsRow()?.whatsapp_number ?? '50663452039').replace(/\D/g, '')}`,
+  );
 
   ngOnInit(): void {
     void this.bootstrap();
@@ -92,6 +144,20 @@ export class OrderConfirmation implements OnInit {
       this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  /** Copy the SINPE number to the clipboard; flip the button to its "copied"
+   *  state for ~1.6s. Best-effort — no-op where the clipboard API is absent. */
+  protected async copySinpe(): Promise<void> {
+    if (!isPlatformBrowser(this.platformId)) return;
+    const num = this.sinpeDisplay().replace(/\s+/g, '');
+    try {
+      await navigator.clipboard?.writeText(num);
+      this.copiedSinpe.set(true);
+      setTimeout(() => this.copiedSinpe.set(false), 1600);
+    } catch {
+      /* clipboard unavailable — silently ignore */
     }
   }
 
