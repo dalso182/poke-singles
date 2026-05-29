@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { adminGuard } from './core/auth/admin.guard';
 import { customerGuard } from './core/auth/customer.guard';
+import { maintenanceGuard } from './core/auth/maintenance.guard';
 
 export const routes: Routes = [
   {
@@ -139,7 +140,17 @@ export const routes: Routes = [
     loadComponent: () => import('./library/library').then((m) => m.Library),
   },
   {
+    // Standalone maintenance screen (no shell). Redirect target of
+    // maintenanceGuard; must come before the empty-path UserShell so the
+    // catch-all doesn't swallow it. Not itself gated — it's the fallback.
+    path: 'mantenimiento',
+    loadComponent: () =>
+      import('./maintenance/maintenance').then((m) => m.Maintenance),
+  },
+  {
     path: '',
+    canActivate: [maintenanceGuard],
+    canActivateChild: [maintenanceGuard],
     loadComponent: () =>
       import('./user/user-shell/user-shell').then((m) => m.UserShell),
     children: [

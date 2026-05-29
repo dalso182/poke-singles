@@ -26,6 +26,16 @@ channel that feeds the admin dashboard's "people online" tile (→ `database` / 
 Rifas · `/cart` CartPage · `/account` Account (`customerGuard`). Specific paths are declared
 before the empty-path UserShell wrapper (router-ordering requirement).
 
+**Maintenance gate.** The whole UserShell branch carries `maintenanceGuard`
+(`src/app/core/auth/maintenance.guard.ts`) as both `canActivate` + `canActivateChild`. When
+`app_settings.maintenance_mode` is on it redirects non-admins to the standalone `/mantenimiento`
+page (`src/app/maintenance/`, no shell chrome, declared before UserShell so the catch-all
+doesn't swallow it); admins bypass to preview the live store and still reach `/admin/config` to
+turn it off. The flag is read via `AppSettingsService.getMaintenance()`, which caches the
+`app_settings` row with a ~60s TTL — so a flip lands on the next navigation / within a minute,
+not instantly for in-session shoppers. `/mantenimiento` is ungated and bounces back to `/` when
+maintenance is off.
+
 ## Shared product card + grids
 
 One component does every tile: **`<app-product-card>`** at `src/app/shared/product-card/`.

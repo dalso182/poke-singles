@@ -42,7 +42,7 @@ Admin status = `app_metadata.role === 'admin'` (→ `database` skill for `is_adm
 | `/admin/customers/:id` | CustomerDetail | profile + saved address + stats + order history (rows → `/admin/orders/:id`) |
 | `/admin/reports` | Reports | 5-tab hub: Pedidos por cliente, Actividad de clientes, Búsquedas, Cupones, Puntos (see Reports below) |
 | `/admin/price-review` | PriceReview | Card-by-card triage of products whose store price drifts from TCGplayer market (see Price review below) |
-| `/admin/config` | AdminConfig | exchange rate, maintenance flag, price-review settings, loyalty points ratio |
+| `/admin/config` | AdminConfig | exchange rate, maintenance flag (gates the storefront via `maintenanceGuard` → `/mantenimiento`; admins bypass), price-review settings, loyalty points ratio |
 
 ## Shared table system
 

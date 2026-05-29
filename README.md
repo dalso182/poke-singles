@@ -96,6 +96,7 @@ Deploy details: `scripts/deploy.mjs` reads `.env.local` (gitignored — copy fro
 | `/rifas` | Rifas | Raffles — Activas / Completadas tabs, buy entries, winner display |
 | `/cart` | CartPage | Line items, quantity edit, list / grid views, coupon input, summary |
 | `/account` | Account | Two-column: profile rail + name/phone/address editor, order history, Poke-Monedas (loyalty) balance, sign out (`customerGuard`) |
+| `/mantenimiento` | Maintenance | Standalone full-page screen shown when maintenance mode is on (non-admins); shows the configured message |
 | `/admin` | AdminShell | Requires admin role; uses Google OAuth |
 | `/admin/` | Dashboard | Admin home (default after `/admin`) |
 | `/admin/products` | ProductsList | Paginated table with search + filters |
@@ -110,7 +111,7 @@ Deploy details: `scripts/deploy.mjs` reads `.env.local` (gitignored — copy fro
 | `/admin/raffles/:id` | RaffleDetail | Participants + payment status, draw winner (blocked until paid), copy names for the wheel |
 | `/admin/reports` | Reports | 4 tabs: customer orders, activity log, searches, coupon usage — date-filterable |
 | `/admin/price-review` | PriceReview | Card-by-card triage of NM-singles whose price drifts from TCGplayer market (manual + weekly cron) |
-| `/admin/config` | AdminConfig | Exchange rate, maintenance mode, price-review settings |
+| `/admin/config` | AdminConfig | Exchange rate, maintenance mode (gates the storefront → `/mantenimiento`), price-review settings |
 | `/library` | Library | Designer reference (no app chrome) |
 
 ## Deploying
