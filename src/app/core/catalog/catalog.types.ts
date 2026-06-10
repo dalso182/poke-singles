@@ -153,6 +153,7 @@ export interface ProductCardItem {
   set_name: string | null;
   set_printed_total: number | null;
   condition: string | null;
+  variant: string | null;
   type1: string | null;
   type2: string | null;
 }
@@ -181,6 +182,8 @@ export interface RaffleCardItem {
   set_printed_total: number | null;
   /** The card's real market value (CRC), shown to justify the raffle. */
   market_price: number | null;
+  /** Card condition (NM/LP/MP/HP/DMG); null hides the pill. */
+  condition: string | null;
 }
 
 /** Admin raffle list row from the admin_raffles_summary() RPC: product fields +

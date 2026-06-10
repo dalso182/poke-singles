@@ -1334,6 +1334,7 @@ export type Database = {
       rifas_listing: {
         Row: {
           card_number: string | null
+          condition: string | null
           draw_at: string | null
           entries_sold: number | null
           id: string | null

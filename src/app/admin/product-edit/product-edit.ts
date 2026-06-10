@@ -304,7 +304,9 @@ export class ProductEdit implements OnInit {
         image_url: raw.image_url || null,
         set_id: raw.set_id || null,
         category_id: raw.category_id,
-        condition: isCard ? raw.condition || null : null,
+        // Raffles are single-card prizes too, so they keep their condition even
+        // though the rest of the card-only fields stay hidden for them.
+        condition: isCard || this.isRaffle() ? raw.condition || null : null,
         language: raw.language,
         variant: isCard ? raw.variant || null : null,
         price: Number(raw.price),

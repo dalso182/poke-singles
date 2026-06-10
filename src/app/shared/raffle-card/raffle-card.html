@@ -17,8 +17,15 @@
 
   <div class="card-info">
     <h3 class="card-name">{{ raffle().name }}</h3>
-    @if (metaLine()) {
-      <div class="card-meta">{{ metaLine() }}</div>
+    @if (metaLine() || raffle().condition) {
+      <div class="card-meta">
+        @if (metaLine()) {
+          <span>{{ metaLine() }}</span>
+        }
+        @if (raffle().condition) {
+          <span [class]="conditionClass(raffle().condition)">{{ raffle().condition }}</span>
+        }
+      </div>
     }
 
     @switch (raffle().status) {

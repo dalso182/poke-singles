@@ -72,6 +72,18 @@ export class RaffleCard {
     return { label, soon: days < 3 };
   });
 
+  /** Maps a condition code to its pill classes — mirrors the product card. */
+  protected conditionClass(condition: string | null): string {
+    if (!condition) return '';
+    const code = condition.toUpperCase();
+    let modifier = '';
+    if (code === 'NM') modifier = 'condition-pill--nm';
+    else if (code === 'LP') modifier = 'condition-pill--lp';
+    else if (code === 'MP') modifier = 'condition-pill--mp';
+    else if (code === 'HP' || code === 'DMG') modifier = 'condition-pill--hp';
+    return `condition-pill ${modifier}`;
+  }
+
   protected step(delta: number): void {
     const max = Math.max(1, this.raffle().quantity);
     this.qty.update((q) => Math.min(max, Math.max(1, q + delta)));
