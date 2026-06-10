@@ -3,6 +3,9 @@
   position: relative;
   padding: 24px 32px 28px;
   width: min(440px, 92vw);
+  max-height: 92vh;
+  max-height: 92dvh; // dvh accounts for mobile browser chrome; the vh line above is the fallback
+  overflow-y: auto;
 }
 
 .login-dialog__close {

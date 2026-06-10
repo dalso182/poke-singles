@@ -67,6 +67,12 @@ export class CouponField {
       const result = await this.cart.applyCoupon(this.form.controls.code.value);
       if (result.error) {
         this.error.set(mapCouponError(result.error, result.gap));
+        // The code itself is valid (non-empty, ≥3 chars), so without forcing an
+        // error state Material would never render <mat-error> and the message
+        // would stay invisible. Re-running validators on the next keystroke
+        // clears this automatically.
+        this.form.controls.code.setErrors({ server: true });
+        this.form.controls.code.markAsTouched();
         return;
       }
       this.form.reset();
