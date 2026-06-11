@@ -53,8 +53,9 @@ export class CardList {
   readonly tipo = input<string | undefined>(undefined);
   /** URL `sort` param. No query here, so 'relevance' is never offered. */
   readonly sort = input<string>('recent');
-  /** `?categoria=` facet selection on the all-products page. Ignored on
-   *  dedicated category routes — the route param wins in effectiveCategorySlug. */
+  /** `?categoria=` facet selection — the single source for category scoping.
+   *  When set, the grid is scoped to that category and the page presents it as
+   *  the active scope (heading + selected facet). */
   readonly categoria = input<string | undefined>(undefined);
   /** Route-data bound. When true the grid lists only discounted products and
    *  the page presents as /ofertas. Default false = the full /products grid. */
@@ -62,9 +63,6 @@ export class CardList {
   /** Route-data bound. Base path for filter/sort navigation. NOTE: can arrive
    *  `undefined` despite the default — see effectiveBasePath's guard. */
   readonly basePath = input<string>('/products');
-  /** Route-param bound (from `categoria/:categorySlug`). When set, the grid is
-   *  scoped to that category and the page presents as the category page. */
-  readonly categorySlug = input<string | undefined>(undefined);
 
   private readonly products = inject(ProductsService);
   private readonly setsService = inject(SetsService);
@@ -90,18 +88,14 @@ export class CardList {
   protected readonly categoryCounts = signal<Map<string, number>>(new Map());
   protected readonly loading = signal(true);
 
-  /** Active category: the route param (category page) wins; otherwise the
-   *  `?categoria=` facet selection on the all-products page. Drives the grid,
-   *  the scoped facet counts, and which filters are shown. */
+  /** Active category — the `?categoria=` facet selection. Drives the grid, the
+   *  scoped facet counts, the heading, and which filters are shown. */
   protected readonly effectiveCategorySlug = computed<string | undefined>(
-    () => this.categorySlug() ?? this.categoria(),
+    () => this.categoria(),
   );
 
-  /** Rareza (card-type variants) only makes sense for singles/graded. */
-  protected readonly showRareza = computed<boolean>(() => {
-    const slug = this.effectiveCategorySlug();
-    return slug === 'singles' || slug === 'graded';
-  });
+  /** Rareza (global card-type variants) is shown on every category now. */
+  protected readonly showRareza = computed<boolean>(() => this.globalCardTypes().length > 0);
 
   /** Resolve the active category slug to its id (for scoping card types). */
   protected readonly effectiveCategoryId = computed<string | null>(() => {
@@ -132,21 +126,10 @@ export class CardList {
     const slug = this.effectiveCategorySlug();
     return (slug === 'sellado' || slug === 'accesorios') && this.subtypeCardTypes().length > 0;
   });
-  /** One card-type facet drives both: Rareza for singles/graded, sub-types for
-   *  sealed/accessories (they never show together). */
-  protected readonly showCardTypeFilter = computed<boolean>(
-    () => this.showRareza() || this.showSubtypeFilter(),
-  );
-  protected readonly cardTypeFilterTypes = computed<CardTypeRow[]>(() =>
-    this.showRareza() ? this.globalCardTypes() : this.subtypeCardTypes(),
-  );
-  protected readonly cardTypeFilterLabel = computed<string>(() =>
-    this.showRareza() ? 'Rareza' : 'Tipo',
-  );
-
-  /** The Categoría facet appears only on the all-products page. */
+  /** The Categoría facet appears on every /products view (selected when a
+   *  category is active); only /ofertas hides it. */
   protected readonly showCategoryFilter = computed<boolean>(
-    () => !this.categorySlug() && !this.onSaleOnly(),
+    () => !this.onSaleOnly(),
   );
 
   /** Active categories for the facet (rifas has its own /rifas page). */
@@ -155,44 +138,51 @@ export class CardList {
   );
 
   /** Display name for the active category (falls back to the raw slug until
-   *  the categories list has loaded). Empty when not on a category page. */
+   *  the categories list has loaded). Empty when no category is selected. */
   protected readonly categoryName = computed<string>(() => {
-    const slug = this.categorySlug();
+    const slug = this.effectiveCategorySlug();
     if (!slug) return '';
     return this.categories().find((c) => c.slug === slug)?.name ?? slug;
   });
 
-  /** Where filter/sort navigation lands: the category page when scoped,
-   *  otherwise the route-data basePath (/products or /ofertas).
+  /** Where filter/sort navigation lands: the route-data basePath (/products or
+   *  /ofertas). The active category rides along as the `?categoria=` param via
+   *  queryParamsHandling: 'merge', so it survives every filter change.
    *  NOTE: `basePath()` can be `undefined` even though the input declares a
    *  default — withComponentInputBinding() overrides the default with undefined
    *  on routes (like /products) that don't supply `basePath` in their data. The
    *  `?? '/products'` guard prevents navigate(['undefined', …]) → NG04008, which
    *  was silently breaking every filter on /products. */
-  protected readonly effectiveBasePath = computed<string>(() =>
-    this.categorySlug() ? '/categoria/' + this.categorySlug() : (this.basePath() ?? '/products'),
+  protected readonly effectiveBasePath = computed<string>(
+    () => this.basePath() ?? '/products',
   );
 
   protected readonly selectedSetIds = computed<string[]>(() =>
     parseIdList(this.sets()),
   );
-  /** The active card-type selection as ids. On sealed/accesorios it resolves the
-   *  `?tipo=` clean slugs; elsewhere it reads `?types=` ids (Rareza). The grid +
-   *  search always work in ids. */
-  protected readonly selectedCardTypeIds = computed<string[]>(() => {
-    if (this.showSubtypeFilter()) {
-      const map = this.subtypeIdBySlug();
-      return parseIdList(this.tipo())
-        .map((slug) => map.get(slug))
-        .filter((id): id is string => !!id);
-    }
-    return parseIdList(this.types());
+  /** Rareza (global) selection from `?types=` ids — present on every category. */
+  protected readonly selectedRarezaIds = computed<string[]>(() => parseIdList(this.types()));
+
+  /** Sub-type selection from clean `?tipo=` slugs → ids — only sealed/accesorios.
+   *  The grid + search always work in ids. */
+  protected readonly selectedSubtypeIds = computed<string[]>(() => {
+    if (!this.showSubtypeFilter()) return [];
+    const map = this.subtypeIdBySlug();
+    return parseIdList(this.tipo())
+      .map((slug) => map.get(slug))
+      .filter((id): id is string => !!id);
   });
+
+  /** Union of both card-type facets — what the search RPC filters on. */
+  protected readonly selectedCardTypeIds = computed<string[]>(() => [
+    ...(this.showRareza() ? this.selectedRarezaIds() : []),
+    ...this.selectedSubtypeIds(),
+  ]);
 
   protected readonly anyFilterActive = computed<boolean>(
     () =>
       this.selectedSetIds().length > 0 ||
-      (this.showCardTypeFilter() && this.selectedCardTypeIds().length > 0) ||
+      this.selectedCardTypeIds().length > 0 ||
       (this.showCategoryFilter() && !!this.categoria()),
   );
 
@@ -200,9 +190,9 @@ export class CardList {
     normalizeSort(this.sort(), false),
   );
 
-  // Page chrome switches between the full catalog, a category page, and offers.
+  // Page chrome switches between the full catalog, a selected category, and offers.
   protected readonly pageTitle = computed(() => {
-    if (this.categorySlug()) return this.categoryName();
+    if (this.effectiveCategorySlug()) return this.categoryName();
     if (this.onSaleOnly()) return 'Ofertas';
     return 'Productos';
   });
@@ -212,7 +202,7 @@ export class CardList {
       : 'Productos auténticos, condición verificada, envío seguro a todo Costa Rica.',
   );
   protected readonly emptyText = computed(() => {
-    if (this.categorySlug()) return 'No hay productos en esta categoría todavía.';
+    if (this.effectiveCategorySlug()) return 'No hay productos en esta categoría todavía.';
     if (this.onSaleOnly()) return 'No hay ofertas en este momento. Vuelve pronto.';
     return 'Aún no hay productos en stock. Vuelve pronto.';
   });
@@ -235,9 +225,8 @@ export class CardList {
     // Refetch the grid whenever the selection, sort, or scope changes.
     effect(() => {
       const setIds = this.selectedSetIds();
-      // Apply the `types` selection only where a card-type filter is shown
-      // (Rareza for singles/graded, sub-types for sealed/accessories).
-      const cardTypeIds = this.showCardTypeFilter() ? this.selectedCardTypeIds() : [];
+      // Union of the Rareza (global) + sub-type (sealed/accesorios) selections.
+      const cardTypeIds = this.selectedCardTypeIds();
       const sort = this.normalizedSort();
       const onSaleOnly = this.onSaleOnly();
       const categorySlug = this.effectiveCategorySlug();
@@ -325,7 +314,7 @@ export class CardList {
     this.loadingMore.set(true);
     try {
       const setIds = this.selectedSetIds();
-      const cardTypeIds = this.showCardTypeFilter() ? this.selectedCardTypeIds() : [];
+      const cardTypeIds = this.selectedCardTypeIds();
       const { rows } = await this.products.search({
         q: '',
         sort: this.normalizedSort(),
@@ -365,19 +354,20 @@ export class CardList {
     });
   }
 
-  protected onCardTypesChange(ids: string[]): void {
-    // Sealed/accesorios write clean `?tipo=` slugs; singles/graded write `?types=` ids.
-    if (this.showSubtypeFilter()) {
-      const map = this.subtypeSlugById();
-      const slugs = ids.map((id) => map.get(id)).filter((s): s is string => !!s);
-      void this.router.navigate([this.effectiveBasePath()], {
-        queryParams: { tipo: slugs.length > 0 ? slugs.join(',') : null },
-        queryParamsHandling: 'merge',
-      });
-      return;
-    }
+  /** Rareza (global) — writes `?types=` ids. */
+  protected onRarezaChange(ids: string[]): void {
     void this.router.navigate([this.effectiveBasePath()], {
       queryParams: { types: ids.length > 0 ? ids.join(',') : null },
+      queryParamsHandling: 'merge',
+    });
+  }
+
+  /** Sub-types (sealed/accesorios) — writes clean `?tipo=` slugs. */
+  protected onSubtypeChange(ids: string[]): void {
+    const map = this.subtypeSlugById();
+    const slugs = ids.map((id) => map.get(id)).filter((s): s is string => !!s);
+    void this.router.navigate([this.effectiveBasePath()], {
+      queryParams: { tipo: slugs.length > 0 ? slugs.join(',') : null },
       queryParamsHandling: 'merge',
     });
   }

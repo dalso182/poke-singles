@@ -30,14 +30,24 @@
     [hideZero]="onSaleOnly() || !!effectiveCategorySlug()"
     (selectionChange)="onSetsChange($event)"
   />
-  @if (showCardTypeFilter()) {
+  @if (showRareza()) {
     <app-card-type-filter
-      [label]="cardTypeFilterLabel()"
-      [cardTypes]="cardTypeFilterTypes()"
+      label="Rareza"
+      [cardTypes]="globalCardTypes()"
       [counts]="cardTypeCounts()"
-      [selected]="selectedCardTypeIds()"
+      [selected]="selectedRarezaIds()"
       [hideZero]="onSaleOnly() || !!effectiveCategorySlug()"
-      (selectionChange)="onCardTypesChange($event)"
+      (selectionChange)="onRarezaChange($event)"
+    />
+  }
+  @if (showSubtypeFilter()) {
+    <app-card-type-filter
+      label="Tipo"
+      [cardTypes]="subtypeCardTypes()"
+      [counts]="cardTypeCounts()"
+      [selected]="selectedSubtypeIds()"
+      [hideZero]="onSaleOnly() || !!effectiveCategorySlug()"
+      (selectionChange)="onSubtypeChange($event)"
     />
   }
   <app-sort-select

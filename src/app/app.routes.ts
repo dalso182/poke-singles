@@ -1,4 +1,5 @@
-import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { Router, Routes } from '@angular/router';
 import { adminGuard } from './core/auth/admin.guard';
 import { customerGuard } from './core/auth/customer.guard';
 import { maintenanceGuard } from './core/auth/maintenance.guard';
@@ -182,12 +183,14 @@ export const routes: Routes = [
           import('./user/card-list/card-list').then((m) => m.CardList),
       },
       {
-        // Reuses CardList scoped to one category (CardList.categorySlug binds
-        // from this param). Any active category slug works; rifas resolves to
-        // an empty grid since products_search excludes it.
+        // Legacy category pages now live as the `?categoria=` facet on
+        // /products. Redirect old/bookmarked links there, preserving any
+        // incoming query params (e.g. ?tipo=).
         path: 'categoria/:categorySlug',
-        loadComponent: () =>
-          import('./user/card-list/card-list').then((m) => m.CardList),
+        redirectTo: ({ params, queryParams }) =>
+          inject(Router).createUrlTree(['/products'], {
+            queryParams: { categoria: params['categorySlug'], ...queryParams },
+          }),
       },
       {
         path: 'products/:slug',

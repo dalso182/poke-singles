@@ -37,47 +37,46 @@ describe('CardList', () => {
     expect((component as unknown as { pageTitle(): string }).pageTitle()).toBe('Ofertas');
   });
 
-  it('scopes to a category and keeps navigation on /categoria/:slug', () => {
-    fixture.componentRef.setInput('categorySlug', 'sellado');
+  it('scopes to the ?categoria= facet but keeps navigation on /products', () => {
+    fixture.componentRef.setInput('categoria', 'sellado');
     // Categories list isn't loaded in the test, so the title falls back to the slug.
     expect((component as unknown as { pageTitle(): string }).pageTitle()).toBe('sellado');
+    // Filter/sort nav stays on /products; the category rides the merged query param.
     expect((component as unknown as { effectiveBasePath(): string }).effectiveBasePath()).toBe(
-      '/categoria/sellado',
+      '/products',
     );
   });
 
-  it('shows the Categoría facet only on the all-products page', () => {
+  it('shows the Categoría facet on /products but hides it in offers mode', () => {
     const c = component as unknown as { showCategoryFilter(): boolean };
     expect(c.showCategoryFilter()).toBe(true);
-    fixture.componentRef.setInput('categorySlug', 'singles');
+    // Still shown when a category is selected (so the active facet is visible).
+    fixture.componentRef.setInput('categoria', 'singles');
+    expect(c.showCategoryFilter()).toBe(true);
+    // Hidden only on /ofertas.
+    fixture.componentRef.setInput('onSaleOnly', true);
     expect(c.showCategoryFilter()).toBe(false);
   });
 
-  it('shows Rareza only for singles/graded (route param or facet)', () => {
-    const c = component as unknown as { showRareza(): boolean };
-    expect(c.showRareza()).toBe(false);
-    fixture.componentRef.setInput('categorySlug', 'sellado');
-    expect(c.showRareza()).toBe(false);
-    fixture.componentRef.setInput('categorySlug', 'singles');
-    expect(c.showRareza()).toBe(true);
-  });
-
-  it('uses the route category as the effective category', () => {
+  it('shows Rareza on every category once global rarities are loaded', () => {
     const c = component as unknown as {
-      effectiveCategorySlug(): string | undefined;
       showRareza(): boolean;
+      allCardTypes: { set(v: unknown[]): void };
     };
-    expect(c.effectiveCategorySlug()).toBeUndefined();
-    fixture.componentRef.setInput('categorySlug', 'graded');
-    expect(c.effectiveCategorySlug()).toBe('graded');
+    // No card types loaded yet → nothing to show.
+    expect(c.showRareza()).toBe(false);
+    // A global rarity (category_id null) makes Rareza available everywhere,
+    // regardless of the active category.
+    c.allCardTypes.set([{ id: 'r1', category_id: null }]);
+    expect(c.showRareza()).toBe(true);
+    fixture.componentRef.setInput('categoria', 'sellado');
     expect(c.showRareza()).toBe(true);
   });
 
-  it('labels the card-type filter Rareza for singles and Tipo for sealed', () => {
-    const c = component as unknown as { cardTypeFilterLabel(): string };
-    fixture.componentRef.setInput('categorySlug', 'singles');
-    expect(c.cardTypeFilterLabel()).toBe('Rareza');
-    fixture.componentRef.setInput('categorySlug', 'sellado');
-    expect(c.cardTypeFilterLabel()).toBe('Tipo');
+  it('uses the ?categoria= param as the effective category', () => {
+    const c = component as unknown as { effectiveCategorySlug(): string | undefined };
+    expect(c.effectiveCategorySlug()).toBeUndefined();
+    fixture.componentRef.setInput('categoria', 'graded');
+    expect(c.effectiveCategorySlug()).toBe('graded');
   });
 });
