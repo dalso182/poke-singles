@@ -28,12 +28,13 @@
               }
             </button>
           } @else {
-            <!-- Plain link (unchanged behaviour). -->
+            <!-- Plain link. Category items share /products, so active state is
+                 derived from the URL (incl. ?categoria=), not routerLinkActive. -->
             <a
               class="nav-item"
               [routerLink]="item.path"
-              routerLinkActive="active"
-              [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
+              [queryParams]="item.queryParams ?? null"
+              [class.active]="isItemActive(item)"
               [matTooltip]="expanded() ? '' : item.label"
               matTooltipPosition="right"
             >
@@ -63,7 +64,7 @@
                   <span class="child-label">{{ child.label }}</span>
                 </a>
               }
-              <a class="see-all" [routerLink]="item.path">
+              <a class="see-all" [routerLink]="item.path" [queryParams]="item.queryParams ?? null">
                 Ver todo en {{ item.label }}
                 <mat-icon svgIcon="nav-chevron" />
               </a>
@@ -82,27 +83,34 @@
             >
               <div class="flyout-card">
                 <span class="flyout-tick"></span>
-                <div class="flyout-header">
-                  <mat-icon [svgIcon]="item.icon" />
-                  <div class="title">{{ item.label }}</div>
-                </div>
-                @for (child of item.children; track child.key) {
+                <div class="flyout-scroll" [style.maxHeight.px]="flyoutMaxHeight()">
+                  <div class="flyout-header">
+                    <mat-icon [svgIcon]="item.icon" />
+                    <div class="title">{{ item.label }}</div>
+                  </div>
+                  @for (child of item.children; track child.key) {
+                    <a
+                      class="child"
+                      role="menuitem"
+                      [routerLink]="child.path"
+                      [queryParams]="child.queryParams"
+                      routerLinkActive="active"
+                      [routerLinkActiveOptions]="childActiveOptions"
+                      (click)="closeFlyout()"
+                    >
+                      <span class="child-label">{{ child.label }}</span>
+                    </a>
+                  }
                   <a
-                    class="child"
-                    role="menuitem"
-                    [routerLink]="child.path"
-                    [queryParams]="child.queryParams"
-                    routerLinkActive="active"
-                    [routerLinkActiveOptions]="childActiveOptions"
+                    class="see-all"
+                    [routerLink]="item.path"
+                    [queryParams]="item.queryParams ?? null"
                     (click)="closeFlyout()"
                   >
-                    <span class="child-label">{{ child.label }}</span>
+                    Ver todo en {{ item.label }}
+                    <mat-icon svgIcon="nav-chevron" />
                   </a>
-                }
-                <a class="see-all" [routerLink]="item.path" (click)="closeFlyout()">
-                  Ver todo en {{ item.label }}
-                  <mat-icon svgIcon="nav-chevron" />
-                </a>
+                </div>
               </div>
             </div>
           }

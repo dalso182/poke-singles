@@ -341,6 +341,17 @@ button.nav-item {
     0 24px 56px -16px rgba(21, 21, 26, 0.18),
     0 4px 12px -4px rgba(21, 21, 26, 0.08);
 }
+.flyout-scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  // overflow-y:auto pulls overflow-x to auto as well; give the scroll box a few
+  // px of inner room (offset to preserve alignment) so the active accent bar
+  // (.flyout .child.active::before, left:-3px) isn't clipped nor spawns an
+  // x-scrollbar. The tick stays outside this box so it's never clipped either.
+  padding-inline: 4px;
+  margin-inline: -4px;
+}
 .flyout-tick {
   position: absolute;
   left: -5px;

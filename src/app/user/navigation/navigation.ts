@@ -40,9 +40,12 @@ interface NavItem {
   /** Registered svgIcon name (see icon literals below). */
   readonly icon: string;
   readonly path: string;
+  /** Query params for the link. Category items all share the `/products` path
+   *  and select via the `?categoria=` facet, so the slug lives here. */
+  readonly queryParams?: Record<string, string>;
   readonly exact?: boolean;
   /** When present, the item is a disclosure: flyout (collapsed) / accordion
-   *  (expanded). `path` becomes the "Ver todo" landing target. */
+   *  (expanded). `path`+`queryParams` become the "Ver todo" landing target. */
   readonly children?: readonly NavChild[];
 }
 
@@ -153,6 +156,9 @@ export class Navigation {
   protected readonly flyoutTop = signal<number>(0);
   /** Left edge of the flyout = the rail's right edge (read on hover). */
   protected readonly flyoutLeft = signal<number>(0);
+  /** Cap for the flyout's scroll area so a tall menu never spills past the
+   *  viewport on short screens (null until the first hover positions it). */
+  protected readonly flyoutMaxHeight = signal<number | null>(null);
   /** Expanded-panel accordion: keys of open parents. */
   protected readonly openSections = signal<ReadonlySet<string>>(new Set());
   private leaveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -198,13 +204,22 @@ export class Navigation {
         key: 'explorar',
         label: 'Explorar',
         items: [
+          // Category items all land on /products; the slug selects the
+          // Categoría facet via ?categoria=. Todo carries no param ("all").
           { key: 'todo', label: 'Todo', icon: 'nav-category', path: '/products' },
-          { key: 'singles', label: 'Singles', icon: 'nav-cards', path: '/categoria/singles' },
+          {
+            key: 'singles',
+            label: 'Singles',
+            icon: 'nav-cards',
+            path: '/products',
+            queryParams: { categoria: 'singles' },
+          },
           {
             key: 'sellado',
             label: 'Sellado',
             icon: 'nav-box',
-            path: '/categoria/sellado',
+            path: '/products',
+            queryParams: { categoria: 'sellado' },
             children: childrenFor('sellado'),
           },
           { key: 'rifas', label: 'Rifas', icon: 'nav-raffle', path: '/rifas' },
@@ -213,7 +228,8 @@ export class Navigation {
             key: 'accesorios',
             label: 'Accesorios',
             icon: 'nav-dice',
-            path: '/categoria/accesorios',
+            path: '/products',
+            queryParams: { categoria: 'accesorios' },
             children: childrenFor('accesorios'),
           },
         ],
@@ -255,7 +271,7 @@ export class Navigation {
         let changed = false;
         for (const section of sections) {
           for (const item of section.items) {
-            if (item.children?.length && url.startsWith(item.path) && !open.has(item.key)) {
+            if (item.children?.length && this.itemMatchesUrl(item, url) && !open.has(item.key)) {
               open.add(item.key);
               changed = true;
             }
@@ -283,8 +299,8 @@ export class Navigation {
             return {
               key: `${slug}.${tipo}`,
               label: t.name,
-              path: `/categoria/${slug}`,
-              queryParams: { tipo },
+              path: '/products',
+              queryParams: { categoria: slug, tipo },
             };
           });
           return [slug, children] as const;
@@ -300,9 +316,32 @@ export class Navigation {
     return this.openSections().has(key);
   }
 
+  /** The active `?categoria=` facet for a URL — only meaningful on /products
+   *  (where every category item lives). null = no category / not on /products. */
+  private categoriaOf(url: string): string | null {
+    if (url.split('?')[0] !== '/products') return null;
+    return this.router.parseUrl(url).queryParams['categoria'] ?? null;
+  }
+
+  /** Whether a nav item matches a URL. Category items share the /products path
+   *  and are told apart by `?categoria=`; everything else uses the old
+   *  exact/prefix path match that routerLinkActive used to provide. */
+  private itemMatchesUrl(item: NavItem, url: string): boolean {
+    const path = url.split('?')[0];
+    if (item.path === '/products') {
+      return path === '/products' && this.categoriaOf(url) === (item.queryParams?.['categoria'] ?? null);
+    }
+    return item.exact ? path === item.path : path === item.path || path.startsWith(item.path + '/');
+  }
+
+  /** Active state for a plain link (drives `.active`). */
+  protected isItemActive(item: NavItem): boolean {
+    return this.itemMatchesUrl(item, this.currentUrl());
+  }
+
   /** Parent (with children) reads active when the URL is inside its category. */
   protected isParentActive(item: NavItem): boolean {
-    return !!item.children?.length && this.currentUrl().startsWith(item.path);
+    return !!item.children?.length && this.isItemActive(item);
   }
 
   protected onParentEnter(item: NavItem, ev: MouseEvent): void {
@@ -311,10 +350,40 @@ export class Navigation {
       clearTimeout(this.leaveTimer);
       this.leaveTimer = null;
     }
-    const rect = (ev.currentTarget as HTMLElement).getBoundingClientRect();
-    this.flyoutTop.set(rect.top);
+    const iconRect = (ev.currentTarget as HTMLElement).getBoundingClientRect();
     this.flyoutLeft.set(this.hostEl.nativeElement.getBoundingClientRect().right);
+    this.positionFlyout(iconRect, item.children.length);
     this.hoveredKey.set(item.key);
+  }
+
+  /**
+   * Vertically place the collapsed-rail flyout so the whole panel stays on
+   * screen. It opens anchored to the icon, but slides up when it would overflow
+   * the bottom — like a native menu near the screen edge. The card height is
+   * estimated from the row count (rows are fixed-height); an off estimate only
+   * nudges where it opens. Correctness is guaranteed by `flyoutMaxHeight`, which
+   * caps the scroll area to the viewport, so items are never clipped — at worst
+   * the panel scrolls on a very short screen.
+   */
+  private positionFlyout(iconRect: DOMRect, childCount: number): void {
+    const view = this.hostEl.nativeElement.ownerDocument.defaultView;
+    if (!view) {
+      // No window (e.g. SSR) — fall back to the plain icon-anchored position.
+      this.flyoutTop.set(iconRect.top);
+      this.flyoutMaxHeight.set(null);
+      return;
+    }
+    const MARGIN = 12; // gap kept from the viewport's top/bottom edges
+    const CARD_PAD = 24; // .flyout-card vertical padding (exact: 12px × 2)
+    const HEADER = 45; // header block — approx, only sways the open position
+    const SEE_ALL = 49; // "Ver todo" row — approx
+    const ROW = 36; // each .child link (matches .child height)
+    const availForCard = view.innerHeight - MARGIN * 2;
+    const estimated = CARD_PAD + HEADER + childCount * ROW + SEE_ALL;
+    const cardHeight = Math.min(estimated, availForCard);
+    const top = Math.max(MARGIN, Math.min(iconRect.top, view.innerHeight - MARGIN - cardHeight));
+    this.flyoutTop.set(top);
+    this.flyoutMaxHeight.set(availForCard - CARD_PAD);
   }
 
   protected onParentLeave(): void {
@@ -335,9 +404,14 @@ export class Navigation {
   }
 
   protected onParentClick(item: NavItem): void {
-    // Plain links navigate via routerLink; only disclosure parents toggle, and
-    // only in the expanded panel (the collapsed rail uses hover flyouts).
-    if (!item.children?.length || !this.expanded()) return;
+    if (!item.children?.length) return;
+    // Collapsed rail: the icon navigates to the category landing (sub-types are
+    // still reachable via the hover flyout). Expanded panel: toggle the accordion.
+    if (!this.expanded()) {
+      this.closeFlyout();
+      void this.router.navigate([item.path], { queryParams: item.queryParams ?? {} });
+      return;
+    }
     const open = new Set(this.openSections());
     if (open.has(item.key)) open.delete(item.key);
     else open.add(item.key);
