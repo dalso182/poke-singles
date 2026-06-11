@@ -1,22 +1,73 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { SupabaseService } from '../supabase/supabase.service';
+import { AuthService } from './auth.service';
 import type { ProfileRow, ProfileUpdate } from '../catalog/catalog.types';
 
 /**
- * Thin wrapper for the `profiles` table. AuthService still owns session /
- * user-state signals; this service just gets/updates application-level
- * profile data (display name, phone, default shipping address). RLS enforces
- * self-only access so we don't need to pass the user id explicitly on read.
+ * Thin wrapper for the `profiles` table plus a reactive, session-scoped cache of
+ * the current user's profile. AuthService still owns the session / user-state
+ * signals; this service exposes the application-level profile (display name,
+ * phone, default shipping address, avatar) as a signal so chrome like the header
+ * and the /account page stay in sync without each re-fetching. RLS enforces
+ * self-only access, so reads/writes never pass the user id explicitly.
  */
 @Injectable({ providedIn: 'root' })
 export class ProfilesService {
   private readonly supabase = inject(SupabaseService);
+  private readonly auth = inject(AuthService);
+
+  private readonly profileSig = signal<ProfileRow | null>(null);
+  /** Reactive current-user profile. null = signed out or not loaded yet. */
+  readonly profile = this.profileSig.asReadonly();
+  /** The chosen avatar Pokémon (national-dex number), reactive. */
+  readonly avatarPokemonNumber = computed(
+    () => this.profileSig()?.avatar_pokemon_number ?? null,
+  );
+
+  /** auth.users id the cached profile belongs to — guards a stale cache when
+   *  the signed-in user switches. */
+  private loadedUserId: string | null = null;
+  private inflight: Promise<ProfileRow | null> | null = null;
+
+  constructor() {
+    // Track the session: clear the cache on sign-out, (re)load when a user
+    // appears or the signed-in user changes.
+    effect(() => {
+      const user = this.auth.currentUser();
+      if (user === undefined) return; // initial hydration still in flight
+      if (!user) {
+        this.setProfile(null, null);
+        return;
+      }
+      if (this.loadedUserId !== user.id) void this.ensureLoaded();
+    });
+  }
+
+  /** Load the profile into the signal unless it's already cached for the
+   *  current user. Cheap to call from any consumer (header, account, checkout). */
+  async ensureLoaded(): Promise<ProfileRow | null> {
+    if (this.profileSig() && this.loadedUserId) return this.profileSig();
+    return this.getMine();
+  }
 
   async getMine(): Promise<ProfileRow | null> {
+    if (this.inflight) return this.inflight;
+    this.inflight = this.fetchMine();
+    try {
+      return await this.inflight;
+    } finally {
+      this.inflight = null;
+    }
+  }
+
+  private async fetchMine(): Promise<ProfileRow | null> {
     const {
       data: { user },
     } = await this.supabase.client.auth.getUser();
-    if (!user) return null;
+    if (!user) {
+      this.setProfile(null, null);
+      return null;
+    }
 
     // Explicit id filter is more robust than relying on RLS-only scoping
     // (avoids 406s from .single() when a stray row from another auth.users
@@ -27,7 +78,10 @@ export class ProfilesService {
       .eq('id', user.id)
       .maybeSingle();
     if (error) throw error;
-    if (data) return data as ProfileRow;
+    if (data) {
+      this.setProfile(data as ProfileRow, user.id);
+      return data as ProfileRow;
+    }
 
     // Self-heal: profile row missing for the current auth.users id (e.g. the
     // user pre-dates handle_new_user, or the trigger didn't fire). Create
@@ -47,6 +101,7 @@ export class ProfilesService {
       console.error('[profiles] self-heal failed', createErr);
       return null;
     }
+    this.setProfile(created as ProfileRow, user.id);
     return created as ProfileRow;
   }
 
@@ -62,6 +117,12 @@ export class ProfilesService {
       .select('*')
       .single();
     if (error) throw error;
+    this.setProfile(data as ProfileRow, user.id);
     return data as ProfileRow;
+  }
+
+  private setProfile(row: ProfileRow | null, userId: string | null): void {
+    this.profileSig.set(row);
+    this.loadedUserId = userId;
   }
 }

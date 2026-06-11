@@ -234,12 +234,19 @@ export interface ProfileRow {
   full_name: string | null;
   phone: string | null;
   default_shipping_address: ShippingAddress | null;
+  /** National-dex number of the customer's chosen avatar Pokémon. The artwork
+   *  is a static asset (assets/images/avatars/{number}.png); the list it's
+   *  picked from is client-side reference data. Null = no avatar chosen. */
+  avatar_pokemon_number: number | null;
   created_at: string;
   updated_at: string;
 }
 
 export type ProfileUpdate = Partial<
-  Pick<ProfileRow, 'full_name' | 'phone' | 'default_shipping_address'>
+  Pick<
+    ProfileRow,
+    'full_name' | 'phone' | 'default_shipping_address' | 'avatar_pokemon_number'
+  >
 >;
 
 export interface CartItemRow {

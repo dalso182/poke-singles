@@ -1,0 +1,67 @@
+<h2 mat-dialog-title class="avp__title">Elegí tu avatar</h2>
+
+<div class="avp__search">
+  <mat-icon class="avp__search-icon">search</mat-icon>
+  <input
+    class="avp__search-input"
+    type="text"
+    [formControl]="searchControl"
+    placeholder="Buscar por nombre o número…"
+    autocomplete="off"
+    aria-label="Buscar Pokémon"
+  />
+  @if (searchControl.value) {
+    <button
+      type="button"
+      class="avp__search-clear"
+      (click)="searchControl.setValue('')"
+      aria-label="Limpiar búsqueda"
+    >
+      <mat-icon>close</mat-icon>
+    </button>
+  }
+</div>
+
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<mat-dialog-content class="avp__content">
+  @if (!loading() && filtered().length === 0) {
+    <p class="avp__empty">
+      No encontramos ningún Pokémon con “{{ searchControl.value }}”.
+    </p>
+  }
+
+  <div class="avp__grid">
+    @for (p of visible(); track p.number) {
+      <button
+        type="button"
+        class="avp__tile"
+        [class.is-selected]="p.number === selected()"
+        (click)="pick(p.number)"
+        [attr.title]="p.displayName"
+      >
+        <span class="avp__thumb">
+          <span class="avp__num brand-mono" aria-hidden="true">#{{ p.number }}</span>
+          <img
+            class="avp__img"
+            [src]="avatarUrl(p.number)"
+            [alt]="p.displayName"
+            loading="lazy"
+            (error)="onImgError($event)"
+          />
+        </span>
+        <span class="avp__name">{{ p.displayName }}</span>
+      </button>
+    }
+  </div>
+
+  <div #sentinel class="avp__sentinel" aria-hidden="true"></div>
+</mat-dialog-content>
+
+<mat-dialog-actions class="avp__actions">
+  <span class="avp__count brand-mono">{{ filtered().length }} Pokémon</span>
+  <span class="avp__spacer"></span>
+  <button mat-button type="button" (click)="onCancel()">Cancelar</button>
+</mat-dialog-actions>

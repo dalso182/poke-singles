@@ -132,6 +132,9 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+    // White plate so transparent Pokémon sprites read inside the circle
+    // (harmless for opaque Google photos).
+    background: #fff;
   }
 }
 
@@ -227,6 +230,8 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+    // White plate so transparent Pokémon sprites read inside the circle.
+    background: #fff;
   }
 }
 

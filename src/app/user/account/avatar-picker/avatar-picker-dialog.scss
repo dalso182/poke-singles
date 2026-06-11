@@ -1,0 +1,175 @@
+// Navy mirrors the account page accent (.acc-* scope).
+$navy: var(--mat-sys-primary, #1e3a8a);
+
+.avp__title {
+  margin: 0;
+  font-family: var(--font-brand);
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  color: var(--text-primary);
+}
+
+// ───────── Search ─────────
+.avp__search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 12px;
+  padding: 0 12px;
+  height: 44px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  background: var(--surface-page);
+  transition: border-color 0.12s ease;
+
+  &:focus-within {
+    border-color: var(--border-strong);
+  }
+}
+
+.avp__search-icon {
+  flex: 0 0 auto;
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  color: var(--text-tertiary);
+}
+
+.avp__search-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.avp__search-clear {
+  flex: 0 0 auto;
+  display: inline-flex;
+  padding: 2px;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  &:hover {
+    color: var(--text-secondary);
+  }
+}
+
+// ───────── Grid ─────────
+.avp__content {
+  min-height: 320px;
+}
+
+.avp__empty {
+  margin: 0;
+  padding: 24px 4px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.avp__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.avp__tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 6px 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  background: var(--surface-card);
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease, transform 0.08s ease;
+
+  &:hover {
+    border-color: var(--border-strong);
+    background: var(--surface-tonal);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &.is-selected {
+    border-color: $navy;
+    box-shadow: 0 0 0 2px color-mix(in srgb, #1e3a8a 35%, transparent);
+  }
+}
+
+.avp__thumb {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--surface-tonal);
+  overflow: hidden;
+}
+
+// Dex-number placeholder sits behind the artwork; shows through when the PNG
+// is missing (artwork is added incrementally) or while it lazy-loads.
+.avp__num {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.avp__img {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.avp__name {
+  max-width: 100%;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.avp__sentinel {
+  height: 1px;
+}
+
+// ───────── Footer ─────────
+.avp__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avp__count {
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.avp__spacer {
+  flex: 1;
+}
