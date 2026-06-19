@@ -92,21 +92,36 @@ $blue-soft: #e8edf8;
   }
 }
 
-// Pencil affordance — always visible so it's tappable on touch devices.
-.acc-avatar-edit {
-  position: absolute;
-  inset: 0;
+// Explicit text affordance under the avatar — replaces the pencil overlay.
+.acc-avatar-link {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
-  padding-bottom: 5px;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.5), transparent 55%);
+  gap: 5px;
+  width: fit-content;
+  margin: 0 auto;
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: var(--font-brand);
+  font-size: 12px;
+  font-weight: 700;
+  color: $navy;
+  cursor: pointer;
 
   mat-icon {
-    font-size: 15px;
-    width: 15px;
-    height: 15px;
-    color: #fff;
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+  }
+
+  .acc-avatar-link-text {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  &:hover {
+    color: var(--text-primary);
   }
 }
 
@@ -186,10 +201,6 @@ $blue-soft: #e8edf8;
     .acc-nav-label {
       font-weight: 700;
     }
-
-    .acc-nav-num {
-      color: $navy;
-    }
   }
 }
 
@@ -204,13 +215,6 @@ $blue-soft: #e8edf8;
   flex: 1;
   font-size: 13.5px;
   font-weight: 600;
-}
-
-.acc-nav-num {
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  color: var(--text-tertiary);
-  opacity: 0.85;
 }
 
 .acc-rail-foot {
@@ -295,22 +299,13 @@ $blue-soft: #e8edf8;
   min-width: 0;
 
   h2 {
-    margin: 4px 0 0;
+    margin: 0;
     font-family: var(--font-brand);
     font-size: 21px;
     font-weight: 800;
     letter-spacing: -0.6px;
     color: var(--text-primary);
   }
-}
-
-.acc-eyebrow {
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  font-weight: 600;
-  letter-spacing: 1.8px;
-  text-transform: uppercase;
-  color: var(--accent-amber);
 }
 
 .acc-sub {

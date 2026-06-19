@@ -21,10 +21,13 @@
             type="button"
             class="acc-avatar"
             (click)="openAvatarPicker()"
-            aria-label="Cambiar avatar"
+            aria-label="Cambiar Pokémon"
           >
             <app-user-avatar [maxInitials]="1" />
-            <span class="acc-avatar-edit" aria-hidden="true"><mat-icon>edit</mat-icon></span>
+          </button>
+          <button type="button" class="acc-avatar-link" (click)="openAvatarPicker()">
+            <mat-icon>edit</mat-icon>
+            <span class="acc-avatar-link-text">Cambiar Pokémon</span>
           </button>
           <div class="acc-identity-name">{{ displayName() }}</div>
           <div class="acc-identity-email">{{ email() }}</div>
@@ -44,7 +47,6 @@
           >
             <mat-icon>person</mat-icon>
             <span class="acc-nav-label">Datos personales</span>
-            <span class="acc-nav-num">01</span>
           </a>
           <a
             class="acc-nav-item"
@@ -53,7 +55,6 @@
           >
             <mat-icon>place</mat-icon>
             <span class="acc-nav-label">Dirección de envío</span>
-            <span class="acc-nav-num">02</span>
           </a>
           <a
             class="acc-nav-item"
@@ -62,7 +63,6 @@
           >
             <mat-icon>shopping_bag</mat-icon>
             <span class="acc-nav-label">Mis pedidos</span>
-            <span class="acc-nav-num">03</span>
           </a>
           <a
             class="acc-nav-item"
@@ -71,7 +71,6 @@
           >
             <img class="acc-nav-coin" src="assets/images/coin-sm.png" alt="" />
             <span class="acc-nav-label">Poke-Monedas</span>
-            <span class="acc-nav-num">04</span>
           </a>
         </nav>
 
@@ -91,7 +90,6 @@
         <header class="acc-panel-head">
           <span class="acc-icon"><mat-icon>person</mat-icon></span>
           <div class="acc-panel-titles">
-            <div class="acc-eyebrow">01 —</div>
             <h2>Datos personales</h2>
             <p class="acc-sub">Usamos estos datos para confirmar pedidos y coordinar el SINPE.</p>
           </div>
@@ -121,7 +119,6 @@
         <header class="acc-panel-head">
           <span class="acc-icon"><mat-icon>place</mat-icon></span>
           <div class="acc-panel-titles">
-            <div class="acc-eyebrow">02 —</div>
             <h2>Dirección de envío</h2>
             <p class="acc-sub">
               Se usa para pre-llenar el checkout. Puedes editarla en cualquier pedido.
@@ -157,7 +154,6 @@
         <header class="acc-panel-head">
           <span class="acc-icon"><mat-icon>shopping_bag</mat-icon></span>
           <div class="acc-panel-titles">
-            <div class="acc-eyebrow">03 —</div>
             <h2>Mis pedidos</h2>
             <p class="acc-sub">Historial de compras y estado de cada envío.</p>
           </div>
@@ -197,7 +193,6 @@
         <header class="acc-panel-head">
           <span class="acc-icon acc-icon--coin"><img src="assets/images/coin-sm.png" alt="" /></span>
           <div class="acc-panel-titles">
-            <div class="acc-eyebrow">04 —</div>
             <h2>Poke-Monedas</h2>
             <p class="acc-sub">
               Ganas Poke-Monedas con cada compra confirmada.

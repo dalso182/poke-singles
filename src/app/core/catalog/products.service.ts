@@ -24,6 +24,14 @@ export interface ProductListParams {
    *  the home rails so raffles only ever surface on /rifas. No-op if the Rifas
    *  category doesn't exist. */
   excludeRaffles?: boolean;
+  /** Apply the public storefront-visibility predicate (quantity > 0 AND price > 0)
+   *  in the query itself. Storefront surfaces (home rails) must set this:
+   *  visibility can't lean on RLS alone because an admin session bypasses
+   *  `products_public_read` via the permissive `products_admin_all` policy and
+   *  would otherwise see sold-out rows. Off by default so admin callers are
+   *  unaffected. Pairs with the default `active = true` filter (when
+   *  `includeInactive` is falsy). */
+  inStockOnly?: boolean;
   page?: number;
   pageSize?: number;
 }
@@ -97,6 +105,9 @@ export class ProductsService {
 
     if (!params.includeInactive) {
       query = query.eq('active', true);
+    }
+    if (params.inStockOnly) {
+      query = query.gt('quantity', 0).gt('price', 0);
     }
     if (raffleId) {
       query = query.neq('category_id', raffleId);

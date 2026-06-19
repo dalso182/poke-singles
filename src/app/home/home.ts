@@ -32,8 +32,8 @@ export class Home {
   private async bootstrap(): Promise<void> {
     try {
       const [recent, featured] = await Promise.all([
-        this.products.list({ pageSize: 8, excludeRaffles: true }),
-        this.products.list({ featured: true, pageSize: 8, excludeRaffles: true }),
+        this.products.list({ pageSize: 8, excludeRaffles: true, inStockOnly: true }),
+        this.products.list({ featured: true, pageSize: 8, excludeRaffles: true, inStockOnly: true }),
       ]);
       this.recent.set(recent.rows);
       this.featured.set(featured.rows);
