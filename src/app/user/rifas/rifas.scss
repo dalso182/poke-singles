@@ -1,6 +1,43 @@
 // Page chrome only — the raffle tile lives in <app-raffle-card>
 // (src/app/shared/raffle-card/).
 
+// Breadcrumb — kept in lock-step with /products (Ofertas) for consistency.
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.breadcrumb-home {
+  display: flex;
+  align-items: center;
+  color: var(--accent-amber);
+  text-decoration: none;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover {
+    color: var(--text-primary);
+  }
+}
+
+.breadcrumb-sep {
+  color: var(--accent-amber);
+  user-select: none;
+}
+
+.breadcrumb-current {
+  color: var(--accent-amber);
+  font-weight: 500;
+}
+
 .rifas-header {
   margin-bottom: 24px;
 
@@ -10,7 +47,7 @@
     font-weight: 800;
     letter-spacing: -1px;
     color: var(--text-primary);
-    margin: 4px 0 8px 0;
+    margin: 0 0 8px 0;
   }
 
   .lead {

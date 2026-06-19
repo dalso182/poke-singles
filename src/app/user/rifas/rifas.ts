@@ -1,4 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -8,7 +10,14 @@ import { RaffleCard } from '../../shared/raffle-card/raffle-card';
 
 @Component({
   selector: 'app-rifas',
-  imports: [MatProgressBarModule, MatTabsModule, MatSnackBarModule, RaffleCard],
+  imports: [
+    RouterLink,
+    MatIconModule,
+    MatProgressBarModule,
+    MatTabsModule,
+    MatSnackBarModule,
+    RaffleCard,
+  ],
   templateUrl: './rifas.html',
   styleUrl: './rifas.scss',
 })
