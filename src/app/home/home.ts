@@ -4,7 +4,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ProductsService } from '../core/catalog/products.service';
 import type { ProductListRow } from '../core/catalog/catalog.types';
-import { ProductCard } from '../shared/product-card/product-card';
+import { Marquee } from '../shared/marquee/marquee';
 
 @Component({
   selector: 'app-home',
@@ -12,7 +12,7 @@ import { ProductCard } from '../shared/product-card/product-card';
     RouterLink,
     MatProgressBarModule,
     MatSnackBarModule,
-    ProductCard,
+    Marquee,
   ],
   templateUrl: './home.html',
   styleUrl: './home.scss',

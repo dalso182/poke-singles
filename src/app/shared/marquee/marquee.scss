@@ -1,0 +1,61 @@
+:host {
+  display: block;
+}
+
+// Auto-scrolling marquee. The track holds the items twice; the keyframe shifts it
+// by exactly -50% so the loop point is pixel-identical to the start (seamless).
+.marquee {
+  overflow: hidden;
+  // Soft fade at both edges so cards slide in/out instead of hard-cutting.
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 6%,
+    #000 94%,
+    transparent
+  );
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 6%,
+    #000 94%,
+    transparent
+  );
+}
+
+.marquee__track {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll var(--marquee-duration, 45s) linear infinite;
+}
+
+// Right-moving strip: same keyframe, played backwards.
+.marquee--right .marquee__track {
+  animation-direction: reverse;
+}
+
+// Pause when the shopper wants to interact (hover) or tabs into a card (focus).
+.marquee:hover .marquee__track,
+.marquee:focus-within .marquee__track {
+  animation-play-state: paused;
+}
+
+.marquee__group {
+  display: flex;
+  flex: 0 0 auto;
+}
+
+.marquee__item {
+  flex: 0 0 auto;
+  width: 360px;
+  margin-right: 12px; // matches the old grid gap
+}
+
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}

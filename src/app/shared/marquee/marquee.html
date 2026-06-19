@@ -1,0 +1,20 @@
+<div
+  class="marquee"
+  [class.marquee--right]="direction() === 'right'"
+  [style.--marquee-duration]="durationSeconds() + 's'"
+>
+  <div class="marquee__track">
+    <!-- real set: interactive + announced once -->
+    <div class="marquee__group">
+      @for (card of items(); track card.id) {
+        <div class="marquee__item"><app-product-card [card]="card" /></div>
+      }
+    </div>
+    <!-- clone for the seamless loop: hidden from assistive tech -->
+    <div class="marquee__group" aria-hidden="true">
+      @for (card of items(); track card.id) {
+        <div class="marquee__item"><app-product-card [card]="card" /></div>
+      }
+    </div>
+  </div>
+</div>

@@ -22,11 +22,7 @@
   @if (!loading() && recent().length === 0) {
     <p class="home-empty">Aún no hay cartas en stock.</p>
   } @else {
-    <div class="cards-grid">
-      @for (card of recent(); track card.id) {
-        <app-product-card [card]="card" />
-      }
-    </div>
+    <app-marquee [items]="recent()" direction="left" />
   }
 </section>
 
@@ -35,10 +31,6 @@
     <header class="home-section__header">
       <h2>Destacadas</h2>
     </header>
-    <div class="cards-grid">
-      @for (card of featured(); track card.id) {
-        <app-product-card [card]="card" />
-      }
-    </div>
+    <app-marquee [items]="featured()" direction="right" />
   </section>
 }
