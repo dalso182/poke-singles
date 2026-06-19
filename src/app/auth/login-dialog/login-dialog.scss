@@ -57,17 +57,11 @@
   }
 }
 
-.login-dialog__magic {
-  padding-top: 12px;
-}
-
-.login-dialog__section-label {
-  margin: 0 0 4px;
+.login-dialog__tab-hint {
+  margin: 4px 0 0;
   color: var(--mat-sys-on-surface-variant);
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-size: 13px;
+  text-align: center;
 }
 
 .login-dialog__form {
@@ -200,4 +194,13 @@
 
 :host ::ng-deep .mat-mdc-tab-body-content {
   overflow: hidden;
+}
+
+// Three tabs share the row now — trim the per-tab padding so all three labels
+// fit on one line without triggering Material's pagination chevrons.
+:host ::ng-deep .login-dialog__tabs {
+  .mat-mdc-tab {
+    min-width: 0;
+    padding: 0 12px;
+  }
 }

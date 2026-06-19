@@ -6,6 +6,8 @@ interface FooterLink {
   label: string;
   /** Internal router path. Mutually exclusive with `href`. */
   route?: string;
+  /** Optional query params for the internal route (e.g. default sort). */
+  queryParams?: Record<string, string>;
   /** External URL — rendered as a new-tab anchor. Mutually exclusive with `route`. */
   href?: string;
 }
@@ -40,9 +42,9 @@ export class Footer {
       title: 'Tienda',
       links: [
         { label: 'Ofertas', route: '/ofertas' },
-        { label: 'Nuevos ingresos', route: '/products' },
-        { label: 'Sets disponibles', route: '/products' },
-        { label: 'Rifas en vivo', route: '/rifas' },
+        { label: 'Nuevos ingresos', route: '/products', queryParams: { sort: 'recent' } },
+        { label: 'Rifas', route: '/rifas' },
+        { label: 'Sobre nosotros', route: '/info/sobre-nosotros' },
       ],
     },
     {
@@ -51,7 +53,6 @@ export class Footer {
         { label: 'Estado de cartas', route: '/info/estado-de-cartas' },
         { label: 'Métodos de pago y envío', route: '/info/metodos-pago-envio' },
         { label: 'Política de pedidos y envíos', route: '/info/politica-pedidos-envios' },
-        { label: 'Garantía de autenticidad', route: '/info/garantia-autenticidad' },
       ],
     },
     {
@@ -59,24 +60,13 @@ export class Footer {
       links: [
         { label: 'Mi cuenta', route: '/account' },
         { label: 'Mis órdenes', route: '/account' },
-        { label: 'Lista de deseos', route: '/account' },
-        { label: 'Wishlist alerts', route: '/account' },
-      ],
-    },
-    {
-      title: 'Contacto',
-      links: [
-        { label: 'Contáctanos', route: '/info/contacto' },
-        { label: 'Sobre nosotros', route: '/info/sobre-nosotros' },
-        { label: 'WhatsApp', href: 'https://wa.me/50663452039' },
-        { label: 'Instagram DM', href: 'https://www.instagram.com/pokesingles/' },
       ],
     },
   ];
 
   protected readonly stats: FooterStat[] = [
-    { value: '6,400+', label: 'Cartas verificadas' },
-    { value: '2,180+', label: 'Pedidos enviados' },
-    { value: '9 años', label: 'Bóveda activa' },
+    { value: '2021', label: 'Desde' },
+    { value: '10,000+', label: 'Cartas vendidas' },
+    { value: '6,500+', label: 'Pedidos realizados' },
   ];
 }

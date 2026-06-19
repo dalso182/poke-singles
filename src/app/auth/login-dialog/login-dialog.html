@@ -31,36 +31,7 @@
   </div>
 }
 
-<form class="login-dialog__form login-dialog__magic" [formGroup]="magicLinkForm" (ngSubmit)="sendMagicLink()">
-  <p class="login-dialog__section-label">Enlace mágico (recomendado)</p>
-  <mat-form-field appearance="outline">
-    <mat-label>Correo</mat-label>
-    <input
-      matInput
-      type="email"
-      autocomplete="email"
-      formControlName="email"
-      required
-    />
-    @if (magicLinkForm.controls.email.touched && magicLinkForm.controls.email.invalid) {
-      <mat-error>Ingresa un correo válido.</mat-error>
-    }
-  </mat-form-field>
-
-  <button
-    mat-flat-button
-    color="primary"
-    type="submit"
-    class="login-dialog__primary"
-    [disabled]="submitting()"
-  >
-    {{ submitting() ? 'Enviando…' : 'Enviar enlace' }}
-  </button>
-</form>
-
-<div class="login-dialog__divider"><span>o con contraseña</span></div>
-
-<mat-tab-group animationDuration="180ms" mat-align-tabs="center" mat-stretch-tabs="false">
+<mat-tab-group class="login-dialog__tabs" animationDuration="180ms" mat-align-tabs="center" mat-stretch-tabs="false">
   <mat-tab label="Iniciar sesión">
     <form class="login-dialog__form" [formGroup]="signInForm" (ngSubmit)="signIn()">
       <mat-form-field appearance="outline">
@@ -109,6 +80,37 @@
         [disabled]="submitting()"
       >
         ¿Olvidaste tu contraseña?
+      </button>
+    </form>
+  </mat-tab>
+
+  <mat-tab label="Enlace Mágico">
+    <form class="login-dialog__form" [formGroup]="magicLinkForm" (ngSubmit)="sendMagicLink()">
+      <p class="login-dialog__tab-hint">
+        Te enviaremos un enlace de acceso a tu correo. Sin contraseña.
+      </p>
+      <mat-form-field appearance="outline">
+        <mat-label>Correo</mat-label>
+        <input
+          matInput
+          type="email"
+          autocomplete="email"
+          formControlName="email"
+          required
+        />
+        @if (magicLinkForm.controls.email.touched && magicLinkForm.controls.email.invalid) {
+          <mat-error>Ingresa un correo válido.</mat-error>
+        }
+      </mat-form-field>
+
+      <button
+        mat-flat-button
+        color="primary"
+        type="submit"
+        class="login-dialog__primary"
+        [disabled]="submitting()"
+      >
+        {{ submitting() ? 'Enviando…' : 'Enviar enlace' }}
       </button>
     </form>
   </mat-tab>
