@@ -1,0 +1,25 @@
+// Presentational only: fill the parent's circular container and centre content.
+// The parent owns size, background and border-radius.
+:host {
+  display: inline-flex;
+  inline-size: 100%;
+  block-size: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-avatar__img {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+  // White plate so transparent Pokémon sprites read inside the circle
+  // (harmless for opaque Google photos).
+  background: #fff;
+}
+
+.user-avatar__initials {
+  // Inherit size / family / weight / colour from the parent circle.
+  font: inherit;
+  color: inherit;
+  line-height: 1;
+}

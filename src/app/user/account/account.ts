@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DecimalPipe, DatePipe } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -10,9 +10,9 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AuthService } from '../../core/auth/auth.service';
 import { ProfilesService } from '../../core/auth/profiles.service';
-import { PokemonService } from '../../core/pokemon/pokemon.service';
 import { OrdersService } from '../../core/orders/orders.service';
 import { LoyaltyService } from '../../core/loyalty/loyalty.service';
+import { UserAvatar } from '../../shared/user-avatar/user-avatar';
 import {
   AvatarPickerDialog,
   type AvatarPickerData,
@@ -35,6 +35,7 @@ import type {
     MatInputModule,
     MatProgressBarModule,
     MatSnackBarModule,
+    UserAvatar,
   ],
   templateUrl: './account.html',
   styleUrl: './account.scss',
@@ -43,7 +44,6 @@ export class Account implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
   private readonly profiles = inject(ProfilesService);
-  private readonly pokemon = inject(PokemonService);
   private readonly orders = inject(OrdersService);
   private readonly loyalty = inject(LoyaltyService);
   private readonly snack = inject(MatSnackBar);
@@ -67,45 +67,8 @@ export class Account implements OnInit {
     return this.email().split('@')[0] || 'Cliente';
   });
 
-  /** Single-letter avatar fallback. */
-  protected readonly initial = computed(() => this.displayName().charAt(0).toUpperCase() || 'C');
-
-  /** Chosen avatar Pokémon (dex number) and its artwork path. The image may not
-   *  exist yet (artwork is added incrementally), so `avatarBroken` flips on a
-   *  load error and the rail falls back to the initial. */
-  protected readonly avatarNumber = computed(() => this.profile()?.avatar_pokemon_number ?? null);
-
-  /** Google OAuth photo (avatar_url / picture), if the account signed in with one. */
-  private readonly googleAvatarUrl = computed(() => {
-    const meta = this.auth.currentUser()?.user_metadata as
-      | { avatar_url?: string; picture?: string }
-      | undefined;
-    return meta?.avatar_url || meta?.picture || null;
-  });
-
-  // Avatar source priority: chosen Pokémon → Google photo → initials. Each
-  // `*Broken` flag drops a source that failed to load so the next one shows.
-  protected readonly pokemonBroken = signal(false);
-  protected readonly googleBroken = signal(false);
-  protected readonly avatarSrc = computed<string | null>(() => {
-    const n = this.avatarNumber();
-    if (n != null && !this.pokemonBroken()) return this.pokemon.avatarUrl(n);
-    if (!this.googleBroken()) return this.googleAvatarUrl();
-    return null;
-  });
-
   /** Which rail nav item is highlighted; driven by clicking a nav link. */
   protected readonly activeSection = signal<'datos' | 'direccion' | 'pedidos' | 'puntos'>('datos');
-
-  constructor() {
-    // Re-attempt every source when the chosen avatar or the signed-in user changes.
-    effect(() => {
-      this.avatarNumber();
-      this.auth.currentUser();
-      this.pokemonBroken.set(false);
-      this.googleBroken.set(false);
-    });
-  }
 
   protected readonly form: FormGroup = this.fb.nonNullable.group({
     full_name: [''],
@@ -226,12 +189,6 @@ export class Account implements OnInit {
     }
   }
 
-  protected onAvatarError(): void {
-    const n = this.avatarNumber();
-    if (n != null && !this.pokemonBroken()) this.pokemonBroken.set(true);
-    else this.googleBroken.set(true);
-  }
-
   /** Open the avatar picker; on a new selection, save it immediately (a
    *  discrete action, kept out of the name/address form's save bar). */
   protected openAvatarPicker(): void {
@@ -242,11 +199,11 @@ export class Account implements OnInit {
         maxWidth: '95vw',
         maxHeight: '85vh',
         autoFocus: 'first-tabbable',
-        data: { current: this.avatarNumber() },
+        data: { current: this.profiles.avatarPokemonNumber() },
       },
     );
     ref.afterClosed().subscribe((picked) => {
-      if (picked == null || picked === this.avatarNumber()) return;
+      if (picked == null || picked === this.profiles.avatarPokemonNumber()) return;
       void this.saveAvatar(picked);
     });
   }

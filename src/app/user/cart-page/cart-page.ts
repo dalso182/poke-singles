@@ -9,6 +9,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { CartService } from '../../core/cart/cart.service';
 import { CouponField } from '../../shared/coupon-field/coupon-field';
+import { EmptyCartPokemon } from '../../shared/empty-cart-pokemon/empty-cart-pokemon';
 import { CardConditionsDialogService } from '../../core/preview/card-conditions-dialog.service';
 import { LocalStorageService } from '../../core/storage/local-storage.service';
 import { mapCouponError } from '../../core/catalog/coupon-errors';
@@ -24,6 +25,7 @@ const VIEW_STORAGE_KEY = 'cart:view';
     RouterLink,
     DecimalPipe,
     CouponField,
+    EmptyCartPokemon,
     MatButtonModule,
     MatButtonToggleModule,
     MatIconModule,

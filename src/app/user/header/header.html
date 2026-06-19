@@ -63,13 +63,7 @@
           aria-label="Cuenta"
           (click)="toggleMenu()"
         >
-          <span class="acct-avatar">
-            @if (avatarSrc(); as url) {
-              <img [src]="url" alt="" referrerpolicy="no-referrer" (error)="onAvatarError()" />
-            } @else {
-              {{ userInitials() }}
-            }
-          </span>
+          <span class="acct-avatar"><app-user-avatar /></span>
           <mat-icon class="acct-caret">expand_more</mat-icon>
         </button>
 
@@ -81,13 +75,7 @@
 
             <!-- Identity -->
             <div class="acct-id">
-              <span class="acct-id-avatar">
-                @if (avatarSrc(); as url) {
-                  <img [src]="url" alt="" referrerpolicy="no-referrer" (error)="onAvatarError()" />
-                } @else {
-                  {{ userInitials() }}
-                }
-              </span>
+              <span class="acct-id-avatar"><app-user-avatar /></span>
               <div class="acct-id-text">
                 <div class="acct-id-name">{{ userDisplayName() }}</div>
                 @if (currentUser()?.email; as email) {

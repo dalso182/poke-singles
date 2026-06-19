@@ -200,14 +200,24 @@
   &:hover {
     background: var(--text-primary);
     border-color: var(--text-primary);
-    color: var(--accent-amber);
     transform: translateY(-1px);
+
+    // Dark slate icon would vanish on the dark hover bg — flip it to light.
+    .social-img {
+      filter: brightness(0) invert(1);
+    }
   }
 
   &:focus-visible {
     outline: 2px solid var(--mat-sys-primary);
     outline-offset: 2px;
   }
+}
+
+.social-img {
+  width: 18px;
+  height: 18px;
+  display: block;
 }
 
 .stats {

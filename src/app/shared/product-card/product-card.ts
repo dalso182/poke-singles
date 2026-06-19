@@ -7,6 +7,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { CartService } from '../../core/cart/cart.service';
 import { CardConditionsDialogService } from '../../core/preview/card-conditions-dialog.service';
 import { CardPreviewDirective } from '../card-preview/card-preview.directive';
+import { VARIANT_OPTIONS } from '../../core/catalog/catalog.types';
 import type { ProductCardItem } from '../../core/catalog/catalog.types';
 
 @Component({
@@ -40,7 +41,11 @@ export class ProductCard {
         ? `#${c.card_number}/${c.set_printed_total}`
         : `#${c.card_number}`
       : '';
-    const parts = [c.set_name ?? '', number].filter(
+    // Surface Holo / Reverse Holo next to the number; plain Normal (and the
+    // other variants) stays implicit to keep the meta line uncluttered.
+    const variant = VARIANT_LABELS.get(c.variant ?? '') ?? '';
+    const numberWithVariant = [number, variant].filter(Boolean).join(' · ');
+    const parts = [c.set_name ?? '', numberWithVariant].filter(
       (s) => s && s.length > 0,
     );
     return parts.join(', ');
@@ -75,6 +80,14 @@ export class ProductCard {
     if (error) this.snack.open(error, 'OK', { duration: 4000 });
   }
 }
+
+// Only Holo / Reverse Holo are called out on the tile meta line; labels reuse
+// the canonical VARIANT_OPTIONS so they can't drift from the rest of the app.
+const VARIANT_LABELS = new Map(
+  VARIANT_OPTIONS.filter((o) => o.value === 'holo' || o.value === 'reverse').map(
+    (o) => [o.value as string, o.label],
+  ),
+);
 
 const TYPE_ICON_MAP: Record<string, string> = {
   Colorless: 'colorless',

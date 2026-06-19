@@ -7,6 +7,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { CartService } from '../../core/cart/cart.service';
 import { CouponField } from '../../shared/coupon-field/coupon-field';
+import { EmptyCartPokemon } from '../../shared/empty-cart-pokemon/empty-cart-pokemon';
 import { CardConditionsDialogService } from '../../core/preview/card-conditions-dialog.service';
 import type { CartLine } from '../../core/catalog/catalog.types';
 
@@ -17,6 +18,7 @@ import type { CartLine } from '../../core/catalog/catalog.types';
     RouterLink,
     DecimalPipe,
     CouponField,
+    EmptyCartPokemon,
     MatButtonModule,
     MatIconModule,
     MatSnackBarModule,

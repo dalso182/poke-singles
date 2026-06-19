@@ -1,0 +1,18 @@
+@if (src(); as url) {
+  <img
+    class="user-avatar__img"
+    [src]="url"
+    alt=""
+    referrerpolicy="no-referrer"
+    [matTooltip]="tooltip()"
+    [matTooltipDisabled]="!tooltip()"
+    (error)="onError()"
+  />
+} @else {
+  <span
+    class="user-avatar__initials"
+    [matTooltip]="tooltip()"
+    [matTooltipDisabled]="!tooltip()"
+    >{{ initials() }}</span
+  >
+}

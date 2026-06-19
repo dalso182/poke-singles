@@ -10,59 +10,12 @@ $navy: var(--mat-sys-primary, #1e3a8a);
 }
 
 // ───────── Search ─────────
+// Outlined field like the storefront inputs; inset to align with the dialog
+// title and grid (Material dialog padding is 24px).
 .avp__search {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 4px 0 12px;
-  padding: 0 12px;
-  height: 44px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 10px;
-  background: var(--surface-page);
-  transition: border-color 0.12s ease;
-
-  &:focus-within {
-    border-color: var(--border-strong);
-  }
-}
-
-.avp__search-icon {
-  flex: 0 0 auto;
-  font-size: 20px;
-  width: 20px;
-  height: 20px;
-  color: var(--text-tertiary);
-}
-
-.avp__search-input {
-  flex: 1;
-  min-width: 0;
-  border: none;
-  background: transparent;
-  outline: none;
-  font-size: 14px;
-  color: var(--text-primary);
-}
-
-.avp__search-clear {
-  flex: 0 0 auto;
-  display: inline-flex;
-  padding: 2px;
-  border: none;
-  background: transparent;
-  color: var(--text-tertiary);
-  cursor: pointer;
-
-  mat-icon {
-    font-size: 18px;
-    width: 18px;
-    height: 18px;
-  }
-
-  &:hover {
-    color: var(--text-secondary);
-  }
+  display: block;
+  width: auto;
+  margin: 4px 24px 8px;
 }
 
 // ───────── Grid ─────────

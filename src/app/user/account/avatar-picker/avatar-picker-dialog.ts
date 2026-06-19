@@ -131,7 +131,9 @@ export class AvatarPickerDialog implements OnDestroy {
   }
 
   protected avatarUrl(n: number): string {
-    return this.pokemon.avatarUrl(n);
+    // Neutral (Normal) portrait — the picker is for choosing a species, so the
+    // cart-total mood doesn't apply to the grid tiles.
+    return this.pokemon.portraitUrl(n);
   }
 
   protected pick(n: number): void {

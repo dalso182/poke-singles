@@ -74,6 +74,10 @@ $blue-soft: #e8edf8;
   border: none;
   background: $navy;
   color: #fff;
+  // Initials inside <app-user-avatar> inherit these.
+  font-family: var(--font-brand);
+  font-size: 26px;
+  font-weight: 800;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -86,27 +90,9 @@ $blue-soft: #e8edf8;
     transform: translateY(-1px);
     box-shadow: 0 10px 22px -8px rgba(30, 58, 138, 0.6);
   }
-
-  &:hover .acc-avatar-edit {
-    opacity: 1;
-  }
 }
 
-.acc-avatar-initial {
-  font-family: var(--font-brand);
-  font-size: 26px;
-  font-weight: 800;
-}
-
-.acc-avatar-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  // White plate so transparent avatar PNGs read inside the navy circle.
-  background: #fff;
-}
-
-// Pencil affordance, revealed on hover.
+// Pencil affordance — always visible so it's tappable on touch devices.
 .acc-avatar-edit {
   position: absolute;
   inset: 0;
@@ -114,9 +100,7 @@ $blue-soft: #e8edf8;
   align-items: flex-end;
   justify-content: center;
   padding-bottom: 5px;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.45), transparent 55%);
-  opacity: 0;
-  transition: opacity 0.15s ease;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.5), transparent 55%);
 
   mat-icon {
     font-size: 15px;

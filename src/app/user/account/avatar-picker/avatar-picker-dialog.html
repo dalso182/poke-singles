@@ -1,9 +1,9 @@
-<h2 mat-dialog-title class="avp__title">Elegí tu avatar</h2>
+<h2 mat-dialog-title class="avp__title">Elegí tu Pokémon favorito</h2>
 
-<div class="avp__search">
-  <mat-icon class="avp__search-icon">search</mat-icon>
+<mat-form-field appearance="outline" subscriptSizing="dynamic" class="avp__search">
+  <mat-icon matIconPrefix>search</mat-icon>
   <input
-    class="avp__search-input"
+    matInput
     type="text"
     [formControl]="searchControl"
     placeholder="Buscar por nombre o número…"
@@ -12,15 +12,16 @@
   />
   @if (searchControl.value) {
     <button
+      matIconSuffix
+      mat-icon-button
       type="button"
-      class="avp__search-clear"
       (click)="searchControl.setValue('')"
       aria-label="Limpiar búsqueda"
     >
       <mat-icon>close</mat-icon>
     </button>
   }
-</div>
+</mat-form-field>
 
 @if (loading()) {
   <mat-progress-bar mode="indeterminate" />

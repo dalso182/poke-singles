@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, output, signal } from '@angular/core';
+import { Component, inject, output, signal } from '@angular/core';
 import { RouterLink, Router } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
@@ -9,12 +9,11 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../core/auth/auth.service';
-import { ProfilesService } from '../../core/auth/profiles.service';
-import { PokemonService } from '../../core/pokemon/pokemon.service';
 import { CartService } from '../../core/cart/cart.service';
 import { LoyaltyService } from '../../core/loyalty/loyalty.service';
 import { SearchLogService } from '../../core/search-log/search-log.service';
 import { SocialIcons } from '../../shared/social-icons/social-icons';
+import { UserAvatar } from '../../shared/user-avatar/user-avatar';
 
 @Component({
   selector: 'app-header',
@@ -27,6 +26,7 @@ import { SocialIcons } from '../../shared/social-icons/social-icons';
     MatFormFieldModule,
     MatTooltipModule,
     SocialIcons,
+    UserAvatar,
   ],
   templateUrl: './header.html',
   styleUrl: './header.scss',
@@ -36,8 +36,6 @@ export class Header {
 
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
-  private readonly profiles = inject(ProfilesService);
-  private readonly pokemon = inject(PokemonService);
   private readonly cart = inject(CartService);
   private readonly loyalty = inject(LoyaltyService);
   private readonly searchLog = inject(SearchLogService);
@@ -48,35 +46,6 @@ export class Header {
   protected readonly isSignedIn = this.auth.isSignedIn;
   protected readonly isAdmin = this.auth.isAdmin;
   protected readonly cartCount = this.cart.itemCount;
-
-  /** Google OAuth photo (avatar_url / picture), if the account has one. */
-  private readonly googleUrl = computed(() => {
-    const meta = this.currentUser()?.user_metadata as
-      | { avatar_url?: string; picture?: string }
-      | undefined;
-    return meta?.avatar_url || meta?.picture || null;
-  });
-
-  // Avatar source priority: chosen Pokémon → Google photo → initials. Each
-  // `*Broken` flag drops a source that failed to load so the next one shows.
-  protected readonly pokemonBroken = signal(false);
-  protected readonly googleBroken = signal(false);
-  protected readonly avatarSrc = computed<string | null>(() => {
-    const n = this.profiles.avatarPokemonNumber();
-    if (n != null && !this.pokemonBroken()) return this.pokemon.avatarUrl(n);
-    if (!this.googleBroken()) return this.googleUrl();
-    return null;
-  });
-
-  constructor() {
-    // Re-attempt every source when the chosen avatar or the signed-in user changes.
-    effect(() => {
-      this.profiles.avatarPokemonNumber();
-      this.currentUser();
-      this.pokemonBroken.set(false);
-      this.googleBroken.set(false);
-    });
-  }
 
   /** Account dropdown open state. */
   protected readonly menuOpen = signal(false);
@@ -148,21 +117,6 @@ export class Header {
     }
   }
 
-  protected userInitials(): string {
-    const user = this.currentUser();
-    if (!user) return '';
-    const name =
-      (user.user_metadata?.['full_name'] as string | undefined) ||
-      user.email ||
-      '';
-    return name
-      .split(/\s+|@/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((p) => p[0]?.toUpperCase() ?? '')
-      .join('');
-  }
-
   protected userDisplayName(): string {
     const user = this.currentUser();
     if (!user) return '';
@@ -171,11 +125,5 @@ export class Header {
       user.email ||
       'Usuario'
     );
-  }
-
-  protected onAvatarError(): void {
-    const n = this.profiles.avatarPokemonNumber();
-    if (n != null && !this.pokemonBroken()) this.pokemonBroken.set(true);
-    else this.googleBroken.set(true);
   }
 }

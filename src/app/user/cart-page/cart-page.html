@@ -40,7 +40,7 @@
 
 @if (!loading() && items().length === 0) {
   <div class="cart-page__empty">
-    <mat-icon>shopping_cart</mat-icon>
+    <app-empty-cart-pokemon [size]="60" />
     <p>Tu carrito está vacío.</p>
     <a mat-flat-button color="primary" routerLink="/products">Explorar cartas</a>
   </div>

@@ -7,7 +7,7 @@
 
 @if (items().length === 0) {
   <div class="cart-drawer__empty">
-    <mat-icon>shopping_cart</mat-icon>
+    <app-empty-cart-pokemon [size]="50" />
     <p>Tu carrito está vacío</p>
     <a mat-stroked-button routerLink="/products" (click)="close()">
       Explorar cartas

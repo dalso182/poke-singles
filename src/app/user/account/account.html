@@ -23,17 +23,7 @@
             (click)="openAvatarPicker()"
             aria-label="Cambiar avatar"
           >
-            @if (avatarSrc(); as url) {
-              <img
-                class="acc-avatar-img"
-                [src]="url"
-                alt="Tu avatar"
-                referrerpolicy="no-referrer"
-                (error)="onAvatarError()"
-              />
-            } @else {
-              <span class="acc-avatar-initial">{{ initial() }}</span>
-            }
+            <app-user-avatar [maxInitials]="1" />
             <span class="acc-avatar-edit" aria-hidden="true"><mat-icon>edit</mat-icon></span>
           </button>
           <div class="acc-identity-name">{{ displayName() }}</div>
