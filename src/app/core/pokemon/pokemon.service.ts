@@ -32,6 +32,24 @@ export function avatarMoodForTotal(total: number): AvatarMood {
   return { emotion: 'Joyous', shiny: true };
 }
 
+/** Moods to try, in order, before giving up on a species — the requested one
+ *  down to the always-present 'Normal'. Keeps the avatar on the user's Pokémon
+ *  when a rare emotion (Joyous) or the shiny variant is missing on SpriteCollab,
+ *  instead of dropping the species entirely. */
+export function portraitMoodChain(mood: AvatarMood): AvatarMood[] {
+  const ladder: PortraitEmotion[] = ['Joyous', 'Happy', 'Normal'];
+  const i = ladder.indexOf(mood.emotion);
+  // Sad / Teary-Eyed aren't on the ladder → try themselves, then Normal.
+  const tail: PortraitEmotion[] = i >= 0 ? ladder.slice(i) : [mood.emotion, 'Normal'];
+  const chain: AvatarMood[] = [];
+  // Top tier is shiny: keep the ✨ look across every emotion downgrade (shiny
+  // Joyous → shiny Happy → shiny Normal) before dropping to non-shiny — a
+  // species missing shiny Joyous but with shiny Normal still rewards the tier.
+  if (mood.shiny) for (const emotion of tail) chain.push({ emotion, shiny: true });
+  for (const emotion of tail) chain.push({ emotion, shiny: false });
+  return chain;
+}
+
 /** Playful Spanish line shown on avatar hover for each mood. */
 export function avatarMoodMessage(mood: AvatarMood): string {
   if (mood.shiny) return 'Ese carrito brilla como yo! ✨';
@@ -94,5 +112,12 @@ export class PokemonService {
     const variant = mood.shiny ? '0000/0001/' : '';
     const base = 'https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/portrait';
     return `${base}/${id}/${variant}${mood.emotion}.png`;
+  }
+
+  /** De-duplicated, ordered portrait URLs to try for a dex number at a mood —
+   *  the requested emotion first, then safer fallbacks down to 'Normal'. When
+   *  the mood is already non-shiny 'Normal' the chain is a single URL. */
+  portraitUrlChain(n: number, mood: AvatarMood): string[] {
+    return [...new Set(portraitMoodChain(mood).map((m) => this.portraitUrl(n, m)))];
   }
 }

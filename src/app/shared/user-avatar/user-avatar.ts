@@ -42,22 +42,32 @@ export class UserAvatar {
     return meta?.avatar_url || meta?.picture || null;
   });
 
-  // Avatar priority: chosen Pokémon (mood portrait) → Google photo → initials.
-  // Each `*Broken` flag drops a source that failed to load so the next shows.
-  protected readonly pokemonBroken = signal(false);
-  protected readonly googleBroken = signal(false);
+  // Avatar candidates, in priority order: the chosen Pokémon's mood portrait
+  // (with emotion fallbacks — a missing Joyous/shiny keeps the species on a
+  // safer face) → Google photo → initials. `step` points at the current one
+  // and advances on each load error.
+  private readonly pokemonSources = computed<string[]>(() => {
+    const n = this.avatarNumber();
+    return n != null ? this.pokemon.portraitUrlChain(n, this.mood()) : [];
+  });
 
-  /** True while the chosen-Pokémon mood portrait is the displayed image. */
+  private readonly sources = computed<string[]>(() => {
+    const out = [...this.pokemonSources()];
+    const google = this.googleUrl();
+    if (google) out.push(google);
+    return out;
+  });
+
+  protected readonly step = signal(0);
+
+  /** True while a chosen-Pokémon portrait (any emotion) is the displayed image. */
   protected readonly showingPokemon = computed(
-    () => this.avatarNumber() != null && !this.pokemonBroken(),
+    () => this.step() < this.pokemonSources().length,
   );
 
-  protected readonly src = computed<string | null>(() => {
-    const n = this.avatarNumber();
-    if (n != null && !this.pokemonBroken()) return this.pokemon.portraitUrl(n, this.mood());
-    if (!this.googleBroken()) return this.googleUrl();
-    return null;
-  });
+  protected readonly src = computed<string | null>(
+    () => this.sources()[this.step()] ?? null,
+  );
 
   /** Mood message — only while the Pokémon portrait is shown. */
   protected readonly tooltip = computed(() =>
@@ -81,19 +91,17 @@ export class UserAvatar {
   });
 
   constructor() {
-    // Re-attempt every source when the avatar, the user, or the mood (cart
-    // total) changes — so a new emotion portrait is fetched again.
+    // Restart from the top candidate when the avatar, the user, or the mood
+    // (cart total) changes — so a new emotion portrait is fetched again.
     effect(() => {
       this.avatarNumber();
       this.auth.currentUser();
       this.mood();
-      this.pokemonBroken.set(false);
-      this.googleBroken.set(false);
+      this.step.set(0);
     });
   }
 
   protected onError(): void {
-    if (this.showingPokemon()) this.pokemonBroken.set(true);
-    else this.googleBroken.set(true);
+    this.step.update((s) => s + 1);
   }
 }

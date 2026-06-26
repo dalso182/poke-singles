@@ -41,24 +41,35 @@ export class EmptyCartPokemon {
   private readonly profiles = inject(ProfilesService);
   private readonly pokemon = inject(PokemonService);
 
-  /** Drops to the default Pokémon if the chosen one has no Teary-Eyed portrait. */
-  private readonly fallback = signal(false);
+  /** Portrait candidates: keep the chosen species (Teary-Eyed, then its Normal
+   *  face) before falling back to the default Pokémon. `step` advances on each
+   *  load error; the last entry repeats so the <img> never goes empty. */
+  private readonly teary = { emotion: 'Teary-Eyed', shiny: false } as const;
+
+  private readonly sources = computed<string[]>(() => {
+    const chosen = this.profiles.avatarPokemonNumber() ?? DEFAULT_AVATAR_NUMBER;
+    return [
+      ...this.pokemon.portraitUrlChain(chosen, this.teary),
+      ...this.pokemon.portraitUrlChain(DEFAULT_AVATAR_NUMBER, this.teary),
+    ];
+  });
+
+  private readonly step = signal(0);
 
   protected readonly src = computed(() => {
-    const chosen = this.profiles.avatarPokemonNumber() ?? DEFAULT_AVATAR_NUMBER;
-    const n = this.fallback() ? DEFAULT_AVATAR_NUMBER : chosen;
-    return this.pokemon.portraitUrl(n, { emotion: 'Teary-Eyed', shiny: false });
+    const list = this.sources();
+    return list[Math.min(this.step(), list.length - 1)];
   });
 
   constructor() {
-    // Re-try the chosen species whenever the picked avatar changes.
+    // Restart from the chosen species whenever the picked avatar changes.
     effect(() => {
       this.profiles.avatarPokemonNumber();
-      this.fallback.set(false);
+      this.step.set(0);
     });
   }
 
   protected onError(): void {
-    this.fallback.set(true);
+    this.step.update((s) => s + 1);
   }
 }
