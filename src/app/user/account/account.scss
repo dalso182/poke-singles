@@ -527,50 +527,11 @@ $blue-soft: #e8edf8;
   }
 }
 
-// ───────── Sticky save bar ─────────
-.acc-savebar {
-  position: sticky;
-  bottom: 0;
-  margin-top: 8px;
-  padding: 16px 0;
+// ───────── Per-section save action ─────────
+.acc-panel-actions {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  border-top: 1px solid transparent;
-  transition: background 0.2s ease, border-color 0.2s ease;
-
-  &.is-dirty {
-    background: rgba(251, 250, 247, 0.92);
-    backdrop-filter: blur(8px);
-    border-top-color: var(--border-subtle);
-  }
-}
-
-.acc-savebar-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--text-tertiary);
-
-  .is-dirty & {
-    color: var(--accent-amber);
-  }
-}
-
-.acc-savebar-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: var(--success);
-  box-shadow: 0 0 0 4px var(--success-soft, #e6f4ea);
-
-  .is-dirty & {
-    background: var(--accent-amber);
-    box-shadow: 0 0 0 4px var(--accent-amber-soft);
-  }
+  justify-content: flex-end;
+  margin-top: 20px;
 }
 
 .acc-save-btn {

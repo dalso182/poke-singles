@@ -1,11 +1,14 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DecimalPipe, DatePipe } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { nameValidator } from '../../shared/validators/name.validator';
+import { phoneValidator } from '../../shared/validators/phone.validator';
 import { Router, RouterLink } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AuthService } from '../../core/auth/auth.service';
@@ -33,6 +36,7 @@ import type {
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    MatSelectModule,
     MatProgressBarModule,
     MatSnackBarModule,
     UserAvatar,
@@ -57,7 +61,8 @@ export class Account implements OnInit {
   protected readonly points = signal(0);
   protected readonly pointsHistory = signal<LoyaltyTransactionRow[]>([]);
   protected readonly loading = signal(false);
-  protected readonly saving = signal(false);
+  protected readonly savingPersonal = signal(false);
+  protected readonly savingAddress = signal(false);
   protected readonly email = computed(() => this.auth.currentUser()?.email ?? '');
 
   /** Rail name: the saved full name, else the email's local part, else a generic label. */
@@ -70,9 +75,25 @@ export class Account implements OnInit {
   /** Which rail nav item is highlighted; driven by clicking a nav link. */
   protected readonly activeSection = signal<'datos' | 'direccion' | 'pedidos' | 'puntos'>('datos');
 
-  protected readonly form: FormGroup = this.fb.nonNullable.group({
-    full_name: [''],
-    phone: [''],
+  /** The 7 provinces of Costa Rica, for the shipping-address dropdown. */
+  protected readonly provinces = [
+    'San José',
+    'Alajuela',
+    'Cartago',
+    'Heredia',
+    'Guanacaste',
+    'Puntarenas',
+    'Limón',
+  ] as const;
+
+  // Two independent forms so each section saves on its own — editing the
+  // address doesn't dirty the personal-data save, and vice versa.
+  protected readonly personalForm: FormGroup = this.fb.nonNullable.group({
+    full_name: ['', nameValidator()],
+    phone: ['', phoneValidator()],
+  });
+
+  protected readonly addressForm: FormGroup = this.fb.nonNullable.group({
     line1: [''],
     line2: [''],
     city: [''],
@@ -103,9 +124,11 @@ export class Account implements OnInit {
       this.pointsHistory.set(pointsHistory);
       if (profile) {
         const addr = profile.default_shipping_address;
-        this.form.patchValue({
+        this.personalForm.patchValue({
           full_name: profile.full_name ?? '',
           phone: profile.phone ?? '',
+        });
+        this.addressForm.patchValue({
           line1: addr?.line1 ?? '',
           line2: addr?.line2 ?? '',
           city: addr?.city ?? '',
@@ -113,7 +136,8 @@ export class Account implements OnInit {
           address_notes: addr?.notes ?? '',
         });
       }
-      this.form.markAsPristine();
+      this.personalForm.markAsPristine();
+      this.addressForm.markAsPristine();
     } catch (err) {
       this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
     } finally {
@@ -154,11 +178,31 @@ export class Account implements OnInit {
     }
   }
 
-  protected async onSave(): Promise<void> {
-    if (this.form.invalid || this.saving()) return;
-    this.saving.set(true);
+  /** Save just the personal-data slice (name + phone). */
+  protected async savePersonal(): Promise<void> {
+    if (this.personalForm.invalid || this.savingPersonal()) return;
+    this.savingPersonal.set(true);
     try {
-      const raw = this.form.getRawValue();
+      const raw = this.personalForm.getRawValue();
+      await this.profiles.updateMine({
+        full_name: raw.full_name?.trim() || null,
+        phone: raw.phone?.trim() || null,
+      });
+      this.personalForm.markAsPristine();
+      this.snack.open('Datos actualizados', 'OK', { duration: 3000 });
+    } catch (err) {
+      this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
+    } finally {
+      this.savingPersonal.set(false);
+    }
+  }
+
+  /** Save just the shipping-address slice. */
+  protected async saveAddress(): Promise<void> {
+    if (this.addressForm.invalid || this.savingAddress()) return;
+    this.savingAddress.set(true);
+    try {
+      const raw = this.addressForm.getRawValue();
       const line1 = raw.line1?.trim() ?? '';
       const city = raw.city?.trim() ?? '';
       const province = raw.province?.trim() ?? '';
@@ -175,22 +219,18 @@ export class Account implements OnInit {
               notes: raw.address_notes?.trim() || null,
             }
           : null;
-      await this.profiles.updateMine({
-        full_name: raw.full_name?.trim() || null,
-        phone: raw.phone?.trim() || null,
-        default_shipping_address: address,
-      });
-      this.form.markAsPristine();
-      this.snack.open('Cuenta actualizada', 'OK', { duration: 3000 });
+      await this.profiles.updateMine({ default_shipping_address: address });
+      this.addressForm.markAsPristine();
+      this.snack.open('Dirección actualizada', 'OK', { duration: 3000 });
     } catch (err) {
       this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
     } finally {
-      this.saving.set(false);
+      this.savingAddress.set(false);
     }
   }
 
   /** Open the avatar picker; on a new selection, save it immediately (a
-   *  discrete action, kept out of the name/address form's save bar). */
+   *  discrete action, kept out of the name/address section save buttons). */
   protected openAvatarPicker(): void {
     const ref = this.dialog.open<AvatarPickerDialog, AvatarPickerData, number | null>(
       AvatarPickerDialog,

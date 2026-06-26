@@ -83,10 +83,15 @@
       </div>
     </aside>
 
-    <!-- Editable content + save bar -->
-    <form [formGroup]="form" (ngSubmit)="onSave()" class="account__content">
+    <!-- Editable content -->
+    <div class="account__content">
       <!-- 01 · Datos personales -->
-      <section #datosSection class="acc-panel">
+      <form
+        #datosSection
+        class="acc-panel"
+        [formGroup]="personalForm"
+        (ngSubmit)="savePersonal()"
+      >
         <header class="acc-panel-head">
           <span class="acc-icon"><mat-icon>person</mat-icon></span>
           <div class="acc-panel-titles">
@@ -105,17 +110,45 @@
           <mat-form-field appearance="outline">
             <mat-label>Nombre</mat-label>
             <input matInput type="text" formControlName="full_name" autocomplete="name" />
+            @if (personalForm.controls['full_name'].touched && personalForm.controls['full_name'].invalid) {
+              <mat-error>Solo se permiten letras y puntos.</mat-error>
+            }
           </mat-form-field>
 
           <mat-form-field appearance="outline">
             <mat-label>Teléfono</mat-label>
-            <input matInput type="tel" formControlName="phone" autocomplete="tel" />
+            <input
+              matInput
+              type="tel"
+              inputmode="numeric"
+              maxlength="8"
+              formControlName="phone"
+              autocomplete="tel"
+            />
+            @if (personalForm.controls['phone'].touched && personalForm.controls['phone'].invalid) {
+              <mat-error>El teléfono debe tener 8 dígitos.</mat-error>
+            }
           </mat-form-field>
         </div>
-      </section>
+        <div class="acc-panel-actions">
+          <button
+            type="submit"
+            class="acc-save-btn"
+            [disabled]="personalForm.invalid || personalForm.pristine || savingPersonal()"
+          >
+            <mat-icon>check</mat-icon>
+            {{ savingPersonal() ? 'Guardando…' : 'Guardar cambios' }}
+          </button>
+        </div>
+      </form>
 
       <!-- 02 · Dirección de envío -->
-      <section #direccionSection class="acc-panel">
+      <form
+        #direccionSection
+        class="acc-panel"
+        [formGroup]="addressForm"
+        (ngSubmit)="saveAddress()"
+      >
         <header class="acc-panel-head">
           <span class="acc-icon"><mat-icon>place</mat-icon></span>
           <div class="acc-panel-titles">
@@ -140,14 +173,29 @@
           </mat-form-field>
           <mat-form-field appearance="outline">
             <mat-label>Provincia</mat-label>
-            <input matInput type="text" formControlName="province" autocomplete="address-level1" />
+            <mat-select formControlName="province">
+              <mat-option [value]="''">— Selecciona —</mat-option>
+              @for (p of provinces; track p) {
+                <mat-option [value]="p">{{ p }}</mat-option>
+              }
+            </mat-select>
           </mat-form-field>
           <mat-form-field appearance="outline" class="account__full">
             <mat-label>Notas para el repartidor (opcional)</mat-label>
             <textarea matInput rows="2" formControlName="address_notes"></textarea>
           </mat-form-field>
         </div>
-      </section>
+        <div class="acc-panel-actions">
+          <button
+            type="submit"
+            class="acc-save-btn"
+            [disabled]="addressForm.invalid || addressForm.pristine || savingAddress()"
+          >
+            <mat-icon>check</mat-icon>
+            {{ savingAddress() ? 'Guardando…' : 'Guardar cambios' }}
+          </button>
+        </div>
+      </form>
 
       <!-- 03 · Mis pedidos -->
       <section #pedidosSection class="acc-panel">
@@ -230,22 +278,6 @@
           </div>
         }
       </section>
-
-      <!-- Sticky dirty-aware save bar -->
-      <div class="acc-savebar" [class.is-dirty]="form.dirty">
-        <span class="acc-savebar-status">
-          <span class="acc-savebar-dot"></span>
-          {{ form.dirty ? 'Tenés cambios sin guardar' : 'Todo guardado' }}
-        </span>
-        <button
-          type="submit"
-          class="acc-save-btn"
-          [disabled]="form.invalid || form.pristine || saving()"
-        >
-          <mat-icon>check</mat-icon>
-          {{ saving() ? 'Guardando…' : 'Guardar cambios' }}
-        </button>
-      </div>
-    </form>
+    </div>
   </div>
 </section>
