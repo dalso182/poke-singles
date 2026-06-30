@@ -132,12 +132,22 @@ export class OrdersService {
   ): Promise<{ path: string } | { error: string }> {
     const ext = (file.name.split('.').pop() ?? 'jpg').toLowerCase();
     const path = `${orderId}/proof.${ext}`;
+    // No `upsert`: it makes Storage issue INSERT ... ON CONFLICT DO UPDATE, whose
+    // conflict path needs UPDATE/SELECT visibility that anon/authenticated customers
+    // don't have on this private bucket — so it fails the upload RLS policy with
+    // "new row violates row-level security policy". A plain insert satisfies the
+    // INSERT policy. If a prior attempt already uploaded the file (e.g. attach failed
+    // after upload), the re-insert 409s; treat that as success so attach can re-run.
     const { error } = await this.supabase.client.storage
       .from('payment-proofs')
-      .upload(path, file, { upsert: true, contentType: file.type });
+      .upload(path, file, { contentType: file.type });
     if (error) {
-      console.error('[orders] uploadPaymentProof', error);
-      return { error: error.message };
+      const status = (error as { statusCode?: string }).statusCode;
+      const alreadyExists = status === '409' || /exists|duplicate/i.test(error.message);
+      if (!alreadyExists) {
+        console.error('[orders] uploadPaymentProof', error);
+        return { error: error.message };
+      }
     }
     return { path };
   }
