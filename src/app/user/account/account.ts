@@ -97,6 +97,21 @@ export class Account implements OnInit {
     address_notes: [''],
   });
 
+  constructor() {
+    // Leave /account the instant the session ends so no signed-out viewer keeps
+    // seeing the previous user's data. The page's own "Cerrar sesión" navigates
+    // away already, but logout from the header menu or another tab (Supabase
+    // broadcasts SIGNED_OUT) does not — and the reactive forms / order signals
+    // aren't auth-reactive, so they'd otherwise stay filled. Navigating destroys
+    // the component, clearing all loaded PII. (`undefined` = hydrating, skip;
+    // `null` = signed out.)
+    effect(() => {
+      if (this.auth.currentUser() === null) {
+        void this.router.navigate(['/']);
+      }
+    });
+  }
+
   ngOnInit(): void {
     void this.bootstrap();
   }
