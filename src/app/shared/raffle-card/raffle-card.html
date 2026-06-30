@@ -23,7 +23,15 @@
           <span>{{ metaLine() }}</span>
         }
         @if (raffle().condition) {
-          <span [class]="conditionClass(raffle().condition)">{{ raffle().condition }}</span>
+          <button
+            type="button"
+            [class]="conditionClass(raffle().condition) + ' condition-pill--btn'"
+            (click)="openConditionsInfo($event)"
+            matTooltip="Ver guía de condiciones"
+            aria-label="Ver guía de condiciones"
+          >
+            {{ raffle().condition }}
+          </button>
         }
       </div>
     }

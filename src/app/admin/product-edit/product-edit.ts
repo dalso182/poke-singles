@@ -300,7 +300,10 @@ export class ProductEdit implements OnInit {
         slug: raw.slug,
         description: raw.description || null,
         rarity: isCard ? raw.rarity || null : null,
-        card_number: isCard ? raw.card_number || null : null,
+        // Raffles are single-card prizes, so they keep the card number (it shows
+        // on the /rifas tile next to the set) even though the other card-only
+        // fields stay hidden for them — same exception as `condition` below.
+        card_number: isCard || this.isRaffle() ? raw.card_number || null : null,
         image_url: raw.image_url || null,
         set_id: raw.set_id || null,
         category_id: raw.category_id,

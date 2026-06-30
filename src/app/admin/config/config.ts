@@ -152,6 +152,7 @@ export class AdminConfig {
     try {
       const result = await this.sets.syncFromTcgdex();
       const parts = [`${result.added} sets agregados`];
+      if (result.backfilled) parts.push(`${result.backfilled} totales completados`);
       if (result.skipped) parts.push(`${result.skipped} ya existían`);
       if (result.excluded) parts.push(`${result.excluded} excluidos (TCG Pocket)`);
       if (result.failed) parts.push(`${result.failed} fallaron`);

@@ -176,7 +176,19 @@ export class SetsService {
   async findOrCreateFromTcgdex(card: Card): Promise<SetRow> {
     const resume: SetResume = card.set;
     const existing = await this.findByCode(resume.id);
-    if (existing) return existing;
+    if (existing) {
+      // Older rows were imported without a printed total (TCGdex's cardCount
+      // wasn't captured back then), which hides the "/NN" half of the card
+      // number on every listing for that set. Backfill it from TCGdex the first
+      // time we touch the set again so the gap self-heals as cards are added.
+      if (existing.printed_total == null) {
+        const hydrated = await this.hydrateSetFromTcgdex(resume.id);
+        if (hydrated.printedTotal != null) {
+          return this.update(existing.id, { printed_total: hydrated.printedTotal });
+        }
+      }
+      return existing;
+    }
 
     const hydrated = await this.hydrateSetFromTcgdex(resume.id);
     return this.create({
@@ -200,6 +212,7 @@ export class SetsService {
    */
   async syncFromTcgdex(): Promise<{
     added: number;
+    backfilled: number;
     skipped: number;
     failed: number;
     excluded: number;
@@ -208,14 +221,32 @@ export class SetsService {
       this.tcgdex.client.set.list(),
       this.list({ refresh: true }),
     ]);
-    const existingCodes = new Set(existing.map((s) => s.code));
+    const existingByCode = new Map(existing.map((s) => [s.code, s]));
 
     let added = 0;
+    let backfilled = 0;
     let skipped = 0;
     let failed = 0;
     let excluded = 0;
     for (const resume of resumes) {
-      if (existingCodes.has(resume.id)) {
+      const existingRow = existingByCode.get(resume.id);
+      if (existingRow) {
+        // Fill a missing printed total on older rows so the "/NN" half of the
+        // card number renders on listings (same gap findOrCreateFromTcgdex
+        // self-heals on card pick). One TCGdex fetch per still-null set; once
+        // filled, later syncs skip it. A transient error just leaves it for next time.
+        if (existingRow.printed_total == null) {
+          try {
+            const hydrated = await this.hydrateSetFromTcgdex(resume.id);
+            if (hydrated.printedTotal != null) {
+              await this.update(existingRow.id, { printed_total: hydrated.printedTotal });
+              backfilled++;
+              continue;
+            }
+          } catch {
+            // fall through to skip; don't abort the whole run on one bad set
+          }
+        }
         skipped++;
         continue;
       }
@@ -239,7 +270,7 @@ export class SetsService {
       }
     }
     this.invalidate();
-    return { added, skipped, failed, excluded };
+    return { added, backfilled, skipped, failed, excluded };
   }
 
   private async hydrateSetFromTcgdex(code: string): Promise<{

@@ -3,7 +3,9 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { CartService } from '../../core/cart/cart.service';
+import { CardConditionsDialogService } from '../../core/preview/card-conditions-dialog.service';
 import type { RaffleCardItem } from '../../core/catalog/catalog.types';
 
 /**
@@ -21,6 +23,7 @@ import type { RaffleCardItem } from '../../core/catalog/catalog.types';
     MatButtonModule,
     MatIconModule,
     MatSnackBarModule,
+    MatTooltipModule,
   ],
   templateUrl: './raffle-card.html',
   styleUrl: './raffle-card.scss',
@@ -30,6 +33,7 @@ export class RaffleCard {
 
   private readonly cart = inject(CartService);
   private readonly snack = inject(MatSnackBar);
+  private readonly conditionsDialog = inject(CardConditionsDialogService);
 
   /** How many numbers the user wants to add at once. Clamped to [1, quantity]. */
   protected readonly qty = signal(1);
@@ -82,6 +86,12 @@ export class RaffleCard {
     else if (code === 'MP') modifier = 'condition-pill--mp';
     else if (code === 'HP' || code === 'DMG') modifier = 'condition-pill--hp';
     return `condition-pill ${modifier}`;
+  }
+
+  /** Open the shared card-conditions guide modal (mirrors the product card). */
+  protected openConditionsInfo(event: MouseEvent): void {
+    event.stopPropagation();
+    void this.conditionsDialog.open();
   }
 
   protected step(delta: number): void {
