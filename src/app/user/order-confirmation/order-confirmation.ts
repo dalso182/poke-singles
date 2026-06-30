@@ -50,6 +50,9 @@ export class OrderConfirmation implements OnInit {
   protected readonly notFound = signal(false);
   protected readonly uploading = signal(false);
   protected readonly copiedSinpe = signal(false);
+  /** Object URL of the just-uploaded proof, for the same-session "Ver" link.
+   *  Cleared on reload — the private bucket has no customer read access. */
+  protected readonly proofPreviewUrl = signal<string | null>(null);
 
   protected readonly shortRef = computed<string>(() => {
     const num = this.order()?.order_number;
@@ -184,6 +187,11 @@ export class OrderConfirmation implements OnInit {
         return;
       }
       this.order.set({ ...order, payment_proof_url: upload.path });
+      if (isPlatformBrowser(this.platformId)) {
+        const prev = this.proofPreviewUrl();
+        if (prev) URL.revokeObjectURL(prev);
+        this.proofPreviewUrl.set(URL.createObjectURL(file));
+      }
       this.snack.open('Comprobante recibido', 'OK', { duration: 3000 });
     } finally {
       this.uploading.set(false);

@@ -36,7 +36,6 @@
         <section class="confirmation__panel">
           <header class="confirmation__panel-head">
             <div class="confirmation__panel-titles">
-              <div class="brand-eyebrow">01 —</div>
               <h2>Cómo pagar</h2>
               <p class="confirmation__sub">
                 SINPE Móvil o transferencia bancaria. Apartamos tus cartas mientras confirmamos.
@@ -93,7 +92,15 @@
           @if (proofUploaded()) {
             <div class="confirmation__proof-status">
               <mat-icon>check_circle</mat-icon>
-              Comprobante recibido. Te contactaremos cuando lo verifiquemos.
+              <span>Comprobante recibido. Te contactaremos cuando lo verifiquemos.</span>
+              @if (proofPreviewUrl(); as preview) {
+                <a
+                  class="confirmation__proof-view"
+                  [href]="preview"
+                  target="_blank"
+                  rel="noopener"
+                >Ver</a>
+              }
             </div>
           } @else if (whatsappAcknowledged()) {
             <div class="confirmation__proof-status">
@@ -133,12 +140,27 @@
               Ya envié el comprobante por WhatsApp
             </button>
           }
+
+          @if (proofUploaded() || whatsappAcknowledged()) {
+            <div class="confirmation__order-help">
+              <span>Si necesitas ayuda con tu orden contáctanos</span>
+              <a
+                class="confirmation__whatsapp confirmation__whatsapp--sm"
+                [href]="whatsappContactLink()"
+                target="_blank"
+                rel="noopener"
+              >
+                <mat-icon>chat</mat-icon>
+                <span>WhatsApp</span>
+                <mat-icon class="confirmation__whatsapp-ext">open_in_new</mat-icon>
+              </a>
+            </div>
+          }
         </section>
       } @else {
         <section class="confirmation__panel">
           <header class="confirmation__panel-head">
             <div class="confirmation__panel-titles">
-              <div class="brand-eyebrow">01 —</div>
               <h2>Te enviaremos un enlace de pago</h2>
             </div>
             <span class="confirmation__pill">
@@ -173,7 +195,6 @@
       <section class="confirmation__panel">
         <header class="confirmation__panel-head">
           <div class="confirmation__panel-titles">
-            <div class="brand-eyebrow">02 —</div>
             <h2>Datos de envío</h2>
           </div>
         </header>
