@@ -21,6 +21,16 @@ export class AuthService {
   private readonly _currentUser = signal<CurrentUser>(undefined);
   readonly currentUser = this._currentUser.asReadonly();
   readonly isSignedIn = computed(() => this._currentUser() != null);
+
+  private readonly _signedInTick = signal(0);
+  /**
+   * Increments on each Supabase `SIGNED_IN` event — an actual sign-in plus the
+   * magic-link / OAuth redirect callbacks (also token-refresh / multi-tab, which
+   * consumers must dedupe). Lets the UI react once to a *fresh* login regardless
+   * of path, unlike `currentUser()`, which can't tell a redirect-login from a
+   * page reload (those restore the session as `INITIAL_SESSION`).
+   */
+  readonly signedInTick = this._signedInTick.asReadonly();
   readonly isAdmin = computed(() => {
     const u = this._currentUser();
     if (!u) return false;
@@ -44,6 +54,7 @@ export class AuthService {
       // liberally here is safe (and catches passwordless/OAuth logins that never
       // touch signInWith* directly).
       if (event === 'SIGNED_IN') {
+        this._signedInTick.update((n) => n + 1);
         void this.logActivity('login');
       }
     });

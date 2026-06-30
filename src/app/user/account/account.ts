@@ -1,10 +1,9 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { DecimalPipe, DatePipe } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { nameValidator } from '../../shared/validators/name.validator';
 import { phoneValidator } from '../../shared/validators/phone.validator';
 import { Router, RouterLink } from '@angular/router';
-import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -16,10 +15,7 @@ import { ProfilesService } from '../../core/auth/profiles.service';
 import { OrdersService } from '../../core/orders/orders.service';
 import { LoyaltyService } from '../../core/loyalty/loyalty.service';
 import { UserAvatar } from '../../shared/user-avatar/user-avatar';
-import {
-  AvatarPickerDialog,
-  type AvatarPickerData,
-} from './avatar-picker/avatar-picker-dialog';
+import { AvatarPickerService } from './avatar-picker/avatar-picker.service';
 import type {
   LoyaltyTransactionRow,
   OrderRow,
@@ -51,7 +47,7 @@ export class Account implements OnInit {
   private readonly orders = inject(OrdersService);
   private readonly loyalty = inject(LoyaltyService);
   private readonly snack = inject(MatSnackBar);
-  private readonly dialog = inject(MatDialog);
+  private readonly avatarPicker = inject(AvatarPickerService);
   private readonly router = inject(Router);
 
   // Single source of truth for the profile lives in ProfilesService so the
@@ -229,32 +225,12 @@ export class Account implements OnInit {
     }
   }
 
-  /** Open the avatar picker; on a new selection, save it immediately (a
-   *  discrete action, kept out of the name/address section save buttons). */
+  /** Open the avatar picker; on a new selection it's saved immediately (a
+   *  discrete action, kept out of the name/address section save buttons). The
+   *  open + persist logic lives in AvatarPickerService, shared with the
+   *  post-login prompt. */
   protected openAvatarPicker(): void {
-    const ref = this.dialog.open<AvatarPickerDialog, AvatarPickerData, number | null>(
-      AvatarPickerDialog,
-      {
-        width: '720px',
-        maxWidth: '95vw',
-        maxHeight: '85vh',
-        autoFocus: 'first-tabbable',
-        data: { current: this.profiles.avatarPokemonNumber() },
-      },
-    );
-    ref.afterClosed().subscribe((picked) => {
-      if (picked == null || picked === this.profiles.avatarPokemonNumber()) return;
-      void this.saveAvatar(picked);
-    });
-  }
-
-  private async saveAvatar(n: number): Promise<void> {
-    try {
-      await this.profiles.updateMine({ avatar_pokemon_number: n });
-      this.snack.open('Avatar actualizado', 'OK', { duration: 3000 });
-    } catch (err) {
-      this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
-    }
+    this.avatarPicker.openAndSave(this.profiles.avatarPokemonNumber());
   }
 
   protected async signOut(): Promise<void> {

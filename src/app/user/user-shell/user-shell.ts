@@ -29,6 +29,7 @@ import { CartService } from '../../core/cart/cart.service';
 import { LocalStorageService } from '../../core/storage/local-storage.service';
 import { WelcomeDialogService } from '../../core/preview/welcome-dialog.service';
 import { PresenceService } from '../../core/presence/presence.service';
+import { AvatarPickerService } from '../account/avatar-picker/avatar-picker.service';
 
 /** Below this width the rail is dropped for a slide-over drawer. */
 const HANDSET_QUERY = '(max-width: 719.98px)';
@@ -125,6 +126,12 @@ export class UserShell {
     // Announce this shopper on the presence channel so the admin dashboard's
     // "people online" tile can count them. Browser-guarded inside the service.
     inject(PresenceService).joinAsVisitor();
+
+    // Activate the post-login prompt that auto-opens the favorite-Pokémon picker
+    // for a freshly signed-in customer who hasn't chosen one. Instantiating it
+    // here scopes the prompt to the storefront (not the admin shell); the service
+    // is root-provided so its dedupe state survives this shell remounting.
+    inject(AvatarPickerService);
   }
 
   protected toggleSidenav(): void {
