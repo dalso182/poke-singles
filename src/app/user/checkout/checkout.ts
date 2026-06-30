@@ -106,6 +106,10 @@ export class Checkout implements OnInit {
    *  no saved address exists. */
   protected readonly addressMode = signal<'saved' | 'custom'>('saved');
 
+  /** True once the email control is bound to (and locked to) the signed-in
+   *  account email. Guests leave it false and keep an editable field. */
+  protected readonly emailLocked = signal(false);
+
   protected readonly form: FormGroup = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
     name: ['', Validators.required],
@@ -253,7 +257,13 @@ export class Checkout implements OnInit {
     await this.auth.ready;
     const user = this.auth.currentUser();
     if (!user) return;
+    // Signed-in checkout: the order email must always be the account email.
+    // Lock it so it can't be edited (guests, who reach this without a user,
+    // keep an editable field). getRawValue() in onSubmit still carries the
+    // disabled control's value, so the buyer email flows through unchanged.
     this.form.controls['email'].setValue(user.email ?? '');
+    this.form.controls['email'].disable({ emitEvent: false });
+    this.emailLocked.set(true);
     try {
       const profile = await this.profiles.getMine();
       if (!profile) return;
