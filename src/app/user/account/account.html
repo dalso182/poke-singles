@@ -42,35 +42,43 @@
         <nav class="acc-nav">
           <a
             class="acc-nav-item"
-            [class.is-active]="activeSection() === 'datos'"
-            (click)="scrollToSection(datosSection, 'datos')"
+            [class.is-active]="view() === 'panels' && activeSection() === 'datos'"
+            (click)="selectPanel('datos')"
           >
             <mat-icon>person</mat-icon>
             <span class="acc-nav-label">Datos personales</span>
           </a>
           <a
             class="acc-nav-item"
-            [class.is-active]="activeSection() === 'direccion'"
-            (click)="scrollToSection(direccionSection, 'direccion')"
+            [class.is-active]="view() === 'panels' && activeSection() === 'direccion'"
+            (click)="selectPanel('direccion')"
           >
             <mat-icon>place</mat-icon>
             <span class="acc-nav-label">Dirección de envío</span>
           </a>
           <a
             class="acc-nav-item"
-            [class.is-active]="activeSection() === 'pedidos'"
-            (click)="scrollToSection(pedidosSection, 'pedidos')"
+            [class.is-active]="view() === 'panels' && activeSection() === 'pedidos'"
+            (click)="selectPanel('pedidos')"
           >
             <mat-icon>shopping_bag</mat-icon>
             <span class="acc-nav-label">Mis pedidos</span>
           </a>
           <a
             class="acc-nav-item"
-            [class.is-active]="activeSection() === 'puntos'"
-            (click)="scrollToSection(puntosSection, 'puntos')"
+            [class.is-active]="view() === 'panels' && activeSection() === 'puntos'"
+            (click)="selectPanel('puntos')"
           >
             <img class="acc-nav-coin" src="assets/images/coin-sm.png" alt="" />
             <span class="acc-nav-label">Poke-Monedas</span>
+          </a>
+          <a
+            class="acc-nav-item"
+            [class.is-active]="view() === 'pokedex'"
+            (click)="showPokedex()"
+          >
+            <mat-icon>catching_pokemon</mat-icon>
+            <span class="acc-nav-label">Mi Pokédex</span>
           </a>
         </nav>
 
@@ -85,6 +93,7 @@
 
     <!-- Editable content -->
     <div class="account__content">
+      @if (view() === 'panels') {
       <!-- 01 · Datos personales -->
       <form
         #datosSection
@@ -278,6 +287,13 @@
           </div>
         }
       </section>
+      } @else {
+        @defer (when view() === 'pokedex') {
+          <app-pokedex />
+        } @placeholder {
+          <mat-progress-bar mode="indeterminate" />
+        }
+      }
     </div>
   </div>
 </section>

@@ -1,0 +1,221 @@
+$navy: var(--mat-sys-primary, #1e3a8a);
+$blue-soft: #e8edf8;
+
+.pdx {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+// ───────── Header ─────────
+.pdx__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.pdx__titles {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.pdx__icon {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--surface-tonal);
+  border: 1px solid var(--border-subtle);
+  color: $navy;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.pdx__title {
+  margin: 0;
+  font-family: var(--font-brand);
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  color: var(--text-primary);
+}
+
+.pdx__sub {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.pdx__total {
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--surface-tonal);
+  border: 1px solid var(--border-subtle);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+// ───────── Sticky region jump bar ─────────
+.pdx__regions {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px;
+  margin-bottom: 6px;
+  background: color-mix(in srgb, var(--surface-card) 92%, transparent);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+}
+
+.pdx__region-link {
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--font-brand);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  transition: background 0.12s ease, color 0.12s ease;
+
+  &:hover {
+    background: var(--surface-tonal);
+    color: var(--text-primary);
+  }
+
+  &.is-active {
+    background: $blue-soft;
+    color: $navy;
+  }
+}
+
+// ───────── Region section ─────────
+.pdx__region {
+  // Clear the sticky bar when a region is jumped/scrolled into view.
+  scroll-margin-top: 64px;
+  padding-top: 8px;
+}
+
+.pdx__region-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 8px 2px 12px;
+}
+
+.pdx__region-name {
+  margin: 0;
+  font-family: var(--font-brand);
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: var(--text-primary);
+}
+
+.pdx__region-count {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+// ───────── Grid + tiles ─────────
+.pdx__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+  gap: 10px;
+}
+
+.pdx__card {
+  // Skip layout/paint for off-screen tiles — the whole dex renders at once.
+  content-visibility: auto;
+  contain-intrinsic-size: auto 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 6px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  text-align: center;
+
+  &--locked {
+    background: var(--surface-tonal);
+
+    .pdx__img {
+      // Neutral dimming for "not owned" — no brand red (reserved for sale /
+      // sold-out / brand-bar). Same recipe as the sold-out card treatment.
+      filter: grayscale(0.85);
+      opacity: 0.5;
+    }
+
+    .pdx__name,
+    .pdx__dex {
+      color: var(--text-tertiary);
+    }
+  }
+}
+
+.pdx__thumb {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pdx__ph {
+  position: absolute;
+  inset: 0;
+  // Hidden until a sprite 404s (revealed in onImgError) so it never bleeds
+  // through transparent sprites.
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.pdx__img {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+}
+
+.pdx__dex {
+  font-size: 10px;
+  color: var(--text-tertiary);
+}
+
+.pdx__name {
+  max-width: 100%;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .pdx__grid {
+    grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  }
+}

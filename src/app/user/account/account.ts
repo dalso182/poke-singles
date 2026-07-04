@@ -1,4 +1,15 @@
-import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  Injector,
+  OnInit,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { DecimalPipe, DatePipe } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { nameValidator } from '../../shared/validators/name.validator';
@@ -16,6 +27,7 @@ import { OrdersService } from '../../core/orders/orders.service';
 import { LoyaltyService } from '../../core/loyalty/loyalty.service';
 import { UserAvatar } from '../../shared/user-avatar/user-avatar';
 import { AvatarPickerService } from './avatar-picker/avatar-picker.service';
+import { Pokedex } from './pokedex/pokedex';
 import type {
   LoyaltyTransactionRow,
   OrderRow,
@@ -36,6 +48,7 @@ import type {
     MatProgressBarModule,
     MatSnackBarModule,
     UserAvatar,
+    Pokedex,
   ],
   templateUrl: './account.html',
   styleUrl: './account.scss',
@@ -49,6 +62,7 @@ export class Account implements OnInit {
   private readonly snack = inject(MatSnackBar);
   private readonly avatarPicker = inject(AvatarPickerService);
   private readonly router = inject(Router);
+  private readonly injector = inject(Injector);
 
   // Single source of truth for the profile lives in ProfilesService so the
   // header avatar and this page stay in sync after an edit.
@@ -70,6 +84,17 @@ export class Account implements OnInit {
 
   /** Which rail nav item is highlighted; driven by clicking a nav link. */
   protected readonly activeSection = signal<'datos' | 'direccion' | 'pedidos' | 'puntos'>('datos');
+
+  /** Content mode: the scrollable settings panels, or the full Pokédex grid.
+   *  Both share the rail; selecting a panel section returns to 'panels'. */
+  protected readonly view = signal<'panels' | 'pokedex'>('panels');
+
+  // Section anchors — queried (not passed inline) so scrolling still works when
+  // returning from the Pokédex view, where the panels were just re-rendered.
+  private readonly datosSection = viewChild<ElementRef<HTMLElement>>('datosSection');
+  private readonly direccionSection = viewChild<ElementRef<HTMLElement>>('direccionSection');
+  private readonly pedidosSection = viewChild<ElementRef<HTMLElement>>('pedidosSection');
+  private readonly puntosSection = viewChild<ElementRef<HTMLElement>>('puntosSection');
 
   /** The 7 provinces of Costa Rica, for the shipping-address dropdown. */
   protected readonly provinces = [
@@ -170,13 +195,36 @@ export class Account implements OnInit {
     return `#${orderNumber}`;
   }
 
-  /** Rail nav: highlight the target and smooth-scroll its section into view. */
-  protected scrollToSection(
-    el: HTMLElement,
-    key: 'datos' | 'direccion' | 'pedidos' | 'puntos',
-  ): void {
+  /** Rail nav: show the settings panels, highlight the target, and scroll it
+   *  into view. The scroll is deferred to the next render so it also works when
+   *  switching back from the Pokédex view (panels need to render first). */
+  protected selectPanel(key: 'datos' | 'direccion' | 'pedidos' | 'puntos'): void {
+    this.view.set('panels');
     this.activeSection.set(key);
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    afterNextRender(
+      () =>
+        this.sectionEl(key)?.nativeElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        }),
+      { injector: this.injector },
+    );
+  }
+
+  /** Rail nav: switch the content area to the full Pokédex grid. */
+  protected showPokedex(): void {
+    this.view.set('pokedex');
+  }
+
+  private sectionEl(
+    key: 'datos' | 'direccion' | 'pedidos' | 'puntos',
+  ): ElementRef<HTMLElement> | undefined {
+    switch (key) {
+      case 'datos':     return this.datosSection();
+      case 'direccion': return this.direccionSection();
+      case 'pedidos':   return this.pedidosSection();
+      case 'puntos':    return this.puntosSection();
+    }
   }
 
   /** Falls back to a kind label when a transaction has no description. */

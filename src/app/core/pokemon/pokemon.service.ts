@@ -9,9 +9,28 @@ export interface Pokemon {
   region: string;
 }
 
-/** SpriteCollab portrait emotions: Sad/Normal/Happy/Joyous drive the cart-total
+/** Region jump-nav order + display labels for the customer Pokédex. Keys match
+ *  the lowercase `region` field on each Pokémon row in pokemon.json. */
+export const POKEDEX_REGIONS = [
+  { key: 'kanto', label: 'Kanto' },
+  { key: 'johto', label: 'Johto' },
+  { key: 'hoenn', label: 'Hoenn' },
+  { key: 'sinnoh', label: 'Sinnoh' },
+  { key: 'unova', label: 'Unova' },
+  { key: 'kalos', label: 'Kalos' },
+  { key: 'alola', label: 'Alola' },
+  { key: 'galar', label: 'Galar' },
+  { key: 'paldea', label: 'Paldea' },
+] as const;
+
+/** Rare cases where the PokeAPI slug stored in pokemon.json differs from the
+ *  pokemondb sprite filename. Base species verified to map cleanly today, so
+ *  this is empty — add `pokeApiSlug: pokemondbSlug` entries only if a sprite 404s. */
+const SPRITE_NAME_OVERRIDES: Record<string, string> = {};
+
+/** SpriteCollab portrait emotions: Normal/Happy/Joyous drive the cart-total
  *  mood; Teary-Eyed is the fixed empty-cart mascot. */
-export type PortraitEmotion = 'Sad' | 'Normal' | 'Happy' | 'Joyous' | 'Teary-Eyed';
+export type PortraitEmotion = 'Normal' | 'Happy' | 'Joyous' | 'Teary-Eyed';
 
 /** Fallback avatar Pokémon (Charizard) when the user hasn't picked one — or when
  *  the picked species lacks the requested portrait. */
@@ -23,9 +42,9 @@ export interface AvatarMood {
   shiny: boolean;
 }
 
-/** Map a cart total (CRC) to the avatar's mood. */
+/** Map a cart total (CRC) to the avatar's mood. An empty cart (total <= 0) shares
+ *  the 'Normal' tier — there's no dedicated sad state. */
 export function avatarMoodForTotal(total: number): AvatarMood {
-  if (total <= 0) return { emotion: 'Sad', shiny: false };
   if (total < 5000) return { emotion: 'Normal', shiny: false };
   if (total < 20000) return { emotion: 'Happy', shiny: false };
   if (total < 50000) return { emotion: 'Joyous', shiny: false };
@@ -39,7 +58,7 @@ export function avatarMoodForTotal(total: number): AvatarMood {
 export function portraitMoodChain(mood: AvatarMood): AvatarMood[] {
   const ladder: PortraitEmotion[] = ['Joyous', 'Happy', 'Normal'];
   const i = ladder.indexOf(mood.emotion);
-  // Sad / Teary-Eyed aren't on the ladder → try themselves, then Normal.
+  // Teary-Eyed isn't on the ladder → try itself, then Normal.
   const tail: PortraitEmotion[] = i >= 0 ? ladder.slice(i) : [mood.emotion, 'Normal'];
   const chain: AvatarMood[] = [];
   // Top tier is shiny: keep the ✨ look across every emotion downgrade (shiny
@@ -54,8 +73,6 @@ export function portraitMoodChain(mood: AvatarMood): AvatarMood[] {
 export function avatarMoodMessage(mood: AvatarMood): string {
   if (mood.shiny) return 'Ese carrito brilla como yo! ✨';
   switch (mood.emotion) {
-    case 'Sad':
-      return 'Estoy triste de ver el carrito vacío';
     case 'Normal':
       return 'Buen comienzo… ¿y si agregamos más al carrito?';
     case 'Happy':
@@ -119,5 +136,13 @@ export class PokemonService {
    *  the mood is already non-shiny 'Normal' the chain is a single URL. */
   portraitUrlChain(n: number, mood: AvatarMood): string[] {
     return [...new Set(portraitMoodChain(mood).map((m) => this.portraitUrl(n, m)))];
+  }
+
+  /** Pokémon HOME sprite (AVIF, 2x) for the Pokédex grid, keyed by the lowercase
+   *  PokeAPI name slug. Remote CDN (pokemondb) — fine for reference sprites,
+   *  unlike product imagery which is self-hosted. */
+  spriteUrl(name: string): string {
+    const slug = SPRITE_NAME_OVERRIDES[name] ?? name;
+    return `https://img.pokemondb.net/sprites/home/normal/2x/avif/${slug}.avif`;
   }
 }

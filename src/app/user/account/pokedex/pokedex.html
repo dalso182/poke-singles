@@ -1,0 +1,67 @@
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<div class="pdx">
+  <header class="pdx__head">
+    <div class="pdx__titles">
+      <span class="pdx__icon"><mat-icon>catching_pokemon</mat-icon></span>
+      <div>
+        <h2 class="pdx__title">Mi Pokédex</h2>
+        <p class="pdx__sub">Completa tu colección por región.</p>
+      </div>
+    </div>
+    <span class="pdx__total brand-mono">{{ progress().total }} / {{ total() }}</span>
+  </header>
+
+  <nav class="pdx__regions" aria-label="Saltar a región">
+    @for (r of regionDefs; track r.key) {
+      <button
+        type="button"
+        class="pdx__region-link"
+        [class.is-active]="activeRegion() === r.key"
+        (click)="jumpTo(r.key)"
+      >
+        {{ r.label }}
+      </button>
+    }
+  </nav>
+
+  @for (r of regions(); track r.key) {
+    <section
+      #regionSection
+      class="pdx__region"
+      [id]="'region-' + r.key"
+      [attr.data-region]="r.key"
+    >
+      <header class="pdx__region-head">
+        <h3 class="pdx__region-name">{{ r.label }}</h3>
+        <span class="pdx__region-count brand-mono">
+          {{ progress().byRegion.get(r.key) ?? 0 }} / {{ r.list.length }}
+        </span>
+      </header>
+
+      <div class="pdx__grid">
+        @for (p of r.list; track p.number) {
+          <div class="pdx__card" [class.pdx__card--locked]="!caught().has(p.number)">
+            <span class="pdx__thumb">
+              <span class="pdx__ph brand-mono" aria-hidden="true">#{{ dex(p.number) }}</span>
+              <img
+                class="pdx__img"
+                [src]="sprite(p.name)"
+                [alt]="p.displayName"
+                width="100"
+                height="100"
+                loading="lazy"
+                decoding="async"
+                (error)="onImgError($event)"
+              />
+            </span>
+            <span class="pdx__dex brand-mono">#{{ dex(p.number) }}</span>
+            <span class="pdx__name">{{ p.displayName }}</span>
+          </div>
+        }
+      </div>
+    </section>
+  }
+</div>

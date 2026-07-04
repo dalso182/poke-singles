@@ -885,6 +885,8 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_pokemon_number: number | null
+          caught_pokemon_numbers: number[]
           created_at: string
           default_shipping_address: Json | null
           full_name: string | null
@@ -893,6 +895,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          avatar_pokemon_number?: number | null
+          caught_pokemon_numbers?: number[]
           created_at?: string
           default_shipping_address?: Json | null
           full_name?: string | null
@@ -901,6 +905,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          avatar_pokemon_number?: number | null
+          caught_pokemon_numbers?: number[]
           created_at?: string
           default_shipping_address?: Json | null
           full_name?: string | null
@@ -1635,6 +1641,7 @@ export type Database = {
         Args: { p_category_slug?: string; p_found?: number; p_term: string }
         Returns: undefined
       }
+      order_accepts_proof: { Args: { p_prefix: string }; Returns: boolean }
       place_order: { Args: { p_input: Json }; Returns: Json }
       raffle_category_id: { Args: never; Returns: string }
       search_card_type_counts: {

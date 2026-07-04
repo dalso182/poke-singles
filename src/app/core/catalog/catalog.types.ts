@@ -238,6 +238,10 @@ export interface ProfileRow {
    *  is a static asset (assets/images/avatars/{number}.png); the list it's
    *  picked from is client-side reference data. Null = no avatar chosen. */
   avatar_pokemon_number: number | null;
+  /** National-dex numbers the customer has "caught" — their personal Pokédex
+   *  collection. Read on /account to render owned (color) vs not-owned (grayed)
+   *  Pokémon. Defaults to an empty array; the mechanism that fills it is TBD. */
+  caught_pokemon_numbers: number[];
   created_at: string;
   updated_at: string;
 }
@@ -245,7 +249,11 @@ export interface ProfileRow {
 export type ProfileUpdate = Partial<
   Pick<
     ProfileRow,
-    'full_name' | 'phone' | 'default_shipping_address' | 'avatar_pokemon_number'
+    | 'full_name'
+    | 'phone'
+    | 'default_shipping_address'
+    | 'avatar_pokemon_number'
+    | 'caught_pokemon_numbers'
   >
 >;
 
