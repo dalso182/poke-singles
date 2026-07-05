@@ -240,7 +240,9 @@ export interface ProfileRow {
   avatar_pokemon_number: number | null;
   /** National-dex numbers the customer has "caught" — their personal Pokédex
    *  collection. Read on /account to render owned (color) vs not-owned (grayed)
-   *  Pokémon. Defaults to an empty array; the mechanism that fills it is TBD. */
+   *  Pokémon. SERVER-ONLY writes: column-level grants restrict clients, and the
+   *  open_pokeball RPC is the sole write path (the redemption economy would be
+   *  cheatable otherwise) — hence not part of ProfileUpdate. */
   caught_pokemon_numbers: number[];
   created_at: string;
   updated_at: string;
@@ -249,11 +251,7 @@ export interface ProfileRow {
 export type ProfileUpdate = Partial<
   Pick<
     ProfileRow,
-    | 'full_name'
-    | 'phone'
-    | 'default_shipping_address'
-    | 'avatar_pokemon_number'
-    | 'caught_pokemon_numbers'
+    'full_name' | 'phone' | 'default_shipping_address' | 'avatar_pokemon_number'
   >
 >;
 
@@ -757,7 +755,7 @@ export interface CouponReportResult {
 
 // ---- Loyalty points ----
 
-export type LoyaltyTransactionKind = 'earn' | 'reversal' | 'adjust';
+export type LoyaltyTransactionKind = 'earn' | 'reversal' | 'adjust' | 'redeem';
 
 /** One row of the customer-facing loyalty ledger (RLS-scoped to self). `amount`
  *  is signed: positive earned, negative reversed/(later) redeemed. Balance is
@@ -803,6 +801,30 @@ export interface LoyaltyReportResult {
   total: number;
   page: number;
   pageSize: number;
+}
+
+/** One Pokéball tier from app_settings.pokeball_tiers — the single source of
+ *  truth for the redemption economy: the modal displays these numbers and the
+ *  open_pokeball RPC enforces them. Styling (colors) stays client-side. */
+export interface PokeballTier {
+  key: string;
+  /** Display name; also used in the ledger description ("Pokébola: …"). */
+  label: string;
+  /** Price in Poke-Monedas. */
+  cost: number;
+  /** How many random not-owned Pokémon this ball awards. */
+  award: number;
+}
+
+/** Result of the open_pokeball RPC. Business failures come back as
+ *  `{ ok: false, error }` (INSUFFICIENT_POINTS | POKEDEX_COMPLETE |
+ *  UNKNOWN_TIER | NOT_AUTHENTICATED | NO_PROFILE | RPC_ERROR). */
+export interface PokeballOpenResult {
+  ok: boolean;
+  error?: string;
+  /** National-dex numbers awarded (on success). */
+  awarded?: number[];
+  new_balance?: number;
 }
 
 // Row shape returned by the `products_search` view / `search_products` RPC.
@@ -918,6 +940,8 @@ export interface AppSettingsRow {
   loyalty_enabled: boolean;
   /** Colones of net merchandise (subtotal − discount) that earn 1 point. 1000 = 1 pt/₡1000. */
   loyalty_colones_per_point: number;
+  /** Pokéball redemption tiers (cost/award per ball) — see PokeballTier. */
+  pokeball_tiers: PokeballTier[];
   updated_at: string;
 }
 

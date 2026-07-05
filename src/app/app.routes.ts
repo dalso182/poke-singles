@@ -204,6 +204,16 @@ export const routes: Routes = [
           import('./user/account/account').then((m) => m.Account),
       },
       {
+        // Deep link straight into the Mi Pokédex view (header "Canjear" chip,
+        // future promos). Same Account component; `initialView` binds from
+        // route data via withComponentInputBinding.
+        path: 'account/pokedex',
+        canActivate: [customerGuard],
+        data: { initialView: 'pokedex' },
+        loadComponent: () =>
+          import('./user/account/account').then((m) => m.Account),
+      },
+      {
         path: 'cart',
         loadComponent: () =>
           import('./user/cart-page/cart-page').then((m) => m.CartPage),

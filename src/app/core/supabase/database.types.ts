@@ -49,6 +49,7 @@ export type Database = {
           maintenance_message: string | null
           maintenance_mode: boolean
           order_notification_recipients: string
+          pokeball_tiers: Json
           price_review_enabled: boolean
           price_review_floor_crc: number
           price_review_threshold_pct: number
@@ -65,6 +66,7 @@ export type Database = {
           maintenance_message?: string | null
           maintenance_mode?: boolean
           order_notification_recipients?: string
+          pokeball_tiers?: Json
           price_review_enabled?: boolean
           price_review_floor_crc?: number
           price_review_threshold_pct?: number
@@ -81,6 +83,7 @@ export type Database = {
           maintenance_message?: string | null
           maintenance_mode?: boolean
           order_notification_recipients?: string
+          pokeball_tiers?: Json
           price_review_enabled?: boolean
           price_review_floor_crc?: number
           price_review_threshold_pct?: number
@@ -1641,6 +1644,7 @@ export type Database = {
         Args: { p_category_slug?: string; p_found?: number; p_term: string }
         Returns: undefined
       }
+      open_pokeball: { Args: { p_tier: string }; Returns: Json }
       order_accepts_proof: { Args: { p_prefix: string }; Returns: boolean }
       place_order: { Args: { p_input: Json }; Returns: Json }
       raffle_category_id: { Args: never; Returns: string }

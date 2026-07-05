@@ -1,4 +1,4 @@
-import { Component, inject, output, signal } from '@angular/core';
+import { Component, computed, inject, output, signal } from '@angular/core';
 import { RouterLink, Router } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
@@ -49,29 +49,22 @@ export class Header {
 
   /** Account dropdown open state. */
   protected readonly menuOpen = signal(false);
-  /** Poke-Coins (loyalty) balance, lazy-loaded the first time the menu opens. */
-  protected readonly points = signal(0);
-  private pointsLoaded = false;
+  /** Poke-Coins (loyalty) balance — the shared LoyaltyService signal, so a
+   *  spend in the Pokéball modal updates this chip too. Lazy-loaded the first
+   *  time the menu opens; the service clears it on sign-out. */
+  protected readonly points = computed(() => this.loyalty.balance() ?? 0);
 
   protected toggleMenu(): void {
     const next = !this.menuOpen();
     this.menuOpen.set(next);
-    if (next && this.isSignedIn() && !this.pointsLoaded) {
-      this.pointsLoaded = true;
-      void this.loadPoints();
+    if (next && this.isSignedIn()) {
+      // Balance is non-critical header chrome — swallow load failures.
+      void this.loyalty.ensureLoaded().catch(() => undefined);
     }
   }
 
   protected closeMenu(): void {
     this.menuOpen.set(false);
-  }
-
-  private async loadPoints(): Promise<void> {
-    try {
-      this.points.set(await this.loyalty.getMyBalance());
-    } catch {
-      // Balance is non-critical header chrome — leave it at 0 on failure.
-    }
   }
 
   // Tooltip content shown on hover of the search-help icon. Lists every
@@ -110,9 +103,8 @@ export class Header {
     if (error) {
       this.snack.open(error, 'OK', { duration: 4000 });
     } else {
-      // Reset the cached balance so a re-login fetches the new user's total.
-      this.pointsLoaded = false;
-      this.points.set(0);
+      // LoyaltyService clears its balance signal on sign-out, so a re-login
+      // fetches the new user's total — nothing to reset here.
       this.snack.open('Sesión cerrada', 'OK', { duration: 2500 });
     }
   }

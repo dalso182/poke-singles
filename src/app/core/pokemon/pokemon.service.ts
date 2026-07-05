@@ -71,14 +71,14 @@ export function portraitMoodChain(mood: AvatarMood): AvatarMood[] {
 
 /** Playful Spanish line shown on avatar hover for each mood. */
 export function avatarMoodMessage(mood: AvatarMood): string {
-  if (mood.shiny) return 'Ese carrito brilla como yo! ✨';
+  if (mood.shiny) return '¡Este carrito brilla como yo, mae! ✨';
   switch (mood.emotion) {
     case 'Normal':
-      return 'Buen comienzo… ¿y si agregamos más al carrito?';
+      return '¡Pura vida! ¿Armamos el carrito?';
     case 'Happy':
-      return '¡Muy bien, me gusta lo que veo en el carrito!';
+      return '¡Qué chiva lo que llevás!';
     case 'Joyous':
-      return 'Ufff que maravilla de carrito!';
+      return 'Uffff!!, carrito de miedo 🔥';
     default:
       return '';
   }

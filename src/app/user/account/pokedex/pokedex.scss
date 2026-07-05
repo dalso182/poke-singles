@@ -56,6 +56,13 @@ $blue-soft: #e8edf8;
   color: var(--text-secondary);
 }
 
+.pdx__head-side {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .pdx__total {
   flex: 0 0 auto;
   padding: 6px 12px;
@@ -65,6 +72,36 @@ $blue-soft: #e8edf8;
   font-size: 12px;
   font-weight: 600;
   color: var(--text-secondary);
+}
+
+// Navy CTA (matches .acc-save-btn styling, compact size).
+.pdx__capture {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 10px;
+  background: $navy;
+  color: #fff;
+  font-family: var(--font-brand);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover {
+    background: #172e6e;
+  }
 }
 
 // ───────── Sticky region jump bar ─────────
@@ -179,6 +216,10 @@ $blue-soft: #e8edf8;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  // The HOME sprites have a baked-in white background — keep them on a white
+  // frame so it blends, even on the tonal locked tiles.
+  background: var(--surface-card);
+  border-radius: 8px;
 }
 
 .pdx__ph {

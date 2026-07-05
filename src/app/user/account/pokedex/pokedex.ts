@@ -6,10 +6,12 @@ import {
   computed,
   effect,
   inject,
+  output,
   signal,
   viewChildren,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import {
@@ -37,8 +39,13 @@ import { ProfilesService } from '../../../core/auth/profiles.service';
 export class Pokedex implements OnDestroy {
   private readonly pokemon = inject(PokemonService);
   private readonly profiles = inject(ProfilesService);
+  private readonly dialog = inject(MatDialog);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
+  /** Emitted after the Pokéball modal closes having opened ≥1 ball, so the
+   *  account page can refresh its Poke-Monedas history list. */
+  readonly coinsSpent = output<void>();
 
   protected readonly regionDefs = POKEDEX_REGIONS;
   protected readonly all = signal<Pokemon[]>([]);
@@ -132,6 +139,23 @@ export class Pokedex implements OnDestroy {
       `#region-${key}`,
     ) as HTMLElement | null;
     el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /** Open the Pokéball redemption modal (lazy-imported — most Pokédex visits
+   *  don't open it). Dialog resolves `true` when at least one ball was opened;
+   *  the dialog itself already refreshed the profile + balance signals. */
+  protected async openCapture(): Promise<void> {
+    const { PokeballDialog } = await import('./pokeball-dialog/pokeball-dialog');
+    const ref = this.dialog.open(PokeballDialog, {
+      width: '720px',
+      maxWidth: '95vw',
+      maxHeight: '85vh',
+      autoFocus: 'first-tabbable',
+      restoreFocus: true,
+    });
+    ref.afterClosed().subscribe((opened?: boolean) => {
+      if (opened) this.coinsSpent.emit();
+    });
   }
 
   /** A missing sprite: hide the broken <img> and reveal the dex-number

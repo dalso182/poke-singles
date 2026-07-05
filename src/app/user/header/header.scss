@@ -255,6 +255,15 @@
   border: 1px solid #f0dca4;
   border-radius: 12px;
   background: linear-gradient(135deg, #f7f1de 0%, #fdf8e9 100%);
+}
+
+// Balance side (links to /account) — carries the row's flex layout.
+.acct-coins-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   text-decoration: none;
   cursor: pointer;
 }
@@ -302,6 +311,7 @@
   font-weight: 600;
 }
 
+// Canjear chip (links to /account/pokedex — the Pokéball redemption view).
 .acct-coins-redeem {
   flex: 0 0 auto;
   display: inline-flex;
@@ -316,11 +326,17 @@
   letter-spacing: 1px;
   text-transform: uppercase;
   font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
 
   mat-icon {
     font-size: 13px;
     width: 13px;
     height: 13px;
+  }
+
+  &:hover {
+    border-color: #d4941c;
   }
 }
 

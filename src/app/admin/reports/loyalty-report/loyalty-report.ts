@@ -124,6 +124,7 @@ export class LoyaltyReport {
       case 'earn':     return 'Ganados';
       case 'reversal': return 'Revertidos';
       case 'adjust':   return 'Ajuste';
+      case 'redeem':   return 'Canjeados';
     }
   }
 

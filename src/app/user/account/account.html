@@ -289,7 +289,7 @@
       </section>
       } @else {
         @defer (when view() === 'pokedex') {
-          <app-pokedex />
+          <app-pokedex (coinsSpent)="onCoinsSpent()" />
         } @placeholder {
           <mat-progress-bar mode="indeterminate" />
         }

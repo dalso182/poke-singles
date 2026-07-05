@@ -11,7 +11,13 @@
         <p class="pdx__sub">Completa tu colección por región.</p>
       </div>
     </div>
-    <span class="pdx__total brand-mono">{{ progress().total }} / {{ total() }}</span>
+    <div class="pdx__head-side">
+      <span class="pdx__total brand-mono">{{ progress().total }} / {{ total() }}</span>
+      <button type="button" class="pdx__capture" (click)="openCapture()">
+        <mat-icon>catching_pokemon</mat-icon>
+        Capturar más Pokémon
+      </button>
+    </div>
   </header>
 
   <nav class="pdx__regions" aria-label="Saltar a región">

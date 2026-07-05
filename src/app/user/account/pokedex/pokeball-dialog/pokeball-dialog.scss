@@ -1,0 +1,308 @@
+$navy: var(--mat-sys-primary, #1e3a8a);
+$navy-dark: #172e6e;
+$shell: #23233f; // pokeball band/button outline
+
+.pbd__title {
+  font-family: var(--font-brand);
+  font-weight: 800;
+  letter-spacing: -0.6px;
+}
+
+.pbd__content {
+  padding-top: 4px;
+}
+
+.pbd__intro {
+  margin: 0 0 10px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.pbd__balance {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--surface-tonal);
+  border: 1px solid var(--border-subtle);
+
+  .brand-mono {
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+  }
+}
+
+.pbd__coin {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+// Danger red for failures — never brand red (theme rule).
+.pbd__error {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--danger);
+}
+
+// ───────── Tier cards ─────────
+.pbd__tiers {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.pbd__tier {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 10px 12px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.pbd__tier-name {
+  margin-top: 8px;
+  font-family: var(--font-brand);
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.pbd__tier-award {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.pbd__tier-cost,
+.pbd__stage-meta {
+  font-size: 11px;
+  letter-spacing: 0.8px;
+  color: var(--text-tertiary);
+}
+
+.pbd__hint {
+  margin-top: 4px;
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: var(--text-tertiary);
+}
+
+// CSS-drawn pokeball placeholder. Artwork colors, deliberately NOT
+// var(--brand-red) (theme rule: brand red keeps its three allowed uses).
+.pbd__ball {
+  --ball-top: #e3350d; // classic pokeball red, not #CE1126
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 2px solid $shell;
+  background: linear-gradient(
+    to bottom,
+    var(--ball-top) 0 44%,
+    $shell 44% 56%,
+    #fff 56% 100%
+  );
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid $shell;
+  }
+
+  &--super { --ball-top: #2e6eb5; }
+  &--ultra { --ball-top: #fdd23c; }
+  &--master { --ball-top: #6d28a8; }
+
+  &--big {
+    width: 120px;
+    height: 120px;
+
+    &::after {
+      width: 28px;
+      height: 28px;
+      border-width: 4px;
+    }
+  }
+
+  &.is-shaking {
+    animation: pbd-shake 0.6s ease-in-out infinite;
+  }
+
+  &.is-bursting {
+    animation: pbd-burst 0.35s ease-in forwards;
+  }
+}
+
+@keyframes pbd-shake {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-10deg) translateX(-2px); }
+  75% { transform: rotate(10deg) translateX(2px); }
+}
+
+@keyframes pbd-burst {
+  to {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+// ───────── Open stage ─────────
+.pbd__stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 24px 0 12px;
+}
+
+.pbd__stage-name {
+  margin-top: 10px;
+  font-family: var(--font-brand);
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.pbd__stage-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+// ───────── Reveal ─────────
+.pbd__reveal {
+  padding: 8px 0;
+  text-align: center;
+}
+
+.pbd__reveal-title {
+  margin: 0 0 16px;
+  font-family: var(--font-brand);
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.pbd__catches {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+// Fade-in + soft zoom per catch, staggered via inline animation-delay.
+// White card: the HOME sprites ship a white background, so a white surface
+// makes it invisible (a tonal one shows it as a box).
+.pbd__catch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 104px;
+  padding: 10px 6px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  opacity: 0;
+  animation: pbd-pop 0.45s ease-out both;
+}
+
+@keyframes pbd-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.pbd__catch-img {
+  object-fit: contain;
+}
+
+.pbd__catch-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+// ───────── Buttons ─────────
+.pbd__cta {
+  padding: 0 22px;
+  height: 40px;
+  border: none;
+  border-radius: 9px;
+  background: $navy;
+  color: #fff;
+  font-family: var(--font-brand);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: $navy-dark;
+  }
+
+  &:disabled {
+    background: var(--surface-tonal-2);
+    color: var(--text-tertiary);
+    cursor: not-allowed;
+  }
+
+  &--big {
+    height: 48px;
+    padding: 0 34px;
+    font-size: 13px;
+  }
+}
+
+.pbd__link {
+  padding: 8px 10px;
+  border: none;
+  background: none;
+  font-family: var(--font-brand);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    color: var(--text-primary);
+  }
+
+  &:disabled {
+    color: var(--text-tertiary);
+    cursor: not-allowed;
+  }
+}
+
+.pbd__actions {
+  padding: 8px 24px 16px;
+}
+
+.pbd__spacer {
+  flex: 1;
+}

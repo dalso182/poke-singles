@@ -1,0 +1,121 @@
+<h2 mat-dialog-title class="pbd__title">Capturar más Pokémon</h2>
+
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<mat-dialog-content class="pbd__content">
+  @switch (step()) {
+    <!-- 1 · Choose a ball -->
+    @case ('choose') {
+      <p class="pbd__intro">
+        Canjea tus Poke-Monedas por Pokébolas y captura Pokémon al azar para tu Pokédex.
+      </p>
+      <div class="pbd__balance">
+        <img class="pbd__coin" src="assets/images/coin-sm.png" alt="" />
+        <span class="brand-mono">Tienes {{ balance() }} Poke-Monedas</span>
+      </div>
+
+      @if (errorMsg()) {
+        <p class="pbd__error">{{ errorMsg() }}</p>
+      }
+
+      <div class="pbd__tiers">
+        @for (t of tiers(); track t.key) {
+          <div class="pbd__tier">
+            <!-- Placeholder art (CSS-drawn); swap for an <img> when artwork lands. -->
+            <span class="pbd__ball pbd__ball--{{ t.key }}" aria-hidden="true"></span>
+            <span class="pbd__tier-name">{{ t.label }}</span>
+            <span class="pbd__tier-award">Otorga {{ t.award }} Pokémon</span>
+            <span class="pbd__tier-cost brand-mono">{{ costLabel(t) }}</span>
+            <button
+              type="button"
+              class="pbd__cta"
+              [disabled]="!canAfford(t)"
+              (click)="choose(t)"
+            >
+              Canjear
+            </button>
+            @if (!canAfford(t)) {
+              <span class="pbd__hint">{{ earnHint }}</span>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- 2 · Open the selected ball -->
+    @case ('open') {
+      @if (selected(); as tier) {
+        <div class="pbd__stage">
+          <span
+            class="pbd__ball pbd__ball--{{ tier.key }} pbd__ball--big"
+            [class.is-shaking]="opening()"
+            [class.is-bursting]="bursting()"
+            aria-hidden="true"
+          ></span>
+          <span class="pbd__stage-name">{{ tier.label }}</span>
+          <span class="pbd__stage-meta brand-mono">{{ costLabel(tier) }}</span>
+
+          @if (errorMsg()) {
+            <p class="pbd__error">{{ errorMsg() }}</p>
+          }
+
+          <div class="pbd__stage-actions">
+            <button
+              type="button"
+              class="pbd__cta pbd__cta--big"
+              [disabled]="opening() || bursting()"
+              (click)="open()"
+            >
+              {{ opening() || bursting() ? 'Abriendo…' : 'Abrir' }}
+            </button>
+            <button
+              type="button"
+              class="pbd__link"
+              [disabled]="opening() || bursting()"
+              (click)="backToChoose()"
+            >
+              Volver
+            </button>
+          </div>
+        </div>
+      }
+    }
+
+    <!-- 3 · Reveal the catches -->
+    @case ('reveal') {
+      <div class="pbd__reveal">
+        <p class="pbd__reveal-title">
+          {{ awarded().length === 1 ? '¡Capturaste 1 Pokémon!' : '¡Capturaste ' + awarded().length + ' Pokémon!' }}
+        </p>
+        <div class="pbd__catches">
+          @for (p of awarded(); track p.number; let i = $index) {
+            <div class="pbd__catch" [style.animation-delay.ms]="i * 140">
+              <img
+                class="pbd__catch-img"
+                [src]="sprite(p)"
+                [alt]="p.displayName"
+                width="88"
+                height="88"
+                (error)="onImgError($event)"
+              />
+              <span class="pbd__catch-name">{{ p.displayName }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions class="pbd__actions">
+  @if (step() === 'reveal') {
+    <button type="button" class="pbd__link" (click)="backToChoose()">Abrir otra</button>
+    <span class="pbd__spacer"></span>
+    <button type="button" class="pbd__cta" (click)="close()">Listo</button>
+  } @else {
+    <span class="pbd__spacer"></span>
+    <button type="button" class="pbd__link" (click)="close()">Cerrar</button>
+  }
+</mat-dialog-actions>

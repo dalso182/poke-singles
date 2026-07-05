@@ -84,22 +84,30 @@
               </div>
             </div>
 
-            <!-- Poke-Coins -->
+            <!-- Poke-Coins. Two sibling links (anchors can't nest): the
+                 balance goes to the account page, Canjear deep-links into
+                 the Mi Pokédex view to spend coins on Pokébolas. -->
             <div class="acct-coins-wrap">
-              <a routerLink="/account" class="acct-coins" (click)="closeMenu()">
-                <img class="acct-coins-medal" src="assets/images/coin-sm.png" alt="" />
-                <span class="acct-coins-text">
-                  <span class="acct-coins-label brand-mono">Poke-Coins</span>
-                  <span class="acct-coins-bal">
-                    <span class="acct-coins-num">{{ points() }}</span>
-                    <span class="acct-coins-unit">coins</span>
+              <div class="acct-coins">
+                <a routerLink="/account" class="acct-coins-main" (click)="closeMenu()">
+                  <img class="acct-coins-medal" src="assets/images/coin-sm.png" alt="" />
+                  <span class="acct-coins-text">
+                    <span class="acct-coins-label brand-mono">Poke-Coins</span>
+                    <span class="acct-coins-bal">
+                      <span class="acct-coins-num">{{ points() }}</span>
+                      <span class="acct-coins-unit">coins</span>
+                    </span>
                   </span>
-                </span>
-                <span class="acct-coins-redeem brand-mono">
+                </a>
+                <a
+                  routerLink="/account/pokedex"
+                  class="acct-coins-redeem brand-mono"
+                  (click)="closeMenu()"
+                >
                   <mat-icon>redeem</mat-icon>
                   Canjear
-                </span>
-              </a>
+                </a>
+              </div>
             </div>
 
             <!-- Items -->

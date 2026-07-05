@@ -7,10 +7,11 @@ import {
   computed,
   effect,
   inject,
+  input,
   signal,
   viewChild,
 } from '@angular/core';
-import { DecimalPipe, DatePipe } from '@angular/common';
+import { DecimalPipe, DatePipe, Location } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { nameValidator } from '../../shared/validators/name.validator';
 import { phoneValidator } from '../../shared/validators/phone.validator';
@@ -63,12 +64,14 @@ export class Account implements OnInit {
   private readonly avatarPicker = inject(AvatarPickerService);
   private readonly router = inject(Router);
   private readonly injector = inject(Injector);
+  private readonly location = inject(Location);
 
   // Single source of truth for the profile lives in ProfilesService so the
   // header avatar and this page stay in sync after an edit.
   protected readonly profile = this.profiles.profile;
   protected readonly myOrders = signal<OrderRow[]>([]);
-  protected readonly points = signal(0);
+  /** Shared LoyaltyService balance — stays fresh after a Pokéball spend. */
+  protected readonly points = computed(() => this.loyalty.balance() ?? 0);
   protected readonly pointsHistory = signal<LoyaltyTransactionRow[]>([]);
   protected readonly loading = signal(false);
   protected readonly savingPersonal = signal(false);
@@ -84,6 +87,11 @@ export class Account implements OnInit {
 
   /** Which rail nav item is highlighted; driven by clicking a nav link. */
   protected readonly activeSection = signal<'datos' | 'direccion' | 'pedidos' | 'puntos'>('datos');
+
+  /** Route-data input: /account/pokedex sets 'pokedex' to open that view
+   *  directly. NOTE: withComponentInputBinding overwrites the default with
+   *  undefined on routes without the key — always read with `?? 'panels'`. */
+  readonly initialView = input<'panels' | 'pokedex' | undefined>();
 
   /** Content mode: the scrollable settings panels, or the full Pokédex grid.
    *  Both share the rail; selecting a panel section returns to 'panels'. */
@@ -138,6 +146,7 @@ export class Account implements OnInit {
   }
 
   ngOnInit(): void {
+    this.view.set(this.initialView() ?? 'panels');
     void this.bootstrap();
   }
 
@@ -148,15 +157,14 @@ export class Account implements OnInit {
       // come back empty on a hard refresh. customerGuard awaits this too,
       // but defensive here in case the page is reached without the guard.
       await this.auth.ready;
-      const [profile, orders, points, pointsHistory] = await Promise.all([
+      const [profile, orders, , pointsHistory] = await Promise.all([
         this.profiles.ensureLoaded(),
         this.orders.getMyOrders().catch(() => [] as OrderRow[]),
-        this.loyalty.getMyBalance().catch(() => 0),
+        this.loyalty.ensureLoaded().catch(() => 0),
         this.loyalty.getMyHistory().catch(() => [] as LoyaltyTransactionRow[]),
       ]);
       console.debug('[account] profile fetched', profile);
       this.myOrders.set(orders);
-      this.points.set(points);
       this.pointsHistory.set(pointsHistory);
       if (profile) {
         const addr = profile.default_shipping_address;
@@ -200,6 +208,9 @@ export class Account implements OnInit {
    *  switching back from the Pokédex view (panels need to render first). */
   protected selectPanel(key: 'datos' | 'direccion' | 'pedidos' | 'puntos'): void {
     this.view.set('panels');
+    // Keep the address bar truthful without a router navigation (which would
+    // recreate the component) or polluting history.
+    this.location.replaceState('/account');
     this.activeSection.set(key);
     afterNextRender(
       () =>
@@ -214,6 +225,7 @@ export class Account implements OnInit {
   /** Rail nav: switch the content area to the full Pokédex grid. */
   protected showPokedex(): void {
     this.view.set('pokedex');
+    this.location.replaceState('/account/pokedex');
   }
 
   private sectionEl(
@@ -234,6 +246,18 @@ export class Account implements OnInit {
       case 'earn':     return 'Puntos ganados';
       case 'reversal': return 'Puntos revertidos';
       case 'adjust':   return 'Ajuste';
+      case 'redeem':   return 'Poke-Monedas canjeadas';
+    }
+  }
+
+  /** A Pokéball was opened inside the Pokédex view — the balance signal is
+   *  already fresh (LoyaltyService), but the history list needs a re-fetch so
+   *  the new 'redeem' row shows when the user switches to the Puntos panel. */
+  protected async onCoinsSpent(): Promise<void> {
+    try {
+      this.pointsHistory.set(await this.loyalty.getMyHistory());
+    } catch {
+      // Non-critical — history refreshes on the next full page load.
     }
   }
 
