@@ -91,6 +91,8 @@ function randomQuantity() {
 }
 
 // Mirrors src/app/admin/add-product/add-product.ts:computeSlug().
+// The app version also appends a consignment seller-code part; imports/seeds
+// have no seller, so that part is intentionally absent here.
 function computeSlug({ name, cardNumber, setCode, variant, condition, language }) {
   const langSuffix = language && language !== 'EN' ? language : '';
   const parts = [name, cardNumber, setCode, variant, condition, langSuffix].filter(Boolean);

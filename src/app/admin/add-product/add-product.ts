@@ -47,6 +47,7 @@ import { CategoriesService } from '../../core/catalog/categories.service';
 import { CardTypesService } from '../../core/catalog/card-types.service';
 import { ProductsService } from '../../core/catalog/products.service';
 import { RafflesService } from '../../core/catalog/raffles.service';
+import { SellersService } from '../../core/catalog/sellers.service';
 import { SetsService } from '../../core/catalog/sets.service';
 import { TcgdexCardsService } from '../../core/catalog/tcgdex-cards.service';
 import { firstTcgplayerVariant, tcgplayerMarketUsd } from '../../core/catalog/tcgplayer-pricing';
@@ -61,6 +62,7 @@ import type {
   CardTypeRow,
   CategoryRow,
   ProductRow,
+  SellerRow,
   SetRow,
   VariantCode,
 } from '../../core/catalog/catalog.types';
@@ -105,6 +107,7 @@ export class AddProduct {
   private readonly raffles = inject(RafflesService);
   private readonly categories = inject(CategoriesService);
   private readonly cardTypes = inject(CardTypesService);
+  private readonly sellers = inject(SellersService);
   private readonly sets = inject(SetsService);
   private readonly tcgdexCards = inject(TcgdexCardsService);
   private readonly settings = inject(AppSettingsService);
@@ -122,6 +125,12 @@ export class AddProduct {
   protected readonly languages = LANGUAGE_OPTIONS;
   protected readonly categoriesList = signal<CategoryRow[]>([]);
   protected readonly cardTypesList = signal<CardTypeRow[]>([]);
+  /** Active consignment sellers for the "Vendedor" select. Null selection =
+   *  house inventory (Poke-Singles) — the default. */
+  protected readonly sellersList = signal<SellerRow[]>([]);
+  private readonly sellersById = computed(
+    () => new Map(this.sellersList().map((s) => [s.id, s])),
+  );
   protected readonly selectedCardTypeIds = signal<Set<string>>(new Set());
   /** Single sub-type selection for sealed/accessories (one per product). */
   protected readonly selectedSubtypeId = signal<string | null>(null);
@@ -236,6 +245,7 @@ export class AddProduct {
     ],
     set_id: [null as string | null],
     category_id: ['', Validators.required],
+    seller_id: [null as string | null],
     condition: ['NM'],
     language: ['EN', Validators.required],
     variant: [''],
@@ -275,14 +285,16 @@ export class AddProduct {
 
   private async bootstrap(): Promise<void> {
     try {
-      const [cats, sets, types] = await Promise.all([
+      const [cats, sets, types, sellers] = await Promise.all([
         this.categories.list({ activeOnly: true }),
         this.sets.list(),
         this.cardTypes.list({ activeOnly: true }),
+        this.sellers.list({ activeOnly: true }),
       ]);
       this.categoriesList.set(cats);
       this.setsById.set(new Map(sets.map((s) => [s.id, s])));
       this.cardTypesList.set(types);
+      this.sellersList.set(sellers);
       // "Agregar rifa" deep-links here with ?category=rifas — preselect the
       // Rifas category so the Datos de la rifa section is revealed.
       if (this.route.snapshot.queryParamMap.get('category') === 'rifas') {
@@ -420,6 +432,7 @@ export class AddProduct {
       image_url: '',
       set_id: null,
       category_id: '',
+      seller_id: null,
       condition: 'NM',
       language: 'EN',
       variant: '',
@@ -477,10 +490,16 @@ export class AddProduct {
     // drop card_number/variant/condition so defaults like 'NM' don't leak in.
     const slug = this.categoriesList().find((c) => c.id === raw.category_id)?.slug;
     const isCard = slug !== undefined && CARD_CATEGORY_SLUGS.includes(slug);
+    // Consignment products append the seller's 2-char code as the last slug
+    // part — it disambiguates the same card offered by different sellers.
+    // House inventory (no seller) contributes nothing.
+    const sellerCode = raw.seller_id
+      ? this.sellersById().get(raw.seller_id)?.code?.toLowerCase() ?? ''
+      : '';
     const parts = (
       isCard
-        ? [raw.name ?? '', raw.card_number ?? '', setCode, raw.variant ?? '', raw.condition ?? '', langSuffix]
-        : [raw.name ?? '', setCode, langSuffix]
+        ? [raw.name ?? '', raw.card_number ?? '', setCode, raw.variant ?? '', raw.condition ?? '', langSuffix, sellerCode]
+        : [raw.name ?? '', setCode, langSuffix, sellerCode]
     ).filter(Boolean);
     return parts
       .join('-')
@@ -517,6 +536,7 @@ export class AddProduct {
         image_url: raw.image_url || null,
         category_id: raw.category_id,
         set_id: raw.set_id || null,
+        seller_id: raw.seller_id || null,
         // Raffles are single-card prizes too, so they keep their condition even
         // though the rest of the card-only fields stay hidden for them.
         condition: isCard || this.isRaffle() ? raw.condition || null : null,
@@ -574,6 +594,7 @@ export class AddProduct {
       image_url: '',
       set_id: null,
       category_id: this.form.get('category_id')!.value, // keep last category
+      seller_id: null,
       condition: 'NM',
       language: this.form.get('language')!.value, // keep last language
       variant: '',

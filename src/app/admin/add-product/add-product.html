@@ -223,6 +223,16 @@
                 <mat-error>Debe ser menor al precio normal.</mat-error>
               }
             </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Vendedor</mat-label>
+              <mat-select formControlName="seller_id" panelClass="admin-form-overlay">
+                <mat-option [value]="null">Poke-Singles</mat-option>
+                @for (s of sellersList(); track s.id) {
+                  <mat-option [value]="s.id">{{ s.name }} ({{ s.code }})</mat-option>
+                }
+              </mat-select>
+              <mat-hint>Consignación — se fija al crear y agrega su código al slug.</mat-hint>
+            </mat-form-field>
             <app-labeled-toggle formControlName="featured" style="grid-column: span 2">
               Destacar en la portada
             </app-labeled-toggle>

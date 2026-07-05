@@ -110,6 +110,8 @@ function sanitizeCard(card) {
 }
 
 // Mirrors src/app/admin/add-product/add-product.ts:computeSlug() and the seed script.
+// The app version also appends a consignment seller-code part; OpenCart imports
+// have no seller, so that part is intentionally absent here.
 function computeSlug({ name, cardNumber, setCode, variant, condition, language }) {
   const langSuffix = language && language !== 'EN' ? language : '';
   const parts = [name, cardNumber, setCode, variant, condition, langSuffix].filter(Boolean);

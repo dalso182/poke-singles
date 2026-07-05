@@ -86,28 +86,67 @@
 <mat-sidenav-container class="admin-container">
   <mat-sidenav mode="side" [opened]="sidenavOpen()" class="admin-sidenav">
     <nav class="admin-nav" aria-label="Administración">
-      @for (item of items; track item.path) {
-        <a
-          class="nav-row"
-          [routerLink]="item.path"
-          routerLinkActive="nav-row--active"
-          #rla="routerLinkActive"
-          [routerLinkActiveOptions]="{ exact: !!item.exact }"
-          [attr.aria-current]="rla.isActive ? 'page' : null"
-        >
-          <mat-icon class="nav-row__icon">{{ item.icon }}</mat-icon>
-          <span class="nav-row__label">{{ item.label }}</span>
-          @if (item.count && item.count() !== null) {
-            <span
-              class="nav-badge"
-              [class.nav-badge--amber]="item.badgeTone === 'amber'"
+      @for (section of sections; track section.key) {
+        <div class="nav-section">
+          @if (section.label === null) {
+            @for (item of section.items; track item.path) {
+              <ng-container
+                [ngTemplateOutlet]="navRow"
+                [ngTemplateOutletContext]="{ $implicit: item, child: false }"
+              />
+            }
+          } @else {
+            <button
+              type="button"
+              class="nav-group"
+              [class.nav-group--open]="isOpen(section)"
+              (click)="toggleGroup(section.key)"
+              [attr.aria-expanded]="isOpen(section)"
             >
-              {{ item.count() | number }}
-            </span>
+              <mat-icon class="nav-row__icon">{{ section.icon }}</mat-icon>
+              <span class="nav-group__label">{{ section.label }}</span>
+              @if (!isOpen(section) && collapsedAmberCount(section) > 0) {
+                <span class="nav-badge nav-badge--amber">
+                  {{ collapsedAmberCount(section) | number }}
+                </span>
+              }
+              <mat-icon class="nav-group__chevron">expand_more</mat-icon>
+            </button>
+            @if (isOpen(section)) {
+              @for (item of section.items; track item.path) {
+                <ng-container
+                  [ngTemplateOutlet]="navRow"
+                  [ngTemplateOutletContext]="{ $implicit: item, child: true }"
+                />
+              }
+            }
           }
-        </a>
+        </div>
       }
     </nav>
+
+    <ng-template #navRow let-item let-child="child">
+      <a
+        class="nav-row"
+        [class.nav-row--child]="child"
+        [routerLink]="item.path"
+        routerLinkActive="nav-row--active"
+        #rla="routerLinkActive"
+        [routerLinkActiveOptions]="{ exact: !!item.exact }"
+        [attr.aria-current]="rla.isActive ? 'page' : null"
+      >
+        <mat-icon class="nav-row__icon">{{ item.icon }}</mat-icon>
+        <span class="nav-row__label">{{ item.label }}</span>
+        @if (item.count && item.count() !== null) {
+          <span
+            class="nav-badge"
+            [class.nav-badge--amber]="item.badgeTone === 'amber'"
+          >
+            {{ item.count() | number }}
+          </span>
+        }
+      </a>
+    </ng-template>
 
     <div class="store-status">
       <div class="store-status__card">

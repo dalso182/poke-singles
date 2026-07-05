@@ -1,0 +1,30 @@
+// Vendedores-specific bits only. Table look comes from `.app-table` + primitives.
+
+.sellers__add {
+  margin-bottom: 16px;
+}
+
+.sellers__add-form {
+  display: grid;
+  grid-template-columns: 120px 1fr 1fr 1fr auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.sellers__code-field {
+  width: 120px;
+
+  input {
+    text-transform: uppercase;
+  }
+}
+
+.sellers__scroll {
+  overflow-x: auto;
+}
+
+.sellers__empty {
+  padding: 32px 24px;
+  text-align: center;
+  color: var(--text-secondary);
+}

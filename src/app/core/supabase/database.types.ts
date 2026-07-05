@@ -438,6 +438,9 @@ export type Database = {
           product_set_name: string | null
           product_slug: string
           quantity: number
+          seller_code: string | null
+          seller_id: string | null
+          seller_name: string | null
           unit_price: number
         }
         Insert: {
@@ -453,6 +456,9 @@ export type Database = {
           product_set_name?: string | null
           product_slug: string
           quantity: number
+          seller_code?: string | null
+          seller_id?: string | null
+          seller_name?: string | null
           unit_price: number
         }
         Update: {
@@ -468,6 +474,9 @@ export type Database = {
           product_set_name?: string | null
           product_slug?: string
           quantity?: number
+          seller_code?: string | null
+          seller_id?: string | null
+          seller_name?: string | null
           unit_price?: number
         }
         Relationships: [
@@ -504,6 +513,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "rifas_listing"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "sellers"
             referencedColumns: ["id"]
           },
         ]
@@ -786,6 +802,7 @@ export type Database = {
           rarity: string | null
           regulation_mark: string | null
           sale_price: number | null
+          seller_id: string | null
           set_id: string | null
           slug: string
           stage: string | null
@@ -820,6 +837,7 @@ export type Database = {
           rarity?: string | null
           regulation_mark?: string | null
           sale_price?: number | null
+          seller_id?: string | null
           set_id?: string | null
           slug: string
           stage?: string | null
@@ -854,6 +872,7 @@ export type Database = {
           rarity?: string | null
           regulation_mark?: string | null
           sale_price?: number | null
+          seller_id?: string | null
           set_id?: string | null
           slug?: string
           stage?: string | null
@@ -875,6 +894,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "sellers"
             referencedColumns: ["id"]
           },
           {
@@ -1046,6 +1072,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sellers: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+        }
+        Relationships: []
       }
       sets: {
         Row: {

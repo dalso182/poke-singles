@@ -66,6 +66,31 @@ export interface SetInsert {
 
 export type SetUpdate = Partial<Omit<SetInsert, 'code'>>;
 
+/** Consignment seller. The house (Poke-Singles) has no row — a product with
+ *  `seller_id = null` is house inventory. Admin-only table. */
+export interface SellerRow {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  /** 2-char uppercase code; lowercased when appended to product slugs. */
+  code: string;
+  active: boolean;
+  created_at: string;
+}
+
+export interface SellerInsert {
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  code: string;
+  active?: boolean;
+}
+
+/** `code` is locked after creation: product slugs and order_items snapshots
+ *  embed it, so changing it would create silent drift. */
+export type SellerUpdate = Partial<Omit<SellerInsert, 'code'>>;
+
 export interface ProductRow {
   id: string;
   category_id: string;
@@ -98,6 +123,9 @@ export interface ProductRow {
   legal_standard: boolean | null;
   legal_expanded: boolean | null;
   featured: boolean;
+  /** Consignment owner; null = house inventory (Poke-Singles). Set at
+   *  creation only — never editable afterwards. */
+  seller_id: string | null;
 }
 
 export interface ProductInsert {
@@ -127,6 +155,7 @@ export interface ProductInsert {
   legal_standard?: boolean | null;
   legal_expanded?: boolean | null;
   featured?: boolean;
+  seller_id?: string | null;
 }
 
 /** ProductRow plus the joined set's name + printed_total. Returned by
@@ -135,6 +164,8 @@ export interface ProductInsert {
 export interface ProductListRow extends ProductRow {
   set_name: string | null;
   set_printed_total: number | null;
+  seller_code: string | null;
+  seller_name: string | null;
 }
 
 /** Minimal shape the shared <app-product-card> needs. Structurally satisfied
@@ -502,6 +533,10 @@ export interface OrderItemRow {
   product_condition: string | null;
   product_set_name: string | null;
   product_card_number: string | null;
+  /** Consignment snapshot (place_order v10). All null = house inventory. */
+  seller_id: string | null;
+  seller_code: string | null;
+  seller_name: string | null;
   unit_price: number;
   quantity: number;
   line_total: number;
@@ -883,7 +918,9 @@ export function normalizeSort(raw: string | null | undefined, hasQuery: boolean)
   return hasQuery ? DEFAULT_SORT_WITH_QUERY : DEFAULT_SORT_NO_QUERY;
 }
 
-export type ProductUpdate = Partial<Omit<ProductInsert, 'category_id'>> & {
+// `seller_id` is excluded outright: the seller is fixed at creation (a
+// duplicate card from another seller becomes a new product).
+export type ProductUpdate = Partial<Omit<ProductInsert, 'category_id' | 'seller_id'>> & {
   category_id?: string;
 };
 

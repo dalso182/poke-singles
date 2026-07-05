@@ -18,6 +18,11 @@
         <th mat-header-cell *matHeaderCellDef>Pedido</th>
         <td mat-cell *matCellDef="let row" class="is-mono">
           <span class="orders__hash">#</span><strong>{{ shortRef(row.order_number) }}</strong>
+          @if (row.has_consignment) {
+            <mat-icon class="orders__consign" matTooltip="Contiene ítems en consignación">
+              storefront
+            </mat-icon>
+          }
         </td>
       </ng-container>
 

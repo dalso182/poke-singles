@@ -208,6 +208,9 @@
                       >
                         {{ item.product_name }}
                       </a>
+                      @if (item.seller_code) {
+                        <app-pill tone="blue" [title]="item.seller_name">{{ item.seller_code }}</app-pill>
+                      }
                     </td>
                   </ng-container>
                   <ng-container matColumnDef="condition">
@@ -337,6 +340,9 @@
                     <span [class]="conditionClass(item.product_condition)">
                       {{ item.product_condition }}
                     </span>
+                  }
+                  @if (item.seller_code) {
+                    <app-pill tone="blue" [title]="item.seller_name">{{ item.seller_code }}</app-pill>
                   }
                 </div>
                 @if (isPicked(item.id)) {

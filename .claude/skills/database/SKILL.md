@@ -50,13 +50,15 @@ stock listings are never visible to anon clients on any query path).
 
 ## Schema overview
 
-- **Catalog:** `categories`, `sets`, `products`, `card_types` + `product_card_types`
-  junction (many-to-many), `tcgdex_cards` (JSONB cache of the TCGdex Card payload),
-  `app_settings`.
+- **Catalog:** `categories`, `sets`, `products` (with optional `seller_id` FK → sellers), `sellers`
+  (2-char code; admin-only RLS), `card_types` + `product_card_types` junction (many-to-many),
+  `tcgdex_cards` (JSONB cache of the TCGdex Card payload), `app_settings`.
 - **Customer:** `profiles` (1:1 with `auth.users`), `cart_items` (PK `(user_id, product_id)`),
   `carts` (1 row/user; holds `coupon_id`).
 - **Coupons:** `coupons` (soft-delete via `deleted_at`, optional `name` label), `coupon_redemptions`.
 - **Raffles:** `raffles` (1:1 with a Rifas-category product).
+- **Orders:** `orders`, `order_items` (with snapshot columns `seller_id / seller_code / seller_name`
+  capturing consignment attribution at checkout).
 - **Reporting/analytics:** `customer_activity` (login / order_created / registered events with
   IP), `search_log` (storefront searches: keyword + match count + IP). Both **RLS-enabled with
   no policies** — written only by security-definer fns, read only by admin report RPCs.
@@ -64,7 +66,10 @@ stock listings are never visible to anon clients on any query path).
   + suggested + `tcgplayer_product_id` + signed `diff_pct` + `condition_multiplier` reserved,
   per-row `ignored_at`), `price_check_runs` (small audit log: trigger / counts / error).
   Both admin-only RLS. `products.price_checked_at` is the cursor for oldest-first sweeps.
-- Triggers: `updated_at`, `first_listed_at`, restock tracking, `pokemon_name` normalization.
+- **Consignment (sellers):** `sellers` table holds name / email / phone / code (unique, 2-char
+  uppercase, admin-only RLS); products reference via `seller_id` (nullable, `ON DELETE RESTRICT`).
+  At checkout, `place_order v10` snapshots the seller onto each line item. House inventory is
+  `seller_id = NULL` (Poke-Singles).
 
 ## Customer auth (DB side)
 

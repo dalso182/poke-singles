@@ -8,8 +8,15 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { CategoriesService } from '../../core/catalog/categories.service';
 import { ProductsService } from '../../core/catalog/products.service';
+import { SellersService } from '../../core/catalog/sellers.service';
 import { SetsService } from '../../core/catalog/sets.service';
-import type { CategoryRow, ProductRow, SetRow } from '../../core/catalog/catalog.types';
+import type {
+  CategoryRow,
+  ProductListRow,
+  ProductRow,
+  SellerRow,
+  SetRow,
+} from '../../core/catalog/catalog.types';
 import { PageHeader } from '../../shared/table/page-header/page-header';
 import { FilterBar } from '../../shared/table/filter-bar/filter-bar';
 import { TableCard } from '../../shared/table/table-card/table-card';
@@ -17,6 +24,7 @@ import { SearchInput } from '../../shared/table/controls/search-input/search-inp
 import { Dropdown, type DropdownOption } from '../../shared/table/controls/outlined-dropdown/outlined-dropdown';
 import { LabeledToggle } from '../../shared/table/controls/labeled-toggle/labeled-toggle';
 import { Thumb } from '../../shared/table/cells/thumb-cell/thumb-cell';
+import { Pill } from '../../shared/table/cells/pill/pill';
 import { Money } from '../../shared/table/cells/money-cell/money-cell';
 import { Stock } from '../../shared/table/cells/stock-cell/stock-cell';
 import { PlainCheckbox } from '../../shared/table/controls/plain-checkbox/plain-checkbox';
@@ -38,6 +46,7 @@ import { PaginationFooter } from '../../shared/table/pagination-footer/paginatio
     Dropdown,
     LabeledToggle,
     Thumb,
+    Pill,
     Money,
     Stock,
     PlainCheckbox,
@@ -52,6 +61,7 @@ import { PaginationFooter } from '../../shared/table/pagination-footer/paginatio
 export class ProductsList {
   private readonly products = inject(ProductsService);
   private readonly categories = inject(CategoriesService);
+  private readonly sellersService = inject(SellersService);
   private readonly sets = inject(SetsService);
   private readonly router = inject(Router);
   private readonly snack = inject(MatSnackBar);
@@ -60,10 +70,13 @@ export class ProductsList {
   protected readonly searchText = signal('');
   protected readonly category = signal('');
   protected readonly setId = signal('');
+  /** '' = todas, 'none' = house only (seller_id IS NULL), uuid = that seller. */
+  protected readonly seller = signal('');
   protected readonly includeInactive = signal(false);
   protected readonly featuredOnly = signal(false);
 
   protected readonly categoriesList = signal<CategoryRow[]>([]);
+  protected readonly sellersList = signal<SellerRow[]>([]);
   protected readonly setsList = signal<SetRow[]>([]);
   private readonly setsById = computed(() => {
     const map = new Map<string, SetRow>();
@@ -79,8 +92,13 @@ export class ProductsList {
     { value: '', label: 'Todos' },
     ...this.setsList().map((s) => ({ value: s.id, label: `${s.code} — ${s.name}` })),
   ]);
+  protected readonly sellerOptions = computed<DropdownOption[]>(() => [
+    { value: '', label: 'Todos' },
+    { value: 'none', label: 'Poke-Singles (sin vendedor)' },
+    ...this.sellersList().map((s) => ({ value: s.id, label: `${s.name} (${s.code})` })),
+  ]);
 
-  protected readonly rows = signal<ProductRow[]>([]);
+  protected readonly rows = signal<ProductListRow[]>([]);
   protected readonly total = signal(0);
   protected readonly page = signal(1);
   protected readonly pageSize = signal(25);
@@ -112,6 +130,7 @@ export class ProductsList {
       this.searchValue();
       this.category();
       this.setId();
+      this.seller();
       this.includeInactive();
       this.featuredOnly();
       if (firstRun) {
@@ -125,9 +144,14 @@ export class ProductsList {
 
   private async bootstrap(): Promise<void> {
     try {
-      const [cats, sets] = await Promise.all([this.categories.list(), this.sets.list()]);
+      const [cats, sets, sellers] = await Promise.all([
+        this.categories.list(),
+        this.sets.list(),
+        this.sellersService.list(),
+      ]);
       this.categoriesList.set(cats);
       this.setsList.set(sets);
+      this.sellersList.set(sellers);
     } catch (err) {
       this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
     }
@@ -141,6 +165,8 @@ export class ProductsList {
         search: this.searchValue() || undefined,
         categoryId: this.category() || undefined,
         setId: this.setId() || undefined,
+        sellerId:
+          this.seller() === '' ? undefined : this.seller() === 'none' ? null : this.seller(),
         includeInactive: this.includeInactive(),
         featured: this.featuredOnly() || undefined,
         page: this.page(),

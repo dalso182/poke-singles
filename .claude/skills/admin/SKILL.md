@@ -28,10 +28,11 @@ Admin status = `app_metadata.role === 'admin'` (→ `database` skill for `is_adm
 | Path | Component | Notes |
 |---|---|---|
 | `/admin/` | Dashboard | KPI tiles (orders/sales/customers + live visitors), 30-day trend sparklines, recent orders, latest-registrations + recent-activity panels, pending-orders + raffle tiles |
-| `/admin/products` | ProductsList | paginated table, search + filters |
-| `/admin/products/new` | AddProduct | TCGdex typeahead + set filter, image picker |
-| `/admin/products/:id/edit` | ProductEdit | quick-update card + full form |
+| `/admin/products` | ProductsList | paginated table, search + filters + seller dropdown |
+| `/admin/products/new` | AddProduct | TCGdex typeahead + set filter, image picker, seller select (optional; appends code to slug) |
+| `/admin/products/:id/edit` | ProductEdit | quick-update card + full form, seller locked (read-only) |
 | `/admin/categories` | Categories | inline-edit CRUD |
+| `/admin/sellers` | Sellers | inline-edit CRUD (name, email, phone editable; code locked after creation) |
 | `/admin/card-types` | CardTypes | taxonomy CRUD (Full Art, VMAX, …) |
 | `/admin/sets` | Sets | expandable rows, find-or-create from TCGdex, detail dialog |
 | `/admin/coupons` | Coupons | list + active/inactive/expired/deleted filters, soft-delete-with-undo |
@@ -40,6 +41,8 @@ Admin status = `app_metadata.role === 'admin'` (→ `database` skill for `is_adm
 | `/admin/raffles/:id` | RaffleDetail | participants + payment, draw winner |
 | `/admin/customers` | Customers | list: search (name/email/phone) + pagination, order_count / total_spent / last_order |
 | `/admin/customers/:id` | CustomerDetail | profile + saved address + stats + order history (rows → `/admin/orders/:id`) |
+| `/admin/orders` | Orders | list: status/payment filters + search, consignment indicator (storefront icon) on orders containing seller items |
+| `/admin/orders/:id` | OrderDetail | item-by-item detail with seller badges (code pill, shown only on consigned items) |
 | `/admin/reports` | Reports | 5-tab hub: Pedidos por cliente, Actividad de clientes, Búsquedas, Cupones, Puntos (see Reports below) |
 | `/admin/price-review` | PriceReview | Card-by-card triage of products whose store price drifts from TCGplayer market (see Price review below) |
 | `/admin/config` | AdminConfig | exchange rate, maintenance flag (gates the storefront via `maintenanceGuard` → `/mantenimiento`; admins bypass), price-review settings, loyalty points ratio |
@@ -138,6 +141,17 @@ condition/variant/language change); other matches read as "ya está en el catál
 to its edit page. Non-blocking — the hard duplicate-slug stop stays at submit (`slugInUse`). Manual
 mode has no `card_ref`, so no banner. Banner uses amber tokens (`--accent-amber*`/`--amber-text`),
 never brand red.
+
+**Sellers (consignment).** When adding a product, an optional **Vendedor** dropdown lets you assign
+a seller (default: Poke-Singles, which writes `seller_id = NULL` to the DB). The seller's 2-char
+code is appended to the auto-computed slug (e.g., `pikachu-ex-sv1-nm-jd`). On edit, the seller
+is **locked** — shown as read-only text, cannot be changed. This enforces that a consigned card
+keeps its seller attribution forever; if the same card comes from a different seller, create a
+new product. On the products list, a **Vendedor** filter (Todos / Poke-Singles / each active
+seller) narrows results. Consigned products show a blue code pill in the name column. On the
+orders list, a small blue storefront icon flags any order containing consignment items. In order
+detail (both the items table and the picking grid), consigned line items display the code pill
+next to the product name (house items show nothing).
 
 ## Coupons admin
 

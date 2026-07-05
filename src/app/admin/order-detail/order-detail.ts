@@ -23,6 +23,7 @@ import {
   type CancelOrderDialogResult,
 } from './cancel-order-dialog';
 import { Thumb } from '../../shared/table/cells/thumb-cell/thumb-cell';
+import { Pill } from '../../shared/table/cells/pill/pill';
 import { Money } from '../../shared/table/cells/money-cell/money-cell';
 
 const PICK_STORAGE_PREFIX = 'pick:order:';
@@ -51,6 +52,7 @@ const NEXT_STATUS: Partial<Record<OrderStatus, { label: string; next: OrderStatu
     MatTabsModule,
     MatTooltipModule,
     Thumb,
+    Pill,
     Money,
   ],
   templateUrl: './order-detail.html',

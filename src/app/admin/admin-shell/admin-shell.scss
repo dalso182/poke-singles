@@ -240,8 +240,62 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 6px;
   padding: 14px 12px;
+}
+
+.nav-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.nav-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 40px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-brand);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.1px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--nav-hover-bg);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--mat-sys-primary);
+    outline-offset: -2px;
+  }
+}
+
+.nav-group__label {
+  flex: 1 1 auto;
+  white-space: nowrap;
+}
+
+.nav-group__chevron {
+  flex-shrink: 0;
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+  color: var(--text-tertiary);
+  transform: rotate(-90deg);
+  transition: transform 0.15s ease;
+}
+
+.nav-group--open .nav-group__chevron {
+  transform: none;
 }
 
 .nav-row {
@@ -281,6 +335,11 @@
 .nav-row__label {
   flex: 1 1 auto;
   white-space: nowrap;
+}
+
+// Subitems of a group — indented so they read as nested under the header.
+.nav-row--child {
+  padding-left: 26px;
 }
 
 .nav-row--active {

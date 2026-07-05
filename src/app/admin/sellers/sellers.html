@@ -1,0 +1,119 @@
+<app-page-header
+  kicker="Catálogo"
+  title="Vendedores"
+  sub="Consignación — quién nos dio cada carta para vender"
+>
+  <app-btn variant="primary" (click)="addOpen.set(!addOpen())">
+    <mat-icon>{{ addOpen() ? 'close' : 'add' }}</mat-icon>
+    {{ addOpen() ? 'Cancelar' : 'Agregar vendedor' }}
+  </app-btn>
+</app-page-header>
+
+@if (addOpen()) {
+  <mat-card class="sellers__add">
+    <mat-card-content>
+      <form [formGroup]="addForm" class="sellers__add-form">
+        <mat-form-field appearance="outline" class="sellers__code-field">
+          <mat-label>Código</mat-label>
+          <input matInput formControlName="code" maxlength="2" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre</mat-label>
+          <input matInput formControlName="name" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Email</mat-label>
+          <input matInput type="email" formControlName="email" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Teléfono</mat-label>
+          <input matInput formControlName="phone" />
+        </mat-form-field>
+        <app-btn variant="primary" [disabled]="addForm.invalid || saving() === '__new__'" (click)="onAdd()">
+          Crear
+        </app-btn>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<app-table-card>
+  <div class="sellers__scroll">
+    <table mat-table [dataSource]="rows()" class="app-table app-table--cozy">
+      <ng-container matColumnDef="code">
+        <th mat-header-cell *matHeaderCellDef>Código</th>
+        <td mat-cell *matCellDef="let row">
+          <span class="app-slug-chip">{{ row.code }}</span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>Nombre</th>
+        <td mat-cell *matCellDef="let row">
+          <app-editable-input
+            [value]="val(row.id, 'name')"
+            (valueChange)="setText(row.id, 'name', $event)"
+          />
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="email">
+        <th mat-header-cell *matHeaderCellDef>Email</th>
+        <td mat-cell *matCellDef="let row">
+          <app-editable-input
+            [value]="val(row.id, 'email')"
+            (valueChange)="setText(row.id, 'email', $event)"
+          />
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="phone">
+        <th mat-header-cell *matHeaderCellDef>Teléfono</th>
+        <td mat-cell *matCellDef="let row">
+          <app-editable-input
+            [value]="val(row.id, 'phone')"
+            (valueChange)="setText(row.id, 'phone', $event)"
+          />
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="active">
+        <th mat-header-cell *matHeaderCellDef class="is-center">Activo</th>
+        <td mat-cell *matCellDef="let row" class="is-center">
+          <app-toggle
+            [on]="row.active"
+            (change)="onToggleActive(row, $event)"
+            [disabled]="saving() === row.id"
+          />
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let row" class="is-right">
+          <app-btn
+            variant="ghost"
+            size="sm"
+            [disabled]="formFor(row.id).invalid || formFor(row.id).pristine || saving() === row.id"
+            (click)="onSave(row)"
+          >
+            Guardar
+          </app-btn>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+  </div>
+
+  @if (!loading() && rows().length === 0) {
+    <p class="sellers__empty">
+      Aún no hay vendedores. Los productos sin vendedor son inventario propio (Poke-Singles).
+    </p>
+  }
+</app-table-card>

@@ -3,12 +3,15 @@ import { DatePipe } from '@angular/common';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { Router } from '@angular/router';
+import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import {
   OrdersService,
   WHATSAPP_PROOF_SENTINEL,
+  type AdminOrderListRow,
   type OrderStatusCounts,
 } from '../../core/orders/orders.service';
 import type { OrderRow, OrderStatus, PaymentMethod } from '../../core/catalog/catalog.types';
@@ -31,9 +34,11 @@ type PillTone = 'neutral' | 'green' | 'amber' | 'red' | 'blue' | 'ink';
   selector: 'app-admin-orders',
   imports: [
     DatePipe,
+    MatIconModule,
     MatProgressBarModule,
     MatSnackBarModule,
     MatTableModule,
+    MatTooltipModule,
     PageHeader,
     FilterBar,
     TableCard,
@@ -57,7 +62,7 @@ export class Orders {
   protected readonly status = signal<string>('pending');
   protected readonly payment = signal<string>('all');
 
-  protected readonly rows = signal<OrderRow[]>([]);
+  protected readonly rows = signal<AdminOrderListRow[]>([]);
   protected readonly total = signal(0);
   protected readonly page = signal(1);
   protected readonly pageSize = signal(25);

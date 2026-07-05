@@ -40,6 +40,7 @@ import { CategoriesService } from '../../core/catalog/categories.service';
 import { CardTypesService } from '../../core/catalog/card-types.service';
 import { ProductsService } from '../../core/catalog/products.service';
 import { RafflesService } from '../../core/catalog/raffles.service';
+import { SellersService } from '../../core/catalog/sellers.service';
 import {
   CONDITION_OPTIONS,
   LANGUAGE_OPTIONS,
@@ -49,6 +50,7 @@ import type {
   CardTypeRow,
   CategoryRow,
   ProductRow,
+  SellerRow,
 } from '../../core/catalog/catalog.types';
 
 /** Card-only fields (Pokémon, rareza, número, condición, variante, tipos de carta)
@@ -87,6 +89,7 @@ export class ProductEdit implements OnInit {
   private readonly raffles = inject(RafflesService);
   private readonly categories = inject(CategoriesService);
   private readonly cardTypes = inject(CardTypesService);
+  private readonly sellers = inject(SellersService);
   private readonly snack = inject(MatSnackBar);
   private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
@@ -103,6 +106,16 @@ export class ProductEdit implements OnInit {
   /** Single sub-type selection for sealed/accessories (one per product). */
   protected readonly selectedSubtypeId = signal<string | null>(null);
   protected readonly product = signal<ProductRow | null>(null);
+  /** All sellers (retired included) so historical products still resolve. */
+  private readonly sellersList = signal<SellerRow[]>([]);
+  /** Read-only label for the locked "Vendedor" field. The seller is fixed at
+   *  creation — a duplicate card from another seller becomes a new product. */
+  protected readonly sellerLabel = computed(() => {
+    const sellerId = this.product()?.seller_id ?? null;
+    if (!sellerId) return 'Poke-Singles';
+    const s = this.sellersList().find((x) => x.id === sellerId);
+    return s ? `${s.name} (${s.code})` : '—';
+  });
   protected readonly loading = signal(false);
   protected readonly saving = signal(false);
   protected readonly notFound = signal(false);
@@ -188,15 +201,17 @@ export class ProductEdit implements OnInit {
   private async bootstrap(): Promise<void> {
     this.loading.set(true);
     try {
-      const [cats, types, product, assignedTypeIds, raffleRow] = await Promise.all([
+      const [cats, types, product, assignedTypeIds, raffleRow, sellers] = await Promise.all([
         this.categories.list(),
         this.cardTypes.list({ activeOnly: true }),
         this.products.get(this.id()),
         this.products.getCardTypeIds(this.id()),
         this.raffles.get(this.id()),
+        this.sellers.list(),
       ]);
       this.categoriesList.set(cats);
       this.cardTypesList.set(types);
+      this.sellersList.set(sellers);
       this.selectedCardTypeIds.set(new Set(assignedTypeIds));
       // Same junction backs the single sub-type; a sealed/accessory product has
       // at most one assigned id.

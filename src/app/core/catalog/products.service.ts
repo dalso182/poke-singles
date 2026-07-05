@@ -19,6 +19,9 @@ export interface ProductListParams {
    *  `setId` when both are provided. Empty array is ignored. */
   setIds?: string[];
   featured?: boolean;
+  /** Consignment filter: undefined = no filter; null = house products only
+   *  (seller_id IS NULL, "Poke-Singles"); a uuid = that seller's products. */
+  sellerId?: string | null;
   includeInactive?: boolean;
   /** Exclude raffle products (category slug = 'rifas') from the result. Used by
    *  the home rails so raffles only ever surface on /rifas. No-op if the Rifas
@@ -98,7 +101,7 @@ export class ProductsService {
 
     let query = (this.supabase.client as any)
       .from('products')
-      .select('*, sets(name, printed_total)', { count: 'exact' })
+      .select('*, sets(name, printed_total), sellers(code, name)', { count: 'exact' })
       .order('last_restocked_at', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: false })
       .range(from, to);
@@ -123,6 +126,13 @@ export class ProductsService {
     if (params.featured !== undefined) {
       query = query.eq('featured', params.featured);
     }
+    if (params.sellerId !== undefined) {
+      // `.eq(col, null)` renders `=NULL` and never matches — the house case
+      // needs an explicit IS NULL.
+      query = params.sellerId === null
+        ? query.is('seller_id', null)
+        : query.eq('seller_id', params.sellerId);
+    }
     if (params.search) {
       const term = params.search.trim();
       if (term.length > 0) {
@@ -135,14 +145,18 @@ export class ProductsService {
 
     const { data, error, count } = await query;
     if (error) throw error;
-    // Flatten the postgrest embed (`sets: { name, printed_total } | null`)
-    // into top-level `set_name` / `set_printed_total` so callers stay flat.
+    // Flatten the postgrest embeds (`sets: {…} | null`, `sellers: {…} | null`)
+    // into top-level columns so callers stay flat. `sellers` is admin-only
+    // (RLS), so anonymous storefront callers just get nulls here.
     const rows: ProductListRow[] = ((data ?? []) as (ProductRow & {
       sets: { name: string | null; printed_total: number | null } | null;
-    })[]).map(({ sets, ...rest }) => ({
+      sellers: { code: string; name: string } | null;
+    })[]).map(({ sets, sellers, ...rest }) => ({
       ...rest,
       set_name: sets?.name ?? null,
       set_printed_total: sets?.printed_total ?? null,
+      seller_code: sellers?.code ?? null,
+      seller_name: sellers?.name ?? null,
     }));
     return { rows, total: count ?? 0, page, pageSize };
   }

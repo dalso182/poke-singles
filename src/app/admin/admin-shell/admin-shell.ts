@@ -3,13 +3,22 @@ import {
   ElementRef,
   HostListener,
   OnInit,
+  PLATFORM_ID,
   Signal,
   inject,
   signal,
   viewChild,
 } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { DecimalPipe, NgTemplateOutlet, isPlatformBrowser } from '@angular/common';
+import {
+  NavigationEnd,
+  Router,
+  RouterLink,
+  RouterLinkActive,
+  RouterOutlet,
+} from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { filter, map } from 'rxjs';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatIconModule } from '@angular/material/icon';
@@ -35,6 +44,15 @@ interface AdminNavItem {
   readonly badgeTone?: 'neutral' | 'amber';
 }
 
+interface AdminNavSection {
+  /** Collapse-state persistence key; also the template track key. */
+  readonly key: string;
+  /** `null` → ungrouped items rendered flat (Dashboard, Configuración). */
+  readonly label: string | null;
+  readonly icon?: string;
+  readonly items: readonly AdminNavItem[];
+}
+
 @Component({
   selector: 'app-admin-shell',
   imports: [
@@ -42,6 +60,7 @@ interface AdminNavItem {
     RouterLink,
     RouterLinkActive,
     DecimalPipe,
+    NgTemplateOutlet,
     MatToolbarModule,
     MatSidenavModule,
     MatIconModule,
@@ -53,6 +72,8 @@ interface AdminNavItem {
 })
 export class AdminShell implements OnInit {
   private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+  private readonly platformId = inject(PLATFORM_ID);
   private readonly dialog = inject(MatDialog);
   private readonly snack = inject(MatSnackBar);
   private readonly products = inject(ProductsService);
@@ -88,24 +109,72 @@ export class AdminShell implements OnInit {
   protected readonly onlineVisitors = signal<number | null>(null);
   protected readonly cartsActive = signal<number | null>(null);
 
-  protected readonly items: readonly AdminNavItem[] = [
-    { label: 'Dashboard', icon: 'dashboard', path: '/admin', exact: true },
-    { label: 'Agregar producto', icon: 'add_box', path: '/admin/products/new', exact: true },
-    { label: 'Productos', icon: 'sell', path: '/admin/products', exact: true, count: this.productCount },
-    { label: 'Rifas', icon: 'confirmation_number', path: '/admin/raffles', count: this.raffleCount },
-    { label: 'Categorías', icon: 'category', path: '/admin/categories' },
-    { label: 'Filtros', icon: 'tune', path: '/admin/filters' },
-    { label: 'Cupones', icon: 'local_offer', path: '/admin/coupons', count: this.couponCount },
-    { label: 'Métodos de envío', icon: 'local_shipping', path: '/admin/shipping-methods' },
-    { label: 'Sets', icon: 'collections_bookmark', path: '/admin/sets', count: this.setCount },
-    { label: 'Pedidos', icon: 'receipt_long', path: '/admin/orders', count: this.pendingOrderCount, badgeTone: 'amber' },
-    { label: 'Clientes', icon: 'groups', path: '/admin/customers' },
-    { label: 'Reportes', icon: 'analytics', path: '/admin/reports' },
-    { label: 'Revisión de precios', icon: 'price_check', path: '/admin/price-review' },
-    { label: 'Páginas', icon: 'description', path: '/admin/pages' },
-    { label: 'Library', icon: 'palette', path: '/library', exact: true },
-    { label: 'Configuración', icon: 'settings', path: '/admin/config' },
+  protected readonly sections: readonly AdminNavSection[] = [
+    {
+      key: 'dashboard',
+      label: null,
+      items: [{ label: 'Dashboard', icon: 'dashboard', path: '/admin', exact: true }],
+    },
+    {
+      key: 'catalogo',
+      label: 'Catálogo',
+      icon: 'inventory_2',
+      items: [
+        { label: 'Productos', icon: 'sell', path: '/admin/products', exact: true, count: this.productCount },
+        { label: 'Agregar producto', icon: 'add_box', path: '/admin/products/new', exact: true },
+        { label: 'Categorías', icon: 'category', path: '/admin/categories' },
+        { label: 'Sets', icon: 'collections_bookmark', path: '/admin/sets', count: this.setCount },
+        { label: 'Filtros', icon: 'tune', path: '/admin/filters' },
+        { label: 'Vendedores', icon: 'storefront', path: '/admin/sellers' },
+        { label: 'Rifas', icon: 'confirmation_number', path: '/admin/raffles', count: this.raffleCount },
+      ],
+    },
+    {
+      key: 'ventas',
+      label: 'Ventas',
+      icon: 'shopping_cart',
+      items: [
+        { label: 'Pedidos', icon: 'receipt_long', path: '/admin/orders', count: this.pendingOrderCount, badgeTone: 'amber' },
+        { label: 'Clientes', icon: 'groups', path: '/admin/customers' },
+        { label: 'Cupones', icon: 'local_offer', path: '/admin/coupons', count: this.couponCount },
+        { label: 'Métodos de envío', icon: 'local_shipping', path: '/admin/shipping-methods' },
+      ],
+    },
+    {
+      key: 'herramientas',
+      label: 'Herramientas',
+      icon: 'build',
+      items: [
+        { label: 'Reportes', icon: 'analytics', path: '/admin/reports' },
+        { label: 'Revisión de precios', icon: 'price_check', path: '/admin/price-review' },
+        { label: 'Library', icon: 'palette', path: '/library', exact: true },
+      ],
+    },
+    {
+      key: 'informacion',
+      label: 'Información',
+      icon: 'info',
+      items: [{ label: 'Páginas', icon: 'description', path: '/admin/pages' }],
+    },
+    {
+      key: 'config',
+      label: null,
+      items: [{ label: 'Configuración', icon: 'settings', path: '/admin/config' }],
+    },
   ];
+
+  // The one manually pinned-open group (persisted per browser). The active
+  // route's group opens on top of this, so at most two groups are ever
+  // expanded at once.
+  private readonly pinnedKey = signal<string | null>(this.readPinned());
+
+  private readonly currentUrl = toSignal(
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+      map((e) => e.urlAfterRedirects),
+    ),
+    { initialValue: this.router.url },
+  );
 
   ngOnInit(): void {
     // Cheap, parallel count fetches for the nav badges. Each is best-effort —
@@ -136,6 +205,47 @@ export class AdminShell implements OnInit {
 
   protected toggleSidenav(): void {
     this.sidenavOpen.update((open) => !open);
+  }
+
+  /** Open only when it's the pinned group — or forced open while it holds the
+   *  active route, so the section you're inside can't disappear. Navigating
+   *  away collapses it again unless it's the pinned one. */
+  protected isOpen(section: AdminNavSection): boolean {
+    return this.pinnedKey() === section.key || this.isGroupActive(section);
+  }
+
+  private isGroupActive(section: AdminNavSection): boolean {
+    const url = this.currentUrl().split(/[?#]/, 1)[0];
+    // Prefix match on purpose (ignores `exact`): detail routes like
+    // /admin/orders/:id must keep their parent group open.
+    return section.items.some(
+      (item) => url === item.path || url.startsWith(item.path + '/'),
+    );
+  }
+
+  protected toggleGroup(key: string): void {
+    // Pinning a group replaces any previous pin — manual expands never stack.
+    this.pinnedKey.update((k) => (k === key ? null : key));
+    if (isPlatformBrowser(this.platformId)) {
+      const pinned = this.pinnedKey();
+      if (pinned) localStorage.setItem('admin-nav-pinned', pinned);
+      else localStorage.removeItem('admin-nav-pinned');
+    }
+  }
+
+  /** Actionable backlog surfaced on a collapsed group header. Only amber
+   *  badges roll up — neutral counts are informational noise at group level. */
+  protected collapsedAmberCount(section: AdminNavSection): number {
+    return section.items.reduce(
+      (total, item) =>
+        item.badgeTone === 'amber' ? total + (item.count?.() ?? 0) : total,
+      0,
+    );
+  }
+
+  private readPinned(): string | null {
+    if (!isPlatformBrowser(this.platformId)) return null;
+    return localStorage.getItem('admin-nav-pinned');
   }
 
   /** Cmd/Ctrl + K focuses the global search. Routed through Angular's event

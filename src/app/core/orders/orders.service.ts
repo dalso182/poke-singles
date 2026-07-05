@@ -30,8 +30,14 @@ export interface AdminOrderListParams {
   pageSize?: number;
 }
 
+/** OrderRow plus a derived consignment flag for the list's indicator icon. */
+export interface AdminOrderListRow extends OrderRow {
+  /** True when any line item was a consignment card (seller_id snapshot). */
+  has_consignment: boolean;
+}
+
 export interface AdminOrderListResult {
-  rows: OrderRow[];
+  rows: AdminOrderListRow[];
   total: number;
   page: number;
   pageSize: number;
@@ -182,9 +188,11 @@ export class OrdersService {
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
 
+    // The order_items embed only feeds the has_consignment flag; child rows
+    // don't disturb the parent-level range() pagination or the exact count.
     let query = (this.supabase.client as any)
       .from('orders')
-      .select('*', { count: 'exact' })
+      .select('*, order_items(seller_id)', { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(from, to);
 
@@ -214,12 +222,13 @@ export class OrdersService {
 
     const { data, error, count } = await query;
     if (error) throw error;
-    return {
-      rows: (data ?? []) as OrderRow[],
-      total: count ?? 0,
-      page,
-      pageSize,
-    };
+    const rows: AdminOrderListRow[] = (
+      (data ?? []) as (OrderRow & { order_items: { seller_id: string | null }[] })[]
+    ).map(({ order_items, ...rest }) => ({
+      ...rest,
+      has_consignment: (order_items ?? []).some((i) => i.seller_id != null),
+    }));
+    return { rows, total: count ?? 0, page, pageSize };
   }
 
   /** Admin detail fetch with line items (RLS-bypassed via admin policy). */
