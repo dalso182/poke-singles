@@ -34,3 +34,17 @@
     <app-marquee [items]="featured()" direction="right" />
   </section>
 }
+
+@if (offers().length > 0) {
+  <section class="home-section">
+    <header class="home-section__header">
+      <h2>Ofertas que te pueden interesar</h2>
+      <a routerLink="/ofertas" class="home-section__more">Ver todo →</a>
+    </header>
+    <div class="cards-grid">
+      @for (card of offers(); track card.id) {
+        <app-product-card [card]="card" />
+      }
+    </div>
+  </section>
+}

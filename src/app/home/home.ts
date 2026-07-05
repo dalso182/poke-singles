@@ -3,8 +3,10 @@ import { RouterLink } from '@angular/router';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ProductsService } from '../core/catalog/products.service';
-import type { ProductListRow } from '../core/catalog/catalog.types';
+import type { ProductListRow, ProductSearchRow } from '../core/catalog/catalog.types';
+import { DEFAULT_SORT_NO_QUERY } from '../core/catalog/catalog.types';
 import { Marquee } from '../shared/marquee/marquee';
+import { ProductCard } from '../shared/product-card/product-card';
 
 @Component({
   selector: 'app-home',
@@ -13,6 +15,7 @@ import { Marquee } from '../shared/marquee/marquee';
     MatProgressBarModule,
     MatSnackBarModule,
     Marquee,
+    ProductCard,
   ],
   templateUrl: './home.html',
   styleUrl: './home.scss',
@@ -23,6 +26,7 @@ export class Home {
 
   protected readonly recent = signal<ProductListRow[]>([]);
   protected readonly featured = signal<ProductListRow[]>([]);
+  protected readonly offers = signal<ProductSearchRow[]>([]);
   protected readonly loading = signal(true);
 
   constructor() {
@@ -31,12 +35,15 @@ export class Home {
 
   private async bootstrap(): Promise<void> {
     try {
-      const [recent, featured] = await Promise.all([
+      const [recent, featured, offers] = await Promise.all([
         this.products.list({ pageSize: 12, excludeRaffles: true, inStockOnly: true }),
         this.products.list({ featured: true, pageSize: 12, excludeRaffles: true, inStockOnly: true }),
+        // Same sort as the /ofertas listing so "Ver todo" continues seamlessly.
+        this.products.search({ q: '', sort: DEFAULT_SORT_NO_QUERY, onSaleOnly: true, pageSize: 8 }),
       ]);
       this.recent.set(recent.rows);
       this.featured.set(featured.rows);
+      this.offers.set(offers.rows);
     } catch (err) {
       this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
     } finally {

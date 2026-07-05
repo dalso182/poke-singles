@@ -63,3 +63,17 @@
   text-align: center;
   padding: 24px 0;
 }
+
+// Static offers grid — same pattern as /products and /buscar (card-list.scss).
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  justify-content: start;
+  gap: 12px;
+}
+
+@media (max-width: 599px) {
+  .cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
