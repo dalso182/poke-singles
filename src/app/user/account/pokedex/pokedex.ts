@@ -51,16 +51,27 @@ export class Pokedex implements OnDestroy {
   protected readonly all = signal<Pokemon[]>([]);
   protected readonly loading = signal(true);
   protected readonly activeRegion = signal<string>(POKEDEX_REGIONS[0].key);
+  /** Ownership filter: everything, only caught, or only still-missing. */
+  protected readonly filter = signal<'all' | 'owned' | 'missing'>('all');
+  /** Back-to-top FAB visibility (shown after scrolling down a bit). */
+  protected readonly showTop = signal(false);
 
   protected readonly total = computed(() => this.all().length);
 
-  /** Pokémon grouped into POKEDEX_REGIONS order; stable after the one-time load. */
-  protected readonly regions = computed(() =>
-    POKEDEX_REGIONS.map((r) => ({
+  /** Pokémon grouped into POKEDEX_REGIONS order, narrowed by the ownership
+   *  filter. Regions left empty by the filter are dropped (no bare headers). */
+  protected readonly regions = computed(() => {
+    const f = this.filter();
+    const c = this.caught();
+    return POKEDEX_REGIONS.map((r) => ({
       ...r,
-      list: this.all().filter((p) => p.region === r.key),
-    })),
-  );
+      list: this.all().filter(
+        (p) =>
+          p.region === r.key &&
+          (f === 'all' || (f === 'owned') === c.has(p.number)),
+      ),
+    })).filter((r) => r.list.length > 0 || f === 'all');
+  });
 
   /** The customer's caught set, reactive to the already-loaded profile. */
   protected readonly caught = computed(
@@ -83,21 +94,32 @@ export class Pokedex implements OnDestroy {
 
   private readonly sections = viewChildren<ElementRef<HTMLElement>>('regionSection');
   private observer: IntersectionObserver | null = null;
+  /** The scrolling container (<mat-sidenav-content>); null → viewport. */
+  private scrollRoot: HTMLElement | null = null;
+  private scrollBound = false;
+  private readonly onScroll = (): void => {
+    const top = this.scrollRoot
+      ? this.scrollRoot.scrollTop
+      : (document.scrollingElement?.scrollTop ?? 0);
+    this.showTop.set(top > 600);
+  };
 
   constructor() {
     void this.load();
 
     // Scroll-spy: highlight the region nearest the top of the scroll viewport in
     // the jump bar. Guarded per the window/document convention even though the
-    // component only renders client-side (it's @defer-loaded).
+    // component only renders client-side (it's @defer-loaded). Re-created every
+    // time the section list changes (the ownership filter adds/removes regions).
     effect(() => {
       const els = this.sections();
-      if (!els.length || !this.isBrowser || this.observer) return;
+      if (!els.length || !this.isBrowser) return;
       // The page scrolls inside <mat-sidenav-content>; observe against it (falls
       // back to the viewport if the shell markup ever changes).
       const root = this.host.nativeElement.closest(
         'mat-sidenav-content',
       ) as HTMLElement | null;
+      this.observer?.disconnect();
       this.observer = new IntersectionObserver(
         (entries) => {
           for (const e of entries) {
@@ -108,11 +130,23 @@ export class Pokedex implements OnDestroy {
         { root, rootMargin: '-20% 0px -70% 0px', threshold: 0 },
       );
       for (const el of els) this.observer.observe(el.nativeElement);
+
+      // One-time: watch scroll depth for the back-to-top FAB.
+      if (!this.scrollBound) {
+        this.scrollBound = true;
+        this.scrollRoot = root;
+        (root ?? window).addEventListener('scroll', this.onScroll, {
+          passive: true,
+        });
+      }
     });
   }
 
   ngOnDestroy(): void {
     this.observer?.disconnect();
+    if (this.scrollBound) {
+      (this.scrollRoot ?? window).removeEventListener('scroll', this.onScroll);
+    }
   }
 
   private async load(): Promise<void> {
@@ -139,6 +173,12 @@ export class Pokedex implements OnDestroy {
       `#region-${key}`,
     ) as HTMLElement | null;
     el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /** Back-to-top FAB: smooth-scroll the container back to the start. */
+  protected scrollToTop(): void {
+    if (!this.isBrowser) return;
+    (this.scrollRoot ?? window).scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   /** Open the Pokéball redemption modal (lazy-imported — most Pokédex visits

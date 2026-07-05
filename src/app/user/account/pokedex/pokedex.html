@@ -21,7 +21,7 @@
   </header>
 
   <nav class="pdx__regions" aria-label="Saltar a región">
-    @for (r of regionDefs; track r.key) {
+    @for (r of regions(); track r.key) {
       <button
         type="button"
         class="pdx__region-link"
@@ -31,6 +31,32 @@
         {{ r.label }}
       </button>
     }
+    <div class="pdx__filters" role="group" aria-label="Filtrar por captura">
+      <button
+        type="button"
+        class="pdx__filter"
+        [class.is-active]="filter() === 'all'"
+        (click)="filter.set('all')"
+      >
+        Todos
+      </button>
+      <button
+        type="button"
+        class="pdx__filter"
+        [class.is-active]="filter() === 'owned'"
+        (click)="filter.set('owned')"
+      >
+        Capturados
+      </button>
+      <button
+        type="button"
+        class="pdx__filter"
+        [class.is-active]="filter() === 'missing'"
+        (click)="filter.set('missing')"
+      >
+        Faltantes
+      </button>
+    </div>
   </nav>
 
   @for (r of regions(); track r.key) {
@@ -69,5 +95,16 @@
         }
       </div>
     </section>
+  }
+
+  @if (showTop()) {
+    <button
+      type="button"
+      class="pdx__top"
+      (click)="scrollToTop()"
+      aria-label="Volver arriba"
+    >
+      <mat-icon>arrow_upward</mat-icon>
+    </button>
   }
 </div>
