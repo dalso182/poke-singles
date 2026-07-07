@@ -100,65 +100,127 @@
               }
             </div>
           </div>
+          <div class="kpi__cell">
+            <div class="kpi__label">Poke-Monedas</div>
+            <div class="kpi__value">
+              <img class="kpi__coin" src="assets/images/coin-sm.png" alt="" />{{
+                c.loyalty_balance | number: '1.0-0'
+              }}
+            </div>
+          </div>
         </div>
       </app-table-card>
     </div>
 
-    <!-- Orders history -->
+    <!-- History: orders + Poke-Monedas ledger -->
     <app-table-card>
-      <div class="orders-head">
-        <h2 class="orders-head__title">Historial de pedidos</h2>
-        <span class="orders-head__count">
-          {{ c.orders.length }} {{ c.orders.length === 1 ? 'pedido' : 'pedidos' }}
-        </span>
-      </div>
+      <mat-tab-group
+        animationDuration="180ms"
+        class="customer-detail__tabs"
+        [selectedIndex]="selectedTab()"
+      >
+        <mat-tab [label]="'Pedidos (' + c.orders.length + ')'">
+          @if (c.orders.length === 0) {
+            <p class="customer-detail__empty">Este cliente no tiene pedidos todavía.</p>
+          } @else {
+            <table mat-table [dataSource]="c.orders" class="app-table app-table--comfy">
+              <ng-container matColumnDef="ref">
+                <th mat-header-cell *matHeaderCellDef>Pedido</th>
+                <td mat-cell *matCellDef="let o" class="is-mono">
+                  <span class="is-dim">#</span><strong>{{ o.order_number }}</strong>
+                </td>
+              </ng-container>
 
-      @if (c.orders.length === 0) {
-        <p class="customer-detail__empty">Este cliente no tiene pedidos todavía.</p>
-      } @else {
-        <table mat-table [dataSource]="c.orders" class="app-table app-table--comfy">
-          <ng-container matColumnDef="ref">
-            <th mat-header-cell *matHeaderCellDef>Pedido</th>
-            <td mat-cell *matCellDef="let o" class="is-mono">
-              <span class="is-dim">#</span><strong>{{ o.order_number }}</strong>
-            </td>
-          </ng-container>
+              <ng-container matColumnDef="total">
+                <th mat-header-cell *matHeaderCellDef class="is-right">Total</th>
+                <td mat-cell *matCellDef="let o" class="is-right">
+                  <app-money [value]="o.total" />
+                </td>
+              </ng-container>
 
-          <ng-container matColumnDef="total">
-            <th mat-header-cell *matHeaderCellDef class="is-right">Total</th>
-            <td mat-cell *matCellDef="let o" class="is-right">
-              <app-money [value]="o.total" />
-            </td>
-          </ng-container>
+              <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef>Estado</th>
+                <td mat-cell *matCellDef="let o">
+                  <app-pill [tone]="statusTone(o.status)">{{ statusLabel(o.status) }}</app-pill>
+                </td>
+              </ng-container>
 
-          <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef>Estado</th>
-            <td mat-cell *matCellDef="let o">
-              <app-pill [tone]="statusTone(o.status)">{{ statusLabel(o.status) }}</app-pill>
-            </td>
-          </ng-container>
+              <ng-container matColumnDef="date">
+                <th mat-header-cell *matHeaderCellDef>Fecha</th>
+                <td mat-cell *matCellDef="let o" class="is-mono is-dim">{{ o.created_at | date: 'short' }}</td>
+              </ng-container>
 
-          <ng-container matColumnDef="date">
-            <th mat-header-cell *matHeaderCellDef>Fecha</th>
-            <td mat-cell *matCellDef="let o" class="is-mono is-dim">{{ o.created_at | date: 'short' }}</td>
-          </ng-container>
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef></th>
+                <td mat-cell *matCellDef="let o" class="is-right" (click)="$event.stopPropagation()">
+                  <app-btn variant="ghost" size="sm" (click)="goToOrder(o.id)">Ver</app-btn>
+                </td>
+              </ng-container>
 
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef></th>
-            <td mat-cell *matCellDef="let o" class="is-right" (click)="$event.stopPropagation()">
-              <app-btn variant="ghost" size="sm" (click)="goToOrder(o.id)">Ver</app-btn>
-            </td>
-          </ng-container>
+              <tr mat-header-row *matHeaderRowDef="orderColumns"></tr>
+              <tr
+                mat-row
+                *matRowDef="let o; columns: orderColumns"
+                class="customer-detail__row"
+                [routerLink]="['/admin/orders', o.id]"
+              ></tr>
+            </table>
+          }
+        </mat-tab>
 
-          <tr mat-header-row *matHeaderRowDef="orderColumns"></tr>
-          <tr
-            mat-row
-            *matRowDef="let o; columns: orderColumns"
-            class="customer-detail__row"
-            [routerLink]="['/admin/orders', o.id]"
-          ></tr>
-        </table>
-      }
+        <mat-tab [label]="'Poke-Monedas (' + c.loyalty_transactions.length + ')'">
+          @if (c.loyalty_transactions.length === 0) {
+            <p class="customer-detail__empty">Este cliente no tiene movimientos de Poke-Monedas.</p>
+          } @else {
+            <table mat-table [dataSource]="c.loyalty_transactions" class="app-table app-table--comfy">
+              <ng-container matColumnDef="date">
+                <th mat-header-cell *matHeaderCellDef>Fecha</th>
+                <td mat-cell *matCellDef="let tx" class="is-mono is-dim">{{ tx.created_at | date: 'short' }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="description">
+                <th mat-header-cell *matHeaderCellDef>Descripción</th>
+                <td mat-cell *matCellDef="let tx">{{ txLabel(tx) }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="kind">
+                <th mat-header-cell *matHeaderCellDef>Tipo</th>
+                <td mat-cell *matCellDef="let tx">
+                  <app-pill [tone]="txTone(tx.kind)">{{ txKindLabel(tx.kind) }}</app-pill>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="amount">
+                <th mat-header-cell *matHeaderCellDef class="is-right">Monto</th>
+                <td
+                  mat-cell
+                  *matCellDef="let tx"
+                  class="is-right is-mono tx-amount"
+                  [class.tx-amount--negative]="tx.amount < 0"
+                >
+                  {{ tx.amount > 0 ? '+' : '' }}{{ tx.amount | number: '1.0-0' }}
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="loyaltyColumns"></tr>
+              <tr mat-row *matRowDef="let tx; columns: loyaltyColumns"></tr>
+            </table>
+          }
+        </mat-tab>
+
+        <mat-tab [label]="'Pokédex (' + c.caught_pokemon_numbers.length + ')'">
+          <!-- Lazy: ~1025 tiles only render when the tab is first opened. -->
+          <ng-template matTabContent>
+            <div class="customer-detail__pokedex">
+              <app-pokedex
+                [caughtNumbers]="c.caught_pokemon_numbers"
+                title="Pokédex"
+                [tileSize]="75"
+              />
+            </div>
+          </ng-template>
+        </mat-tab>
+      </mat-tab-group>
     </app-table-card>
   }
 </div>

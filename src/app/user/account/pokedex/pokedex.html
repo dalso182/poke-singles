@@ -7,16 +7,20 @@
     <div class="pdx__titles">
       <span class="pdx__icon"><mat-icon>catching_pokemon</mat-icon></span>
       <div>
-        <h2 class="pdx__title">Mi Pokédex</h2>
-        <p class="pdx__sub">Completa tu colección por región.</p>
+        <h2 class="pdx__title">{{ title() }}</h2>
+        @if (!external()) {
+          <p class="pdx__sub">Completa tu colección por región.</p>
+        }
       </div>
     </div>
     <div class="pdx__head-side">
       <span class="pdx__total brand-mono">{{ progress().total }} / {{ total() }}</span>
-      <button type="button" class="pdx__capture" (click)="openCapture()">
-        <mat-icon>catching_pokemon</mat-icon>
-        Capturar más Pokémon
-      </button>
+      @if (!external()) {
+        <button type="button" class="pdx__capture" (click)="openCapture()">
+          <mat-icon>catching_pokemon</mat-icon>
+          Capturar más Pokémon
+        </button>
+      }
     </div>
   </header>
 
@@ -82,8 +86,8 @@
                 class="pdx__img"
                 [src]="sprite(p.name)"
                 [alt]="p.displayName"
-                width="100"
-                height="100"
+                [width]="tileSize()"
+                [height]="tileSize()"
                 loading="lazy"
                 decoding="async"
                 (error)="onImgError($event)"

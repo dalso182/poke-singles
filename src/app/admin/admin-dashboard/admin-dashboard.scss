@@ -373,6 +373,35 @@ a.kpi:hover {
   font-size: 12px;
 }
 
+// Top Pokédex panel — ranked rows get a leading position column.
+.recent-user__row--ranked {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.recent-user__rank {
+  min-width: 18px;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: right;
+  color: var(--text-tertiary);
+}
+
+.recent-user__count {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+
+  mat-icon {
+    font-size: 15px;
+    width: 15px;
+    height: 15px;
+    color: var(--text-tertiary);
+  }
+}
+
 @media (max-width: 520px) {
   .recent__date {
     display: none;

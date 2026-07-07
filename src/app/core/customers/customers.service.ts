@@ -5,6 +5,7 @@ import type {
   AdminCustomerListResult,
   CustomerDetail,
   CustomerRow,
+  PokedexLeaderboardRow,
 } from '../catalog/catalog.types';
 
 /** Raw row from admin_customers() — numeric/bigint aggregates may arrive as
@@ -69,10 +70,33 @@ export class CustomersService {
       ...c,
       order_count: Number(c.order_count) || 0,
       total_spent: Number(c.total_spent) || 0,
+      loyalty_balance: Number(c.loyalty_balance) || 0,
       orders: (c.orders ?? []).map((o) => ({
         ...o,
         total: Number(o.total) || 0,
       })),
+      loyalty_transactions: (c.loyalty_transactions ?? []).map((t) => ({
+        ...t,
+        amount: Number(t.amount) || 0,
+      })),
+      caught_pokemon_numbers: c.caught_pokemon_numbers ?? [],
     };
+  }
+
+  /** Top customers by Pokémon captured, for the dashboard "Top Pokédex" panel.
+   *  Backed by admin_pokedex_leaderboard (security definer + is_admin guard). */
+  async pokedexLeaderboard(limit = 10): Promise<PokedexLeaderboardRow[]> {
+    const { data, error } = await (this.supabase.client as any).rpc(
+      'admin_pokedex_leaderboard',
+      { p_limit: limit },
+    );
+    if (error) {
+      console.error('[customers] admin_pokedex_leaderboard', error);
+      throw error;
+    }
+    return ((data ?? []) as PokedexLeaderboardRow[]).map((r) => ({
+      ...r,
+      caught_count: Number(r.caught_count) || 0,
+    }));
   }
 }

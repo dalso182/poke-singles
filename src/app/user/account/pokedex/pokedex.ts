@@ -6,6 +6,7 @@ import {
   computed,
   effect,
   inject,
+  input,
   output,
   signal,
   viewChildren,
@@ -29,12 +30,19 @@ import { ProfilesService } from '../../../core/auth/profiles.service';
  * natively lazy and each tile is `content-visibility: auto`, so off-screen tiles
  * skip layout/paint. Ownership is read from the already-loaded profile
  * (caught_pokemon_numbers) — no extra fetch.
+ *
+ * Also reused by the admin customer detail (/admin/customers/:id, Pokédex tab):
+ * passing `caughtNumbers` switches the component to viewing SOMEONE ELSE'S dex —
+ * ownership comes from the input instead of the signed-in profile and the
+ * Pokéball capture CTA is hidden (it would spend the viewer's own coins).
+ * `tileSize` shrinks the sprites there (75px vs the storefront's 100px default).
  */
 @Component({
   selector: 'app-pokedex',
   imports: [MatIconModule, MatProgressBarModule],
   templateUrl: './pokedex.html',
   styleUrl: './pokedex.scss',
+  host: { '[style.--pdx-tile.px]': 'tileSize()' },
 })
 export class Pokedex implements OnDestroy {
   private readonly pokemon = inject(PokemonService);
@@ -46,6 +54,17 @@ export class Pokedex implements OnDestroy {
   /** Emitted after the Pokéball modal closes having opened ≥1 ball, so the
    *  account page can refresh its Poke-Monedas history list. */
   readonly coinsSpent = output<void>();
+
+  /** External ownership override (admin viewing a customer's dex). null (the
+   *  default) = self mode, reading the signed-in profile. */
+  readonly caughtNumbers = input<number[] | null>(null);
+  /** Header title — the storefront keeps the default. */
+  readonly title = input('Mi Pokédex');
+  /** Sprite square in px; bound to --pdx-tile on the host. */
+  readonly tileSize = input(100);
+
+  /** Viewing someone else's dex → read-only (no capture CTA). */
+  protected readonly external = computed(() => this.caughtNumbers() !== null);
 
   protected readonly regionDefs = POKEDEX_REGIONS;
   protected readonly all = signal<Pokemon[]>([]);
@@ -73,10 +92,14 @@ export class Pokedex implements OnDestroy {
     })).filter((r) => r.list.length > 0 || f === 'all');
   });
 
-  /** The customer's caught set, reactive to the already-loaded profile. */
-  protected readonly caught = computed(
-    () => new Set(this.profiles.profile()?.caught_pokemon_numbers ?? []),
-  );
+  /** The caught set — the input override when viewing another user's dex,
+   *  else reactive to the signed-in user's already-loaded profile. */
+  protected readonly caught = computed(() => {
+    const external = this.caughtNumbers();
+    return new Set(
+      external ?? this.profiles.profile()?.caught_pokemon_numbers ?? [],
+    );
+  });
 
   /** Owned totals — overall and per region — derived from the caught set. */
   protected readonly progress = computed(() => {

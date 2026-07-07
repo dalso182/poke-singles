@@ -13,6 +13,7 @@ import type {
   DashboardStats,
   OrderRow,
   OrderStatus,
+  PokedexLeaderboardRow,
   RaffleSummaryRow,
 } from '../../core/catalog/catalog.types';
 
@@ -34,6 +35,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
   protected readonly recentCustomers = signal<CustomerRow[] | null>(null);
   protected readonly activeCustomers = signal<CustomerRow[] | null>(null);
   protected readonly raffleRows = signal<RaffleSummaryRow[] | null>(null);
+  protected readonly topPokedex = signal<PokedexLeaderboardRow[] | null>(null);
 
   /** Live storefront visitor count (Realtime presence). */
   protected readonly onlineCount = this.presence.watchOnlineCount();
@@ -104,6 +106,10 @@ export class AdminDashboard implements OnInit, OnDestroy {
       .listSummary()
       .then((rows) => this.raffleRows.set(rows))
       .catch(() => this.raffleRows.set([]));
+    void this.customers
+      .pokedexLeaderboard()
+      .then((rows) => this.topPokedex.set(rows))
+      .catch(() => this.topPokedex.set([]));
   }
 
   ngOnDestroy(): void {

@@ -154,7 +154,7 @@
 // ── KPI card ──
 .kpi {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   padding: 22px 26px;
   gap: 8px;
   height: 100%;
@@ -167,9 +167,17 @@
   gap: 6px;
 
   &:not(:first-child) {
-    padding-left: 22px;
+    padding-left: 16px;
     border-left: 1px solid var(--border-subtle);
   }
+}
+
+.kpi__coin {
+  width: 18px;
+  height: 18px;
+  margin-right: 5px;
+  vertical-align: baseline;
+  transform: translateY(1px);
 }
 
 .kpi__label {
@@ -207,35 +215,23 @@
   color: var(--text-tertiary);
 }
 
-// ── Orders history ──
-.orders-head {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 20px 24px 14px;
+// ── History tabs (pedidos + Poke-Monedas ledger) ──
+.customer-detail__tabs {
+  background: transparent;
+  padding-top: 8px;
 }
 
-.orders-head__title {
-  margin: 0;
-  flex: 1;
-  font-family: var(--font-brand);
-  font-size: 18px;
+.tx-amount {
   font-weight: 700;
-  letter-spacing: -0.3px;
-  color: var(--text-primary);
 }
 
-.orders-head__count {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
-  padding: 3px 8px;
-  border-radius: 4px;
-  background: var(--surface-tonal);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-subtle);
+// Negative amounts use the Danger error slot — never brand red.
+.tx-amount--negative {
+  color: var(--mat-sys-error);
+}
+
+.customer-detail__pokedex {
+  padding: 8px 20px 20px;
 }
 
 .customer-detail__row {

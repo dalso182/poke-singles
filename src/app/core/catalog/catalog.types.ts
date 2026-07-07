@@ -635,10 +635,23 @@ export interface CustomerOrderRow {
   created_at: string;
 }
 
-/** Payload of the admin_customer() RPC — full profile + stats + recent orders. */
+/** Payload of the admin_customer() RPC — full profile + stats + recent orders,
+ *  plus the Poke-Monedas balance and recent ledger entries (newest-first) and
+ *  the customer's Pokédex collection (national-dex numbers). */
 export interface CustomerDetail extends CustomerRow {
   default_shipping_address: ShippingAddress | null;
   orders: CustomerOrderRow[];
+  loyalty_balance: number;
+  loyalty_transactions: LoyaltyTransactionRow[];
+  caught_pokemon_numbers: number[];
+}
+
+/** One row of admin_pokedex_leaderboard(): a customer ranked by Pokémon caught. */
+export interface PokedexLeaderboardRow {
+  id: string;
+  full_name: string | null;
+  email: string;
+  caught_count: number;
 }
 
 export interface AdminCustomerListParams {

@@ -236,17 +236,18 @@ $blue-soft: #e8edf8;
   color: var(--text-tertiary);
 }
 
-// Grid + tiles
+// Grid + tiles — sized off --pdx-tile (set on the host from the tileSize input;
+// 100px storefront default, 75px in the admin customer detail).
 .pdx__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(calc(var(--pdx-tile, 100px) + 8px), 1fr));
   gap: 10px;
 }
 
 .pdx__card {
   // Skip layout/paint for off-screen tiles — the whole dex renders at once.
   content-visibility: auto;
-  contain-intrinsic-size: auto 150px;
+  contain-intrinsic-size: auto calc(var(--pdx-tile, 100px) + 50px);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -275,8 +276,8 @@ $blue-soft: #e8edf8;
 
 .pdx__thumb {
   position: relative;
-  width: 100px;
-  height: 100px;
+  width: var(--pdx-tile, 100px);
+  height: var(--pdx-tile, 100px);
   // White frame: HOME sprites have a baked-in white background.
   background: var(--surface-card);
   border-radius: 8px;
@@ -294,8 +295,8 @@ $blue-soft: #e8edf8;
 }
 
 .pdx__img {
-  width: 100px;
-  height: 100px;
+  width: var(--pdx-tile, 100px);
+  height: var(--pdx-tile, 100px);
   object-fit: contain;
 }
 
@@ -316,6 +317,6 @@ $blue-soft: #e8edf8;
 
 @media (max-width: 600px) {
   .pdx__grid {
-    grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(calc(var(--pdx-tile, 100px) - 8px), 1fr));
   }
 }

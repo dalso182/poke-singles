@@ -225,5 +225,38 @@
         </div>
       }
     </section>
+
+    <section class="panel panel--customers">
+      <header class="panel__head">
+        <span class="brand-eyebrow">Top Pokédex</span>
+        <a routerLink="/admin/customers" class="panel__link">Ver clientes</a>
+      </header>
+
+      @if (topPokedex() === null) {
+        <p class="muted panel__empty">Cargando…</p>
+      } @else if (topPokedex()!.length === 0) {
+        <p class="muted panel__empty">Aún no hay Pokémon capturados.</p>
+      } @else {
+        <div class="recent">
+          @for (c of topPokedex(); track c.id; let i = $index) {
+            <a
+              class="recent-user__row recent-user__row--ranked"
+              [routerLink]="['/admin/customers', c.id]"
+              [queryParams]="{ tab: 'pokedex' }"
+            >
+              <span class="recent-user__rank brand-mono">{{ i + 1 }}</span>
+              <span class="recent-user__id">
+                <span class="recent-user__name">{{ c.full_name || 'Sin nombre' }}</span>
+                <span class="recent-user__email">{{ c.email }}</span>
+              </span>
+              <span class="recent-user__count brand-mono">
+                <mat-icon>catching_pokemon</mat-icon>
+                {{ c.caught_count }}
+              </span>
+            </a>
+          }
+        </div>
+      }
+    </section>
   </div>
 </section>
