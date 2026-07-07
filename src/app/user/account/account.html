@@ -42,32 +42,32 @@
         <nav class="acc-nav">
           <a
             class="acc-nav-item"
-            [class.is-active]="view() === 'panels' && activeSection() === 'datos'"
-            (click)="selectPanel('datos')"
+            [class.is-active]="view() === 'datos'"
+            (click)="select('datos')"
           >
             <mat-icon>person</mat-icon>
             <span class="acc-nav-label">Datos personales</span>
           </a>
           <a
             class="acc-nav-item"
-            [class.is-active]="view() === 'panels' && activeSection() === 'direccion'"
-            (click)="selectPanel('direccion')"
+            [class.is-active]="view() === 'direccion'"
+            (click)="select('direccion')"
           >
             <mat-icon>place</mat-icon>
             <span class="acc-nav-label">Dirección de envío</span>
           </a>
           <a
             class="acc-nav-item"
-            [class.is-active]="view() === 'panels' && activeSection() === 'pedidos'"
-            (click)="selectPanel('pedidos')"
+            [class.is-active]="view() === 'pedidos'"
+            (click)="select('pedidos')"
           >
             <mat-icon>shopping_bag</mat-icon>
             <span class="acc-nav-label">Mis pedidos</span>
           </a>
           <a
             class="acc-nav-item"
-            [class.is-active]="view() === 'panels' && activeSection() === 'puntos'"
-            (click)="selectPanel('puntos')"
+            [class.is-active]="view() === 'puntos'"
+            (click)="select('puntos')"
           >
             <img class="acc-nav-coin" src="assets/images/coin-sm.png" alt="" />
             <span class="acc-nav-label">Poke-Monedas</span>
@@ -75,7 +75,7 @@
           <a
             class="acc-nav-item"
             [class.is-active]="view() === 'pokedex'"
-            (click)="showPokedex()"
+            (click)="select('pokedex')"
           >
             <mat-icon>catching_pokemon</mat-icon>
             <span class="acc-nav-label">Mi Pokédex</span>
@@ -91,12 +91,11 @@
       </div>
     </aside>
 
-    <!-- Editable content -->
-    <div class="account__content">
-      @if (view() === 'panels') {
-      <!-- 01 · Datos personales -->
+    <!-- Editable content — one panel at a time, picked from the rail -->
+    <div class="account__content" #contentEl>
+      @switch (view()) {
+      @case ('datos') {
       <form
-        #datosSection
         class="acc-panel"
         [formGroup]="personalForm"
         (ngSubmit)="savePersonal()"
@@ -150,10 +149,10 @@
           </button>
         </div>
       </form>
+      }
 
-      <!-- 02 · Dirección de envío -->
+      @case ('direccion') {
       <form
-        #direccionSection
         class="acc-panel"
         [formGroup]="addressForm"
         (ngSubmit)="saveAddress()"
@@ -205,22 +204,42 @@
           </button>
         </div>
       </form>
+      }
 
-      <!-- 03 · Mis pedidos -->
-      <section #pedidosSection class="acc-panel">
+      @case ('pedidos') {
+      <section class="acc-panel">
         <header class="acc-panel-head">
           <span class="acc-icon"><mat-icon>shopping_bag</mat-icon></span>
           <div class="acc-panel-titles">
             <h2>Mis pedidos</h2>
             <p class="acc-sub">Historial de compras y estado de cada envío.</p>
           </div>
-          @if (myOrders().length > 0) {
-            <span class="acc-panel-action brand-mono">{{ myOrders().length }} pedidos</span>
+          @if (ordersTotal() > 0) {
+            <span class="acc-panel-action brand-mono">{{ ordersTotal() }} pedidos</span>
           }
         </header>
 
+        <!-- Rendered while a filter is active even with 0 matches, so it can
+             always be cleared. Hidden only for customers with no orders at all. -->
+        @if (ordersTotal() > 0 || ordersFiltered()) {
+          <div class="acc-filter">
+            <app-date-range
+              [start]="ordersFrom()"
+              (startChange)="ordersFrom.set($event); reloadOrders()"
+              [end]="ordersTo()"
+              (endChange)="ordersTo.set($event); reloadOrders()"
+            />
+          </div>
+        }
+
         @if (myOrders().length === 0) {
-          <p class="muted">Aún no has hecho un pedido.</p>
+          <p class="muted">
+            {{
+              ordersFiltered()
+                ? 'No hay pedidos en ese rango de fechas.'
+                : 'Aún no has hecho un pedido.'
+            }}
+          </p>
         } @else {
           <div class="acc-orders">
             @for (order of myOrders(); track order.id) {
@@ -242,11 +261,18 @@
               </a>
             }
           </div>
+          @if (ordersHasMore()) {
+            <app-load-more
+              [loading]="ordersLoadingMore()"
+              (loadMore)="loadMoreOrders()"
+            />
+          }
         }
       </section>
+      }
 
-      <!-- 04 · Mis puntos -->
-      <section #puntosSection class="acc-panel">
+      @case ('puntos') {
+      <section class="acc-panel">
         <header class="acc-panel-head">
           <span class="acc-icon acc-icon--coin"><img src="assets/images/coin-sm.png" alt="" /></span>
           <div class="acc-panel-titles">
@@ -262,10 +288,31 @@
           <span class="acc-points-figure">
             <span class="acc-points-balance">{{ points() | number: '1.0-0' }}</span>
           </span>
+          <button type="button" class="acc-points-redeem brand-mono" (click)="select('pokedex')">
+            <mat-icon>redeem</mat-icon>
+            Canjear
+          </button>
         </div>
 
+        @if (pointsTotal() > 0 || pointsFiltered()) {
+          <div class="acc-filter">
+            <app-date-range
+              [start]="pointsFrom()"
+              (startChange)="pointsFrom.set($event); reloadPoints()"
+              [end]="pointsTo()"
+              (endChange)="pointsTo.set($event); reloadPoints()"
+            />
+          </div>
+        }
+
         @if (pointsHistory().length === 0) {
-          <p class="muted">Aún no tienes movimientos de Poke-Monedas.</p>
+          <p class="muted">
+            {{
+              pointsFiltered()
+                ? 'No hay movimientos en ese rango de fechas.'
+                : 'Aún no tienes movimientos de Poke-Monedas.'
+            }}
+          </p>
         } @else {
           <div class="acc-points-head brand-mono">Historial</div>
           <div class="acc-points-log">
@@ -285,14 +332,23 @@
               </div>
             }
           </div>
+          @if (pointsHasMore()) {
+            <app-load-more
+              [loading]="pointsLoadingMore()"
+              (loadMore)="loadMorePoints()"
+            />
+          }
         }
       </section>
-      } @else {
+      }
+
+      @case ('pokedex') {
         @defer (when view() === 'pokedex') {
           <app-pokedex (coinsSpent)="onCoinsSpent()" />
         } @placeholder {
           <mat-progress-bar mode="indeterminate" />
         }
+      }
       }
     </div>
   </div>

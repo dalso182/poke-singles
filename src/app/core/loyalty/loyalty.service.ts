@@ -74,15 +74,26 @@ export class LoyaltyService {
     );
   }
 
-  /** Recent ledger entries, newest-first, for the /account history list. */
-  async getMyHistory(limit = 50): Promise<LoyaltyTransactionRow[]> {
-    const { data, error } = await (this.supabase.client as any)
+  /** Ledger entries, paged newest-first, for the /account history list.
+   *  `total` is the exact row count — of the *filtered* set when a `from`/`to`
+   *  bound (inclusive ISO timestamps) is given — so the caller knows when to
+   *  stop offering "Cargar más". The balance stays a separate full-table SUM
+   *  (getMyBalance). */
+  async getMyHistory(
+    opts: { limit?: number; offset?: number; from?: string; to?: string } = {},
+  ): Promise<{ rows: LoyaltyTransactionRow[]; total: number }> {
+    const limit = Math.max(1, opts.limit ?? 20);
+    const offset = Math.max(0, opts.offset ?? 0);
+    let query = (this.supabase.client as any)
       .from('loyalty_transactions')
-      .select('*')
+      .select('*', { count: 'exact' })
       .order('created_at', { ascending: false })
-      .limit(limit);
+      .range(offset, offset + limit - 1);
+    if (opts.from) query = query.gte('created_at', opts.from);
+    if (opts.to) query = query.lte('created_at', opts.to);
+    const { data, error, count } = await query;
     if (error) throw error;
-    return (data ?? []) as LoyaltyTransactionRow[];
+    return { rows: (data ?? []) as LoyaltyTransactionRow[], total: count ?? 0 };
   }
 
   /** Open a Pokéball tier: the RPC atomically checks the balance, debits the

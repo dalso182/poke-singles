@@ -48,6 +48,8 @@ $blue-soft: #e8edf8;
   display: flex;
   flex-direction: column;
   gap: 18px;
+  // Mobile panel switching scrolls this container into view.
+  scroll-margin-top: 16px;
 }
 
 // ───────── Profile rail ─────────
@@ -251,13 +253,19 @@ $blue-soft: #e8edf8;
   }
 }
 
+// ───────── Panel filter row (date range on Pedidos / Poke-Monedas) ─────────
+.acc-filter {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 14px;
+}
+
 // ───────── Section card ─────────
 .acc-panel {
   background: var(--surface-card);
   border: 1px solid var(--border-subtle);
   border-radius: 14px;
   padding: 24px 26px;
-  scroll-margin-top: 16px;
 }
 
 .acc-panel-head {
@@ -433,6 +441,37 @@ $blue-soft: #e8edf8;
   display: inline-flex;
   align-items: baseline;
   gap: 12px;
+}
+
+// Deep-links into the Mi Pokédex view to spend coins. Mirrors the header's
+// "Canjear" pill, sized up to sit alongside the hero balance.
+.acc-points-redeem {
+  flex: 0 0 auto;
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #fff;
+  border: 1px solid #f0dca4;
+  border-radius: 999px;
+  color: #8a6209;
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+
+  mat-icon {
+    font-size: 17px;
+    width: 17px;
+    height: 17px;
+  }
+
+  &:hover {
+    border-color: #d4941c;
+  }
 }
 
 .acc-points-balance {

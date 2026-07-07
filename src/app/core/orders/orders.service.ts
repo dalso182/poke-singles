@@ -79,14 +79,25 @@ export class OrdersService {
     return result;
   }
 
-  /** Signed-in user's order history. RLS scopes to their own rows. */
-  async getMyOrders(): Promise<OrderRow[]> {
-    const { data, error } = await (this.supabase.client as any)
+  /** Signed-in user's order history, paged newest-first. RLS scopes to their
+   *  own rows; `total` is the exact count — of the *filtered* set when a
+   *  `from`/`to` bound (inclusive ISO timestamps) is given — so /account can
+   *  show the figure and decide whether a "Cargar más" page remains. */
+  async getMyOrders(
+    opts: { limit?: number; offset?: number; from?: string; to?: string } = {},
+  ): Promise<{ rows: OrderRow[]; total: number }> {
+    const limit = Math.max(1, opts.limit ?? 10);
+    const offset = Math.max(0, opts.offset ?? 0);
+    let query = (this.supabase.client as any)
       .from('orders')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+    if (opts.from) query = query.gte('created_at', opts.from);
+    if (opts.to) query = query.lte('created_at', opts.to);
+    const { data, error, count } = await query;
     if (error) throw error;
-    return (data ?? []) as OrderRow[];
+    return { rows: (data ?? []) as OrderRow[], total: count ?? 0 };
   }
 
   /** Confirmation-page lookup. Works for both anon (guest) and authed.

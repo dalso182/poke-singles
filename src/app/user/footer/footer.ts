@@ -59,7 +59,7 @@ export class Footer {
       title: 'Mi cuenta',
       links: [
         { label: 'Mi cuenta', route: '/account' },
-        { label: 'Mis órdenes', route: '/account' },
+        { label: 'Mis órdenes', route: '/account/pedidos' },
       ],
     },
   ];

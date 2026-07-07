@@ -209,9 +209,31 @@ export const routes: Routes = [
           import('./user/account/account').then((m) => m.Account),
       },
       {
-        // Deep link straight into the Mi Pokédex view (header "Canjear" chip,
-        // future promos). Same Account component; `initialView` binds from
-        // route data via withComponentInputBinding.
+        // Deep links straight into an account panel (order-confirmation "Ver
+        // mis pedidos", footer, header coins chip / "Canjear"). Same Account
+        // component; `initialView` binds from route data via
+        // withComponentInputBinding. Bare /account = the Datos panel.
+        path: 'account/direccion',
+        canActivate: [customerGuard],
+        data: { initialView: 'direccion' },
+        loadComponent: () =>
+          import('./user/account/account').then((m) => m.Account),
+      },
+      {
+        path: 'account/pedidos',
+        canActivate: [customerGuard],
+        data: { initialView: 'pedidos' },
+        loadComponent: () =>
+          import('./user/account/account').then((m) => m.Account),
+      },
+      {
+        path: 'account/puntos',
+        canActivate: [customerGuard],
+        data: { initialView: 'puntos' },
+        loadComponent: () =>
+          import('./user/account/account').then((m) => m.Account),
+      },
+      {
         path: 'account/pokedex',
         canActivate: [customerGuard],
         data: { initialView: 'pokedex' },

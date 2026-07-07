@@ -3,6 +3,7 @@ import {
   ElementRef,
   Injector,
   OnInit,
+  PLATFORM_ID,
   afterNextRender,
   computed,
   effect,
@@ -11,7 +12,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { DecimalPipe, DatePipe, Location } from '@angular/common';
+import { DecimalPipe, DatePipe, Location, isPlatformBrowser } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { nameValidator } from '../../shared/validators/name.validator';
 import { phoneValidator } from '../../shared/validators/phone.validator';
@@ -28,12 +29,33 @@ import { OrdersService } from '../../core/orders/orders.service';
 import { LoyaltyService } from '../../core/loyalty/loyalty.service';
 import { UserAvatar } from '../../shared/user-avatar/user-avatar';
 import { AvatarPickerService } from './avatar-picker/avatar-picker.service';
+import { LoadMore } from '../../shared/load-more/load-more';
+import { DateRange } from '../../shared/table/controls/date-range/date-range';
 import { Pokedex } from './pokedex/pokedex';
 import type {
   LoyaltyTransactionRow,
   OrderRow,
   ShippingAddress,
 } from '../../core/catalog/catalog.types';
+
+/** The rail's five views — one panel at a time, so the page height stays
+ *  constant no matter how long the order / points history grows. */
+type AccountView = 'datos' | 'direccion' | 'pedidos' | 'puntos' | 'pokedex';
+
+const ORDERS_PAGE_SIZE = 10;
+const POINTS_PAGE_SIZE = 20;
+
+/** app-date-range emits local calendar days (`YYYY-MM-DD`); convert them to
+ *  inclusive UTC instants so "hoy" means the customer's day, not UTC's. */
+function dayBounds(
+  fromIso: string | null,
+  toIso: string | null,
+): { from?: string; to?: string } {
+  const out: { from?: string; to?: string } = {};
+  if (fromIso) out.from = new Date(`${fromIso}T00:00:00`).toISOString();
+  if (toIso) out.to = new Date(`${toIso}T23:59:59.999`).toISOString();
+  return out;
+}
 
 @Component({
   selector: 'app-account',
@@ -49,6 +71,8 @@ import type {
     MatProgressBarModule,
     MatSnackBarModule,
     UserAvatar,
+    LoadMore,
+    DateRange,
     Pokedex,
   ],
   templateUrl: './account.html',
@@ -69,10 +93,38 @@ export class Account implements OnInit {
   // Single source of truth for the profile lives in ProfilesService so the
   // header avatar and this page stay in sync after an edit.
   protected readonly profile = this.profiles.profile;
+
+  // Orders ledger, paged: `myOrders` holds the loaded pages, `ordersTotal` the
+  // exact DB count (drives the header figure + when "Cargar más" disappears).
+  // When a date filter is set, both reflect the filtered set.
   protected readonly myOrders = signal<OrderRow[]>([]);
+  protected readonly ordersTotal = signal(0);
+  protected readonly ordersLoadingMore = signal(false);
+  protected readonly ordersHasMore = computed(
+    () => this.myOrders().length < this.ordersTotal(),
+  );
+  // Date filter (local calendar days, from app-date-range).
+  protected readonly ordersFrom = signal<string | null>(null);
+  protected readonly ordersTo = signal<string | null>(null);
+  protected readonly ordersFiltered = computed(
+    () => this.ordersFrom() !== null || this.ordersTo() !== null,
+  );
+
   /** Shared LoyaltyService balance — stays fresh after a Pokéball spend. */
   protected readonly points = computed(() => this.loyalty.balance() ?? 0);
+  // Points ledger, paged + date-filtered the same way as orders.
   protected readonly pointsHistory = signal<LoyaltyTransactionRow[]>([]);
+  protected readonly pointsTotal = signal(0);
+  protected readonly pointsLoadingMore = signal(false);
+  protected readonly pointsHasMore = computed(
+    () => this.pointsHistory().length < this.pointsTotal(),
+  );
+  protected readonly pointsFrom = signal<string | null>(null);
+  protected readonly pointsTo = signal<string | null>(null);
+  protected readonly pointsFiltered = computed(
+    () => this.pointsFrom() !== null || this.pointsTo() !== null,
+  );
+
   protected readonly loading = signal(false);
   protected readonly savingPersonal = signal(false);
   protected readonly savingAddress = signal(false);
@@ -85,24 +137,21 @@ export class Account implements OnInit {
     return this.email().split('@')[0] || 'Cliente';
   });
 
-  /** Which rail nav item is highlighted; driven by clicking a nav link. */
-  protected readonly activeSection = signal<'datos' | 'direccion' | 'pedidos' | 'puntos'>('datos');
+  /** Route-data input: /account/pedidos, /account/puntos, /account/pokedex …
+   *  open their view directly. NOTE: withComponentInputBinding overwrites the
+   *  default with undefined on routes without the key — always read with
+   *  `?? 'datos'`. */
+  readonly initialView = input<AccountView | undefined>();
 
-  /** Route-data input: /account/pokedex sets 'pokedex' to open that view
-   *  directly. NOTE: withComponentInputBinding overwrites the default with
-   *  undefined on routes without the key — always read with `?? 'panels'`. */
-  readonly initialView = input<'panels' | 'pokedex' | undefined>();
+  /** The active panel — the rail is a real switcher, so only this section
+   *  renders. Keeps the page height flat however long the ledgers get. */
+  protected readonly view = signal<AccountView>('datos');
 
-  /** Content mode: the scrollable settings panels, or the full Pokédex grid.
-   *  Both share the rail; selecting a panel section returns to 'panels'. */
-  protected readonly view = signal<'panels' | 'pokedex'>('panels');
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
-  // Section anchors — queried (not passed inline) so scrolling still works when
-  // returning from the Pokédex view, where the panels were just re-rendered.
-  private readonly datosSection = viewChild<ElementRef<HTMLElement>>('datosSection');
-  private readonly direccionSection = viewChild<ElementRef<HTMLElement>>('direccionSection');
-  private readonly pedidosSection = viewChild<ElementRef<HTMLElement>>('pedidosSection');
-  private readonly puntosSection = viewChild<ElementRef<HTMLElement>>('puntosSection');
+  // On the stacked mobile layout the rail sits above the content, so after a
+  // switch the fresh panel can start below the fold — we scroll it into view.
+  private readonly contentEl = viewChild<ElementRef<HTMLElement>>('contentEl');
 
   /** The 7 provinces of Costa Rica, for the shipping-address dropdown. */
   protected readonly provinces = [
@@ -146,7 +195,7 @@ export class Account implements OnInit {
   }
 
   ngOnInit(): void {
-    this.view.set(this.initialView() ?? 'panels');
+    this.view.set(this.initialView() ?? 'datos');
     void this.bootstrap();
   }
 
@@ -157,15 +206,19 @@ export class Account implements OnInit {
       // come back empty on a hard refresh. customerGuard awaits this too,
       // but defensive here in case the page is reached without the guard.
       await this.auth.ready;
+      const emptyOrders = { rows: [] as OrderRow[], total: 0 };
+      const emptyHistory = { rows: [] as LoyaltyTransactionRow[], total: 0 };
       const [profile, orders, , pointsHistory] = await Promise.all([
         this.profiles.ensureLoaded(),
-        this.orders.getMyOrders().catch(() => [] as OrderRow[]),
+        this.orders.getMyOrders({ limit: ORDERS_PAGE_SIZE }).catch(() => emptyOrders),
         this.loyalty.ensureLoaded().catch(() => 0),
-        this.loyalty.getMyHistory().catch(() => [] as LoyaltyTransactionRow[]),
+        this.loyalty.getMyHistory({ limit: POINTS_PAGE_SIZE }).catch(() => emptyHistory),
       ]);
       console.debug('[account] profile fetched', profile);
-      this.myOrders.set(orders);
-      this.pointsHistory.set(pointsHistory);
+      this.myOrders.set(orders.rows);
+      this.ordersTotal.set(orders.total);
+      this.pointsHistory.set(pointsHistory.rows);
+      this.pointsTotal.set(pointsHistory.total);
       if (profile) {
         const addr = profile.default_shipping_address;
         this.personalForm.patchValue({
@@ -203,39 +256,106 @@ export class Account implements OnInit {
     return `#${orderNumber}`;
   }
 
-  /** Rail nav: show the settings panels, highlight the target, and scroll it
-   *  into view. The scroll is deferred to the next render so it also works when
-   *  switching back from the Pokédex view (panels need to render first). */
-  protected selectPanel(key: 'datos' | 'direccion' | 'pedidos' | 'puntos'): void {
-    this.view.set('panels');
-    // Keep the address bar truthful without a router navigation (which would
-    // recreate the component) or polluting history.
-    this.location.replaceState('/account');
-    this.activeSection.set(key);
-    afterNextRender(
-      () =>
-        this.sectionEl(key)?.nativeElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start',
-        }),
-      { injector: this.injector },
-    );
+  /** Rail nav: switch the content area to the chosen panel. Every panel has a
+   *  matching route (refresh/deep-link safe), but switching here only
+   *  replaceState()s the URL — a router navigation would recreate the
+   *  component and re-fire the bootstrap fetches. */
+  protected select(view: AccountView): void {
+    this.view.set(view);
+    this.location.replaceState(view === 'datos' ? '/account' : `/account/${view}`);
+    // Mobile (single-column) only: the rail sits above the content, so bring
+    // the freshly rendered panel into view. Deferred to the next render so the
+    // new panel exists before we scroll.
+    if (this.isBrowser && window.matchMedia('(max-width: 900px)').matches) {
+      afterNextRender(
+        () =>
+          this.contentEl()?.nativeElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          }),
+        { injector: this.injector },
+      );
+    }
   }
 
-  /** Rail nav: switch the content area to the full Pokédex grid. */
-  protected showPokedex(): void {
-    this.view.set('pokedex');
-    this.location.replaceState('/account/pokedex');
+  /** Current orders date filter as inclusive UTC bounds for the service. */
+  private ordersRange(): { from?: string; to?: string } {
+    return dayBounds(this.ordersFrom(), this.ordersTo());
   }
 
-  private sectionEl(
-    key: 'datos' | 'direccion' | 'pedidos' | 'puntos',
-  ): ElementRef<HTMLElement> | undefined {
-    switch (key) {
-      case 'datos':     return this.datosSection();
-      case 'direccion': return this.direccionSection();
-      case 'pedidos':   return this.pedidosSection();
-      case 'puntos':    return this.puntosSection();
+  private pointsRange(): { from?: string; to?: string } {
+    return dayBounds(this.pointsFrom(), this.pointsTo());
+  }
+
+  /** Date filter changed: restart the orders list from page one. */
+  protected async reloadOrders(): Promise<void> {
+    this.ordersLoadingMore.set(true);
+    try {
+      const { rows, total } = await this.orders.getMyOrders({
+        limit: ORDERS_PAGE_SIZE,
+        ...this.ordersRange(),
+      });
+      this.myOrders.set(rows);
+      this.ordersTotal.set(total);
+    } catch (err) {
+      this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
+    } finally {
+      this.ordersLoadingMore.set(false);
+    }
+  }
+
+  /** "Cargar más" on the orders panel: append the next page. */
+  protected async loadMoreOrders(): Promise<void> {
+    if (this.ordersLoadingMore() || !this.ordersHasMore()) return;
+    this.ordersLoadingMore.set(true);
+    try {
+      const { rows, total } = await this.orders.getMyOrders({
+        limit: ORDERS_PAGE_SIZE,
+        offset: this.myOrders().length,
+        ...this.ordersRange(),
+      });
+      this.myOrders.update((cur) => [...cur, ...rows]);
+      this.ordersTotal.set(total);
+    } catch (err) {
+      this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
+    } finally {
+      this.ordersLoadingMore.set(false);
+    }
+  }
+
+  /** Date filter changed: restart the points history from page one. */
+  protected async reloadPoints(): Promise<void> {
+    this.pointsLoadingMore.set(true);
+    try {
+      const { rows, total } = await this.loyalty.getMyHistory({
+        limit: POINTS_PAGE_SIZE,
+        ...this.pointsRange(),
+      });
+      this.pointsHistory.set(rows);
+      this.pointsTotal.set(total);
+    } catch (err) {
+      this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
+    } finally {
+      this.pointsLoadingMore.set(false);
+    }
+  }
+
+  /** "Cargar más" on the points panel: append the next page. */
+  protected async loadMorePoints(): Promise<void> {
+    if (this.pointsLoadingMore() || !this.pointsHasMore()) return;
+    this.pointsLoadingMore.set(true);
+    try {
+      const { rows, total } = await this.loyalty.getMyHistory({
+        limit: POINTS_PAGE_SIZE,
+        offset: this.pointsHistory().length,
+        ...this.pointsRange(),
+      });
+      this.pointsHistory.update((cur) => [...cur, ...rows]);
+      this.pointsTotal.set(total);
+    } catch (err) {
+      this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
+    } finally {
+      this.pointsLoadingMore.set(false);
     }
   }
 
@@ -252,10 +372,17 @@ export class Account implements OnInit {
 
   /** A Pokéball was opened inside the Pokédex view — the balance signal is
    *  already fresh (LoyaltyService), but the history list needs a re-fetch so
-   *  the new 'redeem' row shows when the user switches to the Puntos panel. */
+   *  the new 'redeem' row shows when the user switches to the Puntos panel.
+   *  Resets to the first page (keeping any active date filter) so the new row
+   *  lands on top. */
   protected async onCoinsSpent(): Promise<void> {
     try {
-      this.pointsHistory.set(await this.loyalty.getMyHistory());
+      const { rows, total } = await this.loyalty.getMyHistory({
+        limit: POINTS_PAGE_SIZE,
+        ...this.pointsRange(),
+      });
+      this.pointsHistory.set(rows);
+      this.pointsTotal.set(total);
     } catch {
       // Non-critical — history refreshes on the next full page load.
     }
