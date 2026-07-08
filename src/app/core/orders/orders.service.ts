@@ -323,6 +323,24 @@ export class OrdersService {
     return data as OrderRow;
   }
 
+  /** Admin: re-send payment instructions for a pending order via the
+   *  send-payment-reminder edge function (JWT-gated, admin-only). Awaited —
+   *  the admin needs success/failure feedback. On success the function also
+   *  stamps orders.payment_reminder_at. */
+  async sendPaymentReminder(
+    orderId: string,
+  ): Promise<{ ok: true; reminder_at: string } | { ok: false; error: string }> {
+    const { data, error } = await this.supabase.client.functions.invoke(
+      'send-payment-reminder',
+      { body: { order_id: orderId } },
+    );
+    if (error) {
+      console.error('[orders] sendPaymentReminder', error);
+      return { ok: false, error: 'FUNCTION_ERROR' };
+    }
+    return data as { ok: true; reminder_at: string } | { ok: false; error: string };
+  }
+
   async cancelOrder(
     id: string,
     notes?: string | null,

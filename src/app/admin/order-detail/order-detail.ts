@@ -199,6 +199,33 @@ export class OrderDetail implements OnInit {
     }
   }
 
+  protected async onRemindPayment(): Promise<void> {
+    const order = this.order();
+    if (!order || order.status !== 'pending' || this.working()) return;
+    this.working.set(true);
+    try {
+      const result = await this.orders.sendPaymentReminder(order.id);
+      if (!result.ok) {
+        this.snack.open(this.reminderErrorCopy(result.error), 'OK', { duration: 5000 });
+        return;
+      }
+      this.order.set({ ...order, payment_reminder_at: result.reminder_at });
+      this.snack.open(`Recordatorio de pago enviado a ${order.customer_email}.`, 'OK', { duration: 4000 });
+    } finally {
+      this.working.set(false);
+    }
+  }
+
+  private reminderErrorCopy(code: string): string {
+    switch (code) {
+      case 'NOT_ADMIN':   return 'Necesitas permisos de administrador.';
+      case 'NOT_FOUND':   return 'No encontramos el pedido.';
+      case 'NOT_PENDING': return 'El pedido ya no está pendiente de pago.';
+      case 'SEND_FAILED': return 'No se pudo enviar el correo. Intenta de nuevo.';
+      default:            return 'No se pudo enviar el recordatorio.';
+    }
+  }
+
   private cancelErrorCopy(code: string): string {
     switch (code) {
       case 'NOT_ADMIN':         return 'Necesitas permisos de administrador.';

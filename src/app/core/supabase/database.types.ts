@@ -539,6 +539,7 @@ export type Database = {
           order_number: number
           payment_method: string
           payment_proof_url: string | null
+          payment_reminder_at: string | null
           shipping_address: Json | null
           shipping_amount: number
           shipping_method_id: string | null
@@ -563,6 +564,7 @@ export type Database = {
           order_number?: number
           payment_method: string
           payment_proof_url?: string | null
+          payment_reminder_at?: string | null
           shipping_address?: Json | null
           shipping_amount?: number
           shipping_method_id?: string | null
@@ -587,6 +589,7 @@ export type Database = {
           order_number?: number
           payment_method?: string
           payment_proof_url?: string | null
+          payment_reminder_at?: string | null
           shipping_address?: Json | null
           shipping_amount?: number
           shipping_method_id?: string | null
@@ -1547,6 +1550,15 @@ export type Database = {
           order_number: number
           total_count: number
           user_id: string
+        }[]
+      }
+      admin_pokedex_leaderboard: {
+        Args: { p_limit?: number }
+        Returns: {
+          caught_count: number
+          email: string
+          full_name: string
+          id: string
         }[]
       }
       admin_price_review_accept: {

@@ -69,3 +69,9 @@ verify_jwt = false
 # more than one wall-clock window per sweep.
 [functions.price-check]
 verify_jwt = false
+
+# Admin-triggered "Recordar pago" email for pending orders. verify_jwt = true
+# requires a signed-in caller at the gateway; the function additionally checks
+# app_metadata.role = 'admin' (the same claim is_admin() reads) before sending.
+[functions.send-payment-reminder]
+verify_jwt = true

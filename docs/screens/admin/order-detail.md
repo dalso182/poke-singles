@@ -1,6 +1,6 @@
 # Admin — Order detail
 
-> Part of the Poke-Singles docs set. Verified against source on 2026-07-06. Load together with /CLAUDE.md.
+> Part of the Poke-Singles docs set. Verified against source on 2026-07-08. Load together with /CLAUDE.md.
 
 ## Purpose
 
@@ -18,7 +18,7 @@ Single-order workbench: full buyer/shipping/payment context, the line-item snaps
 - `src/app/admin/order-detail/order-detail.html` — header, cancel banner, action bar, two-tab body (info / picking grid).
 - `src/app/admin/order-detail/order-detail.scss` — `.order-detail__*` styles: cancel banner (red-tinted via `color-mix` on `--brand-red`), proof image, summary rows, picking-grid cards.
 - `src/app/admin/order-detail/cancel-order-dialog.ts|html|scss` — `CancelOrderDialog` (selector `app-cancel-order-dialog`) + `CancelOrderDialogData { shortRef }` / `CancelOrderDialogResult = string | null`.
-- `src/app/core/orders/orders.service.ts` — `OrdersService`: `getOrderForAdmin`, `updateOrderStatus`, `cancelOrder`, `uploadPaymentProof`, `adminAttachPaymentProof`, `getPaymentProofSignedUrl`, `WHATSAPP_PROOF_SENTINEL`.
+- `src/app/core/orders/orders.service.ts` — `OrdersService`: `getOrderForAdmin`, `updateOrderStatus`, `sendPaymentReminder`, `cancelOrder`, `uploadPaymentProof`, `adminAttachPaymentProof`, `getPaymentProofSignedUrl`, `WHATSAPP_PROOF_SENTINEL`.
 - `src/app/core/storage/local-storage.service.ts` — `LocalStorageService`, used for pick-state persistence.
 - `src/app/core/catalog/catalog.types.ts` — `OrderRow`, `OrderItemRow`, `OrderStatus`, `ShippingAddress`.
 - Backend: `supabase/migrations/20260509000000_cancel_order.sql`, `20260523000000_cancel_order_notes.sql`, `20260523000100_cancel_order_releases_coupon.sql` (current RPC body), `20260526000000_products_restock_respect_caller.sql` (restock trigger), `20260528000000_loyalty_points.sql` (status trigger), `20260508000600` / `20260509000400` / `20260629000000` (payment-proofs storage policies).
@@ -31,6 +31,7 @@ Single-order workbench: full buyer/shipping/payment context, the line-item snaps
 4. **Cancel banner** (only when `status === 'cancelled'`, `.order-detail__cancel-banner`, `role="status"`) — `cancel` icon, bold `"Pedido cancelado."`, then `cancellation_notes` or the muted fallback `"Sin nota."`.
 5. **Action bar** (`mat-card.order-detail__actions`):
    - Forward button (`mat-flat-button color="primary"`, `check_circle` icon) — rendered only when `forwardAction()` is non-null: `pending` → label `"Marcar como pagado"` (next `paid`); `paid` → `"Marcar como completado"` (next `completed`). No button for `shipped`, `completed`, `cancelled`.
+   - "Recordar pago" button (`mat-stroked-button`, `mail` icon) — rendered only while `status === 'pending'`, disabled while `working()`. `onRemindPayment()` → awaited `OrdersService.sendPaymentReminder(order.id)` (edge function `send-payment-reminder`), then snackbar `"Recordatorio de pago enviado a {email}."` and the local `order` signal gets the returned `payment_reminder_at`. If the order was already reminded, a muted hint `"Recordatorio enviado {{ payment_reminder_at | date:'medium' }}"` (`.order-detail__reminder-hint`) sits next to the button. Error codes map to Spanish copy via `reminderErrorCopy()` (`NOT_ADMIN`/`NOT_FOUND`/`NOT_PENDING`/`SEND_FAILED`).
    - Cancel button (`mat-stroked-button color="warn"`, `cancel` icon, label `"Cancelar pedido"`) — disabled unless `canCancel()` (`status === 'pending' || status === 'paid'`) and not `working()`.
 6. **`<mat-tab-group animationDuration="180ms">`** with two tabs:
    - **Tab `"Info pedido"`** — stacked `mat-card` panels:
@@ -65,7 +66,7 @@ Single-order workbench: full buyer/shipping/payment context, the line-item snaps
   - Viewing: `getPaymentProofSignedUrl(filePath, expiresIn = 3600)` → `createSignedUrl` (yes, signed URLs — the bucket is not public; admin read via `payment_proofs_admin_read` / `payment_proofs_admin_all`).
   - Attaching: `uploadPaymentProof(orderId, file)` uploads to path `{orderId}/proof.{ext}` **without `upsert`** (a 409 "already exists" is treated as success), then `adminAttachPaymentProof(orderId, path)` does a direct `update({ payment_proof_url })` on the order (allowed by `orders_admin_all`; unlike the customer `attach_payment_proof` RPC there are no email/status checks, because admins receive proofs out-of-band and may attach after the order is already `paid`). Admin writes to the bucket at any status ride the `payment_proofs_admin_all` storage policy.
   - `WHATSAPP_PROOF_SENTINEL = '__whatsapp__'` in `payment_proof_url` means "customer said they sent it via WhatsApp" — no file exists.
-- **Emails** — the edge function **`send-order-email`** (`supabase/functions/send-order-email/index.ts`) is **not triggered from this screen**. It fires exactly once, fire-and-forget, from `OrdersService.placeOrder()` at checkout (customer confirmation + admin notification via Resend; the admin email's `"Ver pedido en admin"` button deep-links to `{STORE_PUBLIC_URL}/admin/orders/{id}` — how admins usually land here). No status-change or cancellation emails exist.
+- **Emails** — the edge function **`send-order-email`** (`supabase/functions/send-order-email/index.ts`) is **not triggered from this screen**. It fires exactly once, fire-and-forget, from `OrdersService.placeOrder()` at checkout (customer confirmation + admin notification via Resend; the admin email's `"Ver pedido en admin"` button deep-links to `{STORE_PUBLIC_URL}/admin/orders/{id}` — how admins usually land here). The one email this screen *does* send is **`send-payment-reminder`** (`supabase/functions/send-payment-reminder/index.ts`) via the "Recordar pago" button: admin-gated (`verify_jwt = true` + in-function `app_metadata.role === 'admin'` check), pending-only, re-sends payment instructions with a CTA to `/checkout/confirmation/{id}?email=…` plus a secondary `/account/pedidos` link, and stamps `orders.payment_reminder_at` on success. No status-change or cancellation emails exist.
 
 ## State & data flow
 

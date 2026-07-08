@@ -343,7 +343,10 @@ for `truncate` (which has different transactional / trigger semantics).
 
 ## Edge functions
 
-`send-order-email`, `send-signup-email`, `send-raffle-result`, and **`price-check`** are live.
-DB triggers / cron jobs invoke them via `net.http_post` — **pg_net lives in the `net` schema on
-this project, NOT `extensions`** — plus Vault secrets for the function URL +
-`supabase_anon_key`. The folder grows as new flows need server-side hooks.
+`send-order-email`, `send-signup-email`, `send-raffle-result`, **`price-check`**, and
+**`send-payment-reminder`** are live. DB triggers / cron jobs invoke them via `net.http_post` —
+**pg_net lives in the `net` schema on this project, NOT `extensions`** — plus Vault secrets for
+the function URL + `supabase_anon_key`. `send-payment-reminder` is the sole
+`verify_jwt = true` function: admin-invoked from the browser, it re-checks
+`app_metadata.role === 'admin'` in-function (the anon key passes the gateway too). The folder
+grows as new flows need server-side hooks.

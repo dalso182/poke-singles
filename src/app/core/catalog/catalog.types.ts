@@ -519,6 +519,9 @@ export interface OrderRow {
   total: number;
   customer_notes: string | null;
   cancellation_notes: string | null;
+  /** Last "Recordar pago" reminder email, stamped by the
+   *  send-payment-reminder edge function. Null = never sent. */
+  payment_reminder_at: string | null;
   created_at: string;
   updated_at: string;
 }

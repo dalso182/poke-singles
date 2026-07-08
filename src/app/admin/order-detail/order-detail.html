@@ -62,6 +62,22 @@
             {{ action.label }}
           </button>
         }
+        @if (o.status === 'pending') {
+          <button
+            mat-stroked-button
+            type="button"
+            (click)="onRemindPayment()"
+            [disabled]="working()"
+          >
+            <mat-icon>mail</mat-icon>
+            Recordar pago
+          </button>
+          @if (o.payment_reminder_at) {
+            <span class="muted order-detail__reminder-hint">
+              Recordatorio enviado {{ o.payment_reminder_at | date: 'medium' }}
+            </span>
+          }
+        }
         <button
           mat-stroked-button
           color="warn"

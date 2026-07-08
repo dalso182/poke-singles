@@ -1,6 +1,6 @@
 # Backend RPCs, edge functions & PHP endpoints
 
-> Part of the Poke-Singles docs set. Verified against source on 2026-07-06. Load together with /CLAUDE.md.
+> Part of the Poke-Singles docs set. Verified against source on 2026-07-08. Load together with /CLAUDE.md.
 
 ## Purpose
 
@@ -18,7 +18,7 @@ Catalogue every callable backend surface at its FINAL version: all Postgres RPCs
 | File | Role |
 |---|---|
 | `supabase/migrations/*.sql` | RPC truth. Final versions: `place_order` → `20260704100200` (v10); `cancel_order` → `20260523000100`; `validate_coupon`/`calculate_coupon_discount`/`get_my_applied_coupon` → `20260524000300`; `search_products` → `20260525002000`; `draw_raffle` → `20260525000600`; `admin_customer` → `20260704120000`; `admin_price_review_start` → `20260525003900`; `admin_record_price_check`/`admin_price_review_next` → `20260525003800`. |
-| `supabase/functions/{price-check,send-order-email,send-raffle-result,send-signup-email}/index.ts` | Edge functions. |
+| `supabase/functions/{price-check,send-order-email,send-payment-reminder,send-raffle-result,send-signup-email}/index.ts` | Edge functions. |
 | `supabase/config.toml` | `verify_jwt = false` for all four functions. |
 | `server/{_supabase-auth.php,auth-config.php,list-images.php,upload-image.php,create-folder.php}` | Image-picker endpoints + admin gate. |
 | Angular callers | `src/app/core/catalog/products.service.ts`, `sets.service.ts`, `card-types.service.ts`, `categories.service.ts`, `raffles.service.ts`; `core/cart/cart.service.ts`; `core/orders/orders.service.ts`; `core/customers/customers.service.ts`; `core/dashboard/dashboard.service.ts`; `core/reports/reports.service.ts`; `core/loyalty/loyalty.service.ts`; `core/search-log/search-log.service.ts`; `core/auth/auth.service.ts`. |
@@ -178,7 +178,7 @@ DEFINER, `authenticated`. Caller: `LoyaltyService.openPokeball` (`loyalty.servic
 
 ### Edge functions (Deno, `supabase/functions/`)
 
-All four have `verify_jwt = false` in `supabase/config.toml` and use the auto-injected `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`.
+All use the auto-injected `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`. Four have `verify_jwt = false` in `supabase/config.toml`; `send-payment-reminder` is the sole `verify_jwt = true` function (admin-gated).
 
 #### `price-check`
 
@@ -191,6 +191,12 @@ All four have `verify_jwt = false` in `supabase/config.toml` and use the auto-in
 - **Invoked by**: the browser — `OrdersService.placeOrder` fire-and-forgets `functions.invoke('send-order-email', {body: {order_id, email}})` after a successful `place_order`. Anon-callable; the **order_id + customer_email match is the spam guard** (`EMAIL_MISMATCH` 403 otherwise).
 - **Behavior**: loads the order + items via service role; loads `app_settings` payment fields; sends via **Resend** (`https://api.resend.com/emails`): (1) customer confirmation — items table, totals, SINPE/transfer instructions with a prefilled WhatsApp link when applicable; (2) one admin notification to all `order_notification_recipients` (parsed, validated, lowercased; reply-to = the customer) with a deep link `STORE_PUBLIC_URL/admin/orders/<id>`. Empty recipients ⇒ no admin mail.
 - **Env**: `RESEND_API_KEY`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` (default "Poke-Singles"), `STORE_PUBLIC_URL` (default `https://new.poke-singles.com`).
+
+#### `send-payment-reminder`
+
+- **Invoked by**: the admin — `OrdersService.sendPaymentReminder(orderId)` (awaited, not fire-and-forget) from the "Recordar pago" button on `/admin/orders/:id`; body `{order_id}`. `verify_jwt = true` at the gateway, but the anon key is itself a valid JWT — the real gate is the in-function check `auth.getUser(token)` → `app_metadata.role === 'admin'` (the same claim `is_admin()` reads). Business failures return HTTP 200 `{ok: false, error: CODE}` (`NOT_ADMIN`/`NOT_FOUND`/`NOT_PENDING`/`SEND_FAILED`) so supabase-js surfaces the code in `data`.
+- **Behavior**: loads the order + items via service role; rejects unless `status === 'pending'` (proof-already-attached does NOT block — admin judgment); loads `app_settings` payment fields; sends ONE Resend email to the customer — payment instructions (same SINPE/transfer/WhatsApp block as the confirmation email), CTA button to `STORE_PUBLIC_URL/checkout/confirmation/<id>?email=<customer_email>` (guest-capable proof-upload page), secondary link to `/account/pedidos`, items + totals summary. On success stamps `orders.payment_reminder_at` (best-effort) and returns `{ok: true, reminder_at}`.
+- **Env**: same Resend quartet as send-order-email.
 
 #### `send-raffle-result`
 
