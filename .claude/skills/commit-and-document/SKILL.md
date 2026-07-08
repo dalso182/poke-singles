@@ -1,7 +1,7 @@
 ---
 name: commit-and-document
-model: haiku
-description: Use when the user asks to "commit work and update docs if necessary", "wrap up", "save progress", or any phrasing that implies "I'm done with this batch of changes — commit them and refresh docs if they're stale". Reviews the working tree, routes each doc update to its correct home (a domain skill under `.claude/skills/`, the slim `CLAUDE.md`, or `README.md`) and updates only where the diff actually changes behavior, stages explicit paths (never `git add -A`), composes a thematic commit message in the project's style, and creates the commit. Skips when the user only asks for a docs update without a commit, or wants to commit without docs review.
+model: sonnet
+description: Use when the user asks to "commit work and update docs if necessary", "wrap up", "save progress", or any phrasing that implies "I'm done with this batch of changes — commit them and refresh docs if they're stale". Reviews the working tree, routes each doc update to its correct home (a domain skill under `.claude/skills/`, the per-screen/subsystem docs under `docs/`, the slim `CLAUDE.md`, or `README.md`) and updates only where the diff actually changes behavior, stages explicit paths (never `git add -A`), composes a thematic commit message in the project's style, and creates the commit. Skips when the user only asks for a docs update without a commit, or wants to commit without docs review.
 ---
 
 # commit-and-document
@@ -9,7 +9,7 @@ description: Use when the user asks to "commit work and update docs if necessary
 Wrap-up routine for "I'm done with this slice of work — commit it cleanly." Two halves:
 
 1. **Doc refresh.** Read the diff and update *only* the docs this batch made stale. Docs now
-   live in three places — route each change to the right one (see step 3). Skip everything the
+   live in four places — route each change to the right one (see step 3). Skip everything the
    batch didn't touch.
 2. **Targeted commit.** Stage explicit paths to keep `.env.local`, build artifacts, IDE config,
    and other clutter out. Compose a 1-line title in the project's existing style, plus a short
@@ -23,8 +23,13 @@ The project docs were split for context efficiency. Know where things live befor
   guardrails, a high-level directory + route map, the "Out of scope" list, and a skill index.
   It is loaded on *every* turn, so keep it lean. Most feature work does **not** belong here.
 - **`.claude/skills/<name>/SKILL.md`** — domain detail, loaded on demand. Six skills:
-  `database`, `storefront`, `admin`, `theme`, `deploy`, `migration`. This is where nearly all
+  `database`, `storefront`, `admin`, `theme`, `deploy`, `migration`. This is where domain-level
   "this is now stale" updates land.
+- **`docs/`** — per-screen and per-subsystem reference docs, one file per screen
+  (`docs/screens/<area>/<screen>.md`) plus cross-cutting subsystem docs
+  (`docs/architecture/<subsystem>.md`). Index with routes: `docs/README.md`. These carry the
+  exact identifiers (signal/method names, RPCs, copy, gotchas) — the deepest layer, and the
+  one most likely to go stale when a screen changes.
 - **`README.md`** — for humans (setup, status, command/route reference, user-facing capability).
 - **`.claude/skills/README.md`** — index of the skills themselves.
 
@@ -79,7 +84,25 @@ For each diff theme, route by what changed:
 | Brand utility class, palette/font/density change, Material override, the brand-red rule | `theme` skill |
 | Deploy flow/flags, env tier, `.htaccess`, self-hosted images, the deploy guard | `deploy` skill |
 | OpenCart import pipeline, category map, cutover steps, URL/301 strategy | `migration` skill |
+| Screen-level behavior (UI anatomy, signals, service calls, edge cases, gotchas) | the matching `docs/screens/<area>/<screen>.md` (or `docs/architecture/<x>.md`) — see below |
 | A **new domain skill** was created this session | add a row to `.claude/skills/README.md` **and** the skill index in `CLAUDE.md` |
+
+**Always sweep the `docs/` tree.** For every screen or subsystem the diff touches, open its doc
+(find it via the `docs/README.md` index) and:
+
+- Fix facts the diff made stale — renamed signals/methods, changed RPC names or params, new/
+  removed UI, changed copy, new query params or settings keys.
+- **Prune Gotchas the commit fixed** and add new ones the change introduced.
+- Bump the doc's "Verified against source on <date>" line to today.
+- **New screen or route** → create a new doc following the same 9-section template as its
+  siblings (Purpose · Route & access · Files · UI anatomy · Services & backend · State & data
+  flow · Behaviors & edge cases · Gotchas / invariants · Related docs) **and** add a row to the
+  `docs/README.md` index.
+- **Removed screen** → delete its doc and its index row; fix any docs that linked to it.
+
+Skills stay high-level; the `docs/` file is where exact identifiers live. If the diff is
+backend-only, the sweep may land in `docs/architecture/` (data-model, backend-rpcs-and-functions,
+commerce-flow…) instead of a screen doc.
 
 Update **`CLAUDE.md` itself only** when the batch changes something always-on:
 
@@ -125,8 +148,8 @@ Always exclude (unless the user asks otherwise):
 - Untracked top-level paths whose purpose is unclear, and any binary not part of the session's work
 
 **Include** project docs the session changed: the slim `CLAUDE.md`, any edited
-`.claude/skills/<name>/SKILL.md`, `.claude/skills/README.md`, and `README.md` — these are tracked,
-shared project files. New skills the session created at `.claude/skills/<feature>/SKILL.md` get
+`.claude/skills/<name>/SKILL.md`, `.claude/skills/README.md`, `README.md`, and any
+edited/created files under `docs/` — these are tracked, shared project files. New skills the session created at `.claude/skills/<feature>/SKILL.md` get
 committed too. Downloaded marketplace skills can stay untracked unless the user wants them shared.
 
 For tracked-modified files use `git add -u <path>` or list them; for new files, `git add <path>`
@@ -184,10 +207,15 @@ User: "wrap this up and commit"
      instructions render; note the cart-page summary tweak.
    - **`CLAUDE.md`** → remove "Checkout" from the *Out of scope* list (it shipped). Nothing else
      in CLAUDE.md changes — resist touching it further.
+   - **`docs/`** → create `docs/screens/storefront/checkout.md` from the sibling template + add
+     its row to `docs/README.md`; update `docs/screens/storefront/cart-page.md` (summary tweak)
+     and `docs/architecture/commerce-flow.md` + `docs/architecture/backend-rpcs-and-functions.md`
+     (place_order v8); prune any gotcha this batch fixed.
    - **`README.md`** → add a shopper-facing checkout bullet; flip the ⬜ Checkout status line to ✅.
    - `theme` / `admin` / `deploy` / `migration` skills → untouched; the diff doesn't affect them.
 4. Stage explicit paths: the migration, the checkout component files, the edited `database` +
-   `storefront` SKILL.md, `CLAUDE.md`, `README.md`. Exclude `.env.local`, `supabase/.temp/`, etc.
+   `storefront` SKILL.md, `CLAUDE.md`, `README.md`, and the touched `docs/` files. Exclude
+   `.env.local`, `supabase/.temp/`, etc.
 5. Title (project style): `Checkout: orders + place_order redemption, buyer form, SINPE instructions`.
    Body: 3 bullets on the why.
 6. `git commit -m "$(cat <<'EOF' … EOF)"` succeeds.

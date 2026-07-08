@@ -8,7 +8,7 @@ description: >-
   changes against `/library`. Trigger this especially for any question about the brand-red
   rule, sale-price styling, the sold-out/AGOTADA badge, or why form errors use a different red.
   When a change could alter how the app looks, read this first so the theme stays consistent
-  and red stays restricted to its three allowed uses.
+  and red stays restricted to its two allowed uses.
 ---
 
 # Vault Light theme (Angular Material 3)
@@ -60,17 +60,21 @@ the convention everywhere else is `var(--surface-card)`.
 
 ## Hard rule: brand red
 
-Brand red (`#CE1126`) is restricted to exactly three uses:
+Brand red (`#CE1126`) is restricted to exactly two uses:
 
 1. The brand-bar gradient (`.brand-bar`).
-2. Sale prices / discount lines (`.price--sale`).
-3. The AGOTADA / sold-out badge (`.product-card--sold-out::after`).
+2. The AGOTADA / sold-out badge (`.product-card--sold-out::after`).
+
+Sale prices / discount lines (`.price--sale`) are **amber** (`--accent-amber`), not brand
+red — sale prices moved off red (see the comment in `_brand-tokens.scss`).
 
 Brand red is **not** wired into Material's palette. Material's `error` slot uses **Danger
 (`#B91C1C`)**, a different red, so form-field errors, snackbars, and chips never bleed brand
-red. If brand red appears anywhere else, the wiring leaked — fix it before shipping.
+red. If brand red appears anywhere else, the wiring leaked — fix it before shipping. (Known
+in-code stragglers still using brand red are listed in `docs/architecture/theming.md`
+Gotchas — reconcile before copying their pattern.)
 
-(Note: amber is used for emphasis elsewhere; keep red reserved for the three cases above so
+(Note: amber is used for emphasis elsewhere; keep red reserved for the two cases above so
 "out of stock" and the brand bar stay visually distinct from ordinary accents.)
 
 The **admin table & form systems** follow this rule: the `app-pill` red tone, `app-stock`

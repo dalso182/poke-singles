@@ -41,7 +41,7 @@ enrichment, preserving OC's original list dates. Pipeline:
    any Reverse-Holo / Holográficas card-type.
 6. **In-process slug claim** — a synchronous `Set<slug>` prevents the 8 parallel batches from
    racing on duplicate inserts when OC has two listings for the same TCGdex card.
-7. **Insert + attach card-types** — `tcgdex_cards` upsert (cache), `products` insert,
+7. **Insert + attach card-types** — `card_details` upsert (cache), `products` insert,
    `product_card_types` junction inserts.
 8. **Unmatched** → `.tmp/opencart-unmatched.csv` with a reason (`not-a-single` /
    `no-set-category` / `title-unparseable` / `no-card-in-set` / `sealed-no-subtype`). Triage by

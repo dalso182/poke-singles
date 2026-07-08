@@ -29,11 +29,13 @@ before working in that area rather than guessing.
 
 ## Hard rule: brand red
 
-Brand red (`#CE1126`) is restricted to: the brand-bar gradient (`.brand-bar`), sale prices
-(`.price--sale`), and the AGOTADA / sold-out badge (`.product-card--sold-out::after`).
-Material's `error` slot uses a **different** red, Danger (`#B91C1C`), so form errors and
-snackbars never bleed brand red. If brand red shows up anywhere else, the wiring leaked —
-fix before shipping. Rationale + implementation → `theme` skill.
+Brand red (`#CE1126`) is restricted to **two** uses: the brand-bar gradient (`.brand-bar`)
+and the AGOTADA / sold-out badge (`.product-card--sold-out::after`). Sale prices
+(`.price--sale`) are **amber** (`--accent-amber`), not red. Material's `error` slot uses a
+**different** red, Danger (`#B91C1C`), so form errors and snackbars never bleed brand red.
+If brand red shows up anywhere else, the wiring leaked — fix before shipping. (Known
+stragglers to reconcile are listed in `docs/architecture/theming.md`.) Rationale +
+implementation → `theme` skill.
 
 ## Hard rule: never deploy to the live OpenCart root
 
@@ -54,18 +56,29 @@ Deploy, DB, image, and migration commands live in their respective skills.
 
 ## Directory map (high level)
 
+> **Per-screen / per-subsystem docs:** before working on a specific screen or subsystem,
+> load its doc from `docs/` — one file per screen under `docs/screens/<area>/`, plus
+> cross-cutting subsystem docs under `docs/architecture/`. Index with routes and
+> load-when guidance: `docs/README.md`.
+
 ```
 src/app/
 ├── app.ts / app.routes.ts / app.config.ts   Root, top-level routes, providers
-├── user/      Customer-facing branch (UserShell): header, nav, footer, home,
-│              card-list, search-results, detail, cart-drawer, cart-page, account   → storefront
-├── admin/     Admin branch (AdminShell, adminGuard): dashboard, products, categories,
-│              card-types, sets, coupons, raffles, config                            → admin
+├── user/      Customer-facing branch (UserShell): header, nav, footer, card-list,
+│              search-results, detail, rifas, cart-drawer, cart-page, checkout,
+│              order-confirmation, account (+pokedex), static-page, dialogs          → storefront
+├── admin/     Admin branch (AdminShell, adminGuard): dashboard, products (+add/edit),
+│              categories, filters (embeds card-types), sets, sellers, coupons,
+│              shipping-methods, orders, customers, raffles, reports, price-review,
+│              pages, config                                                          → admin
 ├── auth/      Shared login-dialog (magic link / password / Google)                  → storefront + database
-├── core/      Services: auth, catalog, cart, images, preview, settings, storage,
-│              supabase, tcgdex                                                       → database (data) / per-feature
-├── shared/    card-typeahead, set-typeahead, image-picker, card-preview, product-card, filters
+├── core/      Services: auth, cart, catalog, customers, dashboard, images, loyalty,
+│              orders, pokemon, presence, preview, reports, search-log, settings,
+│              storage, supabase, tcgdex                                              → database (data) / per-feature
+├── shared/    card-typeahead, set-typeahead, image-picker, card-preview, product-card,
+│              raffle-card, filters-bar, table/ + forms/ (admin primitives), marquee …
 ├── library/   /library designer reference (no shell)                                → theme
+├── maintenance/  /mantenimiento standalone screen (maintenanceGuard fallback)
 └── home/      Landing page
 src/styles/    Vault Light theme (_theme-colors / _brand-tokens / _material-overrides …) → theme
 scripts/       deploy.mjs, seed-products.mjs, prepare-for-prod.mjs, fetch/upload-images   → deploy / migration
@@ -79,17 +92,21 @@ Each skill describes its own subtree in detail.
 ## Routes (compact)
 
 `/admin/*` → AdminShell (lazy, `adminGuard`): dashboard, products(+new/:id/edit),
-categories, card-types, coupons(+new/:id/edit), raffles(+:id), sets, reports, config.
-`/library` → designer reference (no shell). `/` → UserShell: home, products,
-products/:slug, buscar, rifas, cart, account(`customerGuard`). **Specific paths must come
-before the empty-path UserShell** or the router mis-matches `/admin` and `/library`.
-Full route table + component notes → `admin` and `storefront` skills.
+categories, filters (card-types live here — no card-types route), sets, sellers,
+coupons(+new/:id/edit), shipping-methods, orders(+:id), customers(+:id), raffles(+:id),
+reports, price-review, pages(+new/:id/edit), config.
+`/library` → designer reference (no shell). `/mantenimiento` → standalone maintenance
+screen. `/` → UserShell (`maintenanceGuard`): home, products, ofertas, products/:slug,
+buscar, rifas, cart, checkout(+confirmation/:id), info/:slug,
+account(`customerGuard`, + direccion/pedidos/puntos/pokedex deep links);
+categoria/:slug redirects to /products?categoria=. **Specific paths must come before the
+empty-path UserShell** or the router mis-matches `/admin`, `/library`, `/mantenimiento`.
+Full route table → `docs/architecture/routing-and-guards.md`.
 
 ## Out of scope right now (each gets its own plan when picked up)
 
 - Prod Supabase project + cutover wiring (`environment.prod.ts`, `<prod-ref>` placeholders) → `deploy`/`migration`
-- Checkout: `orders` + `place_order` buyer form + SINPE Móvil instructions (RPC + redemption already exist) → `database`
-- Customer order history + invoice download
+- Invoice download for customer orders (history itself is shipped at `/account/pedidos`)
 - 301 redirect map from old OpenCart URLs → `migration`
 - SSR / static prerendering (`ng add @angular/ssr`)
 

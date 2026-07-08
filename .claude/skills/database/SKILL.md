@@ -7,7 +7,7 @@ description: >-
   get_my_applied_coupon, place_order, cancel_order, draw_raffle, admin_dashboard_stats,
   admin_customers), edge functions, the
   schema (products, categories, sets, card_types, profiles, cart_items, carts, coupons,
-  coupon_redemptions, raffles, tcgdex_cards, app_settings, loyalty_transactions),
+  coupon_redemptions, raffles, card_details, app_settings, loyalty_transactions),
   regenerating database.types.ts,
   the SupabaseService client, the TCGdex SDK wrapper, or the coupon/raffle business logic.
   Trigger this even when the request sounds UI-shaped ("why does the coupon drop?", "add a
@@ -52,7 +52,8 @@ stock listings are never visible to anon clients on any query path).
 
 - **Catalog:** `categories`, `sets`, `products` (with optional `seller_id` FK → sellers), `sellers`
   (2-char code; admin-only RLS), `card_types` + `product_card_types` junction (many-to-many),
-  `tcgdex_cards` (JSONB cache of the TCGdex Card payload), `app_settings`.
+  `card_details` (JSONB cache of the TCGdex Card payload; renamed from `tcgdex_cards` in
+  `20260525002000_neutralize_card_source_names.sql`), `app_settings`.
 - **Customer:** `profiles` (1:1 with `auth.users`), `cart_items` (PK `(user_id, product_id)`),
   `carts` (1 row/user; holds `coupon_id`).
 - **Coupons:** `coupons` (soft-delete via `deleted_at`, optional `name` label), `coupon_redemptions`.

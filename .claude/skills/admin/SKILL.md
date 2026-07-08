@@ -33,7 +33,7 @@ Admin status = `app_metadata.role === 'admin'` (→ `database` skill for `is_adm
 | `/admin/products/:id/edit` | ProductEdit | quick-update card + full form, seller locked (read-only) |
 | `/admin/categories` | Categories | inline-edit CRUD |
 | `/admin/sellers` | Sellers | inline-edit CRUD (name, email, phone editable; code locked after creation) |
-| `/admin/card-types` | CardTypes | taxonomy CRUD (Full Art, VMAX, …) |
+| `/admin/filters` | Filters | card-type taxonomy CRUD (Full Art, VMAX, …) via the embedded CardTypes component, re-scoped per tab (Singles / Sellado / Accesorios) — no standalone `/admin/card-types` route |
 | `/admin/sets` | Sets | expandable rows, find-or-create from TCGdex, detail dialog |
 | `/admin/coupons` | Coupons | list + active/inactive/expired/deleted filters, soft-delete-with-undo |
 | `/admin/coupons/new`, `/:id/edit` | CouponEdit | type-reactive form (PERCENTAGE / FIXED_ON_THRESHOLD) |
