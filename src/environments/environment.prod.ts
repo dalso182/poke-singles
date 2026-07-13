@@ -2,7 +2,8 @@
 // deploy target). Substituted in for environment.ts via angular.json's
 // fileReplacements when the production configuration is active.
 //
-// TODO: fill in Supabase URL + anon key when the prod project is created.
+// Points at the prod Supabase project (the original project, promoted to prod
+// during the 2026-07 cutover; lives in the Pro org).
 
 export const environment = {
   production: true,

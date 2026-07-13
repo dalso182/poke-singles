@@ -39,7 +39,7 @@ function abort(msg) {
 if (!SUPABASE_URL || !SUPABASE_KEY) {
   abort('Missing SUPABASE_DEV_URL or SUPABASE_DEV_SERVICE_ROLE_KEY in .env.local.');
 }
-if (!SUPABASE_URL.includes('dhslfridsjdmhwzrgebv')) {
+if (!SUPABASE_URL.includes('fdscdinfpmvswinpasdg')) {
   abort(`Refusing to clean: ${SUPABASE_URL} is not the dev Supabase project.`);
 }
 

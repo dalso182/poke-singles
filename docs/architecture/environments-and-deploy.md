@@ -1,6 +1,6 @@
 # Environments & deploy
 
-> Part of the Poke-Singles docs set. Verified against source on 2026-07-06. Load together with /CLAUDE.md.
+> Part of the Poke-Singles docs set. Verified against source on 2026-07-13. Load together with /CLAUDE.md.
 
 ## Purpose
 
@@ -38,19 +38,28 @@ SiteGround Shared/Cloud runs **Apache + PHP with no Node.js**, so the app ships 
 
 ### Two-tier environment model
 
-`src/environments/environment.ts` is the **dev** tier — used by `npm start` (localhost) and `ng build --configuration=dev` (the `new.poke-singles.com` staging target). `angular.json`'s production configuration swaps it for `environment.prod.ts` via `fileReplacements`. Both files export:
+Since the 2026-07 prod promotion there are **two real Supabase projects**:
+
+| Tier | Domain | Supabase project | Org / plan |
+|---|---|---|---|
+| Dev (+ local) | `dev.poke-singles.com` (Basic-auth protected) + `localhost:4242` | `fdscdinfpmvswinpasdg` (dev-poke-singles) | free org (pausable) |
+| Prod | `poke-singles.com` (cutover pending) | `dhslfridsjdmhwzrgebv` (the original project, promoted) | Pro org |
+
+The `new.poke-singles.com` staging subdomain is being retired in favor of `dev.`.
+
+`src/environments/environment.ts` is the **dev** tier — used by `npm start` (localhost) and `ng build --configuration=dev` (the `dev.poke-singles.com` target); it points at `fdscdinfpmvswinpasdg`. `angular.json`'s production configuration swaps it for `environment.prod.ts` (→ `dhslfridsjdmhwzrgebv`) via `fileReplacements`. Both files export:
 
 ```ts
 {
   production: boolean,
   envName: 'dev' | 'prod',
-  supabase: { url, anonKey },          // dev project dhslfridsjdmhwzrgebv
+  supabase: { url, anonKey },          // per-tier project, see table above
   tcgdex:   { endpoint },              // 'https://api.tcgdex.net/v2'; '' = SDK default
   images:   { listUrl: '/card-images/list-images.php' },  // '' disables the picker
 }
 ```
 
-As of this writing **`environment.prod.ts` still points at the dev Supabase project** (`https://dhslfridsjdmhwzrgebv.supabase.co`, anon key `sb_publishable_jsLP6YsmsjjVvEZ2JuCkwQ_DP_rWRHA`) with a `TODO: fill in Supabase URL + anon key when the prod project is created`. The prod Supabase placeholders (`<prod-ref>`) live in `package.json`'s `db:types:prod` / `functions:prod` scripts, not in the environment files. `images.listUrl` is deliberately root-relative so it's same-origin in production and rides the localhost proxy in dev.
+`images.listUrl` is deliberately root-relative so it's same-origin in production and rides the localhost proxy in dev. The dev project carries a synthetic `seed:dev` catalog plus reference data (categories, card_types, sets, sellers, shipping_methods, static_pages, app_settings) copied row-for-row from prod — ids match prod, which keeps FK-carrying fields like `card_types.category_id` and `shipping_methods.allowed_category_ids` coherent.
 
 ### npm scripts (package.json)
 
@@ -64,12 +73,12 @@ As of this writing **`environment.prod.ts` still points at the dev Supabase proj
 | `deploy` | `node scripts/deploy.mjs` (defaults to `--env=prod`) |
 | `deploy:dev` / `deploy:prod` | `node scripts/deploy.mjs --env=dev` / `--env=prod` |
 | `db:types` | `npx --yes supabase gen types typescript --linked > src/app/core/supabase/database.types.ts` |
-| `db:types:dev` | same but `--project-id dhslfridsjdmhwzrgebv` |
-| `db:types:prod` | same but `--project-id <prod-ref>` (placeholder, not yet usable) |
-| `db:push:dev` | `npx --yes supabase db push --linked` |
-| `db:push:prod` | **currently identical** to `db:push:dev` (`--linked`) — placeholder until a prod project exists |
-| `functions:dev` | `npx --yes supabase functions deploy --project-ref dhslfridsjdmhwzrgebv` |
-| `functions:prod` | `… --project-ref <prod-ref>` (placeholder) |
+| `db:types:dev` | same but `--project-id fdscdinfpmvswinpasdg` |
+| `db:types:prod` | same but `--project-id dhslfridsjdmhwzrgebv` |
+| `db:push:dev` | `npx --yes supabase db push --linked` (the CLI stays linked to the **dev** project) |
+| `db:push:prod` | `node scripts/db-push-prod.mjs` — requires `SUPABASE_PROD_DB_URL` in `.env.local` and passes it via `--db-url`, so prod pushes are deliberate and never depend on the link |
+| `functions:dev` | `npx --yes supabase functions deploy --project-ref fdscdinfpmvswinpasdg` |
+| `functions:prod` | `… --project-ref dhslfridsjdmhwzrgebv` |
 | `seed:dev` / `seed:dev:clean` | `node scripts/seed-products.mjs [--clean]` |
 | `images:fetch` | `node scripts/fetch-card-images.mjs` |
 | `images:upload` | `node scripts/upload-images.mjs` |
@@ -97,7 +106,7 @@ Product images are **self-hosted** to survive the `new.` → main-domain cutover
 
 - **`scripts/fetch-card-images.mjs`** (`npm run images:fetch`) downloads TCGdex card scans into a local `./card-images/<serie>/<set>/<localId>.<ext>` tree. Flags: `--out=./card-images`, `--sets=a,b` (the "new set dropped" path), `--series=a,b`, `--quality=high|low` (default high), `--ext=webp|png|jpg` (default webp), `--lang=en`, `--concurrency=8`, `--logos` (set logos + symbols), `--dry-run`. Resumable (existing non-empty files skipped; `.part` + rename prevents truncated files); cards with no contributed scan are recorded in `card-images/missing-images.json`. Never touches Supabase.
 - **`scripts/upload-images.mjs`** (`npm run images:upload`) ships that tree to SiteGround. Deliberately separate from `deploy.mjs`: it only ever writes under a `card-images` folder and **refuses any target not ending in `/card-images`**. Target = `IMAGES_REMOTE_DIR` if set, else `<{DEV_}DEPLOY_REMOTE_DIR>/card-images`; creds are the same `.env.local` keys as deploy (default `--env=dev`). Default transport is a single **tar.gz uploaded then extracted over SSH** (`--sftp` falls back to per-file uploadDir when remote tar is unavailable). Flags: `--dry-run`, `--sets=ME05` (upload just those subtrees, resolved via `card-images/_manifest.json` or folder scan), `--endpoints-only` (push ONLY `server/*.php`), `--no-php` (skip the PHP push; present in code though not in the header comment), `--env=prod`.
-- **PHP endpoints ride along:** every `server/*.php` is globbed and fastPut into the **card-images root** on the server (e.g. `/new.poke-singles.com/public_html/card-images/list-images.php`). `list-images.php` is the read-only browser for the admin picker; `upload-image.php` / `create-folder.php` are admin-gated writes (`_supabase-auth.php` validates the `X-Supabase-Token` header against `GET /auth/v1/user` requiring `app_metadata.role === 'admin'`; `auth-config.php` holds the public Supabase URL + publishable key and must be edited when a prod project exists).
+- **PHP endpoints ride along:** every `server/*.php` is globbed and fastPut into the **card-images root** on the server (e.g. `/dev.poke-singles.com/public_html/card-images/list-images.php`). `list-images.php` is the read-only browser for the admin picker; `upload-image.php` / `create-folder.php` are admin-gated writes (`_supabase-auth.php` validates the `X-Supabase-Token` header against `GET /auth/v1/user` requiring `app_metadata.role === 'admin'`). **`auth-config.php` is stamped per env at upload time**: `upload-images.mjs` parses the Supabase url/anonKey out of the env-matching environment file (`--env=dev` → `environment.ts`, `--env=prod` → `environment.prod.ts`) and rewrites the two `define()`s before upload, so each site's gate validates against its own project. The repo copy is a dev-tier template.
 - **URL helpers** (`src/app/core/images/card-image-url.ts`): `tcgdexImageToHostedPath()` maps a TCGdex asset URL (`https://assets.tcgdex.net/en/swsh/swsh3/136`) to the hosted relative path (`/card-images/swsh/swsh3/136.webp`, prefix constant `CARD_IMAGES_PREFIX = '/card-images'`); `resolveHostedSrc()` absolutizes relative values against an origin for previews.
 - **Localhost:** `proxy.conf.mjs` forwards `/card-images` from `ng serve` to `https://new.poke-singles.com`, attaching HTTP Basic credentials from `.env.local` (`IMAGES_HTTP_USER`, `IMAGES_HTTP_PASSWORD` — the staging site is site-password-protected). Missing creds just yield 401s on images locally, with a console warning.
 
@@ -106,18 +115,22 @@ Product images are **self-hosted** to survive the `new.` → main-domain cutover
 Gitignored; template at `.env.local.example`. Keys (verified from the scripts — the real file is never read by agents):
 
 - Prod deploy: `DEPLOY_HOST`, `DEPLOY_PORT`, `DEPLOY_USER`, `DEPLOY_REMOTE_DIR`, `DEPLOY_PASSWORD` or `DEPLOY_PRIVATE_KEY_PATH`/`DEPLOY_PRIVATE_KEY_PASSPHRASE`.
-- Dev deploy: same names with `DEV_` prefix.
+- Dev deploy: same names with `DEV_` prefix (remote dir → `dev.poke-singles.com/public_html`).
 - Images: `IMAGES_REMOTE_DIR` (optional override; must end in `/card-images`), `IMAGES_HTTP_USER`, `IMAGES_HTTP_PASSWORD` (localhost proxy).
-- Offline scripts: `SUPABASE_DEV_URL`, `SUPABASE_DEV_SERVICE_ROLE_KEY` (service role **bypasses RLS — dev only, never in a browser bundle**), `OC_IMAGE_BASE` (optional; default `https://poke-singles.com/image/`, source of OpenCart accessory/sealed images for the importer).
+- Offline scripts, dev project: `SUPABASE_DEV_URL`, `SUPABASE_DEV_SERVICE_ROLE_KEY` (service role **bypasses RLS — never in a browser bundle**); used by `seed-products.mjs` and the e2e seed/cleanup scripts.
+- Prod project (treat with production care): `SUPABASE_PROD_URL`, `SUPABASE_PROD_SERVICE_ROLE_KEY` (one-off admin scripts), `SUPABASE_PROD_DB_URL` (connection string for `db:push:prod`).
+- Mail (dev email setup + future function-secret pushes): `RESEND_API_KEY`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME`; `SUPABASE_ACCESS_TOKEN` (personal access token for Management-API config copies — revocable at any time).
 
 ### Seed & import scripts (offline, service-role)
 
 - **`scripts/seed-products.mjs`** (`npm run seed:dev`, `seed:dev:clean`) — seeds the dev `products` table with real cards from TCGdex. Flags: `--clean` (DELETE FROM `products` + `card_details` first), `--sets=sv09,sv08` (override the auto-detected latest 4 physical sets), `--limit=500` (default cap), `--dry-run`. Auth via `SUPABASE_DEV_URL` + `SUPABASE_DEV_SERVICE_ROLE_KEY`.
-- **`scripts/prepare-for-prod.mjs`** — ⚠️ **the wipe-and-import cutover driver. Destructive by default and run manually by the owner only; agents/automation must at most use `--dry-run`.** It wipes (in dependency order) `orders`, `order_items`, `coupon_redemptions`, `carts`, `cart_items`, `products`, `product_card_types`, `raffles`, `card_details`, preserving `auth.users`/`profiles`, taxonomies (`categories`, `card_types`, `sets`), `coupons`, `shipping_methods`, `static_pages`, and `app_settings` — then re-imports the active+in-stock OpenCart catalog from the MySQL dump at `.tmp/opencart-export.sql`, TCGdex-matching singles and routing accessories/sealed via `scripts/_data/oc-category-map.json` (their OC images are downloaded into `card-images/<accesorios|sellado>/` for shipping with `images:upload`). Flags: `--dry-run` (report only, no DB writes, no TCGdex fetches), `--no-wipe` (import-only), `--no-singles` (accessories/sealed only), `--limit=50`, `--input=.tmp/x.sql`. Unmatched rows land in `.tmp/opencart-unmatched.csv`. Same env vars as the seeder.
+- **`scripts/prepare-for-prod.mjs`** — ⚠️ **RETIRED from the cutover path** (2026-07 decision: prod starts fresh, no OpenCart import). Kept for reference. **Destructive by default and run manually by the owner only; agents/automation must at most use `--dry-run`.** It wipes (in dependency order) `orders`, `order_items`, `coupon_redemptions`, `carts`, `cart_items`, `products`, `product_card_types`, `raffles`, `card_details`, preserving `auth.users`/`profiles`, taxonomies (`categories`, `card_types`, `sets`), `coupons`, `shipping_methods`, `static_pages`, and `app_settings` — then re-imports the active+in-stock OpenCart catalog from the MySQL dump at `.tmp/opencart-export.sql`, TCGdex-matching singles and routing accessories/sealed via `scripts/_data/oc-category-map.json` (their OC images are downloaded into `card-images/<accesorios|sellado>/` for shipping with `images:upload`). Flags: `--dry-run` (report only, no DB writes, no TCGdex fetches), `--no-wipe` (import-only), `--no-singles` (accessories/sealed only), `--limit=50`, `--input=.tmp/x.sql`. Unmatched rows land in `.tmp/opencart-unmatched.csv`. Same env vars as the seeder.
 
 ### Supabase workflow notes
 
-Migrations are applied with `npm run db:push:dev` (linked CLI — not the MCP `apply_migration`, which drifts history). Type regen: `npm run db:types`. Edge Functions deploy with `npm run functions:dev`; per-function `verify_jwt` flags live in `supabase/config.toml` (`send-order-email`, `send-signup-email`, `send-raffle-result`, `price-check` are all `verify_jwt = false` because triggers/anon checkout invoke them).
+The CLI is **linked to the dev project** (`fdscdinfpmvswinpasdg`) for daily work. Migrations are applied with `npm run db:push:dev` (linked CLI — not the MCP `apply_migration`, which drifts history); prod pushes go through `npm run db:push:prod` (the `--db-url` wrapper) as a deliberate act. Type regen: `npm run db:types:dev`. Edge Functions deploy with `npm run functions:dev` / `functions:prod`; per-function `verify_jwt` flags live in `supabase/config.toml` (`send-order-email`, `send-signup-email`, `send-raffle-result`, `price-check` are all `verify_jwt = false` because triggers/anon checkout invoke them).
+
+Project config that lives OUTSIDE migrations (must be maintained on both projects): auth URL allowlist + email templates + SMTP (Management API `/config/auth`; templates on a free-tier project require custom SMTP first), edge-function secrets (`RESEND_API_KEY`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME`, `STORE_PUBLIC_URL` — write-only: the API returns SHA-256 digests, so keep recoverable copies in `.env.local`), Vault secrets (`signup_email_url`, `raffle_result_url`, `price_check_url`, `supabase_anon_key`), and the `app_metadata.role='admin'` bootstrap.
 
 ## Contracts & conventions
 
@@ -130,14 +143,15 @@ Migrations are applied with `npm run db:push:dev` (linked CLI — not the MCP `a
 
 ## Gotchas / invariants
 
-- **`environment.prod.ts` currently ships dev Supabase credentials** (explicit TODO in the file). A production build today would talk to the dev database. Cutover requires: create the prod project, fill `environment.prod.ts`, replace `<prod-ref>` in `package.json`, update `server/auth-config.php`, and point the Edge Function env vars at prod.
-- **`db:push:prod` is a lie right now** — it is byte-identical to `db:push:dev` (both `--linked`); it pushes wherever the CLI link points.
+- **The old project ref `dhslfridsjdmhwzrgebv` now means PROD.** Anything hardcoding it as "dev" is stale/wrong. The e2e seed/cleanup scripts and the concurrency load-test pin their safety guards to the dev ref `fdscdinfpmvswinpasdg` — keep it that way, they write data.
+- **Domain cutover is still pending**: `poke-singles.com` serves the live OpenCart store; the promoted prod project is being cleaned (test data wipe) before go-live. Remaining cutover steps live in the prod-promotion plan.
 - The deploy guard regex only blocks paths **ending** in `poke-singles.com/public_html` (optional trailing slash). A subdirectory like `.../poke-singles.com/public_html/new/` would pass the guard — the blocklist protects the root specifically.
 - `npm run deploy` (no suffix) targets **prod**. Use `deploy:dev` habitually; the missing-creds failure is the usual safety net when prod keys are blank.
 - `deploy.mjs` uses `uploadDir` without mirror-delete: removed files (old hashed bundles) persist remotely. Not harmful, but the remote is not an exact mirror.
 - `upload-images.mjs`'s default tar transport requires `tar` locally and on the server; on failure re-run with `--sftp` (slower). `--no-php` exists in code but isn't listed in the script's usage header.
-- `prepare-for-prod.mjs` default mode is **destructive** (wipe + import). Per project policy it is run manually by the owner; anything automated may only use `--dry-run`. It reads OC card *condition* from `oc_product.model` (NM/LP/MP/HP/DMG semantics).
-- `proxy.conf.mjs` only affects `ng serve`; a deployed dev build never proxies. If local images 401, set `IMAGES_HTTP_USER`/`IMAGES_HTTP_PASSWORD` and restart `npm start` (do not kill the owner's running server on port 4242).
+- **A free-tier dev project auto-pauses after ~1 week idle** (and can be paused manually for savings). While paused, `npm run e2e`, `npm start` data loads, and the deployed dev site all fail until it's resumed from the dashboard (~1 min).
+- `prepare-for-prod.mjs` is **retired from the cutover path** (the store starts fresh — no OpenCart import; see the migration skill). It remains destructive: owner-run only, agents at most `--dry-run`. Its env vars are still `SUPABASE_DEV_*`, so a careless run would now hit the NEW dev project, not prod.
+- `proxy.conf.mjs` only affects `ng serve`; a deployed dev build never proxies. **It still targets `new.poke-singles.com`** — switch it to `dev.poke-singles.com` (or the public prod `/card-images` after go-live) when `new.` is retired. If local images 401, set `IMAGES_HTTP_USER`/`IMAGES_HTTP_PASSWORD` and restart `npm start` (do not kill the owner's running server on port 4242).
 - `.env.local.example` shows `DEPLOY_REMOTE_DIR=/home/customer/www/poke-singles.com/public_html` — copying it verbatim creates a target the guard will (correctly) refuse; that's intentional friction, not a bug.
 
 ## Related docs

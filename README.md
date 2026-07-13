@@ -338,19 +338,19 @@ and snackbars never use brand red. See `CLAUDE.md` → *Brand theme* for the rat
 
 | Tier | URL | Supabase | Build |
 |---|---|---|---|
-| Local | `http://localhost:4242` | `dhslfridsjdmhwzrgebv` (dev) | `npm start` |
-| Dev | `new.poke-singles.com` | `dhslfridsjdmhwzrgebv` (dev) | `ng build --configuration=dev` |
-| Prod | `poke-singles.com` (cutover deferred) | prod project (TBD) | `ng build --configuration=production` |
+| Local | `http://localhost:4242` | `fdscdinfpmvswinpasdg` (dev-poke-singles, free org) | `npm start` |
+| Dev | `dev.poke-singles.com` (Basic-auth) | `fdscdinfpmvswinpasdg` (dev) | `ng build --configuration=dev` |
+| Prod | `poke-singles.com` (domain cutover pending) | `dhslfridsjdmhwzrgebv` (original project, promoted to prod 2026-07; Pro org) | `ng build --configuration=production` |
 
-Env files: `src/environments/environment.ts` (local + dev tier — both hit the same
-Supabase project for now) is wired. `src/environments/environment.prod.ts` is an empty
-stub until the prod project exists; the production build swaps it in via
+Env files: `src/environments/environment.ts` (local + dev tier) points at the dev
+project; `src/environments/environment.prod.ts` points at prod and is swapped in via
 `fileReplacements` in `angular.json`. The deploy guard in `scripts/deploy.mjs` blocks
-any upload to the live OpenCart root regardless of env state.
+any upload to the live OpenCart root regardless of env state. The old staging site
+`new.poke-singles.com` is being retired in favor of `dev.`.
 
 ## Supabase
 
-**Dev project linked** (`dhslfridsjdmhwzrgebv`). The pipeline is operational:
+**Dev project linked** (`fdscdinfpmvswinpasdg`). The pipeline is operational:
 
 ```bash
 npm run db:types:dev      # regenerate src/app/core/supabase/database.types.ts
@@ -400,9 +400,10 @@ across the latest SwSh + SV sets) — see `npm run seed:dev{,:clean}`.
 
 **Still pending:**
 
-- Prod Supabase project — when ready, fill in `environment.prod.ts` with prod creds
-  and replace the `<prod-ref>` placeholders in `package.json` (4 of them: `db:types:prod`,
-  `db:push:prod`, `functions:prod` — note `db:types` already uses the linked project)
+- Domain cutover — prod project + `:prod` scripts are wired (`db:push:prod` goes through
+  `scripts/db-push-prod.mjs`, which requires `SUPABASE_PROD_DB_URL` in `.env.local`);
+  remaining: prod test-data cleanup, prod auth/site-URL config, and shipping the app to
+  `poke-singles.com` (see the prod-promotion plan)
 - Orders + checkout (`orders`, `coupon_redemptions`, `place_order` RPC,
   buyer-info form, SINPE Móvil instructions) — cart and coupon validation are
   live, redemption needs the commitment event

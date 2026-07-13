@@ -29,7 +29,9 @@ not in the Angular client. The client reads through views and calls RPCs.
 - `src/app/core/supabase/database.types.ts` is generated. **Re-run `npm run db:types:dev`
   after every migration** — idempotent, ~1s, keeps TS in sync.
 - `supabase/config.toml` pinned to `major_version = 17` (matches the hosted project).
-- Dev project `dhslfridsjdmhwzrgebv` is linked via `npx supabase link`.
+- Dev project `fdscdinfpmvswinpasdg` (dev-poke-singles) is linked via `npx supabase link`.
+  The original project `dhslfridsjdmhwzrgebv` is **PROD** (promoted 2026-07) — never treat it
+  as dev; reach it only via the deliberate `:prod` scripts.
 
 ## DB commands
 
@@ -39,7 +41,9 @@ npm run db:push:dev    # apply migrations from supabase/migrations/
 npm run functions:dev  # deploy edge functions from supabase/functions/
 ```
 
-`<prod-ref>` placeholders remain in the `:prod` variants until the prod project exists.
+The `:prod` variants target `dhslfridsjdmhwzrgebv`; `db:push:prod` is a wrapper
+(`scripts/db-push-prod.mjs`) that requires `SUPABASE_PROD_DB_URL` in `.env.local` and passes
+`--db-url` explicitly, so a prod push can never ride the (dev-pointing) CLI link by accident.
 
 ## RLS pattern
 

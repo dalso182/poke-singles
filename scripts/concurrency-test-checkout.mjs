@@ -26,9 +26,9 @@
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL =
-  process.env.SUPABASE_URL || 'https://dhslfridsjdmhwzrgebv.supabase.co';
+  process.env.SUPABASE_URL || 'https://fdscdinfpmvswinpasdg.supabase.co';
 const SUPABASE_ANON_KEY =
-  process.env.SUPABASE_ANON_KEY || 'sb_publishable_jsLP6YsmsjjVvEZ2JuCkwQ_DP_rWRHA';
+  process.env.SUPABASE_ANON_KEY || 'sb_publishable_1BXPpc4Z1U5u2nqa64_4SQ_-aDOeYdQ';
 
 // "Retiro Showroom" — active, requires_address=false, price 0 → no address needed.
 const SHIPPING_METHOD_ID =

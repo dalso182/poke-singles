@@ -57,25 +57,31 @@ path matching the live OpenCart root (`/poke-singles.com/public_html`). Subdomai
 layered with the convention of leaving prod creds blank in `.env.local`; **both layers must be
 defeated** to overwrite the live store. To deploy at cutover, edit the array deliberately.
 
-## Two-tier environment model
+## Two-tier environment model (post 2026-07 prod promotion)
 
 | Tier | Frontend | Supabase | Selected by |
 |---|---|---|---|
-| Local | `npm start` (localhost:4242) | `dhslfridsjdmhwzrgebv` (dev) | `environment.ts` |
-| Dev | `new.poke-singles.com` | `dhslfridsjdmhwzrgebv` (dev) | `ng build --configuration=dev` (no file replacement) |
-| Prod | `poke-singles.com` (cutover deferred) | prod project (TBD) | `ng build --configuration=production` (`fileReplacements` → `environment.prod.ts`) |
+| Local | `npm start` (localhost:4242) | `fdscdinfpmvswinpasdg` (dev-poke-singles, free org) | `environment.ts` |
+| Dev | `dev.poke-singles.com` (Basic-auth) | `fdscdinfpmvswinpasdg` (dev) | `ng build --configuration=dev` (no file replacement) |
+| Prod | `poke-singles.com` (cutover pending) | `dhslfridsjdmhwzrgebv` (the original project, **promoted to prod**; Pro org) | `ng build --configuration=production` (`fileReplacements` → `environment.prod.ts`) |
 
-`environment.ts` is filled in (dev URL + publishable anon key). `environment.prod.ts` is an
-empty stub; combined with the deploy guard, a prod build with empty env values can't accidentally
-ship. `<dev-ref>` placeholders in `package.json` are replaced; `<prod-ref>` placeholders remain
-(`db:types:prod`, `db:push:prod`, `functions:prod`) — fill them when the prod project exists.
+Both environment files carry real values now. **`dhslfridsjdmhwzrgebv` = PROD** — never treat it
+as dev. The CLI stays linked to the dev project (`db:push:dev`); prod migration pushes go through
+`npm run db:push:prod` (a wrapper requiring `SUPABASE_PROD_DB_URL` in `.env.local`, deliberate by
+design). `new.poke-singles.com` (the old staging site) is being retired; `proxy.conf.mjs` still
+points at it for localhost images until then. The free-tier dev project auto-pauses after ~1 week
+idle — resume it from the dashboard if the dev site/e2e suddenly can't reach Supabase.
 
 ## Self-hosting card images
 
 The store can serve its own card art instead of hotlinking the TCGdex CDN. Layout on the host:
 `card-images/<serie>/<set>/<localId>.webp` (e.g. `card-images/swsh/swsh3/136.webp`). **Reference
-images by relative path** (`/card-images/...`) so they keep resolving when `new.poke-singles.com`
-is promoted to the main domain.
+images by relative path** (`/card-images/...`) so the same catalog rows resolve on every domain
+(dev., the future prod root, localhost via proxy). The tree exists on both `dev.` and `new.`
+docroots (server-side copied); at go-live it gets copied into the prod docroot the same way —
+`cp -a` over SSH, never re-uploaded from local. `upload-images.mjs` stamps `auth-config.php`
+per `--env` from the matching environment file so each site's PHP gate validates against its
+own Supabase project.
 
 ```bash
 node scripts/fetch-card-images.mjs --dry-run   # set/card counts + size estimate, downloads nothing

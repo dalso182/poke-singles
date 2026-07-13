@@ -1,6 +1,6 @@
 // Dev environment — used by `npm start` (local) and `ng build --configuration=dev`
-// (the future new.poke-singles.com deploy target). Points at the dev Supabase project
-// (currently the only one — used for both local and dev tier).
+// (the dev.poke-singles.com deploy target). Points at the dev Supabase project
+// (dev-poke-singles, free org).
 //
 // `npm run build:prod` (production config) replaces this file with environment.prod.ts
 // at build time via angular.json's fileReplacements, so the prod bundle never
@@ -10,8 +10,8 @@ export const environment = {
   production: false,
   envName: 'dev',
   supabase: {
-    url: 'https://dhslfridsjdmhwzrgebv.supabase.co',
-    anonKey: 'sb_publishable_jsLP6YsmsjjVvEZ2JuCkwQ_DP_rWRHA',
+    url: 'https://fdscdinfpmvswinpasdg.supabase.co',
+    anonKey: 'sb_publishable_1BXPpc4Z1U5u2nqa64_4SQ_-aDOeYdQ',
   },
   tcgdex: {
     // Empty string = use the SDK default (https://api.tcgdex.net/v2).

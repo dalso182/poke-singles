@@ -186,12 +186,34 @@ async function endpointPhpFiles() {
     .map((n) => path.join(dir, n));
 }
 
-// fastPut every server/*.php into the card-images root.
+// auth-config.php must gate against the same Supabase project the deployed bundle
+// talks to, and that differs per env. Stamp its defines from the env-matching
+// environment file at upload time (single source of truth: src/environments/).
+async function stampedAuthConfig() {
+  const envFile = path.join(
+    REPO_ROOT, 'src', 'environments',
+    ENV === 'prod' ? 'environment.prod.ts' : 'environment.ts',
+  );
+  const src = await readFile(envFile, 'utf8');
+  const url = src.match(/url:\s*'([^']+)'/)?.[1];
+  const key = src.match(/anonKey:\s*'([^']+)'/)?.[1];
+  if (!url || !key) abort(`could not parse supabase url/anonKey from ${envFile}`);
+  const php = await readFile(path.join(REPO_ROOT, 'server', 'auth-config.php'), 'utf8');
+  return php
+    .replace(/define\('SUPABASE_URL',\s*'[^']*'\)/, `define('SUPABASE_URL', '${url}')`)
+    .replace(/define\('SUPABASE_ANON_KEY',\s*'[^']*'\)/, `define('SUPABASE_ANON_KEY', '${key}')`);
+}
+
+// fastPut every server/*.php into the card-images root (auth-config.php stamped per env).
 async function uploadEndpoints(sftp, remoteDir) {
   for (const php of await endpointPhpFiles()) {
     const name = path.basename(php);
-    log(`uploading ${name}…`);
-    await sftp.fastPut(php, `${remoteDir}/${name}`);
+    log(`uploading ${name}${name === 'auth-config.php' ? ` (stamped for ${ENV})` : ''}…`);
+    if (name === 'auth-config.php') {
+      await sftp.put(Buffer.from(await stampedAuthConfig(), 'utf8'), `${remoteDir}/${name}`);
+    } else {
+      await sftp.fastPut(php, `${remoteDir}/${name}`);
+    }
   }
 }
 

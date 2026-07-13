@@ -57,7 +57,7 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
   );
 }
 // Safety: this script writes fixtures + resets stock — dev project only.
-if (!SUPABASE_URL.includes('dhslfridsjdmhwzrgebv')) {
+if (!SUPABASE_URL.includes('fdscdinfpmvswinpasdg')) {
   abort(`Refusing to seed: ${SUPABASE_URL} is not the dev Supabase project.`);
 }
 if (!E2E_USER_EMAIL || !E2E_USER_PASSWORD) {

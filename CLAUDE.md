@@ -13,7 +13,9 @@ before working in that area rather than guessing.
 - **Angular 21** — standalone components, strict TS, SCSS, signals; vitest runner.
 - **Angular Material 21** (Material 3), themed **Vault Light**. → `theme` skill.
 - **Supabase** — Postgres 17, RLS, REST/Realtime, Auth, Edge Functions. Dev project
-  `dhslfridsjdmhwzrgebv` linked; `SupabaseService` in `src/app/core/supabase/`. → `database` skill.
+  `fdscdinfpmvswinpasdg` (dev-poke-singles) linked for daily work; the original project
+  `dhslfridsjdmhwzrgebv` is now **PROD** (promoted 2026-07) — writes to it only via the
+  deliberate `:prod` scripts. `SupabaseService` in `src/app/core/supabase/`. → `database` skill.
 - **`@tcgdex/sdk`** (`^2.9.0`) — TCG card-data, wired via `TcgdexService`. → `database` skill.
 - **SiteGround** hosting (Apache + PHP, **no Node** on Shared/Cloud → SPA-only). → `deploy` skill.
 
@@ -108,7 +110,8 @@ Full route table → `docs/architecture/routing-and-guards.md`.
 
 ## Out of scope right now (each gets its own plan when picked up)
 
-- Prod Supabase project + cutover wiring (`environment.prod.ts`, `<prod-ref>` placeholders) → `deploy`/`migration`
+- Domain cutover to `poke-singles.com` (prod project + `:prod` scripts are wired; remaining:
+  prod test-data cleanup, prod auth config, go-live deploy — plan: `the-time-is-coming-distributed-pascal.md`)
 - Invoice download for customer orders (history itself is shipped at `/account/pedidos`)
 - 301 redirect map from old OpenCart URLs → `migration`
 - SSR / static prerendering (`ng add @angular/ssr`)
