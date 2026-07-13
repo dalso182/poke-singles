@@ -144,7 +144,7 @@ Project config that lives OUTSIDE migrations (must be maintained on both project
 ## Gotchas / invariants
 
 - **The old project ref `dhslfridsjdmhwzrgebv` now means PROD.** Anything hardcoding it as "dev" is stale/wrong. The e2e seed/cleanup scripts and the concurrency load-test pin their safety guards to the dev ref `fdscdinfpmvswinpasdg` — keep it that way, they write data.
-- **Domain cutover is still pending**: `poke-singles.com` serves the live OpenCart store; the promoted prod project is being cleaned (test data wipe) before go-live. Remaining cutover steps live in the prod-promotion plan.
+- **Domain cutover is still pending**: `poke-singles.com` serves the live OpenCart store. The promoted prod project is already **cleaned** (2026-07-13: admin-only users, empty catalog, `orders_number_seq` at 7304, OC lifetime totals in `app_settings.legacy_*`). Go-live = staged deploy to `public_html_new` + atomic two-rename swap with maintenance mode ON; the checklist lives in the prod-promotion plan.
 - The deploy guard regex only blocks paths **ending** in `poke-singles.com/public_html` (optional trailing slash). A subdirectory like `.../poke-singles.com/public_html/new/` would pass the guard — the blocklist protects the root specifically.
 - `npm run deploy` (no suffix) targets **prod**. Use `deploy:dev` habitually; the missing-creds failure is the usual safety net when prod keys are blank.
 - `deploy.mjs` uses `uploadDir` without mirror-delete: removed files (old hashed bundles) persist remotely. Not harmful, but the remote is not an exact mirror.

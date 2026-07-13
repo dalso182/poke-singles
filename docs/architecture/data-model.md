@@ -189,6 +189,8 @@ Single row enforced by `id boolean PRIMARY KEY DEFAULT true CHECK (id)`; seeded 
 | `loyalty_enabled boolean default false` | `20260528000000` | Gate for earning points. |
 | `loyalty_colones_per_point numeric(12,2) default 1000` | `20260528000000` | ₡ of net merchandise per point. |
 | `pokeball_tiers jsonb` | `20260704000000` | `[{key,label,cost,award}×4]` — poke/super/ultra/master tier economy; UI and `open_pokeball()` both read it. |
+| `legacy_order_count integer NOT NULL default 0` | `20260713000000` | Lifetime order count of the OpenCart store at the 2026-07 cutover (5953; orders up to #7303 — `orders_number_seq` continues at 7304). Not surfaced in UI yet. |
+| `legacy_sales_total_crc numeric NOT NULL default 0` | `20260713000000` | Lifetime OpenCart sales total in colones at cutover (₡64.6M). Not surfaced in UI yet. |
 | `updated_at` | initial | Trigger-maintained. |
 
 #### `static_pages` (`20260510000000`)

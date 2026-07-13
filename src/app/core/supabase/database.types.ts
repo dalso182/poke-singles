@@ -44,6 +44,8 @@ export type Database = {
           bank_account_info: string | null
           exchange_rate_usd_crc: number | null
           id: boolean
+          legacy_order_count: number
+          legacy_sales_total_crc: number
           loyalty_colones_per_point: number
           loyalty_enabled: boolean
           maintenance_message: string | null
@@ -61,6 +63,8 @@ export type Database = {
           bank_account_info?: string | null
           exchange_rate_usd_crc?: number | null
           id?: boolean
+          legacy_order_count?: number
+          legacy_sales_total_crc?: number
           loyalty_colones_per_point?: number
           loyalty_enabled?: boolean
           maintenance_message?: string | null
@@ -78,6 +82,8 @@ export type Database = {
           bank_account_info?: string | null
           exchange_rate_usd_crc?: number | null
           id?: boolean
+          legacy_order_count?: number
+          legacy_sales_total_crc?: number
           loyalty_colones_per_point?: number
           loyalty_enabled?: boolean
           maintenance_message?: string | null
