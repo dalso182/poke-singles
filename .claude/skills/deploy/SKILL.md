@@ -72,6 +72,22 @@ design). `new.poke-singles.com` (the old staging site) is being retired; `proxy.
 points at it for localhost images until then. The free-tier dev project auto-pauses after ~1 week
 idle — resume it from the dashboard if the dev site/e2e suddenly can't reach Supabase.
 
+## Promotion flow (dev → prod, post-launch)
+
+Gate every promotion with **`npm run preflight`** (unit tests + Playwright e2e vs dev +
+prod build). Then by change type:
+
+1. **Frontend-only**: preflight → `deploy:dev` → spot-check dev.poke-singles.com →
+   `deploy:prod`.
+2. **DB change**: migration → `db:push:dev` → `db:types:dev` → code → preflight →
+   verify on dev → **`db:push:prod` BEFORE `deploy:prod`** (additive changes are safe for
+   the old bundle in between; breaking renames land migration+code together — see the
+   rename-sequencing rule).
+3. **Edge functions**: `functions:dev` → exercise the flow on dev → `functions:prod`.
+4. **Dashboard config** (auth URLs, secrets, templates, Vault): no git trail — change on
+   dev, verify, mirror on prod. The out-of-migrations config checklist lives in
+   `docs/architecture/environments-and-deploy.md`.
+
 ## Self-hosting card images
 
 The store can serve its own card art instead of hotlinking the TCGdex CDN. Layout on the host:

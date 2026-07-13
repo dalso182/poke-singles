@@ -69,7 +69,8 @@ The `new.poke-singles.com` staging subdomain is being retired in favor of `dev.`
 | `build` | `ng build` (production default) |
 | `build:dev` / `build:prod` | explicit configurations |
 | `watch` | `ng build --watch --configuration development` |
-| `test` | `ng test` (vitest) |
+| `test` | `ng test` (vitest; suite is green — no tolerated failures) |
+| `preflight` | `npm test -- --watch=false && npm run e2e && npm run build:prod` — the go/no-go gate before any `deploy:prod` |
 | `deploy` | `node scripts/deploy.mjs` (defaults to `--env=prod`) |
 | `deploy:dev` / `deploy:prod` | `node scripts/deploy.mjs --env=dev` / `--env=prod` |
 | `db:types` | `npx --yes supabase gen types typescript --linked > src/app/core/supabase/database.types.ts` |

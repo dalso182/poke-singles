@@ -17,7 +17,7 @@
 - `src/app/admin/admin-shell/admin-shell.ts` — component class, nav model, badge fetches, pin persistence, ⌘K handler.
 - `src/app/admin/admin-shell/admin-shell.html` — toolbar + sidenav template (`mat-toolbar`, `mat-sidenav-container`).
 - `src/app/admin/admin-shell/admin-shell.scss` — shell styling (`.admin-toolbar`, `.admin-sidenav`, `.nav-row`, `.nav-badge`, `.store-status` …).
-- `src/app/admin/admin-shell/admin-shell.spec.ts` — spec (note: `should create` specs across admin fail pre-existing NG0201/ActivatedRoute; not shell-specific).
+- `src/app/admin/admin-shell/admin-shell.spec.ts` — smoke spec (passes; router provided via `provideRouter([])`).
 - `src/app/core/auth/admin.guard.ts` — route guard (see above).
 - `src/app/app.routes.ts` — the `/admin` child route table the sidenav must stay in sync with.
 

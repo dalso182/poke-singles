@@ -19,7 +19,7 @@
 - `src/app/user/user-shell/user-shell.html` — `<app-header>` + `mat-sidenav-container` with nav sidenav, cart-drawer sidenav (`position="end"`), `router-outlet`, `<app-footer>`, `<app-card-preview-overlay>`.
 - `src/app/user/user-shell/user-shell.scss` — 80px-header height math (`calc(100vh - 80px)`), rail width transition (76px ↔ 264px, 260ms), cart drawer width (360px, max 90vw).
 - `src/app/user/header/header.ts` / `.html` / `.scss` — `Header` component: search, cart button, login/account dropdown, social icons.
-- `src/app/user/header/header.spec.ts` — spec (known pre-existing NG0201 failure, see memory note).
+- `src/app/user/header/header.spec.ts` — smoke spec (passes; router provided via `provideRouter([])`).
 - `src/app/user/navigation/navigation.ts` / `.html` / `.scss` — `Navigation` component: sectioned nav with inline SVG icon literals, accordion (expanded) / hover flyout (collapsed), category facet links.
 - `src/app/user/footer/footer.ts` / `.html` / `.scss` — `Footer` component: link columns, brand mark + socials, trust stats, fine print.
 - `src/app/shared/user-avatar/user-avatar.ts` / `.html` / `.scss` — `UserAvatar`: resolves the avatar image chain (Pokémon mood portrait → Google photo → initials).
@@ -153,7 +153,7 @@ Presentational; the parent supplies the circular container. Renders either `.use
 - **The rail-width reflow loop** (300ms rAF loop calling `updateContentMargins()`) exists because the 260ms width transition is pure CSS; removing either side desynchronizes content margin from the rail.
 - **Presence counts admins as visitors** when they browse the storefront (`joinAsVisitor` tracks `role: 'visitor'` unconditionally); the dashboard's `watchOnlineCount` only excludes the watching (non-tracking) admin channel.
 - **CLAUDE.md drift**: CLAUDE.md's brand-red rule says `.price--sale` uses brand red, but `src/styles/_brand-utilities.scss` styles `.price--sale` with `var(--accent-amber)`. Not a shell issue per se, but the shell docs inherit the rule — trust the code/theme skill.
-- The pre-existing `header.spec.ts` "should create" failure (NG0201, missing `provideRouter`) is known and not a regression.
+- `header.spec.ts` passes since 2026-07-13 (`provideRouter([])` added to its TestBed) — a new failure there IS a regression.
 
 ## Related docs
 

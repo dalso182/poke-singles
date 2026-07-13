@@ -9,6 +9,7 @@
     "build:prod": "ng build --configuration=production",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "preflight": "npm test -- --watch=false && npm run e2e && npm run build:prod",
     "e2e": "playwright test",
     "e2e:headed": "playwright test --headed",
     "e2e:ui": "playwright test --ui",

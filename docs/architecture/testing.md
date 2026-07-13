@@ -39,8 +39,10 @@ Supabase project.
 - Requires in `.env.local`: `SUPABASE_DEV_URL`, `SUPABASE_DEV_SERVICE_ROLE_KEY`,
   `E2E_USER_EMAIL`, `E2E_USER_PASSWORD` (seed creates/reuses the auth user
   `e2e-checkout@test.local` and re-syncs its password each run).
-- Suite baseline: 4 pre-existing NG0201 `should create` failures
-  (home / admin-shell / detail / header) + 2 user-shell unhandled errors are expected noise.
+- Suite baseline: **green** (2026-07-13: the four NG0201 `should create` failures —
+  home / admin-shell / detail / header — were fixed with `provideRouter([])` in each spec's
+  TestBed providers). `npm run preflight` (test + e2e + build:prod) is the go/no-go gate
+  before any `deploy:prod`; a red suite blocks promotion, so fix rather than baseline it.
 
 ## Contracts & conventions
 

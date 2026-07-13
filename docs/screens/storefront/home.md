@@ -14,7 +14,7 @@ The customer landing page at `/`. Shows a branded hero, two auto-scrolling produ
 - `src/app/home/home.ts` — `Home` component: three rail signals + one `bootstrap()` fetch.
 - `src/app/home/home.html` — hero, loading bar, three sections.
 - `src/app/home/home.scss` — `.home-hero`, `.home-section`, `.home-empty`, `.cards-grid` (offers grid).
-- `src/app/home/home.spec.ts` — spec (fails pre-existing with NG0201 ActivatedRoute, see project memory).
+- `src/app/home/home.spec.ts` — smoke spec (passes; router provided via `provideRouter([])`).
 - `src/app/shared/marquee/marquee.{ts,html,scss}` — `Marquee` auto-scroll strip.
 - `src/app/shared/product-card/product-card.{ts,html,scss}` — `ProductCard` tile used in marquees and the offers grid.
 - `src/app/core/catalog/products.service.ts` — `ProductsService.list()` / `.search()` data source.

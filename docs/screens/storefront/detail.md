@@ -15,7 +15,7 @@ The single-product page: a large card image with hover shine, a buy panel (price
 - `src/app/user/detail/detail.ts` — `Detail` component + local view-model interfaces `TcgdexAttack`, `TcgdexAbility`, `TcgdexTypedValue` (typed mirrors of the TCGdex SDK shapes the template consumes).
 - `src/app/user/detail/detail.html` — breadcrumb, not-found, hero (image + buy panel), combat section, effect section, seller notes.
 - `src/app/user/detail/detail.scss` — `.hero` (440px/1fr grid, sticky image ≥1100px), `.price-block`/`.price-tick`, `.spec-grid`, `.hp-bar`, `.attack`, responsive breakpoints at 1099/720/520px.
-- `src/app/user/detail/detail.spec.ts` — spec (note: listed in memory as one of the pre-existing NG0201 `should create` failures).
+- `src/app/user/detail/detail.spec.ts` — smoke spec (passes; router provided via `provideRouter([])`).
 - `src/app/shared/pipes/or-dash.pipe.ts` — `OrDashPipe` (`| orDash`): renders `—` (em dash) for null/undefined/`''`/empty array so every field keeps its slot (pre-orders arrive mostly null); pair with `.dash`/`.is-dash` styling.
 - `src/app/shared/energy-chip/energy-chip.ts` — `EnergyChip` (`<app-energy-chip [type] [size] [withLabel]>`) + exported helpers `energyTypeColor()`, `energyTypeFg()`, `energyTypeName()` and the `ENERGY_TYPE_META` map (icons under `assets/images/types/{icon}.png`; aliases Dark/Darkness, Electric/Lightning, Steel/Metal).
 - `src/app/core/catalog/products.service.ts` — `getBySlug()`, `getCardTypeIds()`, `raffleCategoryId()`.
