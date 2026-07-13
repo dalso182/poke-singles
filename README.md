@@ -77,6 +77,8 @@ npm run build:dev         # dev configuration build
 npm run build:prod        # explicit production configuration
 npm run watch             # rebuild on change
 npm test                  # vitest
+npm run e2e               # Playwright checkout smoke (seeds + cleans the dev DB itself)
+npm run e2e:headed        # same, with a visible browser
 
 npm run deploy:dev        # build:dev  + SFTP upload to dev subdomain
 npm run deploy:prod       # build:prod + SFTP upload to poke-singles.com

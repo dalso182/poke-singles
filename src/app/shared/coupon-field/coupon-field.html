@@ -19,7 +19,7 @@
   >
     <mat-form-field appearance="outline" subscriptSizing="dynamic">
       <mat-label>Código de cupón</mat-label>
-      <input matInput formControlName="code" autocomplete="off" />
+      <input matInput formControlName="code" autocomplete="off" data-testid="coupon-input" />
       @if (error()) {
         <mat-error>{{ error() }}</mat-error>
       }
@@ -27,7 +27,12 @@
         <mat-hint>Inicia sesión para usar un cupón.</mat-hint>
       }
     </mat-form-field>
-    <button mat-stroked-button type="submit" [disabled]="!isSignedIn() || applying()">
+    <button
+      mat-stroked-button
+      type="submit"
+      data-testid="coupon-apply"
+      [disabled]="!isSignedIn() || applying()"
+    >
       {{ applying() ? 'Aplicando…' : 'Aplicar' }}
     </button>
   </form>

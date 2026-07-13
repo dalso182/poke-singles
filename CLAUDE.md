@@ -49,10 +49,13 @@ must be defeated deliberately to ship to the live site (cutover day). → `deplo
 npm start          # ng serve on http://localhost:4242
 npm run build      # production build → dist/poke-singles/browser/
 npm run build:dev  # dev-configuration build
-npm test           # vitest
+npm test           # vitest (4 pre-existing NG0201 failures are the known baseline)
+npm run e2e        # Playwright checkout smoke vs dev Supabase (self-seeding + cleanup)
 ```
 
-Deploy, DB, image, and migration commands live in their respective skills.
+Deploy, DB, image, and migration commands live in their respective skills. Test-harness
+details (fakes in `src/app/testing/`, e2e fixtures/env keys, gotchas):
+`docs/architecture/testing.md`.
 
 ## Directory map (high level)
 

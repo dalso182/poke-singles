@@ -23,6 +23,7 @@ if a doc's claims disagree with the code, the code has moved — update the doc.
 | [shared-components](architecture/shared-components.md) | Anything in `src/app/shared/**` — which primitive to use where, composition rules |
 | [theming](architecture/theming.md) | `src/styles/*`, tokens, Material overrides, the brand-red rule (currently **two** sanctioned uses) |
 | [environments-and-deploy](architecture/environments-and-deploy.md) | `deploy.mjs`, env tiers, `.htaccess`, card-image pipeline, seed/import scripts |
+| [testing](architecture/testing.md) | Vitest specs + fakes (`src/app/testing/`), the Playwright checkout suite (`e2e/`, seed/cleanup scripts), test-writing gotchas |
 | [design-manifest](design-manifest.md) | Prop/API tables for every shared component + global utility classes (pre-existing manifest) |
 
 ## Storefront screens (`docs/screens/storefront/`)

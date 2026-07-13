@@ -33,6 +33,11 @@ yarn-error.log
 !.vscode/mcp.json
 .history/*
 
+# Playwright e2e artifacts + per-run fixture ids written by scripts/e2e-seed.mjs
+/test-results
+/playwright-report
+/e2e/.fixtures.json
+
 # Miscellaneous
 /.angular/cache
 /supabase/.temp

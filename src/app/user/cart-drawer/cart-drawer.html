@@ -114,7 +114,13 @@
       <span>{{ appliedCoupon() ? 'Total' : 'Subtotal' }}</span>
       <strong>₡{{ (appliedCoupon() ? total() : subtotal()) | number: '1.0-0' }}</strong>
     </div>
-    <button mat-flat-button color="primary" (click)="onCheckout()" class="cart-drawer__cta">
+    <button
+      mat-flat-button
+      color="primary"
+      (click)="onCheckout()"
+      class="cart-drawer__cta"
+      data-testid="drawer-checkout"
+    >
       Continuar al checkout
     </button>
     <button mat-stroked-button (click)="goToCart()" class="cart-drawer__cta">

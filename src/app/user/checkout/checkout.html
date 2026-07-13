@@ -64,6 +64,7 @@
                 [value]="method.id"
                 class="co-option"
                 [class.co-option--active]="selectedShippingMethodId() === method.id"
+                [attr.data-testid]="'shipping-' + method.id"
               >
                 <div class="co-option-row">
                   <div class="co-option-text">
@@ -246,7 +247,7 @@
             <dd>₡{{ subtotal() | number: '1.0-0' }}</dd>
           </dl>
           @if (appliedCoupon(); as coupon) {
-            <dl class="co-row">
+            <dl class="co-row" data-testid="discount-row">
               <dt>
                 @if (coupon.type === 'PERCENTAGE') {
                   {{ coupon.code }} ({{ coupon.discount_value }}%)
@@ -298,6 +299,7 @@
           <button
             type="submit"
             class="co-confirm"
+            data-testid="checkout-submit"
             [disabled]="form.invalid || placing()"
           >
             <span>{{ placing() ? 'Procesando…' : 'Confirmar pedido' }}</span>
