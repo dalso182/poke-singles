@@ -68,8 +68,9 @@ defeated** to overwrite the live store. To deploy at cutover, edit the array del
 Both environment files carry real values now. **`dhslfridsjdmhwzrgebv` = PROD** — never treat it
 as dev. The CLI stays linked to the dev project (`db:push:dev`); prod migration pushes go through
 `npm run db:push:prod` (a wrapper requiring `SUPABASE_PROD_DB_URL` in `.env.local`, deliberate by
-design). `new.poke-singles.com` (the old staging site) is being retired; `proxy.conf.mjs` still
-points at it for localhost images until then. The free-tier dev project auto-pauses after ~1 week
+design). `new.poke-singles.com` (the old staging site) is being retired; `proxy.conf.mjs` targets
+`dev.poke-singles.com` for localhost images (switched 2026-07-14 — the stale `new.` PHP gate
+rejected dev tokens). The free-tier dev project auto-pauses after ~1 week
 idle — resume it from the dashboard if the dev site/e2e suddenly can't reach Supabase.
 
 ## Promotion flow (dev → prod, post-launch)

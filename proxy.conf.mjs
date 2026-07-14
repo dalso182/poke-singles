@@ -1,10 +1,15 @@
 // Dev-server proxy: makes self-hosted card images load on localhost.
 //
 // Products store relative image paths (/card-images/<serie>/<set>/<localId>.webp)
-// so they survive the new.→main domain cutover. On the deployed site those resolve
+// so they survive the dev.→main domain cutover. On the deployed site those resolve
 // same-origin; on localhost there's nothing at /card-images, so we forward those
-// requests to new.poke-singles.com. That host is HTTP-Basic-password-protected, so
+// requests to dev.poke-singles.com. That host is HTTP-Basic-password-protected, so
 // we attach the credentials here (read from .env.local — never committed).
+//
+// Must stay on the DEV subdomain: the image-picker PHP endpoints there are stamped
+// for the dev Supabase project, so tokens from a local (dev-pointed) session
+// validate. new.poke-singles.com still carries pre-split endpoints that gate
+// against the old project and answer 401 invalid_token.
 //
 // Setup: add to .env.local
 //   IMAGES_HTTP_USER=<site password username>
@@ -29,13 +34,13 @@ const authHeader =
 if (!authHeader) {
   console.warn(
     '[proxy] IMAGES_HTTP_USER / IMAGES_HTTP_PASSWORD not set in .env.local — ' +
-      '/card-images requests will hit new.poke-singles.com unauthenticated (401).',
+      '/card-images requests will hit dev.poke-singles.com unauthenticated (401).',
   );
 }
 
 export default {
   '/card-images': {
-    target: 'https://new.poke-singles.com',
+    target: 'https://dev.poke-singles.com',
     secure: true,
     changeOrigin: true,
     ...(authHeader ? { headers: { Authorization: authHeader } } : {}),
