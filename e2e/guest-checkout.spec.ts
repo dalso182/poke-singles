@@ -1,5 +1,11 @@
 import { expect, test } from '@playwright/test';
-import { blockOrderEmail, dismissOnboarding, loadFixtures, serviceClient } from './helpers';
+import {
+  TINY_PNG,
+  blockOrderEmail,
+  dismissOnboarding,
+  loadFixtures,
+  serviceClient,
+} from './helpers';
 
 const fx = loadFixtures();
 const cardA = fx.products.find((p) => p.slug === 'e2e-test-card-a')!;
@@ -47,4 +53,29 @@ test('guest can order a card for pickup and lands on the confirmation page', asy
     shipping_amount: fx.pickupMethod.price,
     total: cardA.price + fx.pickupMethod.price,
   });
+
+  // Payment proof: attach a receipt image (anon upload to the private bucket
+  // is allowed only while the order is pending + sinpe_or_transfer).
+  await page.getByTestId('proof-file-input').setInputFiles({
+    name: 'comprobante.png',
+    mimeType: 'image/png',
+    buffer: TINY_PNG,
+  });
+  await expect(page.getByTestId('proof-uploaded')).toBeVisible();
+  await expect(page.getByTestId('proof-uploaded')).toContainText('Comprobante recibido');
+
+  // attach_payment_proof stamped the storage path on the order…
+  const { data: after } = await db
+    .from('orders')
+    .select('payment_proof_url')
+    .eq('id', orderId)
+    .single();
+  expect(after!.payment_proof_url).toBe(`${orderId}/proof.png`);
+
+  // …and the object really exists in the private bucket.
+  const { data: files, error: listErr } = await db.storage
+    .from('payment-proofs')
+    .list(orderId);
+  expect(listErr).toBeNull();
+  expect(files?.map((f) => f.name)).toContain('proof.png');
 });

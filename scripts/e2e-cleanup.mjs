@@ -25,8 +25,10 @@ dotenv.config({ path: path.join(REPO_ROOT, '.env.local') });
 const SUPABASE_URL = process.env.SUPABASE_DEV_URL;
 const SUPABASE_KEY = process.env.SUPABASE_DEV_SERVICE_ROLE_KEY;
 const E2E_USER_EMAIL = process.env.E2E_USER_EMAIL ?? 'e2e-checkout@test.local';
+const E2E_ADMIN_EMAIL = 'e2e-admin@test.local';
 const E2E_GUEST_EMAIL = 'e2e-guest@test.local';
-const COUPON_CODE = 'E2ETEST10';
+const COUPON_CODES = ['E2ETEST10', 'E2ELIMIT1'];
+const RESTRICTED_METHOD_NAME = '[E2E] Restricted (RPC test)';
 const PRODUCT_SLUGS = ['e2e-test-card-a', 'e2e-test-card-b'];
 const STOCK = 10;
 const PURGE = process.argv.includes('--purge');
@@ -61,6 +63,21 @@ async function deleteTestOrders() {
     return 0;
   }
 
+  // Payment-proof objects live under payment-proofs/<order_id>/ — remove them
+  // before the order rows so the private bucket doesn't accumulate orphans.
+  for (const id of ids) {
+    const { data: files, error: listErr } = await supabase.storage
+      .from('payment-proofs')
+      .list(id);
+    if (listErr) abort(`payment-proofs list failed for ${id}: ${listErr.message}`);
+    if (files?.length) {
+      const { error: rmErr } = await supabase.storage
+        .from('payment-proofs')
+        .remove(files.map((f) => `${id}/${f.name}`));
+      if (rmErr) abort(`payment-proofs remove failed for ${id}: ${rmErr.message}`);
+    }
+  }
+
   // Children first — not all FKs cascade.
   for (const [table, column] of [
     ['coupon_redemptions', 'order_id'],
@@ -87,18 +104,18 @@ async function main() {
     .in('customer_email', TEST_EMAILS);
   if (actErr) abort(`customer_activity delete failed: ${actErr.message}`);
 
-  // Remaining redemptions for the test coupon (belt and braces).
-  const { data: coupon, error: coupErr } = await supabase
+  // Remaining redemptions for the test coupons (belt and braces).
+  const { data: coupons, error: coupErr } = await supabase
     .from('coupons')
     .select('id')
-    .eq('code', COUPON_CODE)
-    .maybeSingle();
+    .in('code', COUPON_CODES);
   if (coupErr) abort(`coupons lookup failed: ${coupErr.message}`);
-  if (coupon) {
+  const couponIds = (coupons ?? []).map((c) => c.id);
+  if (couponIds.length) {
     const { error } = await supabase
       .from('coupon_redemptions')
       .delete()
-      .eq('coupon_id', coupon.id);
+      .in('coupon_id', couponIds);
     if (error) abort(`coupon_redemptions delete failed: ${error.message}`);
   }
 
@@ -106,11 +123,34 @@ async function main() {
   if (PURGE) {
     const { error } = await supabase.from('products').delete().in('slug', PRODUCT_SLUGS);
     if (error) abort(`products purge failed: ${error.message}`);
-    if (coupon) {
-      const { error: cDelErr } = await supabase.from('coupons').delete().eq('id', coupon.id);
+    if (couponIds.length) {
+      const { error: cDelErr } = await supabase.from('coupons').delete().in('id', couponIds);
       if (cDelErr) abort(`coupons purge failed: ${cDelErr.message}`);
     }
-    console.log('[e2e-cleanup] fixture products + coupon purged');
+    const { error: smErr } = await supabase
+      .from('shipping_methods')
+      .delete()
+      .eq('name', RESTRICTED_METHOD_NAME);
+    if (smErr) abort(`shipping_methods purge failed: ${smErr.message}`);
+    console.log('[e2e-cleanup] fixture products + coupons + restricted method purged');
+    // The auth users too — above all the seeded ADMIN account: leaving an
+    // admin login with the shared test password in the project defeats the
+    // point of a purge (and this "dev" instance has been promoted to prod
+    // once before).
+    const { data: userList, error: purgeListErr } = await supabase.auth.admin.listUsers({
+      page: 1,
+      perPage: 1000,
+    });
+    if (purgeListErr) abort(`listUsers failed: ${purgeListErr.message}`);
+    for (const email of [E2E_ADMIN_EMAIL, E2E_USER_EMAIL]) {
+      const u = userList.users.find(
+        (x) => x.email?.toLowerCase() === email.toLowerCase()
+      );
+      if (!u) continue;
+      const { error: delErr } = await supabase.auth.admin.deleteUser(u.id);
+      if (delErr) abort(`deleteUser failed for ${email}: ${delErr.message}`);
+      console.log(`[e2e-cleanup] auth user ${email}: deleted`);
+    }
   } else {
     const { error } = await supabase
       .from('products')
@@ -136,6 +176,12 @@ async function main() {
       .update({ coupon_id: null, updated_at: new Date().toISOString() })
       .eq('user_id', user.id);
     if (r2.error) abort(`carts reset failed: ${r2.error.message}`);
+    // Loyalty rows survive order deletion (order_id → set null) — sweep them.
+    const r3 = await supabase
+      .from('loyalty_transactions')
+      .delete()
+      .eq('user_id', user.id);
+    if (r3.error) abort(`loyalty_transactions delete failed: ${r3.error.message}`);
   }
 
   console.log(

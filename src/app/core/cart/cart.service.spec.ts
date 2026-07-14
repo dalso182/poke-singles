@@ -40,18 +40,27 @@ function percentCoupon(overrides: Partial<AppliedCoupon> = {}): AppliedCoupon {
 describe('CartService', () => {
   let fake: ReturnType<typeof createSupabaseFake>;
   let svc: CartService;
+  let currentUser: ReturnType<typeof signal<{ id: string } | null | undefined>>;
+
+  /** Flushes the constructor auth-effect and lets its async work settle. */
+  async function settle() {
+    TestBed.tick();
+    await new Promise((r) => setTimeout(r, 0));
+    await new Promise((r) => setTimeout(r, 0));
+  }
 
   beforeEach(() => {
     localStorage.removeItem('cart:v1');
     fake = createSupabaseFake();
+    // Starts `undefined` (= session still hydrating) so the constructor
+    // auth-effect stays inert unless a test drives a transition via settle().
+    currentUser = signal<{ id: string } | null | undefined>(undefined);
     TestBed.configureTestingModule({
       providers: [
         fake.provider,
-        // `undefined` = session still hydrating → the constructor auth-effect
-        // early-returns, so no hydration side effects fire during the test.
         {
           provide: AuthService,
-          useValue: { currentUser: signal(undefined).asReadonly() },
+          useValue: { currentUser: currentUser.asReadonly() },
         },
       ],
     });
@@ -209,6 +218,120 @@ describe('CartService', () => {
 
       expect(svc.appliedCoupon()).toEqual(percentCoupon());
       expect(svc.couponDroppedTick()).toBeNull();
+    });
+  });
+
+  describe('merge on sign-in', () => {
+    const dbProductRow = {
+      id: 'p1',
+      name: 'Card A',
+      slug: 'card-a',
+      image_url: null,
+      price: 1000,
+      sale_price: null,
+      quantity: 5,
+      condition: 'NM',
+      card_number: null,
+      type1: null,
+      type2: null,
+      category_id: 'catA',
+      sets: null,
+    };
+
+    it('mergeAnonIntoDb sums quantities, caps at stock, and drops gone products', async () => {
+      // DB cart already holds p1×1; p3 no longer exists in products.
+      fake.setTable('cart_items', { data: [{ product_id: 'p1', quantity: 1 }] });
+      fake.setTable('products', {
+        data: [
+          { id: 'p1', quantity: 3 },
+          { id: 'p2', quantity: 4 },
+        ],
+      });
+      const anonItems = [
+        { product_id: 'p1', quantity: 2, added_at: '2026-01-01T00:00:00Z' },
+        { product_id: 'p2', quantity: 5, added_at: '2026-01-01T00:00:01Z' },
+        { product_id: 'p3', quantity: 1, added_at: '2026-01-01T00:00:02Z' },
+      ];
+
+      await (
+        svc as unknown as {
+          mergeAnonIntoDb(items: unknown[], userId: string): Promise<void>;
+        }
+      ).mergeAnonIntoDb(anonItems, 'u1');
+
+      const upsert = fake.tableCalls.find(
+        (c) => c.table === 'cart_items' && c.method === 'upsert',
+      );
+      expect(upsert!.args[0]).toEqual([
+        // 1 in DB + 2 anon = 3, exactly at stock.
+        { user_id: 'u1', product_id: 'p1', quantity: 3 },
+        // 0 in DB + 5 anon, capped at stock 4.
+        { user_id: 'u1', product_id: 'p2', quantity: 4 },
+        // p3 dropped: not in the products lookup.
+      ]);
+      expect(upsert!.args[1]).toEqual({ onConflict: 'user_id,product_id' });
+    });
+
+    it('signing in merges the anon cart, clears localStorage, and hydrates from the DB', async () => {
+      localStorage.setItem(
+        'cart:v1',
+        JSON.stringify([
+          { product_id: 'p1', quantity: 2, added_at: '2026-01-01T00:00:00Z' },
+        ]),
+      );
+      fake.setTable('products', { data: [dbProductRow] });
+      // Serves both the pre-merge read ({product_id, quantity}) and the
+      // post-merge hydrateFromDb read (needs the joined products row).
+      // DB quantity 4 is deliberately DIFFERENT from the anon quantity 2 so
+      // the final items() assertion can only pass if hydrateFromDb actually
+      // ran after the merge (not if stale anon state was left behind).
+      fake.setTable('cart_items', {
+        data: [
+          {
+            product_id: 'p1',
+            quantity: 4,
+            added_at: '2026-01-01T00:00:00Z',
+            products: dbProductRow,
+          },
+        ],
+      });
+
+      // Session resolves as signed out → cart hydrates from localStorage.
+      currentUser.set(null);
+      await settle();
+      expect(svc.items().map((l) => l.product_id)).toEqual(['p1']);
+
+      // Fresh login → anon cart merges into the DB cart.
+      currentUser.set({ id: 'u1' });
+      await settle();
+
+      const upsert = fake.tableCalls.find(
+        (c) => c.table === 'cart_items' && c.method === 'upsert',
+      );
+      // 4 already in the DB cart + 2 anon = 6, capped at stock 5.
+      expect(upsert!.args[0]).toEqual([
+        { user_id: 'u1', product_id: 'p1', quantity: 5 },
+      ]);
+      // localStorage handed over to the DB cart.
+      expect(localStorage.getItem('cart:v1')).toBeNull();
+      // Local view now reflects the DB cart (qty 4 — distinct from anon's 2).
+      expect(svc.items()).toHaveLength(1);
+      expect(svc.items()[0]).toMatchObject({ product_id: 'p1', quantity: 4 });
+    });
+
+    it('signing in with no anon items skips the merge entirely', async () => {
+      fake.setTable('cart_items', { data: [] });
+
+      currentUser.set(null);
+      await settle();
+      currentUser.set({ id: 'u1' });
+      await settle();
+
+      const upsert = fake.tableCalls.find(
+        (c) => c.table === 'cart_items' && c.method === 'upsert',
+      );
+      expect(upsert).toBeUndefined();
+      expect(svc.items()).toEqual([]);
     });
   });
 

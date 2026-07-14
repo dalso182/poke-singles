@@ -28,7 +28,16 @@ const E2E_USER_EMAIL = process.env.E2E_USER_EMAIL;
 const E2E_USER_PASSWORD = process.env.E2E_USER_PASSWORD;
 
 export const E2E_GUEST_EMAIL = 'e2e-guest@test.local';
+/** Dev-only admin (app_metadata.role = 'admin') for RPCs behind is_admin(). */
+const E2E_ADMIN_EMAIL = 'e2e-admin@test.local';
 const COUPON_CODE = 'E2ETEST10';
+/** Single-use coupon for the COUPON_LIMIT RPC test. */
+const LIMIT_COUPON_CODE = 'E2ELIMIT1';
+/** Shipping method restricted to a category id that can never exist, so the
+ *  SHIPPING_NOT_ALLOWED_FOR_CART path is testable at the RPC level while the
+ *  method stays invisible to real storefront carts (subset check always fails). */
+const RESTRICTED_METHOD_NAME = '[E2E] Restricted (RPC test)';
+const BOGUS_CATEGORY_ID = '11111111-1111-1111-1111-111111111111';
 const FIXTURES_PATH = path.join(REPO_ROOT, 'e2e', '.fixtures.json');
 
 const PRODUCTS = [
@@ -125,18 +134,22 @@ async function upsertProducts(categoryId) {
   return rows;
 }
 
-async function ensureTestUser() {
+// app_metadata is ALWAYS (re)written — the customer fixture must be provably
+// non-admin on every seed, so stale role:'admin' (from a botched run or a
+// manual dashboard edit) can't silently break the NOT_ADMIN / RLS assertions.
+async function ensureUser(email, { appMetadata = { role: 'customer' } } = {}) {
   const { data, error } = await supabase.auth.admin.createUser({
-    email: E2E_USER_EMAIL,
+    email,
     password: E2E_USER_PASSWORD,
     email_confirm: true,
+    app_metadata: appMetadata,
   });
   if (!error) {
-    console.log(`[e2e-seed] test user ${E2E_USER_EMAIL}: created`);
+    console.log(`[e2e-seed] user ${email}: created`);
     return data.user.id;
   }
   if (!/already/i.test(error.message)) {
-    abort(`createUser failed: ${error.message}`);
+    abort(`createUser failed for ${email}: ${error.message}`);
   }
   // Already exists — find the id (dev user count is small; one page is enough).
   const { data: list, error: listErr } = await supabase.auth.admin.listUsers({
@@ -145,15 +158,16 @@ async function ensureTestUser() {
   });
   if (listErr) abort(`listUsers failed: ${listErr.message}`);
   const user = list.users.find(
-    (u) => u.email?.toLowerCase() === E2E_USER_EMAIL.toLowerCase()
+    (u) => u.email?.toLowerCase() === email.toLowerCase()
   );
-  if (!user) abort(`user ${E2E_USER_EMAIL} exists but was not found via listUsers`);
-  // Keep the password in sync with .env.local so sign-in never drifts.
+  if (!user) abort(`user ${email} exists but was not found via listUsers`);
+  // Keep password + role in sync with .env.local so sign-in never drifts.
   const { error: updErr } = await supabase.auth.admin.updateUserById(user.id, {
     password: E2E_USER_PASSWORD,
+    app_metadata: appMetadata,
   });
-  if (updErr) abort(`updateUserById failed: ${updErr.message}`);
-  console.log(`[e2e-seed] test user ${E2E_USER_EMAIL}: existing, password synced`);
+  if (updErr) abort(`updateUserById failed for ${email}: ${updErr.message}`);
+  console.log(`[e2e-seed] user ${email}: existing, password synced`);
   return user.id;
 }
 
@@ -178,22 +192,22 @@ async function resetUserCart(userId) {
   console.log('[e2e-seed] test user cart cleared');
 }
 
-async function upsertCoupon(userId) {
+async function upsertCoupon(userId, { code, name, maxUses }) {
   const base = {
-    name: '[E2E] Test coupon',
+    name,
     type: 'PERCENTAGE',
     discount_value: 10,
     min_purchase_amount: null,
     category_ids: null,
     is_active: true,
     deleted_at: null,
-    max_uses_per_user: 1000,
+    max_uses_per_user: maxUses,
     expires_at: '2030-01-01T00:00:00Z',
   };
   const { data: existing, error: selErr } = await supabase
     .from('coupons')
     .select('id')
-    .eq('code', COUPON_CODE)
+    .eq('code', code)
     .maybeSingle();
   if (selErr) abort(`coupons lookup failed: ${selErr.message}`);
 
@@ -202,16 +216,16 @@ async function upsertCoupon(userId) {
     const { error } = await supabase.from('coupons').update(base).eq('id', existing.id);
     if (error) abort(`coupons update failed: ${error.message}`);
     couponId = existing.id;
-    console.log(`[e2e-seed] coupon ${COUPON_CODE}: existing, reset`);
+    console.log(`[e2e-seed] coupon ${code}: existing, reset`);
   } else {
     const { data, error } = await supabase
       .from('coupons')
-      .insert({ ...base, code: COUPON_CODE })
+      .insert({ ...base, code })
       .select('id')
       .single();
     if (error) abort(`coupons insert failed: ${error.message}`);
     couponId = data.id;
-    console.log(`[e2e-seed] coupon ${COUPON_CODE}: created`);
+    console.log(`[e2e-seed] coupon ${code}: created`);
   }
 
   // Reset the per-user redemption count so the cap never blocks a run.
@@ -222,6 +236,41 @@ async function upsertCoupon(userId) {
     .or(`user_id.eq.${userId},guest_email.eq.${E2E_GUEST_EMAIL}`);
   if (redErr) abort(`coupon_redemptions reset failed: ${redErr.message}`);
   return couponId;
+}
+
+async function ensureRestrictedShippingMethod() {
+  const base = {
+    description: 'Fixture del RPC test SHIPPING_NOT_ALLOWED_FOR_CART — no usar.',
+    requires_address: false,
+    price: 0,
+    sort_order: 999,
+    is_active: true,
+    allowed_category_ids: [BOGUS_CATEGORY_ID],
+  };
+  const { data: existing, error: selErr } = await supabase
+    .from('shipping_methods')
+    .select('id')
+    .eq('name', RESTRICTED_METHOD_NAME)
+    .maybeSingle();
+  if (selErr) abort(`shipping_methods lookup failed: ${selErr.message}`);
+
+  if (existing) {
+    const { error } = await supabase
+      .from('shipping_methods')
+      .update({ ...base, deleted_at: null })
+      .eq('id', existing.id);
+    if (error) abort(`shipping_methods update failed: ${error.message}`);
+    console.log(`[e2e-seed] restricted method: existing, reset`);
+    return existing.id;
+  }
+  const { data, error } = await supabase
+    .from('shipping_methods')
+    .insert({ ...base, name: RESTRICTED_METHOD_NAME })
+    .select('id')
+    .single();
+  if (error) abort(`shipping_methods insert failed: ${error.message}`);
+  console.log(`[e2e-seed] restricted method: created`);
+  return data.id;
 }
 
 async function findPickupShippingMethod() {
@@ -251,18 +300,34 @@ async function main() {
   console.log(`[e2e-seed] target: ${SUPABASE_URL}`);
   const categoryId = await getSinglesCategoryId();
   const products = await upsertProducts(categoryId);
-  const userId = await ensureTestUser();
+  const userId = await ensureUser(E2E_USER_EMAIL);
+  const adminId = await ensureUser(E2E_ADMIN_EMAIL, {
+    appMetadata: { role: 'admin' },
+  });
   await ensureUserProfile(userId);
   await resetUserCart(userId);
-  const couponId = await upsertCoupon(userId);
+  const couponId = await upsertCoupon(userId, {
+    code: COUPON_CODE,
+    name: '[E2E] Test coupon',
+    maxUses: 1000,
+  });
+  const limitCouponId = await upsertCoupon(userId, {
+    code: LIMIT_COUPON_CODE,
+    name: '[E2E] Single-use coupon (RPC test)',
+    maxUses: 1,
+  });
+  const restrictedMethodId = await ensureRestrictedShippingMethod();
   const pickup = await findPickupShippingMethod();
 
   const fixtures = {
     products,
     user: { id: userId, email: E2E_USER_EMAIL },
+    admin: { id: adminId, email: E2E_ADMIN_EMAIL },
     guestEmail: E2E_GUEST_EMAIL,
     coupon: { id: couponId, code: COUPON_CODE, percent: 10 },
+    limitCoupon: { id: limitCouponId, code: LIMIT_COUPON_CODE, percent: 10 },
     pickupMethod: { id: pickup.id, name: pickup.name, price: pickup.price },
+    restrictedMethod: { id: restrictedMethodId, name: RESTRICTED_METHOD_NAME },
     seededAt: new Date().toISOString(),
   };
   fs.mkdirSync(path.dirname(FIXTURES_PATH), { recursive: true });

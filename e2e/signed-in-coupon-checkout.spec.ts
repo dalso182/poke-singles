@@ -81,4 +81,14 @@ test('signed-in customer can order with a coupon applied', async ({ page }) => {
     .select('product_id')
     .eq('user_id', fx.user.id);
   expect(cartItems).toEqual([]);
+
+  // "Ya envié el comprobante por WhatsApp" stores the sentinel instead of a file.
+  await page.getByTestId('proof-whatsapp').click();
+  await expect(page.getByTestId('whatsapp-acknowledged')).toBeVisible();
+  const { data: after } = await db
+    .from('orders')
+    .select('payment_proof_url')
+    .eq('id', orderId)
+    .single();
+  expect(after!.payment_proof_url).toBe('__whatsapp__');
 });
