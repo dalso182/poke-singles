@@ -58,3 +58,6 @@ Thumbs.db
 .env.*
 !.env.example
 !.env.local.example
+
+# Scratch / one-off working files (OpenCart dumps, one-off admin scripts, cleanup SQL)
+/.tmp
