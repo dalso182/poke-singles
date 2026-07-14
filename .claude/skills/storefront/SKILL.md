@@ -83,6 +83,17 @@ grid. The `[appCardPreview]` directive on each `.card-image` host calls
 via `matchMedia('(hover: hover)')`. Image data is already loaded by the listing — the overlay
 is pure presentation, no extra fetches.
 
+## Announcement modal (show-once)
+
+`AnnouncementModalService` (`src/app/core/announcements/`), instantiated in the UserShell
+constructor, auto-opens the single active `announcements` row once per person: guests get an
+`announcement:seen:<id>` localStorage flag, signed-in users an `announcement_reads` row
+(guest dismissal syncs to the DB on login). Admins are exempt — they see it every page load
+and nothing is recorded. Dialog (`src/app/user/announcement-dialog/`): always-on logo, title,
+rich-text body + optional image column, optional internal-link CTA + always-present
+"Entendido". Replaced the old bienvenida welcome dialog (2026-07-14). Deep dive:
+`docs/screens/storefront/dialogs.md`; admin side: `admin` skill.
+
 ## Cart
 
 `CartService` (`src/app/core/cart/cart.service.ts`) owns both backends: `localStorage`

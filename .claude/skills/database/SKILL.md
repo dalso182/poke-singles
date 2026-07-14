@@ -64,6 +64,13 @@ stock listings are never visible to anon clients on any query path).
 - **Raffles:** `raffles` (1:1 with a Rifas-category product).
 - **Orders:** `orders`, `order_items` (with snapshot columns `seller_id / seller_code / seller_name`
   capturing consignment attribution at checkout).
+- **Content:** `static_pages` (admin CMS for `/info/:slug` + the card-conditions dialog),
+  `announcements` + `announcement_reads` (show-once storefront modals, `20260714000000`): at
+  most one active row (partial unique index on `is_active`), public RLS reads ONLY the active
+  row, per-user seen flags in the reads table (self `for all`, cart_items pattern), and an
+  anon-callable `increment_announcement_views(p_id)` SECURITY DEFINER counter that only bumps
+  the live row. The old `bienvenida` welcome page was absorbed here (seeded inactive, page
+  soft-deleted).
 - **Reporting/analytics:** `customer_activity` (login / order_created / registered events with
   IP), `search_log` (storefront searches: keyword + match count + IP). Both **RLS-enabled with
   no policies** — written only by security-definer fns, read only by admin report RPCs.

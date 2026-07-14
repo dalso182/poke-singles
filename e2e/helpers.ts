@@ -68,16 +68,6 @@ export function makeGuestOrderInput(
 }
 
 /**
- * Marks the first-visit welcome modal as already dismissed so it never
- * opens over the elements the tests click.
- */
-export async function dismissOnboarding(page: Page): Promise<void> {
-  await page.addInitScript(() =>
-    window.localStorage.setItem('welcome:dismissed:v1', '1'),
-  );
-}
-
-/**
  * Intercepts the fire-and-forget send-order-email edge-function call so no
  * real Resend email (customer or admin) ever goes out during a test order.
  * Fulfilled (not aborted) so the client's .catch stays silent.

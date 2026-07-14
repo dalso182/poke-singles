@@ -1,0 +1,45 @@
+<button
+  mat-icon-button
+  type="button"
+  (click)="close()"
+  aria-label="Cerrar"
+  class="announcement-dialog__close"
+>
+  <mat-icon>close</mat-icon>
+</button>
+
+<mat-dialog-content class="announcement-dialog__content">
+  <img
+    class="announcement-dialog__logo"
+    src="assets/images/poke-singles-logo.png"
+    alt="Poke-Singles"
+  />
+
+  <h2 mat-dialog-title class="announcement-dialog__title">
+    {{ data.announcement.title }}
+  </h2>
+
+  <div class="announcement-dialog__body">
+    <article [innerHTML]="safeBody()"></article>
+    @if (data.announcement.image_url) {
+      <img
+        class="announcement-dialog__image"
+        [src]="data.announcement.image_url"
+        [alt]="data.announcement.title"
+      />
+    }
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions class="announcement-dialog__actions">
+  @if (hasLink()) {
+    <button mat-flat-button color="primary" type="button" (click)="followLink()">
+      {{ data.announcement.link_label }}
+    </button>
+    <button mat-stroked-button type="button" (click)="close()">Entendido</button>
+  } @else {
+    <button mat-flat-button color="primary" type="button" (click)="close()">
+      Entendido
+    </button>
+  }
+</mat-dialog-actions>

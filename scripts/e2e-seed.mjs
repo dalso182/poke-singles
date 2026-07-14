@@ -296,8 +296,22 @@ async function findPickupShippingMethod() {
   return pickup;
 }
 
+/**
+ * Deactivate any live announcement so its modal never opens over the elements
+ * the tests click. Deterministic (service-role write) — no localStorage
+ * planting needed, since the announcement id isn't knowable in the specs.
+ */
+async function deactivateAnnouncements() {
+  const { error } = await supabase
+    .from('announcements')
+    .update({ is_active: false })
+    .eq('is_active', true);
+  if (error) abort(`announcements deactivate failed: ${error.message}`);
+}
+
 async function main() {
   console.log(`[e2e-seed] target: ${SUPABASE_URL}`);
+  await deactivateAnnouncements();
   const categoryId = await getSinglesCategoryId();
   const products = await upsertProducts(categoryId);
   const userId = await ensureUser(E2E_USER_EMAIL);

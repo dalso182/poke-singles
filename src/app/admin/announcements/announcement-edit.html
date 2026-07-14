@@ -1,0 +1,115 @@
+<div class="announcement-edit">
+  <app-back-header
+    kicker="Información"
+    [title]="mode() === 'edit' ? 'Editar anuncio' : 'Crear anuncio'"
+    backLink="/admin/announcements"
+  />
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <form [formGroup]="form" class="announcement-edit__form">
+    <app-form-section title="Datos">
+      <app-form-grid [cols]="2">
+        <mat-form-field appearance="outline" style="grid-column: span 2">
+          <mat-label>Título</mat-label>
+          <input matInput type="text" formControlName="title" autocomplete="off" />
+          @if (form.controls['title'].touched && form.controls['title'].invalid) {
+            <mat-error>Necesitamos un título.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="is-mono">
+          <mat-label>Enlace interno (opcional)</mat-label>
+          <input
+            matInput
+            type="text"
+            formControlName="link_path"
+            autocomplete="off"
+            placeholder="/rifas"
+          />
+          <mat-hint>Ruta dentro del sitio, ej. /rifas o /products</mat-hint>
+          @if (form.controls['link_path'].touched && form.controls['link_path'].invalid) {
+            <mat-error>Debe empezar con / y ser una ruta interna.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Texto del botón del enlace</mat-label>
+          <input
+            matInput
+            type="text"
+            formControlName="link_label"
+            autocomplete="off"
+            placeholder="Ver rifas"
+          />
+          @if (form.touched && form.hasError('linkLabelRequired')) {
+            <mat-error>Ponle texto al botón si hay enlace.</mat-error>
+          }
+        </mat-form-field>
+
+        <app-labeled-toggle formControlName="is_active">
+          Activo (al guardar, desactiva cualquier otro anuncio)
+        </app-labeled-toggle>
+      </app-form-grid>
+    </app-form-section>
+
+    <app-form-section
+      title="Imagen (opcional)"
+      subtitle="Se muestra arriba del texto en el modal."
+    >
+      <div class="announcement-edit__image-row">
+        @if (imageUrl()) {
+          <img class="announcement-edit__thumb" [src]="imageUrl()" alt="Imagen del anuncio" />
+          <app-btn variant="ghost" size="sm" (click)="clearImage()">
+            <mat-icon>close</mat-icon>
+            Quitar
+          </app-btn>
+        }
+        <app-btn variant="subtle" (click)="openImagePicker()">
+          <mat-icon>image</mat-icon>
+          {{ imageUrl() ? 'Cambiar imagen' : 'Elegir imagen' }}
+        </app-btn>
+      </div>
+    </app-form-section>
+
+    <app-form-section
+      title="Contenido"
+      subtitle="Texto del modal. Vista previa al lado, tal como lo verá el cliente."
+    >
+      <div class="announcement-edit__editor">
+        <div class="announcement-edit__editor-pane">
+          <label class="announcement-edit__editor-label">Texto</label>
+          <app-rich-text-editor formControlName="body_html" />
+        </div>
+        <div class="announcement-edit__editor-pane">
+          <label class="announcement-edit__editor-label">Vista previa</label>
+          <div class="announcement-edit__preview">
+            <div class="announcement-edit__preview-text" [innerHTML]="previewHtml()"></div>
+            @if (imageUrl()) {
+              <img
+                class="announcement-edit__preview-image"
+                [src]="imageUrl()"
+                alt="Imagen del anuncio"
+              />
+            }
+            @if (previewLinkLabel(); as label) {
+              <div class="announcement-edit__preview-cta">
+                <span class="announcement-edit__preview-btn">{{ label }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </app-form-section>
+
+    <app-form-footer
+      [primaryLabel]="saving() ? 'Guardando…' : (mode() === 'edit' ? 'Guardar' : 'Crear anuncio')"
+      [primaryDisabled]="form.invalid || saving()"
+      [sticky]="false"
+      (primary)="onSubmit()"
+      (secondary)="cancel()"
+    />
+  </form>
+</div>

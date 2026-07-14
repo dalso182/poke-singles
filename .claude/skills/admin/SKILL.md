@@ -45,6 +45,8 @@ Admin status = `app_metadata.role === 'admin'` (→ `database` skill for `is_adm
 | `/admin/orders/:id` | OrderDetail | item-by-item detail with seller badges (code pill, shown only on consigned items) |
 | `/admin/reports` | Reports | 5-tab hub: Pedidos por cliente, Actividad de clientes, Búsquedas, Cupones, Puntos (see Reports below) |
 | `/admin/price-review` | PriceReview | Card-by-card triage of products whose store price drifts from TCGplayer market (see Price review below) |
+| `/admin/pages` (+`/new`, `/:id/edit`) | PagesList / PageEdit | static_pages CRUD: raw-HTML textarea + live preview, slug locked on edit, soft-delete-with-undo |
+| `/admin/announcements` (+`/new`, `/:id/edit`) | AnnouncementsList / AnnouncementEdit | show-once storefront modals: rich-text editor (`app-rich-text-editor`: bold/italic/4 brand-safe colors), optional image (shared ImagePickerDialog) + internal-link CTA, Activar/Desactivar (single-active invariant via `AnnouncementsService.activate()`), Vistas counter, soft-delete-with-undo. Admins always see the active modal on the storefront (nothing recorded) — docs: `docs/screens/admin/announcements.md` |
 | `/admin/config` | AdminConfig | exchange rate, maintenance flag (gates the storefront via `maintenanceGuard` → `/mantenimiento`; admins bypass), price-review settings, loyalty points ratio |
 
 ## Shared table system

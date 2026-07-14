@@ -1,0 +1,46 @@
+<div class="rte" [class.rte--disabled]="disabled()">
+  <div class="rte__toolbar" role="toolbar" aria-label="Formato de texto">
+    <button
+      type="button"
+      class="rte__btn"
+      title="Negrita"
+      aria-label="Negrita"
+      [disabled]="disabled()"
+      (mousedown)="exec($event, 'bold')"
+    >
+      <mat-icon>format_bold</mat-icon>
+    </button>
+    <button
+      type="button"
+      class="rte__btn"
+      title="Cursiva"
+      aria-label="Cursiva"
+      [disabled]="disabled()"
+      (mousedown)="exec($event, 'italic')"
+    >
+      <mat-icon>format_italic</mat-icon>
+    </button>
+
+    <span class="rte__divider" aria-hidden="true"></span>
+
+    @for (color of colors; track color.value) {
+      <button
+        type="button"
+        class="rte__swatch"
+        [style.--swatch]="color.value"
+        [title]="color.label"
+        [attr.aria-label]="'Color ' + color.label"
+        [disabled]="disabled()"
+        (mousedown)="exec($event, 'foreColor', color.value)"
+      ></button>
+    }
+  </div>
+
+  <div
+    #surface
+    class="rte__surface"
+    [attr.contenteditable]="disabled() ? 'false' : 'true'"
+    (input)="onInput()"
+    (blur)="onBlur()"
+  ></div>
+</div>

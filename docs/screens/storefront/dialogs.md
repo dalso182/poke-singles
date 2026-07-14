@@ -1,40 +1,43 @@
-# Storefront-global dialogs (welcome & card conditions)
+# Storefront-global dialogs (announcement & card conditions)
 
-> Part of the Poke-Singles docs set. Verified against source on 2026-07-06. Load together with /CLAUDE.md.
+> Part of the Poke-Singles docs set. Verified against source on 2026-07-14. Load together with /CLAUDE.md.
 
 ## Purpose
 
-Two Material dialogs render admin-editable `static_pages` HTML inside the storefront without a page navigation. The **welcome dialog** auto-opens once per browser on a shopper's first visit and shows the `bienvenida` page. The **card-conditions dialog** opens on demand (condition pills / info icons across product surfaces) and shows the `estado-de-cartas` condition guide (NM/LP/MP/HP/DM).
+Two Material dialogs open globally inside the storefront without a page navigation. The **announcement dialog** auto-opens the single active `announcements` row exactly once per person (per-user DB flag for signed-in users, per-browser localStorage flag for guests) — the admin-managed replacement for the old first-visit welcome modal. The **card-conditions dialog** opens on demand (condition pills / info icons across product surfaces) and shows the `estado-de-cartas` static page (NM/LP/MP/HP/DM guide).
 
 ## Route & access
 
-Neither dialog is routed; both are opened programmatically by root-provided services in `src/app/core/preview/`:
+Neither dialog is routed; both are opened programmatically by root-provided services:
 
-- **Welcome dialog** — `WelcomeDialogService.maybeOpen()` is called exactly once from the `UserShell` constructor (`src/app/user/user-shell/user-shell.ts`), so it fires on any storefront entry (never in `/admin` or `/library`). It self-gates (see State & data flow); no user action opens it.
+- **Announcement dialog** — `AnnouncementModalService` (`src/app/core/announcements/announcement-modal.service.ts`) is instantiated once in the `UserShell` constructor (`src/app/user/user-shell/user-shell.ts`), so it's scoped to the storefront (never `/admin` or `/library`). A constructor `effect()` checks once per app mount (after the auth session resolves) and once per fresh `signedInTick()`; no user action opens it.
 - **Card-conditions dialog** — `CardConditionsDialogService.open()` is called from `openConditionsInfo($event)` handlers in four components: `src/app/shared/product-card/product-card.ts`, `src/app/shared/raffle-card/raffle-card.ts`, `src/app/user/cart-drawer/cart-drawer.ts`, and `src/app/user/cart-page/cart-page.ts` (two template call sites there). Each handler stops the click from propagating to the surrounding card/link before opening.
-
-The same content is also reachable as full pages at `/info/bienvenida` and `/info/estado-de-cartas` — see [static-page](./static-page.md).
 
 ## Files
 
-- `src/app/user/welcome-dialog/welcome-dialog.ts` — `WelcomeDialog` component; `WelcomeDialogData { page: StaticPageRow }` via `MAT_DIALOG_DATA`.
-- `src/app/user/welcome-dialog/welcome-dialog.html` / `.scss` — title bar + sanitized-HTML body + "Entendido" action.
-- `src/app/core/preview/welcome-dialog.service.ts` — `WelcomeDialogService`: gating, lazy import, dismissal persistence.
+- `src/app/user/announcement-dialog/announcement-dialog.ts` — `AnnouncementDialog` component; `AnnouncementDialogData { announcement: AnnouncementRow }` via `MAT_DIALOG_DATA`.
+- `src/app/user/announcement-dialog/announcement-dialog.html` / `.scss` — logo + title + body/image columns + actions.
+- `src/app/core/announcements/announcement-modal.service.ts` — `AnnouncementModalService`: mount/login triggering, seen-gating, guest→login sync, lazy import.
+- `src/app/core/catalog/announcements.service.ts` — `AnnouncementsService` data access (`getActive`, `hasRead`, `markRead`, `incrementViews`, admin CRUD/`activate`).
+- `src/app/core/storage/local-storage.service.ts` — `LocalStorageService` (guest seen flag).
 - `src/app/user/card-conditions-dialog/card-conditions-dialog.ts` — `CardConditionsDialog` component; `CardConditionsDialogData { page: StaticPageRow | null }`.
 - `src/app/user/card-conditions-dialog/card-conditions-dialog.html` / `.scss` — title bar + body (or error line); no action row.
 - `src/app/core/preview/card-conditions-dialog.service.ts` — `CardConditionsDialogService`: page-row cache + lazy import.
-- `src/app/core/catalog/static-pages.service.ts` — `StaticPagesService.getBySlug()` used by both services.
-- `src/app/core/storage/local-storage.service.ts` — `LocalStorageService` (welcome dismissal flag).
-- Seeds: `supabase/migrations/20260510000300_seed_bienvenida.sql`, `supabase/migrations/20260510000100_seed_estado_de_cartas.sql`.
+- Migration: `supabase/migrations/20260714000000_announcements.sql` (also absorbed the old `bienvenida` static page into a seeded inactive announcement and soft-deleted the page). Conditions seed: `supabase/migrations/20260510000100_seed_estado_de_cartas.sql`.
 
 ## UI anatomy
 
-### Welcome dialog
+### Announcement dialog
 
-- `.welcome-dialog__title` — `<h2 mat-dialog-title>` bound to `data.page.title` (seeded as "Bienvenido a Poke-Singles"; admin-editable) + `.welcome-dialog__close` icon button (`close`, `aria-label="Cerrar"`).
-- `mat-dialog-content.welcome-dialog__content` — `<article [innerHTML]="safeContent()">` rendering the page's HTML through `DomSanitizer.bypassSecurityTrustHtml`.
-- `mat-dialog-actions` (align end) — `mat-flat-button color="primary"`: "Entendido", closes the dialog.
-- Dialog config: `panelClass: 'welcome-dialog-panel'`, `width: '760px'`, `maxWidth: '95vw'`, `autoFocus: 'first-tabbable'`, `restoreFocus: true`.
+- `.announcement-dialog__close` — absolute top-right icon button (`close`, `aria-label="Cerrar"`).
+- `mat-dialog-content.announcement-dialog__content`:
+  - `.announcement-dialog__logo` — the Poke-Singles logo (`assets/images/poke-singles-logo.png`), centered, **always present**.
+  - `.announcement-dialog__title` — `<h2 mat-dialog-title>` bound to `announcement.title`, styled as the big left-aligned heading (Material's dialog-title chrome overridden).
+  - `.announcement-dialog__body` — flex row: `<article [innerHTML]="safeBody()">` (rich text from the admin editor; styles both `<p>` and `<div>` blocks) + optional `.announcement-dialog__image` right column (`announcement.image_url`, stacks below text under 600px).
+- `mat-dialog-actions.announcement-dialog__actions` (left-aligned):
+  - When `link_path` AND `link_label` are set: `mat-flat-button color="primary"` with the `link_label` (closes + `router.navigateByUrl(link_path)`) followed by a `mat-stroked-button` "Entendido".
+  - Otherwise: a single `mat-flat-button color="primary"` "Entendido". **Entendido is always present** — it's modal chrome, not content.
+- Dialog config: `panelClass: 'announcement-dialog-panel'`, `width: '600px'`, `maxWidth: '95vw'`, `autoFocus: 'first-tabbable'`, `restoreFocus: true`.
 
 ### Card-conditions dialog
 
@@ -46,20 +49,28 @@ The same content is also reachable as full pages at `/info/bienvenida` and `/inf
 
 ## Services & backend
 
-- Both services call `StaticPagesService.getBySlug(slug)` → `SELECT * FROM static_pages WHERE slug = … maybeSingle()`.
-  - Welcome slug constant: `SLUG = 'bienvenida'` (welcome-dialog.service.ts).
-  - Conditions slug constant: `SLUG = 'estado-de-cartas'` (card-conditions-dialog.service.ts).
-- RLS on `static_pages`: policy `static_pages_public_read` restricts anon/authenticated reads to `is_published = true AND deleted_at IS NULL`; `static_pages_admin_all` gives admins full access. So for shoppers, an unpublished/deleted page reads back as `null`.
-- `WelcomeDialogService` also uses `LocalStorageService.get/set`.
+- `AnnouncementsService.getActive()` → `SELECT * FROM announcements WHERE is_active AND deleted_at IS NULL maybeSingle()`. RLS `announcements_public_read_active` means anon/authenticated can ONLY ever read the active, non-deleted row.
+- Seen state: `announcement_reads (announcement_id, user_id, seen_at, PK(announcement_id, user_id))` with self-`for all` RLS (`cart_items` pattern) + admin read. `markRead` is an idempotent upsert.
+- View counter: `increment_announcement_views(p_id)` — `SECURITY DEFINER`, granted to anon+authenticated, only bumps the live active row (guests can't inflate arbitrary ids).
+- Conditions dialog: `StaticPagesService.getBySlug('estado-de-cartas')`; RLS restricts shoppers to published, non-deleted pages.
 - Both dialog components are **lazy `import()`ed** by their services on first open so they stay out of the initial bundle.
 
 ## State & data flow
 
-### Welcome dialog
+### Announcement dialog
 
-- Storage key: `STORAGE_KEY = 'welcome:dismissed:v1'` (localStorage, value `'1'`). The service doc says to bump the version (`v1` → `v2`) to re-show the modal with new copy.
-- `maybeOpen()` flow: (1) return if the storage flag is set; (2) fetch the `bienvenida` row — return on throw; (3) return if the row is missing or `content` is empty/whitespace (the seed migration intentionally ships empty content so no modal appears until the admin writes copy in `/admin/pages`); (4) lazy-import + open; (5) on `afterClosed()` — regardless of HOW it closed (X, "Entendido", Esc, backdrop) — write the dismissal flag.
-- No signals; the component only has the `safeContent` computed over its injected data.
+- localStorage key: `announcement:seen:<announcement id>` (value `'1'`) via `LocalStorageService`.
+- Trigger `effect()`: waits for `auth.currentUser() !== undefined` (session resolved), then runs `maybeShow()` once per mount and once per new `signedInTick()`; `lastHandledTick` + a session-lifetime `shownIds` Set + a `running` flag dedupe token-refresh ticks and overlapping runs.
+- `maybeShow()` decision order (every failure skips silently):
+  1. `getActive()` → none/error → return.
+  2. Already shown this session (`shownIds`) → return.
+  3. Another dialog already open (`dialog.openDialogs.length > 0`) → return (shows next mount/login instead of stacking).
+  4. **Admins skip all seen-gating** (`auth.isAdmin()`): straight to open, every page load — for content checking. No flags written, no view counted for them.
+  5. localStorage flag present → if signed in, fire-and-forget `markRead()` (**guest→login sync**); return without showing.
+  6. Signed in and `hasRead()` → backfill the localStorage flag; return.
+  7. Open the dialog + fire `incrementViews()`.
+- `afterClosed()` (any close path — X, Entendido, Esc, backdrop, link click): write the localStorage flag + `markRead()` when signed in. The component itself never records seen-state.
+- Component signals: `safeBody` computed (`bypassSecurityTrustHtml`), `hasLink` computed (`link_path && link_label`).
 
 ### Card-conditions dialog
 
@@ -69,27 +80,28 @@ The same content is also reachable as full pages at `/info/bienvenida` and `/inf
 
 ## Behaviors & edge cases
 
-- **Welcome never nags**: any storage/network error path skips silently; private-mode localStorage failures are swallowed by `LocalStorageService`, which means the flag may fail to persist there and the modal can reappear next visit.
-- **Welcome shows at most once per browser**, not per user — it is not tied to auth at all.
+- **Announcement never nags**: any storage/network error path skips silently; private-mode localStorage failures are swallowed by `LocalStorageService` (guests there may see it again next visit; signed-in users are still covered by the DB row).
+- **Seen once is seen forever**: re-activating an old announcement does NOT re-show it — flags are keyed by announcement id and never expire. To re-push a message, create and activate a NEW announcement.
+- **Admins always see the active modal** (once per page load) and never affect `view_count` or seen-flags — deliberate, for iterating on content.
 - **Conditions dialog always opens**, even when content failed to load (shows the fallback error line with a hardcoded "Estado de cartas" title).
-- **Sanitization**: both dialogs deliberately bypass HTML sanitization for `static_pages.content`. Content is admin-authored (admin-only write policy), so this is trusted-input by design — same pattern as [static-page](./static-page.md).
-- **Responsive**: fixed widths 760px (welcome) / 640px (conditions) collapse to `95vw` on narrow screens via `maxWidth`.
-- **Admin sessions**: RLS lets admins read unpublished pages, so an admin could see a welcome modal for an unpublished `bienvenida` draft that shoppers never see (only if their own browser hasn't set the dismissal flag).
+- **Sanitization**: both dialogs deliberately bypass HTML sanitization — content is admin-authored under admin-only write RLS (announcements from the constrained rich-text editor, static pages from the raw-HTML editor).
+- **Responsive**: widths 600px (announcement) / 640px (conditions) collapse to `95vw`; the announcement image column stacks under the text below 600px.
 
 ## Gotchas / invariants
 
-- **The empty-content gate is the welcome dialog's kill switch**: clearing `bienvenida`'s content in `/admin/pages` disables the modal for everyone; writing content arms it for every browser without the `welcome:dismissed:v1` flag.
-- **Dismissal is recorded on ANY close** — a user who Esc'd immediately never sees the copy again until the key version is bumped.
+- **At most one live announcement** — enforced by the partial unique index `announcements_single_active_idx`; activation is deactivate-all-then-activate (see [../admin/announcements.md](../admin/announcements.md)).
+- **Dismissal is recorded on ANY close** — Esc counts. There is no "remind me later".
+- **`view_count` counts modal opens (guests included), not uniques** — the reads table only covers signed-in users; admin opens count nowhere.
+- **E2e**: `scripts/e2e-seed.mjs` deactivates any active announcement so the modal can't open over checkout clicks (the old `welcome:dismissed:v1` localStorage plant is gone).
 - **Unpublishing `estado-de-cartas` breaks the dialog for shoppers** (RLS returns null → permanent fallback message) while admins still see it — easy to miss in testing.
 - **Seeded conditions HTML hot-links an image from the live OpenCart domain** (`poke-singles.com/image/catalog/Logo-Borde-400x400.png`). After OpenCart cutover/decommission that image 404s unless the content is edited or the asset migrated.
-- **Slug coupling**: the constants `'bienvenida'` / `'estado-de-cartas'` must match the seeded rows; renaming a slug in `/admin/pages` silently disables the corresponding dialog (welcome skips; conditions shows the error line).
-- `CardConditionsDialogData.page` is nullable; `WelcomeDialogData.page` is not (the service guarantees a row before opening). Don't reuse one dialog's data shape for the other.
+- **Conditions slug coupling**: the constant `'estado-de-cartas'` must match the seeded row; renaming the slug silently degrades the dialog to the error line.
 - All four condition-dialog call sites use `event.stopPropagation()`-style handlers (`openConditionsInfo($event)`) so the click doesn't also trigger the product-card navigation — keep that when adding new triggers.
 
 ## Related docs
 
-- [static-page](./static-page.md) — the `/info/:slug` page rendering the same rows
-- [shell-header-footer](./shell-header-footer.md) — where the welcome dialog is bootstrapped
+- [../admin/announcements.md](../admin/announcements.md) — admin CRUD, activation, view counts
+- [static-page](./static-page.md) — `/info/:slug` pages (conditions guide's page form)
+- [shell-header-footer](./shell-header-footer.md) — where both global services are bootstrapped
 - [cart-drawer](./cart-drawer.md), [cart-page](./cart-page.md) — condition-dialog triggers
-- [../../architecture/data-model.md](../../architecture/data-model.md) — `static_pages` schema/RLS
-- [../admin/pages.md](../admin/pages.md) — admin CRUD for these pages
+- [../../architecture/data-model.md](../../architecture/data-model.md) — `announcements` / `announcement_reads` / `static_pages` schema/RLS

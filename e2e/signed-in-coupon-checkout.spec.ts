@@ -1,7 +1,6 @@
 import { expect, test } from '@playwright/test';
 import {
   blockOrderEmail,
-  dismissOnboarding,
   loadFixtures,
   serviceClient,
   signInViaToken,
@@ -13,7 +12,6 @@ const expectedDiscount = Math.round(cardB.price * fx.coupon.percent) / 100;
 
 test('signed-in customer can order with a coupon applied', async ({ page }) => {
   await blockOrderEmail(page);
-  await dismissOnboarding(page);
   await signInViaToken(page, fx.user.email, process.env['E2E_USER_PASSWORD']!);
 
   await page.goto(`/products/${cardB.slug}`);

@@ -1,0 +1,32 @@
+// Anuncios-specific bits only. Table look comes from `.app-table` + primitives.
+
+.announcements-list__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.announcements-list__scroll {
+  overflow-x: auto;
+}
+
+.announcements-list__title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.announcements-list__actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.announcements-list__empty {
+  padding: 32px 24px;
+  text-align: center;
+  color: var(--text-secondary);
+}

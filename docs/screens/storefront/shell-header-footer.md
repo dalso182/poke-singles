@@ -1,10 +1,10 @@
 # Storefront shell, header, navigation & footer
 
-> Part of the Poke-Singles docs set. Verified against source on 2026-07-06. Load together with /CLAUDE.md.
+> Part of the Poke-Singles docs set. Verified against source on 2026-07-14. Load together with /CLAUDE.md.
 
 ## Purpose
 
-`UserShell` is the customer-facing chrome that wraps every storefront route: a sticky header (brand, search box, cart button, account menu), a left navigation sidenav (collapsible icon rail on desktop, slide-over drawer on mobile), a right-side cart drawer, the footer, and the global card hover-preview overlay. It also runs three storefront-wide side effects on init: the first-visit welcome dialog, Realtime presence tracking for the admin "people online" counter, and the post-login favorite-Pokémon picker prompt.
+`UserShell` is the customer-facing chrome that wraps every storefront route: a sticky header (brand, search box, cart button, account menu), a left navigation sidenav (collapsible icon rail on desktop, slide-over drawer on mobile), a right-side cart drawer, the footer, and the global card hover-preview overlay. It also runs three storefront-wide side effects on init: the show-once announcement modal, Realtime presence tracking for the admin "people online" counter, and the post-login favorite-Pokémon picker prompt.
 
 ## Route & access
 
@@ -15,7 +15,7 @@
 
 ## Files
 
-- `src/app/user/user-shell/user-shell.ts` — shell component: breakpoint logic, nav rail state (persisted), cart drawer binding, scroll reset, welcome-dialog/presence/avatar-picker bootstrapping.
+- `src/app/user/user-shell/user-shell.ts` — shell component: breakpoint logic, nav rail state (persisted), cart drawer binding, scroll reset, announcement-modal/presence/avatar-picker bootstrapping.
 - `src/app/user/user-shell/user-shell.html` — `<app-header>` + `mat-sidenav-container` with nav sidenav, cart-drawer sidenav (`position="end"`), `router-outlet`, `<app-footer>`, `<app-card-preview-overlay>`.
 - `src/app/user/user-shell/user-shell.scss` — 80px-header height math (`calc(100vh - 80px)`), rail width transition (76px ↔ 264px, 260ms), cart drawer width (360px, max 90vw).
 - `src/app/user/header/header.ts` / `.html` / `.scss` — `Header` component: search, cart button, login/account dropdown, social icons.
@@ -25,7 +25,7 @@
 - `src/app/shared/user-avatar/user-avatar.ts` / `.html` / `.scss` — `UserAvatar`: resolves the avatar image chain (Pokémon mood portrait → Google photo → initials).
 - `src/app/shared/social-icons/social-icons.ts` / `.html` / `.scss` — `SocialIcons`: static Instagram / Facebook / WhatsApp icon links.
 - `src/app/core/presence/presence.service.ts` — `PresenceService`: Supabase Realtime presence channel `'online'`.
-- Consumed services (documented elsewhere): `CartService`, `AuthService`, `LoyaltyService`, `SearchLogService`, `LocalStorageService`, `WelcomeDialogService`, `AvatarPickerService`, `ProfilesService`, `PokemonService`, `CategoriesService`, `CardTypesService`.
+- Consumed services (documented elsewhere): `CartService`, `AuthService`, `LoyaltyService`, `SearchLogService`, `LocalStorageService`, `AnnouncementModalService`, `AvatarPickerService`, `ProfilesService`, `PokemonService`, `CategoriesService`, `CardTypesService`.
 
 ## UI anatomy
 
@@ -91,7 +91,7 @@ Presentational; the parent supplies the circular container. Renders either `.use
 - `LoyaltyService` — `balance` readonly signal; `ensureLoaded()` fetches `SELECT amount FROM loyalty_transactions` (RLS `loyalty_self_read` scopes to the user) and sums client-side. Loaded lazily the first time the account menu opens while signed in; cleared to `null` on sign-out by an effect in the service.
 - `SearchLogService.logSearch(term)` — fire-and-forget: RPC `count_search_products({ q })` then RPC `log_search({ p_term, p_found })`. Failures only `console.error`; navigation is never blocked.
 - `PresenceService.joinAsVisitor()` — Supabase Realtime channel `'online'`, presence key = random string (`Math.random().toString(36)` + timestamp); on `SUBSCRIBED` it `track({ role: 'visitor', at: Date.now() })`. No backing table; the admin dashboard counts via `watchOnlineCount()` (subscribes without tracking) and `teardown()`. Browser-guarded, idempotent, never leaves until the tab closes.
-- `WelcomeDialogService.maybeOpen()` — see [dialogs](./dialogs.md).
+- `AnnouncementModalService` — instantiated in the shell constructor purely for its constructor effect (show-once announcement modal + guest→login seen-sync) — see [dialogs](./dialogs.md).
 - `AvatarPickerService` — instantiated in the shell constructor purely for its constructor effect: after a fresh `SIGNED_IN` tick, if the loaded profile (`profiles.avatar_pokemon_number`) is null, the user isn't admin, and this user wasn't already prompted this session, it auto-opens `AvatarPickerDialog` (720px). Saves via `ProfilesService.updateMine({ avatar_pokemon_number })`; snackbars "Avatar actualizado" / error.
 - `Navigation` data: `CategoriesService.list({ activeOnly: true })` (table `categories`) and `CardTypesService.list({ activeOnly: true, categoryId })` (table `card_types`) to build Sellado/Accesorios children.
 - `ProfilesService.avatarPokemonNumber` (from `profiles`) + `PokemonService.portraitUrlChain(n, mood)` feed `UserAvatar`.
@@ -144,10 +144,10 @@ Presentational; the parent supplies the circular container. Renders either `.use
 
 - **Header cart icon never navigates** — drawer-only by design; `/cart` is reached from the drawer's "Ver carrito completo", the nav "Carrito" item, or direct URL.
 - **Footer does NOT use `SocialIcons`** — it duplicates the same three links inline (`.socials` / `.social-tile`). Changing a social URL requires editing both `src/app/shared/social-icons/social-icons.html` and `src/app/user/footer/footer.html`.
-- **Footer links to `/info/metodos-pago-envio`, which is not seeded by any migration** (seeded slugs: `sobre-nosotros`, `estado-de-cartas`, `bienvenida`, plus the renamed `politica-pedidos-envios`). Unless an admin created that page in `/admin/pages`, the link lands on the static-page "Página no encontrada" state.
+- **Footer links to `/info/metodos-pago-envio`, which is not seeded by any migration** (live seeded slugs: `sobre-nosotros`, `estado-de-cartas`, plus the renamed `politica-pedidos-envios`; `bienvenida` was soft-deleted when the welcome modal became an announcement, `20260714000000`). Unless an admin created that page in `/admin/pages`, the link lands on the static-page "Página no encontrada" state.
 - **Footer stats are hardcoded marketing copy**, not derived from data.
 - **Escape is a document-level listener** on the shell — pressing Esc anywhere (including inside an open Material dialog) also collapses the desktop rail / closes the mobile drawer.
-- **`NAV_EXPANDED_KEY` prefix differs** from other storage keys in the app (`pokesingles.nav.expanded` vs e.g. `welcome:dismissed:v1`); there is no single storage-key convention.
+- **`NAV_EXPANDED_KEY` prefix differs** from other storage keys in the app (`pokesingles.nav.expanded` vs e.g. `announcement:seen:<id>`); there is no single storage-key convention.
 - **The 80px header height is load-bearing**: `user-shell.scss` hardcodes `calc(100vh - 80px)`; changing header height requires updating both files.
 - **Scroll position is managed manually** on the nested `MatSidenavContent`; adding anchors or expecting back-button scroll restoration will not work without extra wiring.
 - **The rail-width reflow loop** (300ms rAF loop calling `updateContentMargins()`) exists because the 260ms width transition is pure CSS; removing either side desynchronizes content margin from the rail.
@@ -157,7 +157,7 @@ Presentational; the parent supplies the circular container. Renders either `.use
 
 ## Related docs
 
-- [dialogs](./dialogs.md) — welcome + card-conditions dialogs opened from this shell/its children
+- [dialogs](./dialogs.md) — announcement + card-conditions dialogs opened from this shell/its children
 - [cart-drawer](./cart-drawer.md), [cart-page](./cart-page.md)
 - [login-dialog](./login-dialog.md)
 - [account](./account.md), [account-pokedex](./account-pokedex.md)

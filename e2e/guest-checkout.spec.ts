@@ -2,7 +2,6 @@ import { expect, test } from '@playwright/test';
 import {
   TINY_PNG,
   blockOrderEmail,
-  dismissOnboarding,
   loadFixtures,
   serviceClient,
 } from './helpers';
@@ -12,7 +11,6 @@ const cardA = fx.products.find((p) => p.slug === 'e2e-test-card-a')!;
 
 test('guest can order a card for pickup and lands on the confirmation page', async ({ page }) => {
   await blockOrderEmail(page);
-  await dismissOnboarding(page);
 
   // Product page → add to cart → drawer → checkout.
   await page.goto(`/products/${cardA.slug}`);

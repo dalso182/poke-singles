@@ -67,8 +67,9 @@ Supabase project.
   `imports:` provides its own `MatSnackBar`; a TestBed `useValue` is ignored. Spy on the
   component's injected instance instead.
 - **`Validators.email` rejects padded input** — prove trimming via name/phone, never email.
-- **E2E must pre-empt onboarding overlays**: welcome modal (localStorage
-  `welcome:dismissed:v1`) and the post-login avatar picker (skipped because the seed sets
+- **E2E must pre-empt onboarding overlays**: the announcement modal (the seed script
+  deactivates any active `announcements` row — no localStorage planting; the id isn't
+  knowable in specs) and the post-login avatar picker (skipped because the seed sets
   `profiles.avatar_pokemon_number`). New global overlays will block clicks the same way.
 - **Ambiguous locators**: `getByLabel('Teléfono')` also matches the payment-link radio;
   the cart drawer keeps a second `coupon-input` in the DOM — scope to `form.checkout__layout`.

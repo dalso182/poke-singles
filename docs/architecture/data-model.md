@@ -195,7 +195,15 @@ Single row enforced by `id boolean PRIMARY KEY DEFAULT true CHECK (id)`; seeded 
 
 #### `static_pages` (`20260510000000`)
 
-Admin-managed info pages (`/info/:slug`): `id`, `slug UNIQUE`, `title`, `content` (HTML), `meta_description`, `is_published default true`, `sort_order`, `deleted_at` (soft delete), timestamps + trigger. RLS: `static_pages_public_read` (published + not deleted), `static_pages_admin_all`. Seeded slugs: `sobre-nosotros`, `estado-de-cartas` (full condition guide), `bienvenida` (welcome modal — empty content = modal silently skips), `politica-pedidos-envios` (slug typo fixed in `20260525001500`).
+Admin-managed info pages (`/info/:slug`): `id`, `slug UNIQUE`, `title`, `content` (HTML), `meta_description`, `is_published default true`, `sort_order`, `deleted_at` (soft delete), timestamps + trigger. RLS: `static_pages_public_read` (published + not deleted), `static_pages_admin_all`. Live seeded slugs: `sobre-nosotros`, `estado-de-cartas` (full condition guide), `politica-pedidos-envios` (slug typo fixed in `20260525001500`). `bienvenida` (the old welcome modal) was copied into an inactive `announcements` row and soft-deleted by `20260714000000`.
+
+#### `announcements` + `announcement_reads` (`20260714000000`)
+
+`announcements` — admin-authored modals shown once per visitor (see the storefront dialogs + admin announcements docs): `id`, `title`, `body_html` (constrained rich text), `image_url` (root-relative `/card-images/...`), `link_path` + `link_label` (optional internal CTA), `is_active`, `view_count integer default 0` (impressions incl. guests), `deleted_at` (soft delete), timestamps + trigger. Partial unique index `announcements_single_active_idx ON (is_active) WHERE is_active AND deleted_at IS NULL` — at most one live active row, ever. RLS: `announcements_public_read_active` (anon/authenticated see ONLY the active, non-deleted row), `announcements_admin_all`.
+
+`announcement_reads` — per-user seen flags: `announcement_id → announcements CASCADE`, `user_id → auth.users CASCADE`, `seen_at`, `PK(announcement_id, user_id)`. Row present = that user never sees that announcement again (re-activation does not reset). RLS: `announcement_reads_self` (`for all`, `cart_items` pattern — covers the client upsert) + `announcement_reads_admin_read`.
+
+RPC `increment_announcement_views(p_id uuid)` — `SECURITY DEFINER`, granted to anon+authenticated; bumps `view_count` only where `is_active AND deleted_at IS NULL` so guests can't inflate arbitrary ids. Fired by the storefront when the modal opens (admin previews excluded).
 
 #### `price_reviews` + `price_check_runs` (`20260525003500`, extended `20260525003800`)
 

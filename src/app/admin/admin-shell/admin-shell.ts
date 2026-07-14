@@ -154,7 +154,10 @@ export class AdminShell implements OnInit {
       key: 'informacion',
       label: 'Información',
       icon: 'info',
-      items: [{ label: 'Páginas', icon: 'description', path: '/admin/pages' }],
+      items: [
+        { label: 'Páginas', icon: 'description', path: '/admin/pages' },
+        { label: 'Anuncios', icon: 'campaign', path: '/admin/announcements' },
+      ],
     },
     {
       key: 'config',

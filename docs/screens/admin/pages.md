@@ -22,7 +22,7 @@ CRUD for admin-managed static/informational pages (About Us, shipping, FAQ — t
 - `src/app/core/catalog/static-pages.service.ts` — `StaticPagesService` (all methods below).
 - `src/app/core/catalog/catalog.types.ts` — `StaticPageRow`, `StaticPageInsert`, `StaticPageUpdate`.
 - `supabase/migrations/20260510000000_static_pages.sql` — table, RLS, `sobre-nosotros` seed.
-- Seeds: `20260510000100_seed_estado_de_cartas.sql`, `20260510000300_seed_bienvenida.sql`, slug fix `20260525001500_fix_shipping_policy_slug.sql`.
+- Seeds: `20260510000100_seed_estado_de_cartas.sql`, slug fix `20260525001500_fix_shipping_policy_slug.sql`. (`20260510000300_seed_bienvenida.sql` is historical — that page moved to the announcements system and was soft-deleted by `20260714000000`.)
 
 ## UI anatomy
 
@@ -94,7 +94,7 @@ Table `static_pages`: `id uuid` PK, `slug text unique`, `title text`, `content t
 - Slug is immutable after creation (disabled control + stripped from the update patch) so live `/info/:slug` URLs never break.
 - Duplicate slug on create fails with the Postgres unique-violation message surfaced raw in the snackbar (no friendly mapping).
 - Search + tab filters are entirely client-side over the one fetched list.
-- Seeded pages: `sobre-nosotros` (migration seed, empty content), plus `estado-de-cartas` and welcome-page seeds in later migrations.
+- Seeded pages: `sobre-nosotros` (migration seed, empty content) plus `estado-de-cartas`. The old `bienvenida` welcome page sits soft-deleted under `Eliminadas` (its content lives on as an announcement — see [announcements](./announcements.md)); restoring it does NOT bring the old welcome modal back.
 
 ## Gotchas / invariants
 

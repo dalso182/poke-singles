@@ -43,7 +43,7 @@ if a doc's claims disagree with the code, the code has moved — update the doc.
 | [account-pokedex](screens/storefront/account-pokedex.md) | `/account/pokedex` (Pokédex panel + Pokéball dialog) |
 | [login-dialog](screens/storefront/login-dialog.md) | dialog (magic link / password / Google) |
 | [shell-header-footer](screens/storefront/shell-header-footer.md) | UserShell chrome: header, navigation, footer, presence |
-| [dialogs](screens/storefront/dialogs.md) | welcome dialog + card-conditions dialog (global overlays) |
+| [dialogs](screens/storefront/dialogs.md) | announcement modal + card-conditions dialog (global overlays) |
 | [static-page](screens/storefront/static-page.md) | `/info/:slug` |
 | [maintenance](screens/storefront/maintenance.md) | `/mantenimiento` |
 
@@ -72,6 +72,7 @@ if a doc's claims disagree with the code, the code has moved — update the doc.
 | [raffle-detail](screens/admin/raffle-detail.md) | `/admin/raffles/:id` |
 | [reports](screens/admin/reports.md) | `/admin/reports` (all five report panels) |
 | [pages](screens/admin/pages.md) | `/admin/pages`, `/admin/pages/new`, `/admin/pages/:id/edit` |
+| [announcements](screens/admin/announcements.md) | `/admin/announcements`, `/admin/announcements/new`, `/admin/announcements/:id/edit` |
 | [config](screens/admin/config.md) | `/admin/config` (all `app_settings` keys) |
 
 ## Other

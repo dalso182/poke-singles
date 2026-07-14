@@ -477,6 +477,41 @@ export type StaticPageUpdate = Partial<StaticPageInsert> & {
   deleted_at?: string | null;
 };
 
+// ---- Announcements (admin-managed login/visit modals) ----
+
+export interface AnnouncementRow {
+  id: string;
+  title: string;
+  body_html: string;
+  image_url: string | null;
+  link_path: string | null;
+  link_label: string | null;
+  is_active: boolean;
+  view_count: number;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AnnouncementInsert {
+  title: string;
+  body_html?: string;
+  image_url?: string | null;
+  link_path?: string | null;
+  link_label?: string | null;
+  is_active?: boolean;
+}
+
+export type AnnouncementUpdate = Partial<AnnouncementInsert> & {
+  deleted_at?: string | null;
+};
+
+export interface AnnouncementReadRow {
+  announcement_id: string;
+  user_id: string;
+  seen_at: string;
+}
+
 // ---- Orders ----
 
 export type OrderStatus =

@@ -20,7 +20,7 @@ Renders one admin-managed informational page (`static_pages` row) as trusted HTM
 - `src/app/core/catalog/static-pages.service.ts` — `StaticPagesService`: `listActive()`, `list()`, `getBySlug()`, `getById()`, `create()`, `update()`, `softDelete()`, `restore()` over table `static_pages`.
 - `supabase/migrations/20260510000000_static_pages.sql` — table + RLS + `sobre-nosotros` seed (empty content).
 - `supabase/migrations/20260510000100_seed_estado_de_cartas.sql` — seeds `estado-de-cartas` ("Estado de cartas", full NM/LP/MP/HP/DM guide, `sort_order` 20).
-- `supabase/migrations/20260510000300_seed_bienvenida.sql` — seeds `bienvenida` ("Bienvenido a Poke-Singles", deliberately empty content, `sort_order` 5).
+- `supabase/migrations/20260510000300_seed_bienvenida.sql` — seeded `bienvenida` (historical: its content was copied into an inactive `announcements` row and the page soft-deleted by `20260714000000_announcements.sql`).
 - `supabase/migrations/20260525001500_fix_shipping_policy_slug.sql` — renames the typo'd slug `politica-peiddos-envios` → `politica-pedidos-envios`.
 
 ## UI anatomy
@@ -58,15 +58,14 @@ Renders one admin-managed informational page (`static_pages` row) as trusted HTM
 
 - **Visibility relies entirely on RLS** — if a future view/policy change relaxes `static_pages` reads, unpublished drafts leak to `/info/:slug` with no client-side backstop (compare the `security_invoker` lesson on product views).
 - **Dead code**: the empty `ngOnInit()` (and the `OnInit` interface) exist only to host a comment.
-- **Seeded slugs the app links to**: `sobre-nosotros`, `estado-de-cartas`, `politica-pedidos-envios` (post-rename), `bienvenida`. The footer's `/info/metodos-pago-envio` has **no seed migration** — it 404s ("Página no encontrada") until created in `/admin/pages`.
-- **`bienvenida` is intentionally empty** — the welcome dialog skips while content is empty; filling it in `/admin/pages` arms the first-visit modal (see [dialogs](./dialogs.md)). Visiting `/info/bienvenida` directly shows the bare title.
+- **Seeded slugs the app links to**: `sobre-nosotros`, `estado-de-cartas`, `politica-pedidos-envios` (post-rename). The footer's `/info/metodos-pago-envio` has **no seed migration** — it 404s ("Página no encontrada") until created in `/admin/pages`. `/info/bienvenida` also 404s now: the page was soft-deleted when the welcome modal moved to the announcements system (`20260714000000`, see [dialogs](./dialogs.md)).
 - **Slug renames are breaking**: nav/footer links and the dialog services hardcode slugs; renaming in admin breaks them silently (`20260525001500` exists precisely because of a slug typo that left the footer link dead).
 - The `estado-de-cartas` seeded body ends with an `<img>` hot-linked from the live OpenCart domain (`https://poke-singles.com/image/catalog/Logo-Borde-400x400.png`) — it will break after cutover unless the content or asset is migrated.
 - `StaticPagesService` casts the Supabase client to `any` for every query (the table postdates the last `database.types.ts` regen pattern used elsewhere) — no compile-time schema safety here.
 
 ## Related docs
 
-- [dialogs](./dialogs.md) — the welcome & card-conditions dialogs render the same rows in modals
+- [dialogs](./dialogs.md) — the card-conditions dialog renders `estado-de-cartas` in a modal; the announcement modal has its own table now
 - [shell-header-footer](./shell-header-footer.md) — nav/footer entry points to `/info/*`
 - [../admin/pages.md](../admin/pages.md) — admin CRUD for `static_pages`
 - [../../architecture/data-model.md](../../architecture/data-model.md)

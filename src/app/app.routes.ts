@@ -135,6 +135,28 @@ export const routes: Routes = [
           import('./admin/pages/page-edit').then((m) => m.PageEdit),
       },
       {
+        path: 'announcements',
+        pathMatch: 'full',
+        loadComponent: () =>
+          import('./admin/announcements/announcements-list').then(
+            (m) => m.AnnouncementsList,
+          ),
+      },
+      {
+        path: 'announcements/new',
+        loadComponent: () =>
+          import('./admin/announcements/announcement-edit').then(
+            (m) => m.AnnouncementEdit,
+          ),
+      },
+      {
+        path: 'announcements/:id/edit',
+        loadComponent: () =>
+          import('./admin/announcements/announcement-edit').then(
+            (m) => m.AnnouncementEdit,
+          ),
+      },
+      {
         path: 'config',
         loadComponent: () =>
           import('./admin/config/config').then((m) => m.AdminConfig),

@@ -1,0 +1,116 @@
+// Announcement form. Field + section look comes from _admin-forms.scss +
+// shared form primitives; only the editor/preview split and image row remain.
+.announcement-edit {
+  max-width: 1200px;
+}
+
+.announcement-edit__form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.announcement-edit__image-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.announcement-edit__thumb {
+  max-height: 96px;
+  max-width: 220px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+}
+
+.announcement-edit__editor {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 880px) {
+  .announcement-edit__editor {
+    grid-template-columns: 1fr;
+  }
+}
+
+.announcement-edit__editor-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.announcement-edit__editor-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+// Mirrors the modal's layout: text left, optional image in a right column.
+.announcement-edit__preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: flex-start;
+  min-height: 190px;
+  padding: 16px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--surface-tonal);
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  line-height: 1.6;
+  box-sizing: border-box;
+}
+
+.announcement-edit__preview-text {
+  flex: 1 1 240px;
+  min-width: 0;
+  color: var(--text-secondary);
+
+  p,
+  div {
+    margin: 0 0 12px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+}
+
+.announcement-edit__preview-image {
+  flex: 0 1 160px;
+  max-width: 160px;
+  height: auto;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+}
+
+.announcement-edit__preview-cta {
+  flex-basis: 100%;
+  margin-top: 4px;
+}
+
+// Non-interactive stand-in for the modal's mat-flat-button CTA (4px shape,
+// uppercase — see _material-overrides.scss).
+.announcement-edit__preview-btn {
+  display: inline-block;
+  padding: 10px 24px;
+  border-radius: 4px;
+  background: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  line-height: 1;
+  cursor: default;
+  user-select: none;
+}

@@ -51,7 +51,7 @@ Raffle exclusion resolves the Rifas category id once via `ProductsService.raffle
 - `inStockOnly` is passed explicitly because an admin session's permissive `products_admin_all` RLS policy would otherwise leak sold-out/inactive rows into the rails (visibility can't rely on the public RLS policy alone).
 - Marquee item limit is 12 per rail (recent commit "increase marquee item limit to 12 each"); offers grid caps at 8.
 - The marquee clone doubles DOM cost: 12 items render 24 product cards per rail.
-- The welcome dialog is **not** wired here — `WelcomeDialogService.maybeOpen()` is called from `UserShell`'s constructor (`src/app/user/user-shell/user-shell.ts`), so it fires on any storefront route, not just home.
+- The announcement modal is **not** wired here — `AnnouncementModalService` is instantiated in `UserShell`'s constructor (`src/app/user/user-shell/user-shell.ts`), so it fires on any storefront route, not just home.
 
 ## Gotchas / invariants
 - The brand-bar div in the hero is the page's single allowed brand-red gradient; don't add another.

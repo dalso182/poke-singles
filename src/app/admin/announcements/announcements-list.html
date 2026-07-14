@@ -1,0 +1,95 @@
+<app-page-header
+  kicker="Información"
+  title="Anuncios"
+  sub="Modales que cada visitante ve una sola vez. Solo puede haber uno activo; al activar otro, el anterior se desactiva."
+>
+  <app-btn variant="primary" (click)="goToNew()">
+    <mat-icon>add</mat-icon>
+    Crear anuncio
+  </app-btn>
+</app-page-header>
+
+<div class="announcements-list__toolbar">
+  <app-pill-tabs [tabs]="tabs()" [value]="filter()" (valueChange)="onFilterChange($event)" />
+  <app-search-input [(value)]="searchText" placeholder="Buscar" />
+</div>
+
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<app-table-card>
+  <div class="announcements-list__scroll">
+    <table mat-table [dataSource]="visibleRows()" class="app-table app-table--comfy">
+      <ng-container matColumnDef="title">
+        <th mat-header-cell *matHeaderCellDef>Título</th>
+        <td mat-cell *matCellDef="let row">
+          <strong class="announcements-list__title">{{ row.title }}</strong>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="is_active">
+        <th mat-header-cell *matHeaderCellDef class="is-center">Estado</th>
+        <td mat-cell *matCellDef="let row" class="is-center">
+          @if (row.is_active) {
+            <app-pill tone="green" [dot]="true">Activo</app-pill>
+          } @else {
+            <app-pill tone="neutral">Inactivo</app-pill>
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="view_count">
+        <th mat-header-cell *matHeaderCellDef class="is-center">Vistas</th>
+        <td mat-cell *matCellDef="let row" class="is-center is-mono">
+          {{ row.view_count | number }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="updated_at">
+        <th mat-header-cell *matHeaderCellDef>Actualizado</th>
+        <td mat-cell *matCellDef="let row" class="is-mono is-dim">
+          {{ row.updated_at | date: 'short' }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let row" class="is-right">
+          <div class="announcements-list__actions">
+            @if (!row.deleted_at) {
+              <app-btn
+                variant="ghost"
+                size="sm"
+                [disabled]="saving() === row.id"
+                (click)="onToggleActive(row)"
+              >
+                {{ row.is_active ? 'Desactivar' : 'Activar' }}
+              </app-btn>
+              <app-btn variant="ghost" size="sm" (click)="goToEdit(row.id)">Editar</app-btn>
+              <app-icon-btn
+                label="Eliminar"
+                tone="danger"
+                [disabled]="saving() === row.id"
+                (click)="onDelete(row)"
+              >
+                <mat-icon>delete_outline</mat-icon>
+              </app-icon-btn>
+            } @else {
+              <app-btn variant="ghost" size="sm" (click)="onRestore(row.id)">Restaurar</app-btn>
+            }
+          </div>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+  </div>
+
+  @if (!loading() && visibleRows().length === 0) {
+    <p class="announcements-list__empty">
+      Sin anuncios en este filtro. Crea uno con el botón de arriba.
+    </p>
+  }
+</app-table-card>

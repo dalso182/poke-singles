@@ -27,7 +27,7 @@ import { CardPreviewOverlay } from '../../shared/card-preview/card-preview-overl
 import { CartDrawer } from '../cart-drawer/cart-drawer';
 import { CartService } from '../../core/cart/cart.service';
 import { LocalStorageService } from '../../core/storage/local-storage.service';
-import { WelcomeDialogService } from '../../core/preview/welcome-dialog.service';
+import { AnnouncementModalService } from '../../core/announcements/announcement-modal.service';
 import { PresenceService } from '../../core/presence/presence.service';
 import { AvatarPickerService } from '../account/avatar-picker/avatar-picker.service';
 
@@ -118,10 +118,10 @@ export class UserShell {
         }
       });
 
-    // Auto-show the welcome modal on first visit. Service handles all the
-    // gating (localStorage flag + page-content check); no-op for repeat
-    // visitors and when the admin hasn't written copy yet.
-    void inject(WelcomeDialogService).maybeOpen();
+    // Activate the announcement modal (shown once per person; admin-managed
+    // at /admin/announcements). The service handles all the gating: active
+    // row, per-user DB flag, guest localStorage flag, guest→login sync.
+    inject(AnnouncementModalService);
 
     // Announce this shopper on the presence channel so the admin dashboard's
     // "people online" tile can count them. Browser-guarded inside the service.

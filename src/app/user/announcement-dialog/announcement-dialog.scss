@@ -1,0 +1,115 @@
+// Layout mirrors the announcement mock: centered logo (always present),
+// left-aligned title + body with the optional image in a right column,
+// CTA + Entendido bottom-left.
+:host {
+  display: block;
+  position: relative;
+}
+
+.announcement-dialog__close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+}
+
+.announcement-dialog__logo {
+  display: block;
+  height: 64px;
+  width: auto;
+  max-width: 240px;
+  margin: 8px auto 20px;
+}
+
+.announcement-dialog__title {
+  // Override Material's dialog-title chrome; this lives inside the content.
+  margin: 0 0 16px;
+  padding: 0;
+  font-family: var(--font-brand);
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -1.2px;
+  line-height: 1.1;
+  color: var(--text-primary);
+  word-break: break-word;
+
+  &::before {
+    display: none; // Material inserts a spacer pseudo-element
+  }
+}
+
+.announcement-dialog__content {
+  max-height: 70vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overflow-wrap: anywhere;
+  padding: 24px 32px 8px;
+}
+
+.announcement-dialog__body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: flex-start;
+
+  article {
+    flex: 1 1 240px;
+    min-width: 0;
+    font-size: 14.5px;
+    font-weight: 500;
+    line-height: 1.6;
+    color: var(--text-secondary);
+
+    // The rich-text editor emits <p> or <div> blocks depending on browser;
+    // style both the same.
+    p,
+    div {
+      margin: 0 0 14px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+
+    a {
+      color: var(--mat-sys-primary);
+      text-decoration: none;
+      &:hover { text-decoration: underline; }
+    }
+  }
+}
+
+.announcement-dialog__image {
+  flex: 0 1 200px;
+  max-width: 200px;
+  height: auto;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+}
+
+.announcement-dialog__actions {
+  padding: 20px 32px 24px;
+  gap: 10px;
+  justify-content: flex-start;
+}
+
+@media (max-width: 599px) {
+  .announcement-dialog__content {
+    padding: 20px 20px 4px;
+  }
+
+  .announcement-dialog__actions {
+    padding: 16px 20px 20px;
+  }
+
+  .announcement-dialog__body {
+    gap: 16px;
+  }
+
+  // Image drops below the text on narrow screens.
+  .announcement-dialog__image {
+    flex-basis: 100%;
+    max-width: 240px;
+    margin: 0 auto;
+  }
+}

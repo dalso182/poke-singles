@@ -39,6 +39,74 @@ export type Database = {
   }
   public: {
     Tables: {
+      announcement_reads: {
+        Row: {
+          announcement_id: string
+          seen_at: string
+          user_id: string
+        }
+        Insert: {
+          announcement_id: string
+          seen_at?: string
+          user_id: string
+        }
+        Update: {
+          announcement_id?: string
+          seen_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcement_reads_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "announcements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      announcements: {
+        Row: {
+          body_html: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          link_label: string | null
+          link_path: string | null
+          title: string
+          updated_at: string
+          view_count: number
+        }
+        Insert: {
+          body_html?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          link_label?: string | null
+          link_path?: string | null
+          title: string
+          updated_at?: string
+          view_count?: number
+        }
+        Update: {
+          body_html?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          link_label?: string | null
+          link_path?: string | null
+          title?: string
+          updated_at?: string
+          view_count?: number
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           bank_account_info: string | null
@@ -1712,6 +1780,10 @@ export type Database = {
         Returns: Json
       }
       get_my_applied_coupon: { Args: never; Returns: Json }
+      increment_announcement_views: {
+        Args: { p_id: string }
+        Returns: undefined
+      }
       is_admin: { Args: never; Returns: boolean }
       log_activity: { Args: { p_event_type: string }; Returns: undefined }
       log_search: {
