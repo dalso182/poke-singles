@@ -63,7 +63,8 @@ stock listings are never visible to anon clients on any query path).
 - **Coupons:** `coupons` (soft-delete via `deleted_at`, optional `name` label), `coupon_redemptions`.
 - **Raffles:** `raffles` (1:1 with a Rifas-category product).
 - **Orders:** `orders`, `order_items` (with snapshot columns `seller_id / seller_code / seller_name`
-  capturing consignment attribution at checkout).
+  capturing consignment attribution at checkout, plus `seller_payout_id` — NULL until the
+  seller is paid).
 - **Content:** `static_pages` (admin CMS for `/info/:slug` + the card-conditions dialog),
   `announcements` + `announcement_reads` (show-once storefront modals, `20260714000000`): at
   most one active row (partial unique index on `is_active`), public RLS reads ONLY the active
@@ -82,6 +83,11 @@ stock listings are never visible to anon clients on any query path).
   uppercase, admin-only RLS); products reference via `seller_id` (nullable, `ON DELETE RESTRICT`).
   At checkout, `place_order v10` snapshots the seller onto each line item. House inventory is
   `seller_id = NULL` (Poke-Singles).
+- **Consignment payouts** (`20260714100000`): `seller_payouts` batch ledger (admin-only RLS;
+  `seller_id ON DELETE RESTRICT`; freezes `total_sold / cuanto_fees / store_fees / total /
+  item_count` at creation) + `order_items.seller_payout_id → seller_payouts ON DELETE SET NULL`
+  (deleting a batch reverts its items to pending — that IS the undo; no delete RPC). See
+  Reports (data side) for the fee function + RPCs.
 
 ## Customer auth (DB side)
 
@@ -206,10 +212,11 @@ These return `jsonb`/`table`, so the Angular side hand-types the shapes in `cata
 
 ## Reports (data side)
 
-The admin **Reportes** hub (`/admin/reports`, 5 tabs) is backed by five `security definer` +
+The admin **Reportes** hub (`/admin/reports`, 6 tabs) is backed by `security definer` +
 `is_admin()` RPCs (granted to `authenticated`), each returning a `table` with `count(*) over()`
 as `total_count` and optional `America/Costa_Rica`-day date filters, hand-typed in
-`catalog.types.ts` and called via `(client as any).rpc(...)`:
+`catalog.types.ts` and called via `(client as any).rpc(...)` — five analytics RPCs via
+`ReportsService`, plus the Consignaciones set via `SellerPayoutsService` (below):
 
 - `admin_customer_orders_report(p_search, p_date_start, p_date_end, p_limit, p_offset, p_sort)`
   — per-customer order totals (orders ⨝ order_items): `order_count`, `no_products`,
@@ -227,6 +234,27 @@ as `total_count` and optional `America/Costa_Rica`-day date filters, hand-typed 
   p_sort)` — every `loyalty_transactions` row joined to customer (`profiles` + `auth.users`
   email) + source `orders.order_number`; `p_search` matches name/email, sort
   `created`/`amount`. See Loyalty points below.
+
+**Consignaciones (seller payouts, `20260714100000`).** Fee rules live ONLY in
+`sealed_payout_fees(p_unit_price, p_quantity, p_payment_method) → (cuanto_fee, store_fee,
+payout)` — IMMUTABLE, laterally joined by every consumer so display and frozen batch totals
+can't drift (never duplicate the tiers in TS): Cuanto app = `round(line × 0.05)` when
+`payment_method = 'payment_link'`; store commission per UNIT × qty: `<15000` → 0, `<30000` →
+1000, `<80000` → 2000, else `round(unit × 0.05)`; both on the sold price independently;
+`payout = line − fees`. **Sealed only** (category slug `'sellado'`, joined live via
+`products.category_id` — order_items doesn't snapshot the category); singles rules TBD.
+- `admin_sealed_payouts_report(p_seller_id, p_pending_only, p_date_start, p_date_end,
+  p_limit, p_offset)` — consigned sealed items + fee breakdown. Pending = unpaid
+  (`seller_payout_id IS NULL`) on a realized order (`paid/shipped/completed`); with
+  `p_pending_only = false`, already-batched items stay visible even if their order is later
+  cancelled.
+- `admin_sealed_pending_totals()` — unpaginated per-seller pending sums (header strip).
+- `create_seller_payout(p_item_ids uuid[], p_notes)` — jsonb `{ok:false, error}` mutation
+  (`cancel_order` idiom). Locks parent orders then items (`FOR UPDATE`, stable id order),
+  validates `NOT_FOUND / NO_SELLER / MIXED_SELLERS / ALREADY_PAID / ORDER_NOT_REALIZED /
+  NOT_SEALED`, freezes the breakdown into `seller_payouts`, stamps
+  `order_items.seller_payout_id`. Batch delete is direct PostgREST (admin RLS) — the FK's
+  SET NULL is the undo.
 
 **Data collection + server-side IP.** `client_ip()` reads the client IP from PostgREST's
 forwarded `request.headers` (`x-forwarded-for`, first hop), null-safe — only meaningful through

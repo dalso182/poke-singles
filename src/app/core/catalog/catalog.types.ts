@@ -91,6 +91,105 @@ export interface SellerInsert {
  *  embed it, so changing it would create silent drift. */
 export type SellerUpdate = Partial<Omit<SellerInsert, 'code'>>;
 
+// ---- Consignment payouts (Reportes → Consignaciones) ----
+
+/** One row of admin_sealed_payouts_report(): a sold sealed consignment item
+ *  with its fee breakdown (computed live by sealed_payout_fees). */
+export interface SealedPayoutItemRow {
+  item_id: string;
+  order_id: string;
+  order_number: number;
+  order_created_at: string;
+  order_status: string;
+  /** 'payment_link' = Cuanto app (5% fee) · 'sinpe_or_transfer' = no fee. */
+  payment_method: string | null;
+  product_name: string;
+  product_slug: string | null;
+  product_image_url: string | null;
+  product_set_name: string | null;
+  product_card_number: string | null;
+  seller_id: string;
+  seller_code: string | null;
+  seller_name: string | null;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+  cuanto_fee: number;
+  store_fee: number;
+  payout_amount: number;
+  seller_payout_id: string | null;
+  payout_paid_at: string | null;
+}
+
+export interface SealedPayoutItemsParams {
+  /** '' / undefined = all sellers; a uuid = that seller. */
+  sellerId?: string | null;
+  /** Default true — only unpaid items on realized orders. */
+  pendingOnly?: boolean;
+  dateStart?: string | null;
+  dateEnd?: string | null;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface SealedPayoutItemsResult {
+  rows: SealedPayoutItemRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+/** Per-seller pending payout sums (admin_sealed_pending_totals). */
+export interface SellerPendingTotal {
+  seller_id: string;
+  seller_code: string;
+  seller_name: string;
+  item_count: number;
+  pending_sold: number;
+  pending_payout: number;
+}
+
+/** One seller_payouts batch. The breakdown columns are frozen at creation —
+ *  the authoritative record even if fee rules change later. */
+export interface SellerPayoutRow {
+  id: string;
+  seller_id: string;
+  seller_code: string;
+  seller_name: string;
+  total_sold: number;
+  cuanto_fees: number;
+  store_fees: number;
+  total: number;
+  item_count: number;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface SellerPayoutListParams {
+  sellerId?: string | null;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface SellerPayoutListResult {
+  rows: SellerPayoutRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+/** Parsed ok-payload of create_seller_payout. */
+export interface SellerPayoutCreated {
+  payout_id: string;
+  seller_id: string;
+  seller_name: string;
+  item_count: number;
+  total_sold: number;
+  cuanto_fees: number;
+  store_fees: number;
+  total: number;
+}
+
 export interface ProductRow {
   id: string;
   category_id: string;

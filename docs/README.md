@@ -70,7 +70,7 @@ if a doc's claims disagree with the code, the code has moved — update the doc.
 | [customer-detail](screens/admin/customer-detail.md) | `/admin/customers/:id` |
 | [raffles](screens/admin/raffles.md) | `/admin/raffles` |
 | [raffle-detail](screens/admin/raffle-detail.md) | `/admin/raffles/:id` |
-| [reports](screens/admin/reports.md) | `/admin/reports` (all five report panels) |
+| [reports](screens/admin/reports.md) | `/admin/reports` (all six panels, incl. Consignaciones seller payouts) |
 | [pages](screens/admin/pages.md) | `/admin/pages`, `/admin/pages/new`, `/admin/pages/:id/edit` |
 | [announcements](screens/admin/announcements.md) | `/admin/announcements`, `/admin/announcements/new`, `/admin/announcements/:id/edit` |
 | [config](screens/admin/config.md) | `/admin/config` (all `app_settings` keys) |

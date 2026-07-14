@@ -43,7 +43,7 @@ Admin status = `app_metadata.role === 'admin'` (→ `database` skill for `is_adm
 | `/admin/customers/:id` | CustomerDetail | profile + saved address + stats + order history (rows → `/admin/orders/:id`) |
 | `/admin/orders` | Orders | list: status/payment filters + search, consignment indicator (storefront icon) on orders containing seller items |
 | `/admin/orders/:id` | OrderDetail | item-by-item detail with seller badges (code pill, shown only on consigned items) |
-| `/admin/reports` | Reports | 5-tab hub: Pedidos por cliente, Actividad de clientes, Búsquedas, Cupones, Puntos (see Reports below) |
+| `/admin/reports` | Reports | 6-tab hub: Pedidos por cliente, Actividad de clientes, Búsquedas, Cupones, Puntos, Consignaciones (see Reports below) |
 | `/admin/price-review` | PriceReview | Card-by-card triage of products whose store price drifts from TCGplayer market (see Price review below) |
 | `/admin/pages` (+`/new`, `/:id/edit`) | PagesList / PageEdit | static_pages CRUD: raw-HTML textarea + live preview, slug locked on edit, soft-delete-with-undo |
 | `/admin/announcements` (+`/new`, `/:id/edit`) | AnnouncementsList / AnnouncementEdit | show-once storefront modals: rich-text editor (`app-rich-text-editor`: bold/italic/4 brand-safe colors), optional image (shared ImagePickerDialog) + internal-link CTA, Activar/Desactivar (single-active invariant via `AnnouncementsService.activate()`), Vistas counter, soft-delete-with-undo. Admins always see the active modal on the storefront (nothing recorded) — docs: `docs/screens/admin/announcements.md` |
@@ -188,8 +188,10 @@ Guests who checked out without an account don't appear here — they live in the
 ## Reports
 
 `/admin/reports` (Reports) is a tabbed hub — a `app-page-header` + `app-pill-tabs` switcher over
-five self-contained read-only report components, each reusing the shared table system +
-`app-date-range` filter and backed by `ReportsService` (`src/app/core/reports/`):
+six self-contained report components: five read-only analytics panels backed by
+`ReportsService` (`src/app/core/reports/`), plus the *operational* Consignaciones panel
+(backed by `SellerPayoutsService`), each reusing the shared table system + `app-date-range`
+filter:
 
 - **Pedidos por cliente** — per-customer order totals (# orders, # products, total spent);
   customer search + date range; sort by spend / orders / recency.
@@ -202,6 +204,15 @@ five self-contained read-only report components, each reusing the shared table s
 - **Puntos** — every loyalty-points transaction (date · customer · email · tipo · signed
   points · source pedido); customer search + date range; sort recientes / mayor cantidad.
   Reversals (negative) render in the Danger error color. Data side → `database` skill.
+- **Consignaciones** — seller payouts, an inner 3-tab host (`ConsignmentReport`): **Sellado**
+  (sold sealed consignment items with fee columns — vendido · Cuanto 5% · comisión · pago
+  vendedor — pending-per-seller strip, and bulk "Marcar pagado": checkboxes appear only when
+  one seller is filtered with "Solo pendientes" on; creates a `seller_payouts` batch,
+  snackbar Deshacer deletes it), **Singles** (placeholder — fee rules TBD), **Pagos** (batch
+  history with Eliminar + Deshacer-by-recreate). New shared primitives born here:
+  `app-bulk-bar` and `app-checkbox`'s `indeterminate` half-state. Service:
+  `SellerPayoutsService` (`src/app/core/catalog/`). Fee rules + RPCs → `database` skill;
+  full detail → `docs/screens/admin/reports.md`.
 
 Mirrors the `customers`/`orders` screen patterns (signals + debounce + effect → refresh). The
 data collection (event tables, `log_activity`/`log_search`/`client_ip`, `place_order_v8`) and

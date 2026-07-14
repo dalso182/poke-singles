@@ -1,7 +1,9 @@
 import { Component, input, model, output } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 
-/** Plain square checkbox (Productos "Destacado"). Two-way `[(on)]` + `(change)`. */
+/** Plain square checkbox (Productos "Destacado", Consignaciones selection).
+ *  Two-way `[(on)]` + `(change)`. `indeterminate` renders a dash while off —
+ *  the select-all "some but not all" half-state. */
 @Component({
   selector: 'app-checkbox',
   imports: [MatIconModule],
@@ -10,13 +12,15 @@ import { MatIconModule } from '@angular/material/icon';
       type="button"
       class="check"
       role="checkbox"
-      [attr.aria-checked]="on()"
-      [class.check--on]="on()"
+      [attr.aria-checked]="on() ? true : indeterminate() ? 'mixed' : false"
+      [class.check--on]="on() || indeterminate()"
       [disabled]="disabled()"
       (click)="toggle()"
     >
       @if (on()) {
         <mat-icon class="check__icon">check</mat-icon>
+      } @else if (indeterminate()) {
+        <mat-icon class="check__icon">remove</mat-icon>
       }
     </button>
   `,
@@ -59,6 +63,7 @@ import { MatIconModule } from '@angular/material/icon';
 export class PlainCheckbox {
   readonly on = model(false);
   readonly disabled = input(false);
+  readonly indeterminate = input(false);
   readonly change = output<boolean>();
 
   protected toggle(): void {

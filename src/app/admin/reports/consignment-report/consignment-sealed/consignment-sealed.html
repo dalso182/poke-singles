@@ -1,0 +1,194 @@
+<!-- Pending strip: per-seller pills (Todos) or the filtered seller's total. -->
+@if (sellerId() === '') {
+  @if (pending().length > 0) {
+    <div class="sealed__strip">
+      @for (p of pending(); track p.seller_id) {
+        <button type="button" class="sealed__chip" (click)="filterSeller(p.seller_id)">
+          <strong>{{ p.seller_name }} ({{ p.seller_code }})</strong>
+          <span class="sealed__chip-amount">₡{{ p.pending_payout | number: '1.0-0' }}</span>
+          <span class="sealed__chip-count">
+            {{ p.item_count }} {{ p.item_count === 1 ? 'ítem' : 'ítems' }}
+          </span>
+        </button>
+      }
+      <span class="sealed__grand">
+        Total pendiente: <strong>₡{{ pendingGrandTotal() | number: '1.0-0' }}</strong>
+      </span>
+    </div>
+  }
+} @else if (pendingHeader(); as ph) {
+  <div class="sealed__strip">
+    <span class="sealed__grand">
+      Pendiente con {{ ph.seller_name }}:
+      <strong>₡{{ ph.pending_payout | number: '1.0-0' }}</strong>
+      · {{ ph.item_count }} {{ ph.item_count === 1 ? 'ítem' : 'ítems' }}
+    </span>
+  </div>
+}
+
+<app-filter-bar>
+  <app-dropdown label="Vendedor" [options]="sellerOptions()" [(value)]="sellerId" [width]="220" />
+  <app-labeled-toggle [(on)]="pendingOnly">Solo pendientes</app-labeled-toggle>
+  <app-date-range [(start)]="dateStart" [(end)]="dateEnd" />
+</app-filter-bar>
+
+@if (!canSelect()) {
+  <p class="sealed__hint">Elegí un vendedor (con "Solo pendientes") para seleccionar ítems y marcarlos pagados.</p>
+}
+
+@if (selectedCount() > 0) {
+  <app-bulk-bar [count]="selectedCount()" (clear)="clearSelection()">
+    <span class="sealed__bulk-total">
+      Pago: <app-money [value]="selectedPayout()" />
+    </span>
+    <input
+      class="sealed__notes"
+      type="text"
+      placeholder="Nota (opcional)"
+      [value]="notes()"
+      (input)="onNotesInput($event)"
+    />
+    <app-btn variant="primary" [disabled]="saving()" (click)="markPaid()">Marcar pagado</app-btn>
+  </app-bulk-bar>
+}
+
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<app-table-card>
+  <div class="report__scroll">
+    <table mat-table [dataSource]="rows()" class="app-table app-table--comfy">
+      <ng-container matColumnDef="select">
+        <th mat-header-cell *matHeaderCellDef class="sealed__col-select">
+          <app-checkbox
+            [on]="allSelected()"
+            [indeterminate]="someSelected()"
+            (change)="toggleAll($event)"
+          />
+        </th>
+        <td mat-cell *matCellDef="let row" class="sealed__col-select">
+          @if (row.seller_payout_id === null) {
+            <app-checkbox [on]="isSelected(row)" (change)="toggleRow(row, $event)" />
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="order">
+        <th mat-header-cell *matHeaderCellDef>Pedido</th>
+        <td mat-cell *matCellDef="let row">
+          <a class="sealed__order is-mono" [routerLink]="['/admin/orders', row.order_id]">
+            #{{ row.order_number }}
+          </a>
+          <div class="is-dim sealed__sub">{{ row.order_created_at | date: 'd/MM/yy' }}</div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="product">
+        <th mat-header-cell *matHeaderCellDef>Producto</th>
+        <td mat-cell *matCellDef="let row">
+          <div class="sealed__product">
+            <app-thumb [src]="row.product_image_url" [size]="30" />
+            <div>
+              <div class="sealed__name">{{ row.product_name }}</div>
+              @if (row.product_set_name) {
+                <div class="is-dim sealed__sub">{{ row.product_set_name }}</div>
+              }
+            </div>
+          </div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="seller">
+        <th mat-header-cell *matHeaderCellDef>Vendedor</th>
+        <td mat-cell *matCellDef="let row">
+          @if (row.seller_code) {
+            <app-pill tone="blue" [title]="row.seller_name">{{ row.seller_code }}</app-pill>
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="pago">
+        <th mat-header-cell *matHeaderCellDef>Pago</th>
+        <td mat-cell *matCellDef="let row">
+          @if (row.payment_method === 'payment_link') {
+            <app-pill tone="blue">Cuanto</app-pill>
+          } @else {
+            <app-pill tone="neutral">SINPE</app-pill>
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="qty">
+        <th mat-header-cell *matHeaderCellDef class="is-right">Cant.</th>
+        <td mat-cell *matCellDef="let row" class="is-right is-mono">{{ row.quantity }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="vendido">
+        <th mat-header-cell *matHeaderCellDef class="is-right">Vendido</th>
+        <td mat-cell *matCellDef="let row" class="is-right">
+          <app-money [value]="row.line_total" />
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="cuanto">
+        <th mat-header-cell *matHeaderCellDef class="is-right">Cuanto 5%</th>
+        <td mat-cell *matCellDef="let row" class="is-right">
+          @if (row.cuanto_fee > 0) {
+            <span class="sealed__fee">−₡{{ row.cuanto_fee | number: '1.0-0' }}</span>
+          } @else {
+            <span class="is-dim">—</span>
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="comision">
+        <th mat-header-cell *matHeaderCellDef class="is-right">Comisión</th>
+        <td mat-cell *matCellDef="let row" class="is-right">
+          @if (row.store_fee > 0) {
+            <span class="sealed__fee">−₡{{ row.store_fee | number: '1.0-0' }}</span>
+          } @else {
+            <span class="is-dim">—</span>
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="payout">
+        <th mat-header-cell *matHeaderCellDef class="is-right">Pago vendedor</th>
+        <td mat-cell *matCellDef="let row" class="is-right sealed__payout">
+          <app-money [value]="row.payout_amount" />
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="estado">
+        <th mat-header-cell *matHeaderCellDef>Estado</th>
+        <td mat-cell *matCellDef="let row">
+          @if (row.seller_payout_id !== null) {
+            <app-pill tone="green">Pagado</app-pill>
+            @if (row.payout_paid_at) {
+              <div class="is-dim sealed__sub">{{ row.payout_paid_at | date: 'd/MM/yy' }}</div>
+            }
+          } @else {
+            <app-pill tone="amber">Pendiente</app-pill>
+          }
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns()"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns()"></tr>
+    </table>
+  </div>
+
+  @if (!loading() && rows().length === 0) {
+    <p class="report__empty">Sin ítems de consignación sellado en este filtro.</p>
+  }
+
+  <app-pagination-footer
+    [page]="page()"
+    [perPage]="pageSize()"
+    [total]="total()"
+    [perPageOptions]="[10, 25, 50, 100]"
+    (pageChange)="onPage($event)"
+    (perPageChange)="onPerPage($event)"
+  />
+</app-table-card>

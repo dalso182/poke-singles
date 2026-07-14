@@ -146,6 +146,24 @@ DEFINER + guard (`20260704130000`). Caller: `CustomersService.pokedexLeaderboard
 | `admin_coupons_report` | `(p_search '', p_date_start, p_date_end, p_limit 50, p_offset 0, p_sort 'discount')` | Per-coupon usage read from **orders** (not redemptions): `order_count`, `total_discount`, `total_revenue` over the same non-cancelled set; soft-deleted coupons included; only coupons used in range; sorts `'discount' \| 'revenue' \| 'orders'`. |
 | `admin_loyalty_transactions_report` | `(p_search '', p_date_start, p_date_end, p_limit 50, p_offset 0, p_sort 'created')` | Ledger feed with customer + `order_number` context; sorts `'created' \| 'amount'`. |
 
+### Consignment payouts (`20260714100000`; caller: `SellerPayoutsService`, Reportes → Consignaciones)
+
+#### `sealed_payout_fees(p_unit_price, p_quantity, p_payment_method) returns (cuanto_fee, store_fee, payout)`
+
+IMMUTABLE plpgsql — the single source of the sealed fee rules, laterally joined by both read RPCs and `create_seller_payout` so display and frozen batch totals can't drift. Cuanto app fee = `round(line × 0.05)` when `p_payment_method = 'payment_link'`, else 0. Store commission per UNIT (tier from `unit_price`, × quantity): `<15000` → 0, `<30000` → 1000, `<80000` → 2000, else `round(unit_price × 0.05)`. Both fees on the sold price independently; `payout = line − cuanto − store`.
+
+#### `admin_sealed_payouts_report(p_seller_id null, p_pending_only true, p_date_start, p_date_end, p_limit 50, p_offset 0) returns table(...)`
+
+DEFINER + guard, `total_count` window column, CR-day dates — same shape as the reports above but scoped to consigned sealed items: `order_items ⨝ orders ⨝ products ⨝ categories (slug='sellado')` (live join — `order_items` doesn't snapshot the category) + the fee lateral. `p_pending_only=true`: `seller_payout_id IS NULL` AND realized order (`paid/shipped/completed`); `false`: realized OR already batched (paid items survive later cancellation).
+
+#### `admin_sealed_pending_totals() returns table(seller_id, seller_code, seller_name, item_count, pending_sold, pending_payout)`
+
+Unpaginated per-seller pending aggregate for the header strip (companion-RPC idiom, like `admin_dashboard_stats`).
+
+#### `create_seller_payout(p_item_ids uuid[], p_notes null) returns jsonb`
+
+DEFINER, `cancel_order`-style `{ok:false, error}` codes. Dedupes ids; locks parent orders then items (`FOR UPDATE`, stable id order — serializes vs `cancel_order` and concurrent admins); validates `NOT_FOUND` / `NO_SELLER` / `MIXED_SELLERS` (one seller per batch) / `ALREADY_PAID` / `ORDER_NOT_REALIZED` / `NOT_SEALED`; freezes `total_sold/cuanto_fees/store_fees/total/item_count` into a `seller_payouts` row and stamps `order_items.seller_payout_id`. **No delete RPC:** batch delete is direct PostgREST under `seller_payouts_admin_all`, and the FK's `ON DELETE SET NULL` reverts the items to pending — that's the undo.
+
 ### Activity & search logging (client fire-and-forget)
 
 - `log_activity(p_event_type text) returns void` — DEFINER, `authenticated`. Caller: `AuthService` (`auth.service.ts:130`) on sign-in/registration. Accepts only `'login'`/`'registered'` (`'order_created'` is rejected — logged server-side in `place_order` so clients can't forge purchases). Login events dedupe within a 10-minute window (Supabase fires SIGNED_IN on token refresh/multi-tab). Snapshots name/email; captures `client_ip()`.

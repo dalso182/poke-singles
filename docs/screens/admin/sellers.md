@@ -4,11 +4,12 @@
 
 ## Purpose
 
-CRUD for **consignment sellers** (`sellers` table) — people who hand the store cards to sell on their behalf. The house (Poke-Singles) deliberately has **no row**: a product with `seller_id IS NULL` is house inventory. The screen is a single inline-editable table with an expandable add form. Sellers ripple through three other surfaces (documented in their own docs, summarized here because this screen is where the entity is managed):
+CRUD for **consignment sellers** (`sellers` table) — people who hand the store cards to sell on their behalf. The house (Poke-Singles) deliberately has **no row**: a product with `seller_id IS NULL` is house inventory. The screen is a single inline-editable table with an expandable add form. Sellers ripple through four other surfaces (documented in their own docs, summarized here because this screen is where the entity is managed):
 
 - **Add product** — a `Vendedor` select (default `Poke-Singles` = null) fixed at creation; the seller's 2-char code is appended lowercase as the last slug part.
 - **Products list** — a `Vendedor` filter dropdown (`Todos` / `Poke-Singles (sin vendedor)` / each seller) and a blue code pill next to product names.
 - **Orders / order detail** — `place_order` (v10) snapshots `seller_id` / `seller_code` / `seller_name` onto each `order_items` row; the order detail shows the code pill per line item.
+- **Reportes → Consignaciones** — where sold consignment items are reviewed (fee breakdown) and bulk-marked paid into `seller_payouts` batches; a seller with payout history becomes undeletable (`ON DELETE RESTRICT`). See [reports.md](./reports.md).
 
 ## Route & access
 

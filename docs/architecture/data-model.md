@@ -152,11 +152,15 @@ Triggers on `orders`: `orders_set_updated_at`; `orders_loyalty_points` — `AFTE
 
 #### `order_items`
 
-Pure snapshots so history survives product edits/deletion: `id`, `order_id NOT NULL → orders CASCADE`, `product_id → products SET NULL`, `product_slug`, `product_name`, `product_image_url`, `product_condition`, `product_set_name` + `product_card_number` (`20260509000200`), `seller_id → sellers SET NULL` + `seller_code` + `seller_name` (`20260704100100` — consignment attribution; house inventory leaves all three NULL), `unit_price`, `quantity CHECK (> 0)`, `line_total`, `created_at`. RLS: `order_items_self_read` (EXISTS parent order owned by caller), `order_items_admin_all`.
+Pure snapshots so history survives product edits/deletion: `id`, `order_id NOT NULL → orders CASCADE`, `product_id → products SET NULL`, `product_slug`, `product_name`, `product_image_url`, `product_condition`, `product_set_name` + `product_card_number` (`20260509000200`), `seller_id → sellers SET NULL` + `seller_code` + `seller_name` (`20260704100100` — consignment attribution; house inventory leaves all three NULL), `unit_price`, `quantity CHECK (> 0)`, `line_total`, `seller_payout_id → seller_payouts SET NULL` (`20260714100000` — NULL = seller not yet paid; the SET NULL is the payout-undo path), `created_at`. Partial indexes `order_items_pending_payout_idx` (`seller_id` where consigned + unpaid) and `order_items_payout_idx` (`seller_payout_id` where set). RLS: `order_items_self_read` (EXISTS parent order owned by caller), `order_items_admin_all`.
 
 #### `sellers` (`20260704100000`)
 
 Consignment sellers; the house has no row. `id`, `name`, `email`, `phone`, `code text UNIQUE CHECK (code ~ '^[A-Z0-9]{2}$')` (2-char uppercase; lowercased only when appended to product slugs), `active` (retirement = flag, no delete UI), `created_at`. RLS: `sellers_admin_all` **only** — nothing customer-facing reads it (`place_order` is SECURITY DEFINER so checkout can join it regardless).
+
+#### `seller_payouts` (`20260714100000`)
+
+Consignment payout batches (Reportes → Consignaciones): one row per bulk "Marcar pagado". `id`, `seller_id NOT NULL → sellers ON DELETE RESTRICT` (payout history makes a seller undeletable), `seller_code` + `seller_name` (display snapshots), `total_sold` / `cuanto_fees` / `store_fees` / `total` (breakdown **frozen at creation** by `create_seller_payout` via `sealed_payout_fees()` — authoritative even if fee rules change later), `item_count`, `notes`, `created_by → auth.users SET NULL`, `created_at`. Items link via `order_items.seller_payout_id`; deleting a batch reverts them to pending (FK SET NULL). RLS: `seller_payouts_admin_all` only. Fee rules + RPCs → [backend-rpcs-and-functions.md](./backend-rpcs-and-functions.md).
 
 ### Raffles
 
