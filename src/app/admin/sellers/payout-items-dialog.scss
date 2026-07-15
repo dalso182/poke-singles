@@ -1,0 +1,68 @@
+.payout-items__title {
+  font-family: var(--font-brand);
+}
+
+.payout-items__sub {
+  margin: -8px 24px 8px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+.payout-items__scroll {
+  overflow-x: auto;
+}
+
+.payout-items__product {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.payout-items__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.payout-items__sub-line {
+  font-size: 11px;
+}
+
+.payout-items__order {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--brand-blue);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.payout-items__empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.payout-items__actions {
+  padding: 12px 24px 16px;
+}
+
+.payout-items__totals {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+
+  strong {
+    font-family: var(--font-mono);
+    color: var(--text-primary);
+  }
+}
+
+.payout-items__paid {
+  font-weight: 700;
+}
+
+.payout-items__spacer {
+  flex: 1 1 auto;
+}

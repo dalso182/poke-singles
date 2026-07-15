@@ -181,7 +181,16 @@
 
       <ng-container matColumnDef="items">
         <th mat-header-cell *matHeaderCellDef class="is-right">Ítems</th>
-        <td mat-cell *matCellDef="let row" class="is-right is-mono">{{ row.item_count }}</td>
+        <td mat-cell *matCellDef="let row" class="is-right">
+          <button
+            type="button"
+            class="sealed__items-link is-mono"
+            title="Ver los ítems de este pago"
+            (click)="openPayoutItems(row)"
+          >
+            {{ row.item_count }}
+          </button>
+        </td>
       </ng-container>
 
       <ng-container matColumnDef="sold">

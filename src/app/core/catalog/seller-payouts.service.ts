@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { SupabaseService } from '../supabase/supabase.service';
 import type {
+  PayoutItemDetail,
   SealedPayoutItemRow,
   SealedPayoutItemsParams,
   SealedPayoutItemsResult,
@@ -130,6 +131,44 @@ export class SellerPayoutsService {
       item_count: Number(r.item_count) || 0,
     }));
     return { rows, total: count ?? 0, page, pageSize };
+  }
+
+  /** The items a batch covered, with their parent order — the "what did this
+   *  payment cover?" dialog. Snapshot columns only; no product join needed. */
+  async listPayoutItems(payoutId: string): Promise<PayoutItemDetail[]> {
+    const { data, error } = await (this.supabase.client as any)
+      .from('order_items')
+      .select(
+        'id, quantity, unit_price, line_total, product_name, product_image_url, ' +
+          'product_set_name, orders(id, order_number, created_at)',
+      )
+      .eq('seller_payout_id', payoutId);
+    if (error) throw error;
+    type Raw = Omit<
+      PayoutItemDetail,
+      'order_id' | 'order_number' | 'order_created_at'
+    > & {
+      orders: { id: string; order_number: number; created_at: string } | null;
+    };
+    return ((data ?? []) as Raw[])
+      .filter((r) => r.orders != null)
+      .map((r) => ({
+        id: r.id,
+        product_name: r.product_name,
+        product_image_url: r.product_image_url,
+        product_set_name: r.product_set_name,
+        quantity: Number(r.quantity) || 0,
+        unit_price: Number(r.unit_price) || 0,
+        line_total: Number(r.line_total) || 0,
+        order_id: r.orders!.id,
+        order_number: Number(r.orders!.order_number) || 0,
+        order_created_at: r.orders!.created_at,
+      }))
+      .sort(
+        (a, b) =>
+          b.order_created_at.localeCompare(a.order_created_at) ||
+          a.product_name.localeCompare(b.product_name),
+      );
   }
 
   /** Item ids linked to a batch — capture BEFORE deletePayout so an undo can

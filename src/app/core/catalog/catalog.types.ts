@@ -178,6 +178,21 @@ export interface SellerPayoutListResult {
   pageSize: number;
 }
 
+/** One item inside a payout batch (the "what did this payment cover?" dialog).
+ *  Flattened from order_items + the embedded parent order. */
+export interface PayoutItemDetail {
+  id: string;
+  product_name: string;
+  product_image_url: string | null;
+  product_set_name: string | null;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+  order_id: string;
+  order_number: number;
+  order_created_at: string;
+}
+
 /** Parsed ok-payload of create_seller_payout. */
 export interface SellerPayoutCreated {
   payout_id: string;

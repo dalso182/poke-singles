@@ -1,6 +1,7 @@
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
@@ -21,6 +22,7 @@ import { Pill } from '../../shared/table/cells/pill/pill';
 import { Thumb } from '../../shared/table/cells/thumb-cell/thumb-cell';
 import { Btn } from '../../shared/table/controls/btn/btn';
 import { PaginationFooter } from '../../shared/table/pagination-footer/pagination-footer';
+import { PayoutItemsDialog } from './payout-items-dialog';
 
 /** RPC error code → admin-facing Spanish. */
 const PAYOUT_ERRORS: Record<string, string> = {
@@ -45,6 +47,7 @@ const PAYOUT_ERRORS: Record<string, string> = {
     DatePipe,
     DecimalPipe,
     RouterLink,
+    MatDialogModule,
     MatProgressBarModule,
     MatSnackBarModule,
     MatTableModule,
@@ -69,6 +72,7 @@ export class SellerSealed {
 
   private readonly payouts = inject(SellerPayoutsService);
   private readonly snack = inject(MatSnackBar);
+  private readonly dialog = inject(MatDialog);
 
   protected readonly pendingOnly = signal(true);
   protected readonly dateStart = signal<string | null>(null);
@@ -276,6 +280,17 @@ export class SellerSealed {
       this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
     }
     await this.refresh();
+  }
+
+  /** "What did this payment cover?" — the batch's items in a small modal. */
+  protected openPayoutItems(row: SellerPayoutRow): void {
+    this.dialog.open(PayoutItemsDialog, {
+      data: row,
+      width: '640px',
+      maxWidth: '95vw',
+      autoFocus: 'first-tabbable',
+      restoreFocus: true,
+    });
   }
 
   /** Delete = revert the batch's items to pending. Undo re-creates the batch

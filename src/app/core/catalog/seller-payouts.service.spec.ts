@@ -160,6 +160,56 @@ describe('SellerPayoutsService', () => {
     });
   });
 
+  it('listPayoutItems() flattens the order embed and coerces numerics', async () => {
+    fake.setTable('order_items', {
+      data: [
+        {
+          id: 'i1',
+          quantity: '1',
+          unit_price: '32900',
+          line_total: '32900',
+          product_name: 'Chaos Rising - ETB',
+          product_image_url: null,
+          product_set_name: 'Chaos Rising',
+          orders: { id: 'o1', order_number: '7345', created_at: '2026-07-14T17:00:00Z' },
+        },
+        {
+          id: 'i2',
+          quantity: '2',
+          unit_price: '20000',
+          line_total: '40000',
+          product_name: 'Booster Box',
+          product_image_url: null,
+          product_set_name: null,
+          orders: null, // orphaned embed must be dropped
+        },
+      ],
+    });
+
+    const items = await svc.listPayoutItems('p1');
+
+    const eq = fake.tableCalls.find((c) => c.method === 'eq');
+    expect(eq).toEqual({
+      table: 'order_items',
+      method: 'eq',
+      args: ['seller_payout_id', 'p1'],
+    });
+    expect(items).toEqual([
+      {
+        id: 'i1',
+        product_name: 'Chaos Rising - ETB',
+        product_image_url: null,
+        product_set_name: 'Chaos Rising',
+        quantity: 1,
+        unit_price: 32900,
+        line_total: 32900,
+        order_id: 'o1',
+        order_number: 7345,
+        order_created_at: '2026-07-14T17:00:00Z',
+      },
+    ]);
+  });
+
   it('payoutItemIds() reads the linked order_items ids', async () => {
     fake.setTable('order_items', { data: [{ id: 'i1' }, { id: 'i2' }] });
     const ids = await svc.payoutItemIds('p1');
