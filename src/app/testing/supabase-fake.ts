@@ -44,6 +44,7 @@ const BUILDER_METHODS = [
   'eq',
   'neq',
   'is',
+  'not',
   'in',
   'gt',
   'gte',

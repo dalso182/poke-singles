@@ -23,6 +23,11 @@ export interface ProductListParams {
    *  (seller_id IS NULL, "Poke-Singles"); a uuid = that seller's products. */
   sellerId?: string | null;
   includeInactive?: boolean;
+  /** Show ONLY soft-deleted rows (deleted_at set) — deleted items never mix
+   *  with the live catalog. Deleted products are also inactive, so callers
+   *  that set this must widen `includeInactive` too. Off by default (live
+   *  rows only). */
+  deletedOnly?: boolean;
   /** Exclude raffle products (category slug = 'rifas') from the result. Used by
    *  the home rails so raffles only ever surface on /rifas. No-op if the Rifas
    *  category doesn't exist. */
@@ -109,6 +114,9 @@ export class ProductsService {
     if (!params.includeInactive) {
       query = query.eq('active', true);
     }
+    query = params.deletedOnly
+      ? query.not('deleted_at', 'is', null)
+      : query.is('deleted_at', null);
     if (params.inStockOnly) {
       query = query.gt('quantity', 0).gt('price', 0);
     }
@@ -206,6 +214,7 @@ export class ProductsService {
       .from('products')
       .select('id, slug, name, condition, variant, language, quantity, active, card_number, set_id')
       .eq('card_ref', cardRef)
+      .is('deleted_at', null)
       .order('created_at', { ascending: false });
     if (error) throw error;
     return (data as ProductRow[] | null) ?? [];
@@ -234,6 +243,25 @@ export class ProductsService {
 
   async setActive(id: string, active: boolean): Promise<ProductRow> {
     return this.update(id, { active });
+  }
+
+  /** Soft delete; also deactivates so a deleted product can't stay purchasable. */
+  async softDelete(id: string): Promise<void> {
+    const { error } = await (this.supabase.client as any)
+      .from('products')
+      .update({ deleted_at: new Date().toISOString(), active: false })
+      .eq('id', id);
+    if (error) throw error;
+  }
+
+  /** Restore from soft delete. Inactive by default; the snackbar-undo path
+   *  passes the captured prior `active` so Deshacer is a true revert. */
+  async restore(id: string, active = false): Promise<void> {
+    const { error } = await (this.supabase.client as any)
+      .from('products')
+      .update({ deleted_at: null, active })
+      .eq('id', id);
+    if (error) throw error;
   }
 
   async setFeatured(id: string, featured: boolean): Promise<ProductRow> {

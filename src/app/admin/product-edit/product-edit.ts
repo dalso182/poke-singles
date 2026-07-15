@@ -379,6 +379,51 @@ export class ProductEdit implements OnInit {
     }
   }
 
+  /** Danger zone: soft delete + volver al listado, with a Deshacer snackbar. */
+  protected async onDelete(): Promise<void> {
+    const product = this.product();
+    if (!product) return;
+    if (!confirm('¿Eliminar este producto? Se ocultará de la tienda y del listado del admin.')) return;
+    // Capture before the delete flips it, so Deshacer is a true revert.
+    const wasActive = product.active;
+    this.saving.set(true);
+    try {
+      await this.products.softDelete(product.id);
+      this.router.navigate(['/admin/products']);
+      this.snack
+        .open('Producto eliminado', 'Deshacer', { duration: 5000 })
+        .onAction()
+        .subscribe(() => {
+          void this.products
+            .restore(product.id, wasActive)
+            .then(() => this.snack.open('Producto restaurado', 'OK', { duration: 3000 }))
+            .catch((err) => this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 }));
+        });
+    } catch (err) {
+      this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  /** Danger zone counterpart when viewing an already-deleted product. Restores
+   *  as inactive (deliberate re-activation via the Activo toggle). */
+  protected async onRestore(): Promise<void> {
+    const product = this.product();
+    if (!product) return;
+    this.saving.set(true);
+    try {
+      await this.products.restore(product.id);
+      this.product.set({ ...product, deleted_at: null, active: false });
+      this.form.patchValue({ active: false });
+      this.snack.open('Producto restaurado — quedó inactivo.', 'OK', { duration: 4000 });
+    } catch (err) {
+      this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
   protected goBack(): void {
     this.router.navigate(['/admin/products']);
   }

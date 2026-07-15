@@ -225,6 +225,8 @@ export interface ProductRow {
   /** Consignment owner; null = house inventory (Poke-Singles). Set at
    *  creation only — never editable afterwards. */
   seller_id: string | null;
+  /** Soft-delete stamp; null = live. A deleted product is also inactive. */
+  deleted_at: string | null;
 }
 
 export interface ProductInsert {
@@ -1072,6 +1074,8 @@ export function normalizeSort(raw: string | null | undefined, hasQuery: boolean)
 // duplicate card from another seller becomes a new product).
 export type ProductUpdate = Partial<Omit<ProductInsert, 'category_id' | 'seller_id'>> & {
   category_id?: string;
+  /** Set/cleared only via ProductsService.softDelete()/restore(). */
+  deleted_at?: string | null;
 };
 
 export type ConditionCode = 'NM' | 'LP' | 'MP' | 'HP' | 'DMG';

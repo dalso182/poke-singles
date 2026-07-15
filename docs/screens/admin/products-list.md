@@ -1,8 +1,8 @@
 # Products list (admin)
-> Part of the Poke-Singles docs set. Verified against source on 2026-07-06. Load together with /CLAUDE.md.
+> Part of the Poke-Singles docs set. Verified against source on 2026-07-14. Load together with /CLAUDE.md.
 
 ## Purpose
-The paginated inventory table at `/admin/products`: search, category/set/seller filters, inactive/featured toggles, inline active + featured switches with undo, price (with sale handling), stock, and restock recency. Row click (or the edit icon button) opens the product editor; the header button starts the add-product flow.
+The paginated inventory table at `/admin/products`: search, category/set/seller filters, inactive/featured/deleted toggles, inline active + featured switches with undo, price (with sale handling), stock, and restock recency. Row click (or the edit icon button) opens the product editor; the header button starts the add-product flow. The `"Solo eliminados"` toggle switches the table into an exclusive soft-deleted view (deleted rows never mix with the live catalog); deleting itself lives on the product-edit danger zone, not here.
 
 ## Route & access
 - Path: `/admin/products` (`pathMatch: 'full'`), lazy `ProductsList`, inside `AdminShell` behind `adminGuard`.
@@ -19,7 +19,7 @@ The paginated inventory table at `/admin/products`: search, category/set/seller 
 
 ## UI anatomy
 1. `app-page-header` — kicker `"Inventario"`, title `"Productos"`, sub `"Catálogo completo · Buscar, filtrar, editar"`; projected `app-btn variant="primary"` `"Nuevo producto"` (+ `add` icon) → `goToNew()`.
-2. `app-filter-bar`: `app-search-input` (width 300, placeholder `"Buscar"`, two-way `searchText`), `app-dropdown label="Categoría"` (`categoryOptions`, first option `"Todas"`), `app-dropdown label="Set"` (width 220, `setOptions`, first `"Todos"`, labels `"{code} — {name}"`), `app-dropdown label="Vendedor"` (width 220, `sellerOptions`: `"Todos"`, `"Poke-Singles (sin vendedor)"` (value `'none'`), then `"{name} ({code})"`), spacer, `app-labeled-toggle` `"Mostrar inactivos"` (`includeInactive`), `app-labeled-toggle` `"Solo destacados"` (`featuredOnly`).
+2. `app-filter-bar`: `app-search-input` (width 300, placeholder `"Buscar"`, two-way `searchText`), `app-dropdown label="Categoría"` (`categoryOptions`, first option `"Todas"`), `app-dropdown label="Set"` (width 220, `setOptions`, first `"Todos"`, labels `"{code} — {name}"`), `app-dropdown label="Vendedor"` (width 220, `sellerOptions`: `"Todos"`, `"Poke-Singles (sin vendedor)"` (value `'none'`), then `"{name} ({code})"`), spacer, `app-labeled-toggle` `"Mostrar inactivos"` (`includeInactive`), `app-labeled-toggle` `"Solo eliminados"` (`deletedOnly`), `app-labeled-toggle` `"Solo destacados"` (`featuredOnly`).
 3. `mat-progress-bar mode="indeterminate"` while `loading()`.
 4. `app-table-card` wrapping `.products-list__scroll` > `table[mat-table].app-table.app-table--cozy`. `displayedColumns` order: `image, name, set, condition, language, price, quantity, restocked, featured, active, actions`.
    - **image**: `app-thumb [src]="row.image_url"`.
@@ -29,30 +29,32 @@ The paginated inventory table at `/admin/products`: search, category/set/seller 
    - **Precio** (right): `app-money [value]="priceValue(row)" [original]="priceOriginal(row)"` — sale price shown (amber per Money cell) with original struck when `sale_price != null && sale_price < price`.
    - **Stock** (right): `app-stock [value]="row.quantity" [low]="3"`.
    - **Reabastecido**: `formatRestocked(row.last_restocked_at)` → `"Hoy"` (highlighted `--today`), `"Ayer"`, `"hace N d"` (<30), `"hace N m"` (<365), `"hace N a"`, else `—`.
-   - **Destacado** (center): `app-checkbox` → `onToggleFeatured` (cell stops row-click propagation).
-   - **Activo** (center): `app-toggle` → `onToggleActive` (propagation stopped).
-   - **actions** (right): `app-icon-btn label="Editar"` (`edit` icon) → `goToEdit(row.id)`.
-   - Row: class `products-list__row`, `--inactive` modifier when `!row.active`; whole row clicks through to edit.
+   - **Destacado** (center): `app-checkbox` → `onToggleFeatured` (cell stops row-click propagation). Deleted rows render an em-dash instead (controls are gated on `!row.deleted_at`).
+   - **Activo** (center): `app-toggle` → `onToggleActive` (propagation stopped). Same `!row.deleted_at` gate — a deleted row can't be re-activated behind `deleted_at`'s back.
+   - **actions** (right): live rows get `app-icon-btn label="Editar"` (`edit` icon) → `goToEdit(row.id)`; deleted rows get a ghost `app-btn` `"Restaurar"` → `onRestore(row.id)`.
+   - Row: class `products-list__row`, `--inactive` modifier when `!row.active` (deleted rows are always inactive so they inherit the dimming); whole row clicks through to edit.
 5. Empty state (only when not loading): `"No hay productos que coincidan con los filtros."`
 6. `app-pagination-footer` — `page`, `perPage`, `total`, `perPageOptions [25, 50, 100]`, emits `pageChange`/`perPageChange`.
 
 ## Services & backend
 `ProductsService.list(params)` → `products` table:
 - `select('*, sets(name, printed_total), sellers(code, name)', { count: 'exact' })`, ordered `last_restocked_at` desc (`nullsFirst: false`) then `created_at` desc, `.range(from, to)`.
-- Filters applied: `eq('active', true)` unless `includeInactive`; `eq('category_id', …)`; `in('set_id', setIds)` or `eq('set_id', setId)` (multi wins); `eq('featured', true)` when `featuredOnly`; seller — `is('seller_id', null)` for `'none'` (explicit IS NULL; `.eq(col, null)` would render `=NULL` and never match) or `eq('seller_id', uuid)`; search — `%`/`_` escaped, then `.or('name.ilike.%…%,pokemon_name.ilike.%…%,slug.ilike.%…%')`.
+- Filters applied: `eq('active', true)` unless `includeInactive`; `is('deleted_at', null)` by default or `not('deleted_at', 'is', null)` when `deletedOnly` (the deleted view is exclusive — live and deleted rows never mix); `eq('category_id', …)`; `in('set_id', setIds)` or `eq('set_id', setId)` (multi wins); `eq('featured', true)` when `featuredOnly`; seller — `is('seller_id', null)` for `'none'` (explicit IS NULL; `.eq(col, null)` would render `=NULL` and never match) or `eq('seller_id', uuid)`; search — `%`/`_` escaped, then `.or('name.ilike.%…%,pokemon_name.ilike.%…%,slug.ilike.%…%')`.
 - Embeds flattened into `ProductListRow` extras: `set_name`, `set_printed_total`, `seller_code`, `seller_name` (the `sellers` embed is admin-only via RLS; anon callers get nulls).
 - `pageSize` clamped 1–200 (default 25).
 `ProductsService.setActive(id, active)` / `setFeatured(id, featured)` — thin wrappers over `update(id, patch)` → `products` UPDATE returning `*` (admin writes ride the `products_admin_all` RLS policy).
+`ProductsService.restore(id, active = false)` — clears `deleted_at` and sets `active` (default false, so a plain Restaurar comes back inactive; re-activation is a deliberate second step via the Activo toggle).
 Filter option sources: `CategoriesService.list()` (`categories`), `SetsService.list()` (`sets`), `SellersService.list()` (`sellers`, name-ordered; called **without** `activeOnly`, so retired sellers remain filterable).
 
 ## State & data flow
-- Filter signals: `searchText('')`, `category('')`, `setId('')`, `seller('')` (`''` = todas, `'none'` = house only, uuid = that seller), `includeInactive(false)`, `featuredOnly(false)`.
+- Filter signals: `searchText('')`, `category('')`, `setId('')`, `seller('')` (`''` = todas, `'none'` = house only, uuid = that seller), `includeInactive(false)`, `deletedOnly(false)`, `featuredOnly(false)`.
 - `searchValue` — `toSignal(toObservable(searchText).pipe(debounceTime(250), distinctUntilChanged()))`; the server only ever sees the debounced value.
 - Table state: `rows: ProductListRow[]`, `total`, `page(1)`, `pageSize(25)`, `loading`.
 - Option computeds: `categoryOptions`, `setOptions`, `sellerOptions`; `setsById` map backs `setLabel()`.
-- Constructor: `bootstrap()` loads categories/sets/sellers in parallel (snackbar on failure) then `refresh()`. A constructor `effect` reads all six filter signals and — skipping its first run via a `firstRun` flag — resets `page` to 1 and calls `refresh()` on any change.
+- Constructor: `bootstrap()` loads categories/sets/sellers in parallel (snackbar on failure) then `refresh()`. A constructor `effect` reads all seven filter signals and — skipping its first run via a `firstRun` flag — resets `page` to 1 and calls `refresh()` on any change.
 - `onPage(page)` / `onPerPage(size)` (resets to page 1) → `refresh()`.
-- `refresh()` maps signals to `ProductListParams` (`seller`: `'' → undefined`, `'none' → null`, uuid passthrough; `featuredOnly` false → `undefined` so unfeatured rows aren't excluded).
+- `refresh()` maps signals to `ProductListParams` (`seller`: `'' → undefined`, `'none' → null`, uuid passthrough; `featuredOnly` false → `undefined` so unfeatured rows aren't excluded; `includeInactive` widened to `includeInactive() || deletedOnly()` because deleted rows are always inactive and the default active-only filter would hide them).
+- `onRestore(id, active = false)` → `restore` then `refresh()`; errors snackbar.
 
 ## Behaviors & edge cases
 - Search debounce 250 ms; empty/whitespace search sends no search clause.
@@ -69,6 +71,7 @@ Filter option sources: `CategoriesService.list()` (`categories`), `SetsService.l
 - Filter state is not reflected in the URL; a page refresh or navigation resets everything (contrast with screens that use query-param inputs).
 - `pageSize` hard-clamps at 200 server-side even if a larger option were added.
 - `sellerOptions` includes inactive sellers (list called without `activeOnly`) — intentional, so consigned history stays reachable.
+- There is deliberately **no delete button here** — misclick safety. Deletion happens in the product-edit "Zona de peligro"; this screen only lists and restores deleted rows via `"Solo eliminados"`.
 
 ## Related docs
 - [Add product](./add-product.md) · [Product edit](./product-edit.md) · [Sellers](./sellers.md) · [Sets](./sets.md) · [Categories](./categories.md)

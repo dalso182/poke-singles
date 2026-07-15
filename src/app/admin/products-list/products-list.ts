@@ -73,6 +73,8 @@ export class ProductsList {
   /** '' = todas, 'none' = house only (seller_id IS NULL), uuid = that seller. */
   protected readonly seller = signal('');
   protected readonly includeInactive = signal(false);
+  /** On = show ONLY deleted products (they never mix with the live catalog). */
+  protected readonly deletedOnly = signal(false);
   protected readonly featuredOnly = signal(false);
 
   protected readonly categoriesList = signal<CategoryRow[]>([]);
@@ -132,6 +134,7 @@ export class ProductsList {
       this.setId();
       this.seller();
       this.includeInactive();
+      this.deletedOnly();
       this.featuredOnly();
       if (firstRun) {
         firstRun = false;
@@ -167,7 +170,10 @@ export class ProductsList {
         setId: this.setId() || undefined,
         sellerId:
           this.seller() === '' ? undefined : this.seller() === 'none' ? null : this.seller(),
-        includeInactive: this.includeInactive(),
+        // Deleted rows are always inactive, so the deleted view must also
+        // widen the active filter or it would show nothing.
+        includeInactive: this.includeInactive() || this.deletedOnly(),
+        deletedOnly: this.deletedOnly(),
         featured: this.featuredOnly() || undefined,
         page: this.page(),
         pageSize: this.pageSize(),
@@ -220,6 +226,15 @@ export class ProductsList {
       ref.onAction().subscribe(() => {
         this.products.setFeatured(row.id, !featured).then(() => this.refresh());
       });
+      await this.refresh();
+    } catch (err) {
+      this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
+    }
+  }
+
+  protected async onRestore(id: string, active = false): Promise<void> {
+    try {
+      await this.products.restore(id, active);
       await this.refresh();
     } catch (err) {
       this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });

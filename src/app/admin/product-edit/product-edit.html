@@ -275,6 +275,29 @@
           Guardar cambios
         </app-btn>
       </div>
+
+      <app-form-section title="Zona de peligro" class="product-edit__danger">
+        <div class="product-edit__danger-row">
+          @if (!p.deleted_at) {
+            <p class="product-edit__danger-text">
+              Eliminar oculta el producto de la tienda y del listado del admin. Las
+              ventas y los pagos de consignación históricos se conservan, y podés
+              restaurarlo desde «Solo eliminados» en el listado.
+            </p>
+            <app-btn variant="danger" [disabled]="saving()" (click)="onDelete()">
+              Eliminar producto
+            </app-btn>
+          } @else {
+            <p class="product-edit__danger-text">
+              Este producto está eliminado: no aparece en la tienda ni en el listado
+              del admin.
+            </p>
+            <app-btn variant="ghost" [disabled]="saving()" (click)="onRestore()">
+              Restaurar
+            </app-btn>
+          }
+        </div>
+      </app-form-section>
     </form>
   }
 </div>

@@ -49,6 +49,7 @@ One row per SKU (~5k on cutover). Key columns:
 - Commerce: `price numeric(10,2) CHECK (price >= 0)`, `sale_price numeric(10,2) CHECK (sale_price is null or (sale_price > 0 and sale_price < price))` — NULL means no sale; effective price everywhere is `coalesce(sale_price, price)`. `quantity integer CHECK (quantity >= 0)`, `active boolean default true`, `featured boolean NOT NULL default false` (home "Destacadas" rail).
 - Consignment: `seller_id uuid → sellers ON DELETE RESTRICT` (`20260704100000`). NULL = house inventory. RESTRICT means a seller with products can't be deleted.
 - Bookkeeping: `first_listed_at` (pinned immutable by trigger), `last_restocked_at`, `price_checked_at` (price-review cursor, `20260525003500`), `created_at`, `updated_at`, `image_url`.
+- Soft delete: `deleted_at timestamptz` (`20260714120000`). NULL = live. `ProductsService.softDelete()` sets it **and** flips `active = false` in one update (deleted ⇒ inactive, so every `active`-filtering storefront path is covered); `restore(id, active = false)` clears it. Products are **never hard-deleted**: sealed-payout detection and consignment reports join `order_items → products → categories` live, so a missing row would strand pending payout lines as `NOT_SEALED`.
 
 Triggers on `products`:
 
@@ -59,19 +60,20 @@ Triggers on `products`:
 | `products_normalize_pokemon_name` | `tg_products_normalize_pokemon_name` | Lowercase + trim; empty → NULL. |
 | `products_pin_first_listed_at` | `tg_products_pin_first_listed_at` | BEFORE UPDATE: `new.first_listed_at := old.first_listed_at` — immutable after insert. |
 
-RLS (final policy from `20260525000200_raffles_table.sql`):
+RLS (final policy from `20260714120000_products_soft_delete.sql`):
 
 ```sql
 create policy products_public_read on public.products
   for select to anon, authenticated
   using (
-    active = true and price > 0
+    deleted_at is null
+    and active = true and price > 0
     and (case when category_id = public.raffle_category_id() then true
               else quantity > 0 end)
   );
 ```
 
-i.e. normal products must be in stock and priced; **raffle products stay publicly visible at quantity 0** (sold-out rifas show as AGOTADA until drawn). Plus `products_admin_all` (full CRUD for admins). Note the `price > 0` invariant: a zero-priced row can never leak to shoppers.
+i.e. normal products must be live (not soft-deleted), in stock, and priced; **raffle products stay publicly visible at quantity 0** (sold-out rifas show as AGOTADA until drawn). Plus `products_admin_all` (full CRUD for admins). Note the `price > 0` invariant: a zero-priced row can never leak to shoppers. The `deleted_at is null` guard is belt-and-braces — deleted rows are also `active = false` — so a stray `active = true` flip can't resurrect a deleted product.
 
 Partial indexes (`products_restocked_idx`, `products_set_idx`, `products_pokemon_idx`, `products_category_idx`, `products_featured_idx`, `products_regulation_mark_idx`, `products_illustrator_idx`, `products_type1_idx`) all carry the predicate `active = true and quantity > 0 and price > 0` to match the customer-visible set; plus `products_card_ref_idx`, `products_seller_idx` (partial `seller_id is not null`), `products_price_checked_at_idx` (partial `active and card_ref is not null`, NULLS FIRST ordering for the price-review cursor).
 
@@ -160,7 +162,7 @@ Consignment sellers; the house has no row. `id`, `name`, `email`, `phone`, `code
 
 #### `seller_payouts` (`20260714100000`)
 
-Consignment payout batches (Reportes → Consignaciones): one row per bulk "Marcar pagado". `id`, `seller_id NOT NULL → sellers ON DELETE RESTRICT` (payout history makes a seller undeletable), `seller_code` + `seller_name` (display snapshots), `total_sold` / `cuanto_fees` / `store_fees` / `total` (breakdown **frozen at creation** by `create_seller_payout` via `sealed_payout_fees()` — authoritative even if fee rules change later), `item_count`, `notes`, `created_by → auth.users SET NULL`, `created_at`. Items link via `order_items.seller_payout_id`; deleting a batch reverts them to pending (FK SET NULL). RLS: `seller_payouts_admin_all` only. Fee rules + RPCs → [backend-rpcs-and-functions.md](./backend-rpcs-and-functions.md).
+Consignment payout batches (seller detail, `/admin/sellers/:id`): one row per bulk "Marcar pagado". `id`, `seller_id NOT NULL → sellers ON DELETE RESTRICT` (payout history makes a seller undeletable), `seller_code` + `seller_name` (display snapshots), `total_sold` / `cuanto_fees` / `store_fees` / `total` (breakdown **frozen at creation** by `create_seller_payout` via `sealed_payout_fees()` — authoritative even if fee rules change later), `item_count`, `notes`, `created_by → auth.users SET NULL`, `created_at`. Items link via `order_items.seller_payout_id`; deleting a batch reverts them to pending (FK SET NULL). RLS: `seller_payouts_admin_all` only. Fee rules + RPCs → [backend-rpcs-and-functions.md](./backend-rpcs-and-functions.md).
 
 ### Raffles
 
@@ -221,13 +223,14 @@ RLS on both: `*_admin_all` only — the queue would leak the store's whole prici
 
 #### `products_search` — the storefront read model
 
-Final definition in `20260618000000_products_search_self_filter.sql`: `products` ⨝ `sets` ⨝ aggregated card types, `WITH (security_invoker = on)`. Columns: all customer-relevant product columns (incl. `sale_price`, `card_ref`) plus `set_name`, `set_code`, `card_type_names` (space-joined), `search_text` (concat of name/pokemon_name/slug/card_number/illustrator/types/regulation_mark/stage/category/set name+code/card-type names — **description deliberately excluded** to avoid flavor-text false positives; **card_number/printed_total also excluded** so "115/151" can't substring-match "15/151"), `card_type_ids uuid[]`, `set_printed_total`.
+Final definition in `20260714120000_products_soft_delete.sql` (body from `20260618000000_products_search_self_filter.sql` + the `deleted_at` guard): `products` ⨝ `sets` ⨝ aggregated card types, `WITH (security_invoker = on)`. Columns: all customer-relevant product columns (incl. `sale_price`, `card_ref`) plus `set_name`, `set_code`, `card_type_names` (space-joined), `search_text` (concat of name/pokemon_name/slug/card_number/illustrator/types/regulation_mark/stage/category/set name+code/card-type names — **description deliberately excluded** to avoid flavor-text false positives; **card_number/printed_total also excluded** so "115/151" can't substring-match "15/151"), `card_type_ids uuid[]`, `set_printed_total`.
 
 Its own `WHERE` now enforces visibility directly:
 
 ```sql
 where p.category_id is distinct from raffle_category_id()
   and p.active = true and p.quantity > 0 and p.price > 0
+  and p.deleted_at is null
 ```
 
 Two-step history that a future session must understand:

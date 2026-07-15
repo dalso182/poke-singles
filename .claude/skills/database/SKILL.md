@@ -54,7 +54,9 @@ stock listings are never visible to anon clients on any query path).
 
 ## Schema overview
 
-- **Catalog:** `categories`, `sets`, `products` (with optional `seller_id` FK → sellers), `sellers`
+- **Catalog:** `categories`, `sets`, `products` (optional `seller_id` FK → sellers; soft-delete via
+  `deleted_at` `20260714120000` — `softDelete()` also sets `active=false`, rows are NEVER
+  hard-deleted because payout detection joins order_items → products live), `sellers`
   (2-char code; admin-only RLS), `card_types` + `product_card_types` junction (many-to-many),
   `card_details` (JSONB cache of the TCGdex Card payload; renamed from `tcgdex_cards` in
   `20260525002000_neutralize_card_source_names.sql`), `app_settings`.
@@ -116,9 +118,12 @@ column (**`description` is omitted** to avoid flavor-text false positives). Quer
 - `/products` routes the same RPC with `q=''`, `sort='recent'` so listings and `/buscar`
   share one data path and row shape (`ProductSearchRow`).
 
-**Active/in-stock filtering is RLS-only.** Neither the view nor `search_products` (which is
-`security invoker`) has a WHERE on `active`/`quantity` — they lean entirely on the
-`products_public_read` policy (`active AND price>0 AND quantity>0`, raffle exception). For
+**Visibility filtering is RLS + view self-filter.** `search_products` (which is
+`security invoker`) has no WHERE of its own on `active`/`quantity` — anon/customer sessions
+lean on the `products_public_read` policy (`deleted_at is null AND active AND price>0 AND
+quantity>0`, raffle exception; final version `20260714120000`). Since `20260618000000` the
+view ALSO self-filters the same predicate in its own WHERE (admin sessions bypass the public
+policy via `products_admin_all` and would otherwise see sold-out/deleted rows on /buscar). For
 that to apply through the view, `products_search` **must** be `WITH (security_invoker = on)`;
 a plain view runs as its owner (`postgres`) and bypasses RLS, leaking inactive / sold-out
 cards into search (fixed in `20260525002400`). Any new customer-facing view needs the same
@@ -212,11 +217,12 @@ These return `jsonb`/`table`, so the Angular side hand-types the shapes in `cata
 
 ## Reports (data side)
 
-The admin **Reportes** hub (`/admin/reports`, 6 tabs) is backed by `security definer` +
+The admin **Reportes** hub (`/admin/reports`, 5 tabs) is backed by `security definer` +
 `is_admin()` RPCs (granted to `authenticated`), each returning a `table` with `count(*) over()`
 as `total_count` and optional `America/Costa_Rica`-day date filters, hand-typed in
 `catalog.types.ts` and called via `(client as any).rpc(...)` — five analytics RPCs via
-`ReportsService`, plus the Consignaciones set via `SellerPayoutsService` (below):
+`ReportsService`, plus the consignment-payouts set via `SellerPayoutsService` (below; its UI
+home is the per-seller screen `/admin/sellers/:id`, not Reportes):
 
 - `admin_customer_orders_report(p_search, p_date_start, p_date_end, p_limit, p_offset, p_sort)`
   — per-customer order totals (orders ⨝ order_items): `order_count`, `no_products`,
@@ -235,14 +241,18 @@ as `total_count` and optional `America/Costa_Rica`-day date filters, hand-typed 
   email) + source `orders.order_number`; `p_search` matches name/email, sort
   `created`/`amount`. See Loyalty points below.
 
-**Consignaciones (seller payouts, `20260714100000`).** Fee rules live ONLY in
-`sealed_payout_fees(p_unit_price, p_quantity, p_payment_method) → (cuanto_fee, store_fee,
-payout)` — IMMUTABLE, laterally joined by every consumer so display and frozen batch totals
-can't drift (never duplicate the tiers in TS): Cuanto app = `round(line × 0.05)` when
-`payment_method = 'payment_link'`; store commission per UNIT × qty: `<15000` → 0, `<30000` →
-1000, `<80000` → 2000, else `round(unit × 0.05)`; both on the sold price independently;
-`payout = line − fees`. **Sealed only** (category slug `'sellado'`, joined live via
-`products.category_id` — order_items doesn't snapshot the category); singles rules TBD.
+**Consignaciones (seller payouts, `20260714100000` + `20260714110000`).** Fee rules live ONLY
+in `sealed_payout_fees(p_unit_price, p_quantity, p_payment_method, p_order_seller_units) →
+(cuanto_fee, store_fee, payout)` — IMMUTABLE, laterally joined by every consumer so display
+and frozen batch totals can't drift (never duplicate the tiers in TS): Cuanto app
+(`payment_method = 'payment_link'`) = `round(line × 0.05)` + flat-₡115-per-order share
+`round(115 × qty / p_order_seller_units)` — divisor = the order's consigned SEALED units
+(computed by each caller with a shared lateral, paid-status-independent; singles/house items
+never absorb a share; NULL/0 → full ₡115 on the line); store commission per UNIT × qty:
+`<15000` → 0, `<30000` → 1000, `<80000` → 2000, else `round(unit × 0.05)`; both on the sold
+price independently; `payout = line − fees`. **Sealed only** (category slug `'sellado'`,
+joined live via `products.category_id` — order_items doesn't snapshot the category); singles
+rules TBD.
 - `admin_sealed_payouts_report(p_seller_id, p_pending_only, p_date_start, p_date_end,
   p_limit, p_offset)` — consigned sealed items + fee breakdown. Pending = unpaid
   (`seller_payout_id IS NULL`) on a realized order (`paid/shipped/completed`); with

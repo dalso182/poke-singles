@@ -96,3 +96,24 @@
   display: flex;
   justify-content: flex-start;
 }
+
+// Danger zone: same card as the other sections, but the border tints red so
+// it reads as a distinct area before the eye lands on the button.
+.product-edit__danger ::ng-deep .fs {
+  border-color: rgba(185, 28, 28, 0.35);
+}
+
+.product-edit__danger-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+}
+
+.product-edit__danger-text {
+  margin: 0;
+  max-width: 560px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}

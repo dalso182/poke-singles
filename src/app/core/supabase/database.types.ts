@@ -515,6 +515,7 @@ export type Database = {
           seller_code: string | null
           seller_id: string | null
           seller_name: string | null
+          seller_payout_id: string | null
           unit_price: number
         }
         Insert: {
@@ -533,6 +534,7 @@ export type Database = {
           seller_code?: string | null
           seller_id?: string | null
           seller_name?: string | null
+          seller_payout_id?: string | null
           unit_price: number
         }
         Update: {
@@ -551,6 +553,7 @@ export type Database = {
           seller_code?: string | null
           seller_id?: string | null
           seller_name?: string | null
+          seller_payout_id?: string | null
           unit_price?: number
         }
         Relationships: [
@@ -594,6 +597,13 @@ export type Database = {
             columns: ["seller_id"]
             isOneToOne: false
             referencedRelation: "sellers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_seller_payout_id_fkey"
+            columns: ["seller_payout_id"]
+            isOneToOne: false
+            referencedRelation: "seller_payouts"
             referencedColumns: ["id"]
           },
         ]
@@ -861,6 +871,7 @@ export type Database = {
           category_id: string
           condition: string | null
           created_at: string
+          deleted_at: string | null
           description: string | null
           featured: boolean
           first_listed_at: string
@@ -896,6 +907,7 @@ export type Database = {
           category_id: string
           condition?: string | null
           created_at?: string
+          deleted_at?: string | null
           description?: string | null
           featured?: boolean
           first_listed_at?: string
@@ -931,6 +943,7 @@ export type Database = {
           category_id?: string
           condition?: string | null
           created_at?: string
+          deleted_at?: string | null
           description?: string | null
           featured?: boolean
           first_listed_at?: string
@@ -1146,6 +1159,59 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seller_payouts: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          cuanto_fees: number
+          id: string
+          item_count: number
+          notes: string | null
+          seller_code: string
+          seller_id: string
+          seller_name: string
+          store_fees: number
+          total: number
+          total_sold: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          cuanto_fees: number
+          id?: string
+          item_count: number
+          notes?: string | null
+          seller_code: string
+          seller_id: string
+          seller_name: string
+          store_fees: number
+          total: number
+          total_sold: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          cuanto_fees?: number
+          id?: string
+          item_count?: number
+          notes?: string | null
+          seller_code?: string
+          seller_id?: string
+          seller_name?: string
+          store_fees?: number
+          total?: number
+          total_sold?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_payouts_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "sellers"
             referencedColumns: ["id"]
           },
         ]
@@ -1725,6 +1791,52 @@ export type Database = {
         }
         Returns: boolean
       }
+      admin_sealed_payouts_report: {
+        Args: {
+          p_date_end?: string
+          p_date_start?: string
+          p_limit?: number
+          p_offset?: number
+          p_pending_only?: boolean
+          p_seller_id?: string
+        }
+        Returns: {
+          cuanto_fee: number
+          item_id: string
+          line_total: number
+          order_created_at: string
+          order_id: string
+          order_number: number
+          order_status: string
+          payment_method: string
+          payout_amount: number
+          payout_paid_at: string
+          product_card_number: string
+          product_image_url: string
+          product_name: string
+          product_set_name: string
+          product_slug: string
+          quantity: number
+          seller_code: string
+          seller_id: string
+          seller_name: string
+          seller_payout_id: string
+          store_fee: number
+          total_count: number
+          unit_price: number
+        }[]
+      }
+      admin_sealed_pending_totals: {
+        Args: never
+        Returns: {
+          item_count: number
+          pending_payout: number
+          pending_sold: number
+          seller_code: string
+          seller_id: string
+          seller_name: string
+        }[]
+      }
       attach_payment_proof: {
         Args: { p_email: string; p_file_path: string; p_order_id: string }
         Returns: Json
@@ -1749,6 +1861,10 @@ export type Database = {
       count_search_products: {
         Args: { p_category_slug?: string; q: string }
         Returns: number
+      }
+      create_seller_payout: {
+        Args: { p_item_ids: string[]; p_notes?: string }
+        Returns: Json
       }
       draw_raffle: {
         Args: { p_product_id: string }
@@ -1794,6 +1910,15 @@ export type Database = {
       order_accepts_proof: { Args: { p_prefix: string }; Returns: boolean }
       place_order: { Args: { p_input: Json }; Returns: Json }
       raffle_category_id: { Args: never; Returns: string }
+      sealed_payout_fees: {
+        Args: {
+          p_order_seller_units?: number
+          p_payment_method: string
+          p_quantity: number
+          p_unit_price: number
+        }
+        Returns: Record<string, unknown>
+      }
       search_card_type_counts: {
         Args: { p_category_slug?: string; p_on_sale_only?: boolean; q: string }
         Returns: {
