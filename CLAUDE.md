@@ -99,7 +99,7 @@ Each skill describes its own subtree in detail.
 ## Routes (compact)
 
 `/admin/*` → AdminShell (lazy, `adminGuard`): dashboard, products(+new/:id/edit),
-categories, filters (card-types live here — no card-types route), sets, sellers,
+categories, filters (card-types live here — no card-types route), sets, sellers(+:id),
 coupons(+new/:id/edit), shipping-methods, orders(+:id), customers(+:id), raffles(+:id),
 reports, price-review, pages(+new/:id/edit), announcements(+new/:id/edit), config.
 `/library` → designer reference (no shell). `/mantenimiento` → standalone maintenance

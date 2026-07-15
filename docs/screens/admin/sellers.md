@@ -9,11 +9,11 @@ CRUD for **consignment sellers** (`sellers` table) — people who hand the store
 - **Add product** — a `Vendedor` select (default `Poke-Singles` = null) fixed at creation; the seller's 2-char code is appended lowercase as the last slug part.
 - **Products list** — a `Vendedor` filter dropdown (`Todos` / `Poke-Singles (sin vendedor)` / each seller) and a blue code pill next to product names.
 - **Orders / order detail** — `place_order` (v10) snapshots `seller_id` / `seller_code` / `seller_name` onto each `order_items` row; the order detail shows the code pill per line item.
-- **Reportes → Consignaciones** — where sold consignment items are reviewed (fee breakdown) and bulk-marked paid into `seller_payouts` batches; a seller with payout history becomes undeletable (`ON DELETE RESTRICT`). See [reports.md](./reports.md).
+- **Seller detail (`/admin/sellers/:id`)** — the per-row "Ver" action opens each seller's consignment view: sold sealed items with the fee breakdown, bulk "Marcar pagado" into `seller_payouts` batches, and the payout history; a seller with payout history becomes undeletable (`ON DELETE RESTRICT`). See [seller-detail.md](./seller-detail.md).
 
 ## Route & access
 
-- **Path:** `/admin/sellers` (child of the lazy `AdminShell` route; `canActivate: [adminGuard]` + `canActivateChild: [adminGuard]` on the parent `admin` route in `src/app/app.routes.ts`).
+- **Path:** `/admin/sellers` with `pathMatch: 'full'` — required so the sibling detail route `/admin/sellers/:id` ([seller-detail.md](./seller-detail.md)) isn't shadowed. Child of the lazy `AdminShell` route; `canActivate: [adminGuard]` + `canActivateChild: [adminGuard]` on the parent `admin` route in `src/app/app.routes.ts`.
 - **Sidenav:** group "Catálogo" → item `Vendedores` (icon `storefront`), no count badge.
 - **Query params:** none.
 
@@ -39,7 +39,7 @@ CRUD for **consignment sellers** (`sellers` table) — people who hand the store
    - **Código** — read-only `span.app-slug-chip` (create-only, like category slugs).
    - **Nombre / Email / Teléfono** — `<app-editable-input>` bound via `val()` / `setText()`.
    - **Activo** — `<app-toggle [on]="row.active">`, disabled while `saving() === row.id`, fires `onToggleActive` immediately.
-   - **actions** — `<app-btn variant="ghost" size="sm">Guardar</app-btn>`, disabled when the row form is invalid, pristine, or saving.
+   - **actions** — `<app-btn variant="ghost" size="sm">Ver</app-btn>` → `goToView(row.id)` → `/admin/sellers/:id` (the payouts detail), then `<app-btn variant="ghost" size="sm">Guardar</app-btn>`, disabled when the row form is invalid, pristine, or saving.
 5. Empty state: `"Aún no hay vendedores. Los productos sin vendedor son inventario propio (Poke-Singles)."` (`.sellers__empty`).
 
 Shared primitives per [design-manifest](../../design-manifest.md).

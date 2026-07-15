@@ -52,8 +52,14 @@ export const routes: Routes = [
       },
       {
         path: 'sellers',
+        pathMatch: 'full',
         loadComponent: () =>
           import('./admin/sellers/sellers').then((m) => m.Sellers),
+      },
+      {
+        path: 'sellers/:id',
+        loadComponent: () =>
+          import('./admin/sellers/seller-detail').then((m) => m.SellerDetail),
       },
       {
         path: 'filters',

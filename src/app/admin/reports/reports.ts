@@ -6,7 +6,6 @@ import { CustomerActivityReport } from './customer-activity-report/customer-acti
 import { CustomerSearchesReport } from './customer-searches-report/customer-searches-report';
 import { CouponsReport } from './coupons-report/coupons-report';
 import { LoyaltyReport } from './loyalty-report/loyalty-report';
-import { ConsignmentReport } from './consignment-report/consignment-report';
 
 /** Admin "Reportes" hub. A page header + a report-type switcher; each report is
  *  a self-contained child (own filters / table / pagination). */
@@ -20,7 +19,6 @@ import { ConsignmentReport } from './consignment-report/consignment-report';
     CustomerSearchesReport,
     CouponsReport,
     LoyaltyReport,
-    ConsignmentReport,
   ],
   templateUrl: './reports.html',
   styleUrl: './reports.scss',
@@ -33,6 +31,5 @@ export class Reports {
     { key: 'searches', label: 'Búsquedas' },
     { key: 'coupons', label: 'Cupones' },
     { key: 'loyalty', label: 'Puntos' },
-    { key: 'consignment', label: 'Consignaciones' },
   ];
 }

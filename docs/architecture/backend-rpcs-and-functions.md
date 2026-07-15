@@ -146,11 +146,11 @@ DEFINER + guard (`20260704130000`). Caller: `CustomersService.pokedexLeaderboard
 | `admin_coupons_report` | `(p_search '', p_date_start, p_date_end, p_limit 50, p_offset 0, p_sort 'discount')` | Per-coupon usage read from **orders** (not redemptions): `order_count`, `total_discount`, `total_revenue` over the same non-cancelled set; soft-deleted coupons included; only coupons used in range; sorts `'discount' \| 'revenue' \| 'orders'`. |
 | `admin_loyalty_transactions_report` | `(p_search '', p_date_start, p_date_end, p_limit 50, p_offset 0, p_sort 'created')` | Ledger feed with customer + `order_number` context; sorts `'created' \| 'amount'`. |
 
-### Consignment payouts (`20260714100000`; caller: `SellerPayoutsService`, Reportes → Consignaciones)
+### Consignment payouts (`20260714100000` + `20260714110000`; caller: `SellerPayoutsService`, Vendedores detail `/admin/sellers/:id`)
 
-#### `sealed_payout_fees(p_unit_price, p_quantity, p_payment_method) returns (cuanto_fee, store_fee, payout)`
+#### `sealed_payout_fees(p_unit_price, p_quantity, p_payment_method, p_order_seller_units default null) returns (cuanto_fee, store_fee, payout)`
 
-IMMUTABLE plpgsql — the single source of the sealed fee rules, laterally joined by both read RPCs and `create_seller_payout` so display and frozen batch totals can't drift. Cuanto app fee = `round(line × 0.05)` when `p_payment_method = 'payment_link'`, else 0. Store commission per UNIT (tier from `unit_price`, × quantity): `<15000` → 0, `<30000` → 1000, `<80000` → 2000, else `round(unit_price × 0.05)`. Both fees on the sold price independently; `payout = line − cuanto − store`.
+IMMUTABLE plpgsql — the single source of the sealed fee rules, laterally joined by both read RPCs and `create_seller_payout` so display and frozen batch totals can't drift. Cuanto app fee, when `p_payment_method = 'payment_link'`: `round(line × 0.05)` **plus the flat-₡115-per-order share** `round(115 × p_quantity / p_order_seller_units)` (`20260714110000`); else 0. `p_order_seller_units` = the order's total consigned SEALED units — every caller computes it with the same lateral over the order's consigned sealed items **regardless of paid status** (a partial payout doesn't change the remaining items' shares); consigned singles and house items never absorb a share; NULL/0 → the line takes the full ₡115; per-line rounding may drift the ₡115 sum by a colón or two. Store commission per UNIT (tier from `unit_price`, × quantity): `<15000` → 0, `<30000` → 1000, `<80000` → 2000, else `round(unit_price × 0.05)`. Both fees on the sold price independently; `payout = line − cuanto − store`.
 
 #### `admin_sealed_payouts_report(p_seller_id null, p_pending_only true, p_date_start, p_date_end, p_limit 50, p_offset 0) returns table(...)`
 

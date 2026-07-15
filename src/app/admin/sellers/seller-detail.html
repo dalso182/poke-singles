@@ -1,0 +1,30 @@
+<app-back-header
+  kicker="Vendedor"
+  [title]="seller()?.name || 'Vendedor'"
+  [sub]="seller() ? seller()!.code + ' · consignación' : null"
+  backLink="/admin/sellers"
+/>
+
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+} @else if (notFound()) {
+  <div class="seller-detail__not-found">
+    <p>No se encontró el vendedor.</p>
+    <app-btn variant="ghost" (click)="goBack()">Volver al listado</app-btn>
+  </div>
+} @else {
+  <div class="seller-detail__tabs">
+    <app-pill-tabs [tabs]="tabs" [(value)]="view" />
+  </div>
+
+  @switch (view()) {
+    @case ('sealed') {
+      <app-seller-sealed [sellerId]="id()" />
+    }
+    @case ('singles') {
+      <p class="seller-detail__placeholder">
+        Reglas de pago para singles pendientes de definir — próximamente.
+      </p>
+    }
+  }
+}

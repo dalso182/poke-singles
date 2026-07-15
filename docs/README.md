@@ -60,6 +60,7 @@ if a doc's claims disagree with the code, the code has moved — update the doc.
 | [filters](screens/admin/filters.md) | `/admin/filters` (embeds the CardTypes component — no `/admin/card-types` route) |
 | [sets](screens/admin/sets.md) | `/admin/sets` |
 | [sellers](screens/admin/sellers.md) | `/admin/sellers` |
+| [seller-detail](screens/admin/seller-detail.md) | `/admin/sellers/:id` (consignment payouts: Sellado / Singles) |
 | [price-review](screens/admin/price-review.md) | `/admin/price-review` |
 | [coupons](screens/admin/coupons.md) | `/admin/coupons` |
 | [coupon-edit](screens/admin/coupon-edit.md) | `/admin/coupons/new`, `/admin/coupons/:id/edit` |
@@ -70,7 +71,7 @@ if a doc's claims disagree with the code, the code has moved — update the doc.
 | [customer-detail](screens/admin/customer-detail.md) | `/admin/customers/:id` |
 | [raffles](screens/admin/raffles.md) | `/admin/raffles` |
 | [raffle-detail](screens/admin/raffle-detail.md) | `/admin/raffles/:id` |
-| [reports](screens/admin/reports.md) | `/admin/reports` (all six panels, incl. Consignaciones seller payouts) |
+| [reports](screens/admin/reports.md) | `/admin/reports` (all five report panels) |
 | [pages](screens/admin/pages.md) | `/admin/pages`, `/admin/pages/new`, `/admin/pages/:id/edit` |
 | [announcements](screens/admin/announcements.md) | `/admin/announcements`, `/admin/announcements/new`, `/admin/announcements/:id/edit` |
 | [config](screens/admin/config.md) | `/admin/config` (all `app_settings` keys) |

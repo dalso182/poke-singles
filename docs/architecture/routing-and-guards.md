@@ -50,7 +50,8 @@ All components are lazy-loaded via `loadComponent: () => import(...).then(m => m
 | `raffles` | `Raffles` | `pathMatch: 'full'` |
 | `raffles/:id` | `RaffleDetail` | |
 | `categories` | `Categories` | |
-| `sellers` | `Sellers` | |
+| `sellers` | `Sellers` | `pathMatch: 'full'` |
+| `sellers/:id` | `SellerDetail` | Per-seller consignment payouts (Sellado / Singles) |
 | `filters` | `Filters` | |
 | `coupons` | `Coupons` | `pathMatch: 'full'` |
 | `coupons/new` | `CouponEdit` | Same component as edit |

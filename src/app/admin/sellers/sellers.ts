@@ -1,4 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -39,6 +40,7 @@ export class Sellers {
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(SellersService);
   private readonly snack = inject(MatSnackBar);
+  private readonly router = inject(Router);
 
   protected readonly rows = signal<SellerRow[]>([]);
   protected readonly loading = signal(false);
@@ -86,6 +88,11 @@ export class Sellers {
 
   protected formFor(id: string): FormGroup {
     return this.editForms.get(id)!;
+  }
+
+  /** Per-seller consignment view (Sellado payouts / Singles). */
+  protected goToView(id: string): void {
+    this.router.navigate(['/admin/sellers', id]);
   }
 
   protected val(id: string, name: string): string {

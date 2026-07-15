@@ -95,6 +95,7 @@
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef></th>
         <td mat-cell *matCellDef="let row" class="is-right">
+          <app-btn variant="ghost" size="sm" (click)="goToView(row.id)">Ver</app-btn>
           <app-btn
             variant="ghost"
             size="sm"

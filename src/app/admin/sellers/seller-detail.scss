@@ -1,0 +1,17 @@
+.seller-detail__tabs {
+  margin-bottom: 16px;
+}
+
+.seller-detail__placeholder,
+.seller-detail__not-found {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--text-secondary);
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+}
+
+.seller-detail__not-found p {
+  margin: 0 0 16px;
+}

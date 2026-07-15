@@ -19,6 +19,16 @@ export class SellersService {
     return (data ?? []) as SellerRow[];
   }
 
+  async get(id: string): Promise<SellerRow | null> {
+    const { data, error } = await (this.supabase.client as any)
+      .from('sellers')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+    if (error) throw error;
+    return (data as SellerRow | null) ?? null;
+  }
+
   async create(input: SellerInsert): Promise<SellerRow> {
     const { data, error } = await (this.supabase.client as any)
       .from('sellers')
