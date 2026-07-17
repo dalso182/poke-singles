@@ -17,7 +17,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { Query } from '@tcgdex/sdk';
-import type { Card, CardResume } from '@tcgdex/sdk';
+import type { Card, CardResume, SetResume } from '@tcgdex/sdk';
 import { TcgdexService } from '../../core/tcgdex/tcgdex.service';
 
 @Component({
@@ -62,9 +62,19 @@ export class CardTypeahead {
         const q = value.trim();
         if (q.length < 2) return [] as CardResume[];
         try {
-          let query = Query.create().contains('name', q);
-          if (setCode) query = query.equal('set.id', setCode);
-          return await this.tcgdex.client.card.list(query.paginate(1, 12));
+          // TCGdex models the SWSH gallery subsets (Trainer Gallery, Galarian
+          // Gallery, Shiny Vault) as separate sets, so a plain set.id filter
+          // would hide e.g. Crown Zenith's GG cards. Query the base set and
+          // its gallery subsets together.
+          const setIds = setCode ? [setCode, ...(await this.subsetIdsFor(setCode))] : [null];
+          const results = await Promise.all(
+            setIds.map((id) => {
+              let query = Query.create().contains('name', q).paginate(1, 30);
+              if (id) query = query.equal('set.id', id);
+              return this.tcgdex.client.card.list(query);
+            }),
+          );
+          return results.flat();
         } catch {
           return [] as CardResume[];
         }
@@ -73,6 +83,29 @@ export class CardTypeahead {
     ),
     { initialValue: [] as CardResume[] },
   );
+
+  private setListPromise?: Promise<SetResume[]>;
+
+  /**
+   * Gallery subsets are named `<base set name> + suffix` — id prefixes are
+   * unreliable (swsh12.5tg is Silver Tempest's gallery, not Crown Zenith's;
+   * sma is Hidden Fates Shiny Vault), so match on names instead.
+   */
+  private async subsetIdsFor(setCode: string): Promise<string[]> {
+    const suffixes = [' Trainer Gallery', ' Galarian Gallery', ' Shiny Vault'];
+    try {
+      this.setListPromise ??= this.tcgdex.client.set.list();
+      const sets = await this.setListPromise;
+      const base = sets.find((s) => s.id === setCode);
+      if (!base) return [];
+      return sets
+        .filter((s) => suffixes.some((suffix) => s.name === base.name + suffix))
+        .map((s) => s.id);
+    } catch {
+      this.setListPromise = undefined;
+      return [];
+    }
+  }
 
   protected displayCardName(card: CardResume | string | null): string {
     if (!card) return '';

@@ -132,6 +132,23 @@ function tcgdexImageToHostedPath(imageBase) {
   return m ? `/card-images/${m[1]}.webp` : '';
 }
 
+// Hosted path for a matched card. Falls back to building it from ids when the
+// card has no TCGdex scan (the SWSH gallery subsets) — the serie id isn't on
+// the card payload, so it comes from a memoized set lookup. The file itself is
+// fetched from pokemontcg.io by scripts/fetch-card-images.mjs.
+const serieIdCache = new Map();
+async function hostedImagePathFor(card, setCode) {
+  const fromUrl = tcgdexImageToHostedPath(card.image);
+  if (fromUrl) return fromUrl;
+  if (!card.localId) return '';
+  if (!serieIdCache.has(setCode)) {
+    const full = await tcgdex.set.get(setCode).catch(() => null);
+    serieIdCache.set(setCode, full?.serie?.id ?? null);
+  }
+  const serieId = serieIdCache.get(setCode);
+  return serieId ? `/card-images/${serieId}/${setCode}/${card.localId}.webp` : '';
+}
+
 async function inBatches(items, size, fn) {
   for (let i = 0; i < items.length; i += size) {
     await Promise.all(items.slice(i, i + size).map(fn));
@@ -846,7 +863,7 @@ async function main() {
       pokemon_name: card.category === 'Pokemon' ? card.name : null,
       rarity: card.rarity ?? null,
       card_number: card.localId ?? parsed.cardNumber,
-      image_url: tcgdexImageToHostedPath(card.image) || null,
+      image_url: (await hostedImagePathFor(card, resolved.setCode)) || null,
       set_id: setRow.id,
       category_id: singlesId,
       // OC stored per-card condition in `model` — normalize to the canonical

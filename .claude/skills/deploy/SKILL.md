@@ -109,3 +109,9 @@ npm run images:upload:endpoints                 # push server/*.php only (no ima
 
 `./card-images/` lives outside `dist/`, so a normal `deploy:*` can never sweep it up. The PHP
 picker endpoints that live alongside the images → `admin` skill.
+
+TCGdex has **no scans for the five SWSH gallery-subset sets** (`swsh9.5tg`, `swsh11.5tg`,
+`swsh12.5tg`, `swsh12.5gg`, `swsh4.5sv`); for those, `images:fetch` falls back to
+`images.pokemontcg.io` (PNG → webp via `sharp`, same `<serie>/<set>/<localId>.webp` path — see
+`PTCGIO_FALLBACK_SETS` in `fetch-card-images.mjs`). Anything else without a scan still lands in
+`card-images/missing-images.json`.

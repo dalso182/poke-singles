@@ -1,4 +1,4 @@
-import { resolveHostedSrc, tcgdexImageToHostedPath } from './card-image-url';
+import { hostedCardImagePath, resolveHostedSrc, tcgdexImageToHostedPath } from './card-image-url';
 
 describe('tcgdexImageToHostedPath', () => {
   it('maps a TCGdex asset URL to our relative hosted path', () => {
@@ -21,6 +21,20 @@ describe('tcgdexImageToHostedPath', () => {
 
   it('returns empty string for a non-TCGdex URL', () => {
     expect(tcgdexImageToHostedPath('https://example.com/foo/bar')).toBe('');
+  });
+});
+
+describe('hostedCardImagePath', () => {
+  it('builds the hosted path from TCGdex identifiers', () => {
+    expect(hostedCardImagePath('swsh', 'swsh12.5gg', 'GG04')).toBe(
+      '/card-images/swsh/swsh12.5gg/GG04.webp',
+    );
+  });
+
+  it('matches what tcgdexImageToHostedPath derives from a URL', () => {
+    expect(hostedCardImagePath('swsh', 'swsh3', '136')).toBe(
+      tcgdexImageToHostedPath('https://assets.tcgdex.net/en/swsh/swsh3/136'),
+    );
   });
 });
 

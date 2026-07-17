@@ -42,7 +42,11 @@ import {
   type ImagePickerResult,
 } from '../../shared/image-picker/image-picker-dialog';
 import { ImageBrowserService } from '../../core/images/image-browser.service';
-import { resolveHostedSrc, tcgdexImageToHostedPath } from '../../core/images/card-image-url';
+import {
+  hostedCardImagePath,
+  resolveHostedSrc,
+  tcgdexImageToHostedPath,
+} from '../../core/images/card-image-url';
 import { CategoriesService } from '../../core/catalog/categories.service';
 import { CardTypesService } from '../../core/catalog/card-types.service';
 import { ProductsService } from '../../core/catalog/products.service';
@@ -50,6 +54,7 @@ import { RafflesService } from '../../core/catalog/raffles.service';
 import { SellersService } from '../../core/catalog/sellers.service';
 import { SetsService } from '../../core/catalog/sets.service';
 import { TcgdexCardsService } from '../../core/catalog/tcgdex-cards.service';
+import { TcgdexService } from '../../core/tcgdex/tcgdex.service';
 import { firstTcgplayerVariant, tcgplayerMarketUsd } from '../../core/catalog/tcgplayer-pricing';
 import { AppSettingsService } from '../../core/settings/app-settings.service';
 import { LocalStorageService } from '../../core/storage/local-storage.service';
@@ -110,6 +115,7 @@ export class AddProduct {
   private readonly sellers = inject(SellersService);
   private readonly sets = inject(SetsService);
   private readonly tcgdexCards = inject(TcgdexCardsService);
+  private readonly tcgdex = inject(TcgdexService);
   private readonly settings = inject(AppSettingsService);
   private readonly snack = inject(MatSnackBar);
   private readonly router = inject(Router);
@@ -327,13 +333,27 @@ export class AddProduct {
       .listByCardRef(card.id)
       .then((rows) => this.existingMatches.set(rows))
       .catch(() => this.existingMatches.set([]));
+    let imageUrl = tcgdexImageToHostedPath(card.image);
+    if (!imageUrl && card.set?.id && card.localId != null) {
+      // The SWSH gallery subsets have no TCGdex image URL to parse, and the
+      // serie id (first path segment) isn't on the card payload — one set
+      // lookup fills it in. The hosted file itself comes from the
+      // pokemontcg.io fallback in scripts/fetch-card-images.mjs.
+      try {
+        const fullSet = await this.tcgdex.client.fetch('sets', card.set.id);
+        const serieId = fullSet?.serie?.id;
+        if (serieId) imageUrl = hostedCardImagePath(serieId, card.set.id, String(card.localId));
+      } catch {
+        // Leave blank — the admin can fill the field via the picker.
+      }
+    }
     this.form.patchValue({
       name: card.name,
       pokemon_name: card.name, // user can refine; trigger lowercase+trims server-side
       rarity: card.rarity ?? '',
       card_number: card.localId ?? '',
       // Point at our self-hosted copy (relative path), not the TCGdex CDN.
-      image_url: tcgdexImageToHostedPath(card.image),
+      image_url: imageUrl,
       variant: this.defaultVariantFor(card),
       card_ref: card.id,
       illustrator: card.illustrator ?? null,

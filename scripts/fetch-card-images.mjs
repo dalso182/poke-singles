@@ -28,7 +28,10 @@
 // renamed on success, so an interrupted run never leaves a truncated "complete" file.
 //
 // Cards with no contributed scan (no `image` field) are skipped and recorded in
-// card-images/missing-images.json. The run never touches Supabase.
+// card-images/missing-images.json — except the SWSH gallery-subset sets (Trainer
+// Gallery / Galarian Gallery / Shiny Vault), which TCGdex has no scans for at all:
+// those fall back to images.pokemontcg.io (PNG, transcoded to --ext via sharp) and
+// land at the same <serie>/<set>/<localId>.<ext> path. The run never touches Supabase.
 
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -71,6 +74,18 @@ if (!['high', 'low'].includes(QUALITY)) abort(`invalid --quality=${QUALITY} (exp
 if (!['webp', 'png', 'jpg'].includes(EXT)) abort(`invalid --ext=${EXT} (expected webp|png|jpg)`);
 
 const tcgdex = new TCGdex(LANG);
+
+// TCGdex gallery-subset sets with no scans on assets.tcgdex.net (0/N images).
+// pokemontcg.io has them all and its card numbers match TCGdex localIds 1:1
+// (GG04, TG01, SV001…). Values are the pokemontcg.io set ids. sma (Hidden Fates
+// Shiny Vault) and the embedded swsh10 TG cards are covered by TCGdex already.
+const PTCGIO_FALLBACK_SETS = {
+  'swsh9.5tg': 'swsh9tg',
+  'swsh11.5tg': 'swsh11tg',
+  'swsh12.5tg': 'swsh12tg',
+  'swsh12.5gg': 'swsh12pt5gg',
+  'swsh4.5sv': 'swsh45sv',
+};
 
 // ---- Helpers -------------------------------------------------------------
 
@@ -118,16 +133,28 @@ async function fileIsComplete(target) {
   }
 }
 
+// sharp is only needed for pokemontcg.io fallbacks (PNG → EXT); load it lazily
+// so TCGdex-only runs still work even if the native module ever fails to build.
+let sharpPromise;
+async function transcodeToExt(buf) {
+  sharpPromise ??= import('sharp').then((m) => m.default);
+  const img = (await sharpPromise)(buf);
+  if (EXT === 'webp') return img.webp({ quality: 90 }).toBuffer();
+  if (EXT === 'png') return img.png().toBuffer();
+  return img.jpeg({ quality: 90 }).toBuffer();
+}
+
 // Download `url` to `target` atomically, with retries. Returns one of:
 //   { status: 'downloaded', bytes } | { status: 'missing' } | { status: 'failed', error }
-async function downloadTo(url, target, retries = 3) {
+async function downloadTo(url, target, { transcode = false, retries = 3 } = {}) {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const res = await fetch(url);
       if (res.status === 404) return { status: 'missing' };
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const buf = Buffer.from(await res.arrayBuffer());
+      let buf = Buffer.from(await res.arrayBuffer());
       if (buf.length === 0) throw new Error('empty body');
+      if (transcode) buf = await transcodeToExt(buf);
       const tmp = `${target}.part`;
       await writeFile(tmp, buf);
       await rename(tmp, target);
@@ -178,7 +205,7 @@ async function main() {
 
   const manifest = { generatedAt: new Date().toISOString(), series: {}, sets: {}, counts: {} };
   const missing = []; // { set, localId, id }
-  const totals = { cards: 0, downloaded: 0, skipped: 0, missing: 0, failed: 0, bytes: 0 };
+  const totals = { cards: 0, downloaded: 0, skipped: 0, missing: 0, failed: 0, fallback: 0, bytes: 0 };
 
   // Process one set at a time (clean per-set progress); parallelise downloads
   // within each set. ~170 sequential set.get() calls are cheap next to the image
@@ -205,15 +232,22 @@ async function main() {
     const tasks = [];
     for (const card of set.cards ?? []) {
       totals.cards++;
+      const target = path.join(setDir, `${safeName(card.localId)}.${EXT}`);
       if (!card.image) {
+        const ptcgioSet = PTCGIO_FALLBACK_SETS[set.id];
+        if (ptcgioSet) {
+          tasks.push({
+            url: `https://images.pokemontcg.io/${ptcgioSet}/${card.localId}_hires.png`,
+            target,
+            transcode: true,
+          });
+          continue;
+        }
         totals.missing++;
         missing.push({ set: set.id, localId: card.localId, id: card.id });
         continue;
       }
-      tasks.push({
-        url: `${card.image}/${QUALITY}.${EXT}`,
-        target: path.join(setDir, `${safeName(card.localId)}.${EXT}`),
-      });
+      tasks.push({ url: `${card.image}/${QUALITY}.${EXT}`, target });
     }
     if (LOGOS) {
       if (set.logo) tasks.push({ url: `${set.logo}.${EXT}`, target: path.join(setDir, `logo.${EXT}`) });
@@ -224,6 +258,7 @@ async function main() {
     let sk = 0;
     let fa = 0;
     let mi = 0;
+    let fb = 0;
 
     if (DRY_RUN) {
       // Count how many would actually download vs already exist.
@@ -237,9 +272,10 @@ async function main() {
           sk++;
           return;
         }
-        const r = await downloadTo(t.url, t.target);
+        const r = await downloadTo(t.url, t.target, { transcode: t.transcode });
         if (r.status === 'downloaded') {
           dl++;
+          if (t.transcode) fb++;
           totals.bytes += r.bytes;
         } else if (r.status === 'missing') {
           mi++;
@@ -255,9 +291,10 @@ async function main() {
     totals.skipped += sk;
     totals.failed += fa;
     totals.missing += mi;
+    totals.fallback += fb;
     log(
       `[${set.id}] ${serieName} — ${tasks.length} img | ` +
-        `${DRY_RUN ? `${dl} to download, ${sk} present` : `${dl} downloaded, ${sk} skipped, ${mi} missing, ${fa} failed`}`
+        `${DRY_RUN ? `${dl} to download, ${sk} present` : `${dl} downloaded${fb ? ` (${fb} via pokemontcg.io)` : ''}, ${sk} skipped, ${mi} missing, ${fa} failed`}`
     );
   });
 
@@ -278,7 +315,7 @@ async function main() {
 
   log('—');
   log(
-    `done: ${totals.downloaded} downloaded (${humanBytes(totals.bytes)}), ` +
+    `done: ${totals.downloaded} downloaded (${humanBytes(totals.bytes)}${totals.fallback ? `, ${totals.fallback} via pokemontcg.io` : ''}), ` +
       `${totals.skipped} skipped, ${totals.missing} missing, ${totals.failed} failed`
   );
   if (totals.failed > 0) {

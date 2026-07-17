@@ -28,6 +28,17 @@ export function tcgdexImageToHostedPath(imageBase: string | null | undefined): s
 }
 
 /**
+ * Build the self-hosted path from TCGdex identifiers directly. Used when a card
+ * has no `image` URL to parse (the SWSH gallery subsets have no TCGdex scans —
+ * their files are fetched from pokemontcg.io into the same layout).
+ *
+ *   ('swsh', 'swsh12.5gg', 'GG04') → /card-images/swsh/swsh12.5gg/GG04.webp
+ */
+export function hostedCardImagePath(serieId: string, setId: string, localId: string): string {
+  return `${CARD_IMAGES_PREFIX}/${serieId}/${setId}/${localId}.webp`;
+}
+
+/**
  * Resolve a stored image value to a loadable `<img src>`. Relative paths
  * (`/card-images/...`) are made absolute against `origin` so the preview loads
  * regardless of where the admin UI runs; absolute URLs (from the picker or
