@@ -1,31 +1,27 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { CardConditionsDialogService } from '../../core/preview/card-conditions-dialog.service';
+import { Pill } from '../table/cells/pill/pill';
 import { Countdown } from '../countdown/countdown';
 import type { AuctionListingItem } from '../../core/catalog/catalog.types';
 
 /**
- * Auction tile for /subastas. An auction is a product whose category is
- * "Subastas": `starting_price` is the opening bid, live state (current bid /
- * bid count / close) comes from the auctions table via `subastas_listing`.
- * Unlike <app-raffle-card> the tile links to a detail page —
- * /subastas/:slug — where the bidding happens.
+ * Auction tile ("Live Arena" handoff) — vertical card: art on top with the
+ * status pill, then meta / name / price block, and a live countdown chip
+ * footer. Used by the /subastas grid AND the "Más subastas" rail on the
+ * auction detail page. The whole tile links to /subastas/:slug.
  */
 @Component({
   selector: 'app-auction-card',
-  imports: [DatePipe, DecimalPipe, RouterLink, MatIconModule, MatTooltipModule, Countdown],
+  imports: [DatePipe, DecimalPipe, RouterLink, MatIconModule, Pill, Countdown],
   templateUrl: './auction-card.html',
   styleUrl: './auction-card.scss',
 })
 export class AuctionCard {
   readonly auction = input.required<AuctionListingItem>();
 
-  private readonly conditionsDialog = inject(CardConditionsDialogService);
-
-  /** Card identity line: "Set name, #123/198" (mirrors the product card). */
+  /** Mono meta line: "SET · #006/198 · NM" (parts drop out when missing). */
   protected readonly metaLine = computed(() => {
     const a = this.auction();
     const number = a.card_number
@@ -33,32 +29,56 @@ export class AuctionCard {
         ? `#${a.card_number}/${a.set_printed_total}`
         : `#${a.card_number}`
       : '';
-    return [a.set_name ?? '', number].filter((s) => s && s.length > 0).join(', ');
+    return [a.set_name ?? '', number, a.condition ?? '']
+      .filter((s) => s && s.length > 0)
+      .join(' · ');
   });
 
   protected readonly hasBids = computed(() => this.auction().bid_count > 0);
 
-  /** What the next/current relevant amount is: current bid when someone has
-   *  bid, otherwise the opening price. */
+  /** Price-block label per state (handoff table). */
+  protected readonly priceLabel = computed(() => {
+    switch (this.auction().status) {
+      case 'ended':
+        return 'Precio final';
+      case 'void':
+        return 'Sin pujas';
+      default:
+        return this.hasBids() ? 'Puja actual' : 'Precio inicial';
+    }
+  });
+
   protected readonly displayAmount = computed(
     () => this.auction().current_bid ?? this.auction().starting_price,
   );
 
-  /** Maps a condition code to its pill classes — mirrors the product card. */
-  protected conditionClass(condition: string | null): string {
-    if (!condition) return '';
-    const code = condition.toUpperCase();
-    let modifier = '';
-    if (code === 'NM') modifier = 'condition-pill--nm';
-    else if (code === 'LP') modifier = 'condition-pill--lp';
-    else if (code === 'MP') modifier = 'condition-pill--mp';
-    else if (code === 'HP' || code === 'DMG') modifier = 'condition-pill--hp';
-    return `condition-pill ${modifier}`;
-  }
+  protected readonly statusLabel = computed(() => {
+    switch (this.auction().status) {
+      case 'ended':
+        return 'Finalizada';
+      case 'void':
+        return 'Sin pujas';
+      default:
+        return 'Activa';
+    }
+  });
 
-  /** Open the shared card-conditions guide modal (mirrors the product card). */
-  protected openConditionsInfo(event: MouseEvent): void {
-    event.stopPropagation();
-    void this.conditionsDialog.open();
+  protected readonly statusTone = computed<'green' | 'blue' | 'neutral'>(() => {
+    switch (this.auction().status) {
+      case 'ended':
+        return 'blue';
+      case 'void':
+        return 'neutral';
+      default:
+        return 'green';
+    }
+  });
+
+  /** Seeded hue for the winner's fallback avatar disc (masked names only). */
+  protected winnerHue(): number {
+    const s = this.auction().winner_masked || '?';
+    let sum = 0;
+    for (let i = 0; i < s.length; i++) sum += s.charCodeAt(i);
+    return Math.abs(sum) % 360;
   }
 }

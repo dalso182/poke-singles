@@ -25,13 +25,24 @@ import { AuctionLiveService } from '../../core/auctions/auction-live.service';
 import { BidsService } from '../../core/auctions/bids.service';
 import { CardConditionsDialogService } from '../../core/preview/card-conditions-dialog.service';
 import { PokemonService } from '../../core/pokemon/pokemon.service';
+import { AppSettingsService } from '../../core/settings/app-settings.service';
 import { Countdown } from '../../shared/countdown/countdown';
+import { AuctionCard } from '../../shared/auction-card/auction-card';
+import { PillTabs, type TabItem } from '../../shared/table/tabs/pill-tabs/pill-tabs';
 import type { AuctionBidItem, AuctionListingItem } from '../../core/catalog/catalog.types';
 
+/** Bid history row decorated for the leaderboard rendering. */
+interface RankedBid extends AuctionBidItem {
+  rank: number;
+  isTop: boolean;
+}
+
 /**
- * Auction detail — /subastas/:slug. Shows the card large, the live current
- * bid + countdown, the masked bid history, and the bid box. Public read; the
- * bid action itself asks for sign-in in place (no route guard).
+ * Auction detail — /subastas/:slug, "Live Arena" layout: a dark bidding
+ * console (card art + countdown tiles + current bid + bid box) over the warm
+ * storefront, then the leaderboard-style bid history, seller notes, and a
+ * "Más subastas" rail. Public read; the bid action itself asks for sign-in
+ * in place (no route guard).
  */
 @Component({
   selector: 'app-subasta-detail',
@@ -46,6 +57,8 @@ import type { AuctionBidItem, AuctionListingItem } from '../../core/catalog/cata
     MatSnackBarModule,
     MatTooltipModule,
     Countdown,
+    AuctionCard,
+    PillTabs,
   ],
   templateUrl: './subasta-detail.html',
   styleUrl: './subasta-detail.scss',
@@ -62,7 +75,23 @@ export class SubastaDetail implements OnInit, OnDestroy {
   private readonly snack = inject(MatSnackBar);
   private readonly conditionsDialog = inject(CardConditionsDialogService);
   private readonly pokemon = inject(PokemonService);
+  private readonly settings = inject(AppSettingsService);
   private readonly injector = inject(Injector);
+
+  /** WhatsApp number from app_settings (store number as fallback). */
+  private readonly whatsappNumber = signal<string | null>(null);
+
+  /** "Pedir fotos adicionales" → WhatsApp, same wiring as the product detail
+   *  page (app_settings number, prefilled message with the card reference). */
+  protected readonly whatsappLink = computed(() => {
+    const num = (this.whatsappNumber() ?? '50663452039').replace(/\D/g, '');
+    const a = this.auction();
+    const ref = a?.card_number ? ` ${a.set_name ?? ''} #${a.card_number}`.trimEnd() : '';
+    const text = encodeURIComponent(
+      `Hola, quiero más fotos de ${a?.name ?? 'esta subasta'}${ref}.`,
+    );
+    return `https://wa.me/${num}?text=${text}`;
+  });
 
   protected readonly auction = signal<AuctionListingItem | null>(null);
   protected readonly bidHistory = signal<AuctionBidItem[]>([]);
@@ -76,7 +105,8 @@ export class SubastaDetail implements OnInit, OnDestroy {
   /** The amount typed into the bid box. */
   protected bidAmount: number | null = null;
 
-  /** Card identity line: "Set name, #123/198" (mirrors the product card). */
+  /** Hero mono meta line: "SET · #006/198" (set_name — the listing view
+   *  doesn't carry the set code). */
   protected readonly metaLine = computed(() => {
     const a = this.auction();
     if (!a) return '';
@@ -85,8 +115,45 @@ export class SubastaDetail implements OnInit, OnDestroy {
         ? `#${a.card_number}/${a.set_printed_total}`
         : `#${a.card_number}`
       : '';
-    return [a.set_name ?? '', number].filter((s) => s && s.length > 0).join(', ');
+    return [a.set_name ?? '', number].filter((s) => s && s.length > 0).join(' · ');
   });
+
+  /** History as a leaderboard: ranked by amount (live bids strictly increase,
+   *  so amount order == reverse chronology), crown on rank 1. */
+  protected readonly rankedBids = computed<RankedBid[]>(() =>
+    [...this.bidHistory()]
+      .sort((a, b) => b.amount - a.amount || a.created_at.localeCompare(b.created_at))
+      .map((b, i) => ({ ...b, rank: i + 1, isTop: i === 0 })),
+  );
+
+  /** The current leader (top live bid) — feeds the console's leader chip. */
+  protected readonly topBid = computed<RankedBid | null>(() => this.rankedBids()[0] ?? null);
+
+  // ---- "Más subastas" rail ----
+  protected readonly moreAuctions = signal<AuctionListingItem[]>([]);
+  protected readonly railTab = signal<'activas' | 'finalizadas'>('activas');
+  protected readonly railTabs = computed<TabItem[]>(() => {
+    const rows = this.moreAuctions();
+    return [
+      { key: 'activas', label: 'Activas', count: rows.filter((a) => a.status === 'active').length },
+      {
+        key: 'finalizadas',
+        label: 'Finalizadas',
+        count: rows.filter((a) => a.status !== 'active').length,
+      },
+    ];
+  });
+  /** Up to one row (4 tiles) for the current rail tab. */
+  protected readonly railAuctions = computed(() => {
+    const active = this.railTab() === 'activas';
+    return this.moreAuctions()
+      .filter((a) => (active ? a.status === 'active' : a.status !== 'active'))
+      .slice(0, 4);
+  });
+
+  protected onRailTab(next: string): void {
+    if (next === 'activas' || next === 'finalizadas') this.railTab.set(next);
+  }
 
   protected readonly hasBids = computed(() => (this.auction()?.bid_count ?? 0) > 0);
 
@@ -129,6 +196,16 @@ export class SubastaDetail implements OnInit, OnDestroy {
       this.bidAmount = this.minNextBid();
       this.bidHistory.set(await this.bids.listBids(auction.id));
       this.startLive(auction.id);
+      // Rail data is decorative — never block or fail the page for it.
+      void this.products
+        .listAuctions()
+        .then((all) => this.moreAuctions.set(all.filter((a) => a.id !== auction.id)))
+        .catch(() => {});
+      // Settings only feed the WhatsApp link — a hiccup keeps the fallback number.
+      void this.settings
+        .get()
+        .then((s) => this.whatsappNumber.set(s?.whatsapp_number ?? null))
+        .catch(() => {});
     } catch (err) {
       this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
     } finally {
@@ -268,6 +345,7 @@ export class SubastaDetail implements OnInit, OnDestroy {
           width: '440px',
           maxWidth: '95vw',
           autoFocus: 'first-tabbable',
+          panelClass: 'arena-dialog',
         })
         .afterClosed(),
     );
@@ -282,39 +360,51 @@ export class SubastaDetail implements OnInit, OnDestroy {
             ? '¡Puja registrada! El cierre se extendió unos minutos.'
             : '¡Puja registrada! Vas ganando.',
           'OK',
-          { duration: 4000 },
+          { duration: 4000, panelClass: 'toast-green' },
         );
         await this.refresh();
         this.bidAmount = this.minNextBid();
         return;
       }
+      // Toast copy + tones per the Live Arena handoff (banned uses --danger,
+      // never brand red — see _material-overrides `.toast-*`).
       switch (result.error) {
         case 'BID_TOO_LOW':
           await this.refresh();
           this.bidAmount = result.min_next ?? this.minNextBid();
           this.snack.open(
-            `Alguien pujó primero — la nueva puja mínima es ₡${(result.min_next ?? this.minNextBid()).toLocaleString('es-CR')}.`,
+            `Alguien pujó primero — tu puja no entró. El nuevo mínimo es ₡${(result.min_next ?? this.minNextBid()).toLocaleString('es-CR')}.`,
             'OK',
-            { duration: 5000 },
+            { duration: 5000, panelClass: 'toast-amber' },
           );
           break;
         case 'ALREADY_LEADING':
-          this.snack.open('Ya tenés la puja más alta.', 'OK', { duration: 4000 });
+          this.snack.open('Ya sos la puja más alta — vas ganando.', 'OK', {
+            duration: 4000,
+            panelClass: 'toast-green',
+          });
           break;
         case 'AUCTION_ENDED':
         case 'AUCTION_NOT_ACTIVE':
           await this.refresh();
-          this.snack.open('La subasta ya cerró.', 'OK', { duration: 5000 });
+          this.snack.open(
+            'La subasta acaba de cerrar — ya no se aceptan pujas.',
+            'OK',
+            { duration: 5000, panelClass: 'toast-blue' },
+          );
           break;
         case 'AUCTION_BANNED':
           this.snack.open(
-            'Tu cuenta no puede participar en subastas. Escribinos si creés que es un error.',
+            'Tu cuenta está vetada de subastas. Escribinos si creés que es un error.',
             'OK',
-            { duration: 6000 },
+            { duration: 6000, panelClass: 'toast-danger' },
           );
           break;
         case 'INVALID_AMOUNT':
-          this.snack.open('Monto inválido — usá colones enteros.', 'OK', { duration: 4000 });
+          this.snack.open('Monto inválido — usá colones enteros.', 'OK', {
+            duration: 4000,
+            panelClass: 'toast-amber',
+          });
           break;
         default:
           this.snack.open(`No se pudo registrar la puja (${result.error}).`, 'OK', {

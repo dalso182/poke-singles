@@ -122,3 +122,31 @@ html {
   line-height: 1.5;
   padding: 10px 12px;
 }
+
+// ---- Auction "Live Arena" overlays (Claude Design handoff) ----
+
+// Dark dialog shell for the bid-confirmation modal (/subastas/:slug). The
+// component paints its own dark radial background; the surface just needs the
+// matching frame so no white corners peek out. Overlay-level rule → global.
+.arena-dialog .mat-mdc-dialog-surface {
+  border-radius: 16px;
+  background: #15151a;
+  border: 1px solid #2f2f36;
+  overflow: hidden;
+  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.6);
+}
+
+// Bid-response snackbar tones (outbid=amber, leading=green, closed=blue,
+// banned=danger — NEVER brand red). panelClass lands on the container.
+.mat-mdc-snack-bar-container.toast-amber .mdc-snackbar__surface {
+  border-left: 4px solid var(--accent-amber);
+}
+.mat-mdc-snack-bar-container.toast-green .mdc-snackbar__surface {
+  border-left: 4px solid var(--success);
+}
+.mat-mdc-snack-bar-container.toast-blue .mdc-snackbar__surface {
+  border-left: 4px solid var(--brand-blue);
+}
+.mat-mdc-snack-bar-container.toast-danger .mdc-snackbar__surface {
+  border-left: 4px solid var(--danger);
+}

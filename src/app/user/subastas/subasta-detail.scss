@@ -1,12 +1,20 @@
-// Auction detail page. Breadcrumb kept in lock-step with /subastas.
+// Auction detail — "Live Arena" (Claude Design handoff). One dark hero panel
+// scoped to this page; everything above and below stays on the warm storefront.
+// The dark ramp (#15151A / #23222A / #1B1B20 / #26262C + white-alpha hairlines)
+// is deliberately arena-local — not promoted to brand tokens.
 
+// ---- breadcrumb (mono uppercase per handoff) ----
 .breadcrumb {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 20px;
-  font-size: 13px;
-  color: var(--text-secondary);
+  gap: 8px;
+  padding: 14px 0 10px;
+  margin-bottom: 10px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
 }
 
 .breadcrumb-home {
@@ -16,33 +24,31 @@
   text-decoration: none;
 
   mat-icon {
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
+    font-size: 15px;
+    width: 15px;
+    height: 15px;
   }
+}
+
+.breadcrumb-sep {
+  user-select: none;
+}
+
+.breadcrumb-link {
+  color: var(--text-tertiary);
+  text-decoration: none;
 
   &:hover {
     color: var(--text-primary);
   }
 }
 
-.breadcrumb-sep {
-  color: var(--accent-amber);
-  user-select: none;
-}
-
-.breadcrumb-link {
-  color: var(--accent-amber);
-  text-decoration: none;
-
-  &:hover {
-    text-decoration: underline;
-  }
-}
-
 .breadcrumb-current {
-  color: var(--accent-amber);
-  font-weight: 500;
+  color: var(--text-primary);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .not-found {
@@ -58,239 +64,457 @@
   }
 }
 
-.detail-layout {
-  display: grid;
-  grid-template-columns: minmax(260px, 380px) 1fr;
-  gap: 28px;
-  align-items: start;
-}
+// ================= Dark arena hero =================
 
-@media (max-width: 767px) {
-  .detail-layout {
-    grid-template-columns: 1fr;
+@keyframes arena-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
   }
-
-  .detail-image {
-    max-width: 320px;
-    margin: 0 auto;
+  50% {
+    opacity: 0.35;
+    transform: scale(0.82);
   }
 }
 
-.detail-image {
+@keyframes arena-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(212, 148, 28, 0.34);
+  }
+  50% {
+    box-shadow: 0 0 44px 2px rgba(212, 148, 28, 0.22);
+  }
+}
+
+.arena {
   position: relative;
-  background: var(--surface-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: 10px;
-  padding: 14px;
+  border-radius: 20px;
+  border: 1px solid #2a2a30;
+  overflow: hidden;
+  padding: 34px;
+  background: radial-gradient(120% 140% at 82% 0%, #23222a 0%, #15151a 55%);
+}
+
+.arena__brand-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  // The sanctioned brand-bar gradient (brand red allowed here).
+  background: linear-gradient(90deg, var(--brand-red), var(--accent-amber), var(--brand-red));
+}
+
+.arena__glow {
+  position: absolute;
+  top: -80px;
+  left: 260px;
+  width: 520px;
+  height: 520px;
+  background: radial-gradient(circle, rgba(212, 148, 28, 0.16), transparent 62%);
+  pointer-events: none;
+}
+
+.arena__grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: 318px 1fr;
+  gap: 44px;
+}
+
+// ---- left: card art ----
+.arena__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.arena__card-halo {
+  position: absolute;
+  width: 340px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(232, 98, 44, 0.28), transparent 68%);
+  filter: blur(6px);
+  pointer-events: none;
+}
+
+.arena__card-frame {
+  position: relative;
+  width: 100%;
+  max-width: 300px;
+  aspect-ratio: 63 / 88;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.6);
 
   img {
     width: 100%;
-    height: auto;
+    height: 100%;
+    object-fit: cover;
     display: block;
-    border-radius: 6px;
   }
 }
 
-.auction-badge {
+.arena__card-sheen {
   position: absolute;
-  top: 14px;
-  left: 14px;
-  z-index: 2;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 1.4px;
-  padding: 4px 8px;
-  border-radius: 4px;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 42%, rgba(255, 255, 255, 0.1) 50%, transparent 58%);
+  pointer-events: none;
+}
 
-  &--sold {
-    background: var(--accent-amber);
-    color: #1f2937;
-  }
+.arena__card-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1b1b20;
+  color: rgba(255, 255, 255, 0.3);
+}
 
-  &--void {
-    background: var(--surface-tonal);
-    color: var(--text-secondary);
+// "Pedir fotos adicionales" → WhatsApp (same action as the product detail
+// page), in the arena's dark-ghost button style.
+.arena__wa-btn {
+  position: relative;
+  margin-top: 18px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.9);
+  font-family: var(--font-brand);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.12s, border-color 0.12s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.25);
   }
 }
 
-.detail-info {
+.arena__wa-icon {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+}
+
+// ---- right: console ----
+.arena__console {
   display: flex;
   flex-direction: column;
-  gap: 12px;
   min-width: 0;
 }
 
-.detail-name {
-  font-family: var(--font-brand);
-  font-size: 28px;
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  color: var(--text-primary);
-  line-height: 1.2;
-  margin: 0;
-}
-
-.detail-meta {
+.arena__status-row {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  color: var(--text-secondary);
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
-// ---- Live state (active auctions) ----
+// EN VIVO pulse pill — AMBER family (brand red stays restricted; user call).
+.live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px 5px 9px;
+  border-radius: 999px;
+  background: rgba(212, 148, 28, 0.14);
+  border: 1px solid rgba(212, 148, 28, 0.45);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1.4px;
+  font-weight: 700;
+  color: #f6e7c4;
+}
 
-.bid-state {
-  background: var(--surface-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: 10px;
-  padding: 16px 18px;
+.live-pill__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--accent-amber);
+  box-shadow: 0 0 8px var(--accent-amber);
+  animation: arena-pulse 1.4s ease-in-out infinite;
+}
+
+.closed-pill {
+  display: inline-flex;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1.4px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.arena__meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+// Dark-surface variant of the shared condition pill (tone colors keep their
+// traffic-light meaning from _brand-utilities).
+.arena__condition {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.arena__title {
+  margin: 14px 0 0;
+  font-family: var(--font-brand);
+  font-size: 38px;
+  font-weight: 800;
+  letter-spacing: -1.2px;
+  line-height: 1.02;
+  color: #fff;
+}
+
+.arena__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+
+  mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    color: var(--accent-amber);
+  }
+}
+
+// ---- countdown block ----
+.arena__countdown {
+  margin-top: 22px;
+  padding: 18px 20px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.arena__countdown-head {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
 }
 
-.bid-current {
+.arena__closes-at {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.arena__snipe {
+  margin-top: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  color: rgba(246, 231, 196, 0.85);
+
+  mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    color: var(--accent-amber);
+  }
+}
+
+// ---- current bid ----
+.arena__bid-row {
+  margin-top: 18px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.arena__amount-line {
   display: flex;
   align-items: baseline;
   gap: 10px;
-  flex-wrap: wrap;
-
-  &__label {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.6px;
-    text-transform: uppercase;
-    color: var(--text-tertiary);
-  }
-
-  &__amount {
-    font-family: var(--font-brand);
-    font-size: 32px;
-    font-weight: 800;
-    letter-spacing: -1px;
-    color: var(--text-primary);
-  }
-
-  &__count {
-    font-size: 13px;
-    color: var(--text-secondary);
-  }
 }
 
-.bid-close {
+.arena__amount {
+  font-family: var(--font-brand);
+  font-size: 52px;
+  font-weight: 800;
+  letter-spacing: -2px;
+  line-height: 1;
+  color: var(--accent-amber);
+  text-shadow: 0 0 30px rgba(212, 148, 28, 0.25);
+  font-variant-numeric: tabular-nums;
+}
+
+.arena__count {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.leader-chip {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  flex-wrap: wrap;
-
-  mat-icon {
-    font-size: 18px;
-    width: 18px;
-    height: 18px;
-    color: var(--accent-amber);
-  }
+  gap: 9px;
+  padding: 7px 12px 7px 8px;
+  border-radius: 999px;
+  background: rgba(212, 148, 28, 0.1);
+  border: 1px solid rgba(212, 148, 28, 0.28);
 }
 
-.detail-countdown {
+.leader-chip__avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid var(--accent-amber);
   display: inline-flex;
   align-items: center;
-  padding: 2px 10px;
-  border-radius: 999px;
-  background: var(--surface-tonal);
-  color: var(--text-secondary);
-  font-family: var(--font-mono);
-  font-size: 14px;
+  justify-content: center;
+  font-size: 12px;
   font-weight: 700;
+  color: var(--text-primary);
+  flex: 0 0 auto;
 
-  &.is-soon {
-    background: color-mix(in srgb, var(--accent-amber) 18%, transparent);
-    color: var(--accent-amber);
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 }
 
-.anti-snipe-note {
+.leader-chip__text {
+  line-height: 1.15;
+}
+
+.leader-chip__name {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.leader-chip__state {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(246, 231, 196, 0.75);
+}
+
+.tu-tag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #0f0f12;
+  background: var(--accent-amber);
+  padding: 1px 5px;
+  border-radius: 4px;
+  vertical-align: 1px;
+
+  // On cream surfaces the tag flips to brand blue (Option B treatment).
+  &--light {
+    color: #fff;
+    background: var(--brand-blue);
+  }
+}
+
+// ---- bid box ----
+.bid-box {
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(212, 148, 28, 0.22);
+  animation: arena-glow 3s ease-in-out infinite;
+}
+
+.bid-box__head {
   display: flex;
   align-items: center;
-  gap: 5px;
-  margin: 0;
-  font-size: 12px;
-  color: var(--text-tertiary);
-
-  mat-icon {
-    font-size: 15px;
-    width: 15px;
-    height: 15px;
-    color: var(--accent-amber);
-  }
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
 }
 
-// ---- Bid box ----
+.bid-box__hint {
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.75);
+}
 
-.bid-box {
-  background: var(--surface-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: 10px;
-  padding: 14px 18px;
+.bid-box__min {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: #f6e7c4;
+}
+
+.bid-box__incr {
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 400;
+}
+
+.bid-box__row {
   display: flex;
-  flex-direction: column;
   gap: 10px;
-
-  &__hint {
-    font-size: 13px;
-    color: var(--text-secondary);
-
-    strong {
-      color: var(--text-primary);
-    }
-  }
-
-  &__increment {
-    color: var(--text-tertiary);
-    font-size: 12px;
-  }
-
-  &__row {
-    display: flex;
-    align-items: stretch;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
 }
 
 .bid-input {
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: 4px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 6px;
-  padding: 0 8px;
-  background: var(--surface-card);
+  height: 52px;
+  border-radius: 10px;
+  background: #0f0f12;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 0 6px 0 16px;
+  min-width: 0;
 
   &__currency {
     font-family: var(--font-brand);
+    font-size: 22px;
     font-weight: 700;
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.5);
   }
 
   input {
-    width: 130px;
+    flex: 1;
+    min-width: 0;
+    background: transparent;
     border: none;
     outline: none;
-    background: transparent;
-    font-family: var(--font-mono);
-    font-size: 16px;
+    font-family: var(--font-brand);
+    font-size: 22px;
     font-weight: 700;
-    color: var(--text-primary);
-    padding: 8px 0;
+    color: #fff;
+    padding: 0 6px;
+    font-variant-numeric: tabular-nums;
 
-    // Hide the number spinners — the +increment button is the stepper here.
     &::-webkit-outer-spin-button,
     &::-webkit-inner-spin-button {
       appearance: none;
@@ -300,204 +524,456 @@
   }
 
   &__bump {
-    border: none;
-    background: var(--surface-tonal);
-    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    height: 34px;
+    padding: 0 12px;
+    border-radius: 7px;
+    background: rgba(212, 148, 28, 0.1);
+    border: 1px solid rgba(212, 148, 28, 0.32);
+    color: #f6e7c4;
     font-family: var(--font-mono);
     font-size: 12px;
-    font-weight: 700;
-    padding: 4px 8px;
-    border-radius: 4px;
+    font-weight: 600;
     cursor: pointer;
+    transition: background 0.12s, border-color 0.12s;
 
     &:hover {
-      color: var(--text-primary);
+      background: rgba(212, 148, 28, 0.16);
+      border-color: rgba(212, 148, 28, 0.5);
     }
   }
 }
 
+// Amber-on-dark primary — arena-scoped variant of the primary button.
 .bid-btn {
-  mat-icon {
-    margin-right: 4px;
-  }
-}
-
-.bidding-closed-note {
-  margin: 0;
-  font-size: 14px;
-  color: var(--text-secondary);
-}
-
-.detail-notes {
-  margin: 0;
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--text-secondary);
-  white-space: pre-line;
-}
-
-// ---- Ended / void ----
-
-.winner-banner {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: color-mix(in srgb, var(--accent-amber) 10%, transparent);
-  border: 1px solid color-mix(in srgb, var(--accent-amber) 35%, transparent);
+  height: 52px;
+  padding: 0 26px;
   border-radius: 10px;
-  padding: 14px 18px;
+  border: none;
+  background: linear-gradient(180deg, #e7a928, var(--accent-amber));
+  color: #1a1206;
+  font-family: var(--font-brand);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  transition: transform 0.1s, filter 0.15s, box-shadow 0.15s;
 
   mat-icon {
-    color: var(--accent-amber);
-    font-size: 30px;
-    width: 30px;
-    height: 30px;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
   }
 
-  .winner-line {
-    font-size: 15px;
-    color: var(--text-primary);
-
-    strong {
-      color: var(--accent-amber);
-    }
+  &:hover:not(:disabled) {
+    filter: brightness(1.06);
+    box-shadow: 0 8px 24px -6px rgba(212, 148, 28, 0.55);
   }
 
-  .winner-amount {
-    font-family: var(--font-brand);
-    font-size: 26px;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-    color: var(--text-primary);
+  &:active:not(:disabled) {
+    transform: translateY(1px);
   }
 
-  .winner-date {
-    font-size: 12px;
-    color: var(--text-tertiary);
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
   }
+}
+
+.bid-box__terms {
+  margin-top: 11px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+  line-height: 1.5;
+}
+
+.arena__closed-note {
+  margin: 18px 0 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+// ---- ended / void console ----
+.arena__result {
+  margin-top: 22px;
+}
+
+.arena__final-amount {
+  font-family: var(--font-brand);
+  font-size: 44px;
+  font-weight: 800;
+  letter-spacing: -1.6px;
+  line-height: 1.1;
+  color: var(--accent-amber);
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
 
   &--void {
-    background: var(--surface-tonal);
-    border-color: var(--border-subtle);
-    color: var(--text-secondary);
-
-    mat-icon {
-      color: var(--text-tertiary);
-    }
+    color: rgba(255, 255, 255, 0.5);
   }
 }
 
-// ---- Bid history ----
-
-.bid-history {
-  margin-top: 32px;
-
-  h2 {
-    font-family: var(--font-brand);
-    font-size: 20px;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-    color: var(--text-primary);
-    margin: 0 0 12px;
-  }
-
-  &__empty {
-    color: var(--text-secondary);
-    font-size: 14px;
-  }
+.winner-chip {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 6px;
+  border-radius: 999px;
+  background: rgba(30, 58, 138, 0.2);
+  border: 1px solid rgba(157, 182, 239, 0.3);
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
 }
 
-.bid-list {
+.winner-chip__disc {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.winner-chip__crown {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  color: #9db6ef;
+}
+
+.arena__closed-at {
+  margin-top: 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.arena__void-note {
+  margin-top: 10px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+// ================= Below the arena (cream) =================
+
+.section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.section-title {
+  font-family: var(--font-brand);
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.section-live {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.below-grid {
+  margin-top: 30px;
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+// ---- leaderboard ----
+.leaderboard {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  max-width: 560px;
+  gap: 8px;
 }
 
-.bid-row {
+.lb-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
+  padding: 13px 16px;
+  border-radius: 12px;
   background: var(--surface-card);
   border: 1px solid var(--border-subtle);
-  border-radius: 8px;
-  padding: 8px 12px;
 
   &--top {
-    border-color: color-mix(in srgb, var(--accent-amber) 45%, transparent);
+    background: var(--accent-amber-soft);
+    border-color: var(--amber-edge);
   }
 
-  &--mine {
-    background: color-mix(in srgb, var(--accent-amber) 6%, var(--surface-card));
+  &--mine:not(&--top) {
+    background: color-mix(in srgb, var(--accent-amber) 5%, var(--surface-card));
+  }
+
+  &--invite {
+    background: transparent;
+    border: 1.5px dashed var(--border-strong);
+    color: var(--text-tertiary);
   }
 }
 
-.bid-avatar {
+.lb-rank {
+  width: 22px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  display: inline-flex;
+  justify-content: center;
   flex: 0 0 auto;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+}
+
+.lb-crown {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  color: var(--accent-amber);
+}
+
+.lb-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
   overflow: hidden;
-  // White plate so transparent Pokémon portraits read inside the circle.
   background: #fff;
   border: 1px solid var(--border-subtle);
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  flex: 0 0 auto;
 
   img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    display: block;
   }
 
-  mat-icon {
-    font-size: 20px;
-    width: 20px;
-    height: 20px;
+  &--empty {
+    background: var(--surface-tonal);
+    border-style: dashed;
+    border-color: var(--border-strong);
     color: var(--text-tertiary);
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
   }
 }
 
-.bid-name {
+.lb-row--top .lb-avatar {
+  border-color: var(--accent-amber);
+}
+
+.lb-who {
   flex: 1;
   min-width: 0;
+}
+
+.lb-name {
+  display: block;
   font-size: 14px;
+  font-weight: 700;
   color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.bid-mine-tag {
+.lb-time {
+  display: block;
   font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
-  color: var(--accent-amber);
-  margin-left: 4px;
+  font-size: 10.5px;
+  letter-spacing: 0.5px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
 }
 
-.bid-amount {
-  font-family: var(--font-mono);
+.lb-amount {
+  font-family: var(--font-brand);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+
+  &--top {
+    color: var(--amber-text);
+  }
+}
+
+.lb-invite-text {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.lb-invite-min {
+  font-family: var(--font-brand);
   font-size: 14px;
   font-weight: 700;
-  color: var(--text-primary);
-}
-
-.bid-time {
-  font-size: 12px;
   color: var(--text-tertiary);
+  white-space: nowrap;
 }
 
-.bid-top-icon {
-  font-size: 18px;
-  width: 18px;
-  height: 18px;
-  color: var(--accent-amber);
+// ---- right rail ----
+.side-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.notes-card {
+  padding: 18px;
+  border-radius: 12px;
+  background: var(--surface-tonal);
+  border: 1px solid var(--border-subtle);
+
+  &__label {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin-bottom: 7px;
+  }
+
+  &__body {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    white-space: pre-line;
+  }
+}
+
+.info-card {
+  padding: 18px;
+  border-radius: 12px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 8px;
+    font-size: 13.5px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+    color: var(--text-primary);
+
+    mat-icon {
+      font-size: 17px;
+      width: 17px;
+      height: 17px;
+      color: var(--brand-blue);
+    }
+  }
+
+  p {
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    line-height: 1.55;
+  }
+}
+
+// ---- Más subastas rail ----
+.more {
+  margin-top: 34px;
+}
+
+.more__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.more__empty {
+  color: var(--text-secondary);
+  font-size: 13px;
+  padding: 16px 0;
+}
+
+// ================= Responsive =================
+
+@media (max-width: 959.98px) {
+  .arena {
+    padding: 24px;
+  }
+
+  .arena__grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .arena__card-frame {
+    max-width: 260px;
+  }
+
+  .below-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .more__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 599.98px) {
+  .arena {
+    padding: 18px;
+  }
+
+  .arena__title {
+    font-size: 28px;
+  }
+
+  .arena__amount {
+    font-size: 40px;
+  }
+
+  .bid-box__row {
+    flex-direction: column;
+  }
+
+  .bid-btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .more__grid {
+    grid-template-columns: 1fr;
+  }
 }

@@ -21,29 +21,51 @@
 }
 
 @if (auction(); as a) {
-  <div class="detail-layout">
-    <div class="detail-image">
-      @if (a.image_url) {
-        <img [src]="a.image_url" [alt]="a.name" />
-      }
-      @if (a.status === 'ended') {
-        <span class="auction-badge auction-badge--sold">VENDIDA</span>
-      } @else if (a.status === 'void') {
-        <span class="auction-badge auction-badge--void">FINALIZADA</span>
-      }
-    </div>
+  <!-- ============ Dark "arena" hero ============ -->
+  <section class="arena">
+    <span class="arena__brand-bar" aria-hidden="true"></span>
+    <span class="arena__glow" aria-hidden="true"></span>
 
-    <div class="detail-info">
-      <h1 class="detail-name">{{ a.name }}</h1>
-      @if (metaLine() || a.condition) {
-        <div class="detail-meta">
+    <div class="arena__grid">
+      <!-- Left: card art -->
+      <div class="arena__card">
+        <div class="arena__card-halo" aria-hidden="true"></div>
+        <div class="arena__card-frame">
+          @if (a.image_url) {
+            <img [src]="a.image_url" [alt]="a.name" />
+            <span class="arena__card-sheen" aria-hidden="true"></span>
+          } @else {
+            <div class="arena__card-fallback">
+              <mat-icon>image_not_supported</mat-icon>
+            </div>
+          }
+        </div>
+        <a class="arena__wa-btn" [href]="whatsappLink()" target="_blank" rel="noopener">
+          <img class="arena__wa-icon" src="assets/images/whatsapp-icon.png" alt="" aria-hidden="true" />
+          Pedir fotos adicionales
+        </a>
+      </div>
+
+      <!-- Right: the console -->
+      <div class="arena__console">
+        <div class="arena__status-row">
+          @if (isActive()) {
+            <span class="live-pill">
+              <span class="live-pill__dot" aria-hidden="true"></span>
+              EN VIVO
+            </span>
+          } @else if (a.status === 'ended') {
+            <span class="closed-pill">FINALIZADA</span>
+          } @else {
+            <span class="closed-pill">SIN PUJAS</span>
+          }
           @if (metaLine()) {
-            <span>{{ metaLine() }}</span>
+            <span class="arena__meta">{{ metaLine() }}</span>
           }
           @if (a.condition) {
             <button
               type="button"
-              [class]="conditionClass(a.condition) + ' condition-pill--btn'"
+              [class]="conditionClass(a.condition) + ' condition-pill--btn arena__condition'"
               (click)="openConditionsInfo($event)"
               matTooltip="Ver guía de condiciones"
               aria-label="Ver guía de condiciones"
@@ -52,156 +74,266 @@
             </button>
           }
         </div>
-      }
 
-      @switch (a.status) {
-        @case ('ended') {
-          <div class="winner-banner">
-            <mat-icon>emoji_events</mat-icon>
-            <div>
-              <div class="winner-line">
-                Ganador: <strong>{{ a.winner_masked || 'Anónimo' }}</strong>
-              </div>
-              @if (a.current_bid != null) {
-                <div class="winner-amount">₡{{ a.current_bid! | number: '1.0-0' }}</div>
+        <h1 class="arena__title">{{ a.name }}</h1>
+
+        @switch (a.status) {
+          @case ('ended') {
+            <!-- Collapsed console: final price + winner -->
+            <div class="arena__result">
+              <div class="arena__label">Precio final</div>
+              <div class="arena__final-amount">₡{{ (a.current_bid ?? a.starting_price) | number: '1.0-0' }}</div>
+              @if (a.winner_masked) {
+                <span class="winner-chip">
+                  <span class="winner-chip__disc">{{ a.winner_masked.charAt(0) }}</span>
+                  Ganó {{ a.winner_masked }}
+                  <mat-icon class="winner-chip__crown">emoji_events</mat-icon>
+                </span>
               }
               @if (a.closed_at) {
-                <div class="winner-date">Cerrada el {{ a.closed_at | date: 'd/MM/yyyy, HH:mm' }}</div>
+                <div class="arena__closed-at">Cerró · {{ a.closed_at | date: 'd/MM, HH:mm' }}</div>
               }
             </div>
-          </div>
-        }
-        @case ('void') {
-          <div class="winner-banner winner-banner--void">
-            <mat-icon>do_not_disturb</mat-icon>
-            <span>Subasta finalizada · sin pujas</span>
-          </div>
-        }
-        @default {
-          <div class="bid-state">
-            <div class="bid-current">
-              <span class="bid-current__label">{{ hasBids() ? 'Puja actual' : 'Puja inicial' }}</span>
-              <span class="bid-current__amount">₡{{ (a.current_bid ?? a.starting_price) | number: '1.0-0' }}</span>
-              <span class="bid-current__count">
-                {{ a.bid_count }} {{ a.bid_count === 1 ? 'puja' : 'pujas' }}
-              </span>
+          }
+          @case ('void') {
+            <div class="arena__result">
+              <div class="arena__label">Precio inicial</div>
+              <div class="arena__final-amount arena__final-amount--void">
+                ₡{{ a.starting_price | number: '1.0-0' }}
+              </div>
+              <div class="arena__void-note">Nadie pujó antes del cierre. No hay ganador.</div>
             </div>
-
-            <div class="bid-close">
-              <mat-icon>schedule</mat-icon>
-              @if (a.ends_at) {
-                <span>Cierra: {{ a.ends_at | date: 'd/MM/yyyy, HH:mm' }}</span>
-                <app-countdown
-                  class="detail-countdown"
-                  [endsAt]="a.ends_at"
-                  (finished)="onCountdownFinished()"
-                />
-              } @else {
-                <span>Fecha de cierre por definir</span>
-              }
-            </div>
-
-            @if ((a.anti_snipe_minutes ?? 0) > 0) {
-              <p class="anti-snipe-note">
-                <mat-icon>bolt</mat-icon>
-                Una puja en los últimos {{ a.anti_snipe_minutes }} min extiende el
-                cierre {{ a.anti_snipe_minutes }} min.
-              </p>
-            }
-          </div>
-
-          @if (biddingOpen()) {
-            <div class="bid-box">
-              <div class="bid-box__hint">
-                Próxima puja mínima:
-                <strong>₡{{ minNextBid() | number: '1.0-0' }}</strong>
-                @if (hasBids()) {
-                  <span class="bid-box__increment">(incremento ₡{{ a.min_increment | number: '1.0-0' }})</span>
+          }
+          @default {
+            <!-- Countdown block -->
+            <div class="arena__countdown">
+              <div class="arena__countdown-head">
+                <span class="arena__label"><mat-icon>schedule</mat-icon> Cierra en</span>
+                @if (a.ends_at) {
+                  <span class="arena__closes-at">{{ a.ends_at | date: 'd/MM HH:mm' }}</span>
                 }
               </div>
-              <div class="bid-box__row">
-                <div class="bid-input">
-                  <span class="bid-input__currency">₡</span>
-                  <input
-                    type="number"
-                    [min]="minNextBid()"
-                    [step]="a.min_increment ?? 1"
-                    [(ngModel)]="bidAmount"
-                    aria-label="Monto de la puja"
-                  />
+              <app-countdown
+                variant="tiles"
+                [endsAt]="a.ends_at"
+                (finished)="onCountdownFinished()"
+              />
+              @if (a.ends_at && (a.anti_snipe_minutes ?? 0) > 0) {
+                <div class="arena__snipe">
+                  <mat-icon>bolt</mat-icon>
+                  Una puja en los últimos {{ a.anti_snipe_minutes }} min extiende el cierre
+                  {{ a.anti_snipe_minutes }} min.
+                </div>
+              }
+            </div>
+
+            <!-- Current bid + leader chip -->
+            <div class="arena__bid-row">
+              <div>
+                <div class="arena__label">{{ hasBids() ? 'Puja actual' : 'Precio inicial' }}</div>
+                <div class="arena__amount-line">
+                  <span class="arena__amount">₡{{ (a.current_bid ?? a.starting_price) | number: '1.0-0' }}</span>
+                  <span class="arena__count">{{ a.bid_count }} puja{{ a.bid_count === 1 ? '' : 's' }}</span>
+                </div>
+              </div>
+              @if (hasBids() && topBid(); as top) {
+                <span class="leader-chip">
+                  <span class="leader-chip__avatar">
+                    @if (avatarUrl(top.avatar_pokemon_number); as url) {
+                      <img [src]="url" alt="" loading="lazy" />
+                    } @else {
+                      {{ top.bidder_masked.charAt(0) }}
+                    }
+                  </span>
+                  <span class="leader-chip__text">
+                    <span class="leader-chip__name">
+                      {{ top.bidder_masked }}
+                      @if (top.is_mine) {
+                        <span class="tu-tag">TÚ</span>
+                      }
+                    </span>
+                    <span class="leader-chip__state">va ganando</span>
+                  </span>
+                </span>
+              }
+            </div>
+
+            <!-- Bid box -->
+            @if (biddingOpen()) {
+              <div class="bid-box">
+                <div class="bid-box__head">
+                  <span class="bid-box__hint">Próxima puja mínima</span>
+                  <span class="bid-box__min">
+                    ₡{{ minNextBid() | number: '1.0-0' }}
+                    <span class="bid-box__incr">· incremento ₡{{ a.min_increment | number: '1.0-0' }}</span>
+                  </span>
+                </div>
+                <div class="bid-box__row">
+                  <div class="bid-input">
+                    <span class="bid-input__currency">₡</span>
+                    <input
+                      type="number"
+                      [min]="minNextBid()"
+                      [step]="a.min_increment ?? 1"
+                      [(ngModel)]="bidAmount"
+                      aria-label="Monto de la puja"
+                    />
+                    <button
+                      type="button"
+                      class="bid-input__bump"
+                      (click)="bumpBid()"
+                      matTooltip="Sumar un incremento"
+                    >
+                      +{{ a.min_increment | number: '1.0-0' }}
+                    </button>
+                  </div>
                   <button
+                    class="bid-btn"
                     type="button"
-                    class="bid-input__bump"
-                    (click)="bumpBid()"
-                    matTooltip="Sumar un incremento"
+                    [disabled]="placing()"
+                    (click)="onBid()"
                   >
-                    +₡{{ a.min_increment | number: '1.0-0' }}
+                    <mat-icon>gavel</mat-icon>
+                    {{ placing() ? 'Pujando…' : 'Pujar' }}
                   </button>
                 </div>
-                <button
-                  mat-flat-button
-                  class="bid-btn"
-                  type="button"
-                  [disabled]="placing()"
-                  (click)="onBid()"
-                >
-                  <mat-icon>gavel</mat-icon>
-                  {{ placing() ? 'Pujando…' : 'Pujar' }}
-                </button>
+                <div class="bid-box__terms">
+                  Al pujar te comprometés a pagar si ganás. Se pedirá una confirmación.
+                </div>
               </div>
-            </div>
-          } @else if (a.status === 'active') {
-            <p class="bidding-closed-note">
-              @if (a.ends_at) {
-                La subasta cerró — confirmando el resultado…
-              } @else {
-                La fecha de cierre aún no está definida; pronto se abrirán las pujas.
-              }
-            </p>
-          }
-
-          @if (a.notes) {
-            <p class="detail-notes">{{ a.notes }}</p>
+            } @else {
+              <p class="arena__closed-note">
+                @if (a.ends_at) {
+                  La subasta cerró — confirmando el resultado…
+                } @else {
+                  La fecha de cierre aún no está definida; pronto se abrirán las pujas.
+                }
+              </p>
+            }
           }
         }
-      }
+      </div>
     </div>
-  </div>
+  </section>
 
-  <section class="bid-history">
-    <h2>Historial de pujas</h2>
-    @if (bidHistory().length === 0) {
-      <p class="bid-history__empty">
-        Todavía no hay pujas.
-        @if (biddingOpen()) {
-          ¡Sé la primera persona en pujar!
-        }
-      </p>
-    } @else {
-      <ol class="bid-list">
-        @for (bid of bidHistory(); track bid.id; let first = $first) {
-          <li class="bid-row" [class.bid-row--top]="first" [class.bid-row--mine]="bid.is_mine">
-            <span class="bid-avatar">
+  <!-- ============ 01 — Historial + right rail ============ -->
+  <div class="below-grid">
+    <section class="history">
+      <div class="section-head">
+        <h2 class="section-title">Historial de pujas</h2>
+        <span class="section-live">Se actualiza en vivo</span>
+      </div>
+
+      <ol class="leaderboard">
+        @for (bid of rankedBids(); track bid.id) {
+          <li class="lb-row" [class.lb-row--top]="bid.isTop" [class.lb-row--mine]="bid.is_mine">
+            <span class="lb-rank">
+              @if (bid.isTop) {
+                <mat-icon class="lb-crown">emoji_events</mat-icon>
+              } @else {
+                {{ bid.rank }}
+              }
+            </span>
+            <span class="lb-avatar">
               @if (avatarUrl(bid.avatar_pokemon_number); as url) {
                 <img [src]="url" alt="" loading="lazy" />
               } @else {
-                <mat-icon>person</mat-icon>
+                {{ bid.bidder_masked.charAt(0) }}
               }
             </span>
-            <span class="bid-name">
-              {{ bid.bidder_masked }}
-              @if (bid.is_mine) {
-                <span class="bid-mine-tag">tú</span>
+            <span class="lb-who">
+              <span class="lb-name">
+                {{ bid.bidder_masked }}
+                @if (bid.is_mine) {
+                  <span class="tu-tag tu-tag--light">TÚ</span>
+                }
+              </span>
+              <span class="lb-time">
+                {{ bid.created_at | date: 'd/MM, HH:mm' }}@if (bid.isTop) {<span> · puja más alta</span>}
+              </span>
+            </span>
+            <span class="lb-amount" [class.lb-amount--top]="bid.isTop">
+              ₡{{ bid.amount | number: '1.0-0' }}
+            </span>
+          </li>
+        }
+
+        @if (biddingOpen()) {
+          <li class="lb-row lb-row--invite">
+            <span class="lb-rank">{{ rankedBids().length + 1 }}</span>
+            <span class="lb-avatar lb-avatar--empty"><mat-icon>gavel</mat-icon></span>
+            <span class="lb-invite-text">
+              @if (hasBids()) {
+                Este lugar está libre — superá ₡{{ (auction()!.current_bid ?? 0) | number: '1.0-0' }} para tomar la delantera.
+              } @else {
+                Nadie ha pujado todavía — sé la primera persona en pujar.
               }
             </span>
-            <span class="bid-amount">₡{{ bid.amount | number: '1.0-0' }}</span>
-            <span class="bid-time">{{ bid.created_at | date: 'd/MM, HH:mm' }}</span>
-            @if (first) {
-              <mat-icon class="bid-top-icon" matTooltip="Puja más alta">emoji_events</mat-icon>
-            }
+            <span class="lb-invite-min">≥ ₡{{ minNextBid() | number: '1.0-0' }}</span>
+          </li>
+        } @else if (rankedBids().length === 0) {
+          <li class="lb-row lb-row--invite">
+            <span class="lb-avatar lb-avatar--empty"><mat-icon>gavel</mat-icon></span>
+            <span class="lb-invite-text">Esta subasta cerró sin pujas.</span>
           </li>
         }
       </ol>
-    }
-  </section>
+    </section>
+
+    <aside class="side-rail">
+      @if (auction()!.notes) {
+        <div class="notes-card">
+          <div class="notes-card__label">Notas del vendedor</div>
+          <p class="notes-card__body">{{ auction()!.notes }}</p>
+        </div>
+      }
+      @if ((auction()!.anti_snipe_minutes ?? 0) > 0) {
+        <div class="info-card">
+          <div class="info-card__head">
+            <mat-icon>bolt</mat-icon>
+            <span>Anti-sniping activo</span>
+          </div>
+          <p>
+            Toda puja en los últimos {{ auction()!.anti_snipe_minutes }} minutos empuja el
+            cierre {{ auction()!.anti_snipe_minutes }} minutos. Nadie roba el martillo al final.
+          </p>
+        </div>
+      }
+      <div class="info-card">
+        <div class="info-card__head">
+          <mat-icon>verified_user</mat-icon>
+          <span>Compromiso de pago</span>
+        </div>
+        <p>
+          Si ganás recibís una orden de pago por correo. No pagar puede vetarte de futuras
+          subastas.
+        </p>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ============ 02 — Más subastas ============ -->
+  @if (moreAuctions().length > 0) {
+    <section class="more">
+      <div class="section-head">
+        <h2 class="section-title">Más subastas</h2>
+        <app-pill-tabs [tabs]="railTabs()" [value]="railTab()" (valueChange)="onRailTab($event)" />
+      </div>
+      @if (railAuctions().length > 0) {
+        <div class="more__grid">
+          @for (item of railAuctions(); track item.id) {
+            <app-auction-card [auction]="item" />
+          }
+        </div>
+      } @else {
+        <p class="more__empty">
+          @if (railTab() === 'activas') {
+            No hay otras subastas activas ahora mismo.
+          } @else {
+            Todavía no hay subastas finalizadas.
+          }
+        </p>
+      }
+    </section>
+  }
 }

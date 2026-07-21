@@ -1,96 +1,74 @@
-<div
-  class="auction-card"
-  [class.auction-card--done]="auction().status !== 'active'"
+<a
+  class="tile"
+  [class.tile--done]="auction().status !== 'active'"
+  [routerLink]="['/subastas', auction().slug]"
 >
-  <a class="card-image" [routerLink]="['/subastas', auction().slug]">
+  <div class="tile__art">
     @if (auction().image_url) {
       <img [src]="auction().image_url" [alt]="auction().name" loading="lazy" />
-    }
-    @if (auction().status === 'ended') {
-      <span class="auction-badge auction-badge--sold">VENDIDA</span>
-    } @else if (auction().status === 'void') {
-      <span class="auction-badge auction-badge--void">FINALIZADA</span>
-    }
-  </a>
-
-  <div class="card-info">
-    <a class="card-name" [routerLink]="['/subastas', auction().slug]">{{ auction().name }}</a>
-    @if (metaLine() || auction().condition) {
-      <div class="card-meta">
-        @if (metaLine()) {
-          <span>{{ metaLine() }}</span>
-        }
-        @if (auction().condition) {
-          <button
-            type="button"
-            [class]="conditionClass(auction().condition) + ' condition-pill--btn'"
-            (click)="openConditionsInfo($event)"
-            matTooltip="Ver guía de condiciones"
-            aria-label="Ver guía de condiciones"
-          >
-            {{ auction().condition }}
-          </button>
-        }
+    } @else {
+      <div class="tile__art-fallback">
+        <mat-icon>image_not_supported</mat-icon>
       </div>
     }
+    <span class="tile__sheen" aria-hidden="true"></span>
+    <span class="tile__status">
+      <app-pill [tone]="statusTone()" [dot]="auction().status === 'active'">
+        {{ statusLabel() }}
+      </app-pill>
+    </span>
+  </div>
 
-    @switch (auction().status) {
-      @case ('ended') {
-        <div class="auction-winner">
-          <mat-icon>emoji_events</mat-icon>
-          <span>Ganador: <strong>{{ auction().winner_masked || 'Anónimo' }}</strong></span>
-        </div>
-        @if (auction().current_bid != null) {
-          <div class="card-price">
-            ₡{{ auction().current_bid! | number: '1.0-0' }}
-            <span class="price-unit">puja ganadora</span>
-          </div>
-        }
-        @if (auction().closed_at) {
-          <div class="auction-date">
-            <mat-icon>event_available</mat-icon>
-            <span>Cerrada el {{ auction().closed_at | date: 'd/MM/yyyy' }}</span>
-          </div>
-        }
-      }
-      @case ('void') {
-        <div class="auction-winner auction-winner--void">
-          <mat-icon>do_not_disturb</mat-icon>
-          <span>Subasta finalizada · sin pujas</span>
-        </div>
-      }
-      @default {
-        <div class="auction-date">
-          <mat-icon>schedule</mat-icon>
-          @if (auction().ends_at) {
-            <span>Cierra: {{ auction().ends_at | date: 'd/MM/yyyy, HH:mm' }}</span>
-            <app-countdown class="auction-countdown" [endsAt]="auction().ends_at" />
-          } @else {
-            <span>Fecha por definir</span>
-          }
-        </div>
-
-        <div class="card-price">
-          ₡{{ displayAmount() | number: '1.0-0' }}
-          <span class="price-unit">{{ hasBids() ? 'puja actual' : 'puja inicial' }}</span>
-        </div>
-
-        <div class="auction-bids">
-          <mat-icon>gavel</mat-icon>
-          <span>{{ auction().bid_count }} {{ auction().bid_count === 1 ? 'puja' : 'pujas' }}</span>
-        </div>
-
-        @if (auction().notes) {
-          <p class="auction-notes">{{ auction().notes }}</p>
-        }
-      }
+  <div class="tile__body">
+    @if (metaLine()) {
+      <div class="tile__meta">{{ metaLine() }}</div>
     }
+    <div class="tile__name">{{ auction().name }}</div>
 
-    <div class="auction-actions">
-      <a class="view-btn" [routerLink]="['/subastas', auction().slug]">
-        {{ auction().status === 'active' ? 'Ver y pujar' : 'Ver subasta' }}
-        <mat-icon>arrow_forward</mat-icon>
-      </a>
+    <div class="tile__price-row">
+      <div>
+        <div class="tile__price-label">{{ priceLabel() }}</div>
+        <div
+          class="tile__price"
+          [class.tile__price--void]="auction().status === 'void'"
+          [class.tile__price--live]="auction().status === 'active' && hasBids()"
+        >
+          ₡{{ displayAmount() | number: '1.0-0' }}
+        </div>
+      </div>
+
+      @if (auction().status === 'active' && hasBids()) {
+        <span class="tile__count">{{ auction().bid_count }} puja{{ auction().bid_count === 1 ? '' : 's' }}</span>
+      } @else if (auction().status === 'active') {
+        <span class="tile__first">Sé el primero →</span>
+      } @else if (auction().status === 'ended' && auction().winner_masked) {
+        <span class="tile__winner">
+          <span class="tile__winner-disc" [style.background]="'oklch(0.9 0.06 ' + winnerHue() + ')'">
+            {{ (auction().winner_masked || '?').charAt(0) }}
+          </span>
+          {{ auction().winner_masked }}
+        </span>
+      }
+    </div>
+
+    <div class="tile__footer">
+      @switch (auction().status) {
+        @case ('ended') {
+          <span class="tile__closed">
+            Cerró
+            @if (auction().closed_at) {
+              · {{ auction().closed_at | date: 'd/MM, HH:mm' }}
+            }
+          </span>
+        }
+        @case ('void') {
+          <span class="tile__closed">Cerró sin ofertas</span>
+        }
+        @default {
+          <mat-icon class="tile__clock">schedule</mat-icon>
+          <app-countdown variant="chip" [endsAt]="auction().ends_at" />
+        }
+      }
     </div>
   </div>
-</div>
+</a>
