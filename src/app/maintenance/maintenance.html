@@ -5,7 +5,11 @@
       alt="Poke-Singles"
       class="maintenance__logo"
     />
-    <mat-icon class="maintenance__icon">build</mat-icon>
+    @if (imageUrl(); as url) {
+      <img class="maintenance__image" [src]="url" alt="" />
+    } @else {
+      <mat-icon class="maintenance__icon">build</mat-icon>
+    }
     <h1>En mantenimiento</h1>
     <p class="muted">{{ message() }}</p>
   </main>

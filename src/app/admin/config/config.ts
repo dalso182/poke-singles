@@ -1,11 +1,18 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatDialog } from '@angular/material/dialog';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS, MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AppSettingsService } from '../../core/settings/app-settings.service';
+import { ImageBrowserService } from '../../core/images/image-browser.service';
+import {
+  ImagePickerDialog,
+  type ImagePickerData,
+  type ImagePickerResult,
+} from '../../shared/image-picker/image-picker-dialog';
 import { LabeledToggle } from '../../shared/table/controls/labeled-toggle/labeled-toggle';
 import { PageHeader } from '../../shared/table/page-header/page-header';
 import { FormSection } from '../../shared/forms/form-section/form-section';
@@ -43,11 +50,16 @@ export class AdminConfig {
   private readonly settings = inject(AppSettingsService);
   private readonly sets = inject(SetsService);
   private readonly snack = inject(MatSnackBar);
+  private readonly dialog = inject(MatDialog);
+  private readonly imageBrowser = inject(ImageBrowserService);
 
   protected readonly current = signal<AppSettingsRow | null>(null);
   protected readonly loading = signal(false);
   protected readonly saving = signal(false);
   protected readonly importing = signal(false);
+  /** Root-relative /card-images/… path shown on the maintenance page. */
+  protected readonly maintenanceImageUrl = signal<string | null>(null);
+  protected readonly imagePickerEnabled = this.imageBrowser.isEnabled();
 
   protected readonly form: FormGroup = this.fb.nonNullable.group({
     exchange_rate_usd_crc: [
@@ -85,6 +97,7 @@ export class AdminConfig {
     try {
       const row = await this.settings.get();
       this.current.set(row);
+      this.maintenanceImageUrl.set(row.maintenance_image_url);
       this.form.patchValue({
         exchange_rate_usd_crc: row.exchange_rate_usd_crc,
         maintenance_mode: row.maintenance_mode,
@@ -119,6 +132,7 @@ export class AdminConfig {
             : Number(raw.exchange_rate_usd_crc),
         maintenance_mode: !!raw.maintenance_mode,
         maintenance_message: raw.maintenance_message?.trim() || null,
+        maintenance_image_url: this.maintenanceImageUrl(),
         sinpe_phone: raw.sinpe_phone?.trim() || null,
         whatsapp_number: raw.whatsapp_number?.trim() || null,
         bank_account_info: raw.bank_account_info?.trim() || null,
@@ -137,6 +151,29 @@ export class AdminConfig {
     } finally {
       this.saving.set(false);
     }
+  }
+
+  /** Pick the maintenance-page image; opens inside /card-images/maintenance/. */
+  protected openMaintenanceImagePicker(): void {
+    const ref = this.dialog.open<ImagePickerDialog, ImagePickerData, ImagePickerResult>(
+      ImagePickerDialog,
+      {
+        width: '880px',
+        maxWidth: '95vw',
+        autoFocus: 'first-tabbable',
+        data: { startPath: 'maintenance' },
+      },
+    );
+    ref.afterClosed().subscribe((result) => {
+      if (!result) return;
+      this.maintenanceImageUrl.set(result.url);
+      this.form.markAsDirty();
+    });
+  }
+
+  protected clearMaintenanceImage(): void {
+    this.maintenanceImageUrl.set(null);
+    this.form.markAsDirty();
   }
 
   protected async onImportTcgdexSets(): Promise<void> {

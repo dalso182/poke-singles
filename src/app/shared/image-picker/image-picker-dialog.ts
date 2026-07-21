@@ -3,7 +3,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { debounceTime } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
-import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -18,6 +18,12 @@ import {
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
 
 export type ImagePickerResult = { url: string; path: string; name: string } | null;
+
+/** Optional dialog data. `startPath` opens the picker inside that subfolder
+ *  (creating it if missing) instead of the tree root. */
+export interface ImagePickerData {
+  readonly startPath?: string;
+}
 
 interface Crumb {
   readonly label: string;
@@ -42,6 +48,7 @@ interface Crumb {
 export class ImagePickerDialog {
   private readonly browser = inject(ImageBrowserService);
   private readonly dialogRef = inject<MatDialogRef<ImagePickerDialog, ImagePickerResult>>(MatDialogRef);
+  private readonly data = inject<ImagePickerData | null>(MAT_DIALOG_DATA, { optional: true });
 
   protected readonly listing = signal<ImageListing | null>(null);
   protected readonly loading = signal(false);
@@ -89,7 +96,29 @@ export class ImagePickerDialog {
   });
 
   constructor() {
-    this.navigate('');
+    const startPath = this.data?.startPath?.trim();
+    if (startPath) {
+      void this.openAt(startPath);
+    } else {
+      void this.navigate('');
+    }
+  }
+
+  /** Open inside `startPath`, creating the folder if needed (create-folder is
+   *  idempotent server-side). Falls back to the root if anything fails. */
+  private async openAt(startPath: string): Promise<void> {
+    this.loading.set(true);
+    try {
+      const parts = startPath.split('/').filter(Boolean);
+      let parent = '';
+      for (const part of parts) {
+        await this.browser.createFolder(parent, part);
+        parent = parent ? `${parent}/${part}` : part;
+      }
+      await this.navigate(parent);
+    } catch {
+      await this.navigate('');
+    }
   }
 
   protected async navigate(path: string): Promise<void> {

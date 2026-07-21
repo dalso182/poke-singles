@@ -28,10 +28,18 @@ export class AppSettingsService {
     return this.inFlight;
   }
 
-  /** Maintenance flag + message, derived from the cached settings. */
-  async getMaintenance(): Promise<{ on: boolean; message: string | null }> {
+  /** Maintenance flag + message + optional image, derived from the cached settings. */
+  async getMaintenance(): Promise<{
+    on: boolean;
+    message: string | null;
+    imageUrl: string | null;
+  }> {
     const s = await this.load();
-    return { on: !!s.maintenance_mode, message: s.maintenance_message };
+    return {
+      on: !!s.maintenance_mode,
+      message: s.maintenance_message,
+      imageUrl: s.maintenance_image_url,
+    };
   }
 
   async update(patch: AppSettingsUpdate): Promise<AppSettingsRow> {

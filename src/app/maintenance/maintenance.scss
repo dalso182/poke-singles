@@ -16,6 +16,12 @@
   margin-bottom: 8px;
 }
 
+.maintenance__image {
+  width: min(1200px, 100%);
+  height: auto;
+  border-radius: 12px;
+}
+
 .maintenance__icon {
   font-size: 64px;
   width: 64px;

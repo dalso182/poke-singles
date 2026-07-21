@@ -1,6 +1,6 @@
 # Maintenance page
 
-> Part of the Poke-Singles docs set. Verified against source on 2026-07-06. Load together with /CLAUDE.md.
+> Part of the Poke-Singles docs set. Verified against source on 2026-07-20. Load together with /CLAUDE.md.
 
 ## Purpose
 
@@ -16,11 +16,11 @@ The full-page maintenance screen at `/mantenimiento`, shown to non-admin visitor
 
 - `src/app/maintenance/maintenance.ts` — `Maintenance` component (standalone, selector `app-maintenance`); constant `FALLBACK_MESSAGE = 'Estamos actualizando el inventario, volvemos en un rato.'` (mirrors the placeholder in the admin config form).
 - `src/app/maintenance/maintenance.html` — the static page (`.maintenance` block).
-- `src/app/maintenance/maintenance.scss` — full-viewport centered layout on `var(--surface-page)`; `.maintenance__logo`, `.maintenance__icon`, `.muted`.
+- `src/app/maintenance/maintenance.scss` — full-viewport centered layout on `var(--surface-page)`; `.maintenance__logo`, `.maintenance__image` (`width: min(1200px, 100%)`, proportional), `.maintenance__icon`, `.muted`.
 - `src/app/core/auth/maintenance.guard.ts` — `maintenanceGuard` (`CanActivateFn`).
 - `src/app/core/settings/app-settings.service.ts` — `AppSettingsService` (`load()` TTL cache, `getMaintenance()`, `get()`, `update()`).
 - `src/app/app.routes.ts` — route declaration + ordering comment.
-- Admin side: `/admin/config` (`src/app/admin/config/`) writes `maintenance_mode` / `maintenance_message` via `AppSettingsService.update()`.
+- Admin side: `/admin/config` (`src/app/admin/config/`) writes `maintenance_mode` / `maintenance_message` / `maintenance_image_url` via `AppSettingsService.update()`.
 
 ## UI anatomy
 
@@ -28,7 +28,7 @@ Rendered only once `ready()` is true (avoids a flash of the fallback copy before
 
 1. `<main class="maintenance">` — flex column, centered, `min-height: 100vh`.
 2. Logo `assets/images/poke-singles-logo.png` (`.maintenance__logo`, 56 px tall).
-3. `mat-icon` "build" (`.maintenance__icon`, 64 px, `--text-tertiary`).
+3. When `imageUrl()` is set: `<img class="maintenance__image">` — the admin-picked image (root-relative `/card-images/maintenance/…` path, 1200 px wide max, shrinks with the viewport, `border-radius: 12px`). Otherwise: `mat-icon` "build" (`.maintenance__icon`, 64 px, `--text-tertiary`).
 4. `<h1>` "En mantenimiento".
 5. `<p class="muted">{{ message() }}</p>` — the admin-authored `maintenance_message`, or the fallback "Estamos actualizando el inventario, volvemos en un rato." when blank/whitespace.
 
@@ -36,7 +36,7 @@ No buttons, links, or countdown — the only exit is the automatic bounce when m
 
 ## Services & backend
 
-- `AppSettingsService.getMaintenance()` → `{ on: !!maintenance_mode, message: maintenance_message }`, derived from `load()`.
+- `AppSettingsService.getMaintenance()` → `{ on: !!maintenance_mode, message: maintenance_message, imageUrl: maintenance_image_url }`, derived from `load()`.
 - `AppSettingsService.load(maxAgeMs = 60_000)` — cached read of the **`app_settings`** singleton row (`select('*').eq('id', true).single()`; the table's PK is the boolean `id = true`). Returns the cached row when younger than 60 s; concurrent callers share one in-flight request. This cache is why the guard doesn't round-trip on every navigation.
 - `app_settings` is readable by anon (the storefront needs it pre-login); writes go through `update()` from `/admin/config` (admin-gated by RLS).
 - `maintenanceGuard` additionally awaits `AuthService.ready` (initial `getSession()` hydration) so `isAdmin()` is reliable on a hard refresh.
@@ -44,8 +44,8 @@ No buttons, links, or countdown — the only exit is the automatic bounce when m
 ## State & data flow
 
 - **Guard flow** (`maintenanceGuard`): `await auth.ready` → `auth.isAdmin()` ⇒ allow → else `await settings.getMaintenance()` → `on === false` ⇒ allow → else `router.createUrlTree(['/mantenimiento'])`.
-- **Component signals:** `ready` (starts `false`; set `true` in `finally`), `message` (starts at `FALLBACK_MESSAGE`).
-- **Component flow** (`resolve()` in the constructor): fetch `getMaintenance()`; if `on` is false → `router.navigate(['/'])` and return (page never renders); otherwise set `message` to the trimmed admin message or the fallback.
+- **Component signals:** `ready` (starts `false`; set `true` in `finally`), `message` (starts at `FALLBACK_MESSAGE`), `imageUrl` (starts `null`).
+- **Component flow** (`resolve()` in the constructor): fetch `getMaintenance()`; if `on` is false → `router.navigate(['/'])` and return (page never renders); otherwise set `message` to the trimmed admin message or the fallback, and `imageUrl` to the stored path (bound directly into `[src]` — relative paths ride same-origin in prod and the `/card-images` dev proxy on localhost).
 - No inputs, effects, or reload triggers — one fetch per instantiation. The component usually hits the guard-warmed cache, so no second network round-trip.
 
 ## Behaviors & edge cases

@@ -118,7 +118,7 @@ Consumers of the directive: `app-product-card` (every grid/marquee tile) and the
 - `app-energy-chip` — one Pokémon energy-type disc (self-hosted PNG), gray em-dash fallback; also exports `ENERGY_TYPE_META`, `energyTypeColor()`, `energyTypeFg()`, `energyTypeName()` for non-component uses. Used on the detail page.
 - `app-social-icons` — Instagram/Facebook/WhatsApp buttons with hard-coded URLs (footer).
 - `app-sparkline` — dependency-free inline-SVG trend line (`stroke` defaults to `var(--mat-sys-primary)`); admin dashboard 30-day KPI trends.
-- `app-image-picker-dialog` — Material dialog browser over the self-hosted card-image store (PHP endpoints in `server/`); returns `ImagePickerResult = { url, path, name } | null` via `MatDialogRef`. Admin product forms only.
+- `app-image-picker-dialog` — Material dialog browser over the self-hosted card-image store (PHP endpoints in `server/`); returns `ImagePickerResult = { url, path, name } | null` via `MatDialogRef`. Optional `MAT_DIALOG_DATA` `ImagePickerData { startPath?: string }` opens inside that subfolder (created if missing; falls back to root on failure). Admin only: product forms, announcement-edit, config (maintenance image, `startPath: 'maintenance'`).
 
 ### Pipes & validators
 

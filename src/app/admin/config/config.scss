@@ -21,6 +21,25 @@
   max-width: 640px;
 }
 
+.admin-config__image-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.admin-config__thumb {
+  max-height: 96px;
+  max-width: 220px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+}
+
+.admin-config__image-hint {
+  flex-basis: 100%;
+  font-size: 13px;
+}
+
 .admin-config__actions {
   display: flex;
   justify-content: flex-end;

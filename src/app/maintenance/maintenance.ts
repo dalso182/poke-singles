@@ -24,6 +24,8 @@ export class Maintenance {
 
   protected readonly ready = signal(false);
   protected readonly message = signal(FALLBACK_MESSAGE);
+  /** Admin-picked /card-images/… image; replaces the wrench icon when set. */
+  protected readonly imageUrl = signal<string | null>(null);
 
   constructor() {
     void this.resolve();
@@ -31,13 +33,14 @@ export class Maintenance {
 
   private async resolve(): Promise<void> {
     try {
-      const { on, message } = await this.settings.getMaintenance();
+      const { on, message, imageUrl } = await this.settings.getMaintenance();
       if (!on) {
         void this.router.navigate(['/']);
         return;
       }
       const trimmed = message?.trim();
       this.message.set(trimmed ? trimmed : FALLBACK_MESSAGE);
+      this.imageUrl.set(imageUrl);
     } finally {
       this.ready.set(true);
     }

@@ -50,7 +50,7 @@ Admin status = `app_metadata.role === 'admin'` (→ `database` skill for `is_adm
 | `/admin/price-review` | PriceReview | Card-by-card triage of products whose store price drifts from TCGplayer market (see Price review below) |
 | `/admin/pages` (+`/new`, `/:id/edit`) | PagesList / PageEdit | static_pages CRUD: raw-HTML textarea + live preview, slug locked on edit, soft-delete-with-undo |
 | `/admin/announcements` (+`/new`, `/:id/edit`) | AnnouncementsList / AnnouncementEdit | show-once storefront modals: rich-text editor (`app-rich-text-editor`: bold/italic/4 brand-safe colors), optional image (shared ImagePickerDialog) + internal-link CTA, Activar/Desactivar (single-active invariant via `AnnouncementsService.activate()`), Vistas counter, soft-delete-with-undo. Admins always see the active modal on the storefront (nothing recorded) — docs: `docs/screens/admin/announcements.md` |
-| `/admin/config` | AdminConfig | exchange rate, maintenance flag (gates the storefront via `maintenanceGuard` → `/mantenimiento`; admins bypass), price-review settings, loyalty points ratio |
+| `/admin/config` | AdminConfig | exchange rate, maintenance flag + message + optional image (gates the storefront via `maintenanceGuard` → `/mantenimiento`; admins bypass; image picked from `/card-images/maintenance/` via ImagePickerDialog), price-review settings, loyalty points ratio |
 
 ## Shared table system
 
@@ -304,11 +304,15 @@ until the next check rebuilds the queue.
 The product forms have a folder-icon suffix on the **URL de la imagen** field that opens a
 Windows-Explorer-style modal to browse the `/card-images/` tree on SiteGround, create folders,
 upload images into the current folder, and pick one. Uploading does **not** auto-select — the
-new file appears (briefly highlighted) and the admin clicks it.
+new file appears (briefly highlighted) and the admin clicks it. Also used by announcement-edit
+and `/admin/config` (maintenance image).
 
 - **Service / dialog:** `src/app/core/images/image-browser.service.ts` (`list()`/`upload()`/
   `createFolder()`) + `src/app/shared/image-picker/image-picker-dialog.{ts,html,scss}`. The
   dialog returns + stores **relative** URLs (cutover-safe).
+- **Start folder:** optional `MAT_DIALOG_DATA` `ImagePickerData { startPath?: string }` opens the
+  dialog inside that subfolder, creating it if missing (create-folder is idempotent); falls back
+  to the root on failure. Config uses `{ startPath: 'maintenance' }`.
 - **Config per env:** `environment*.ts` `images.listUrl` is **root-relative**
   (`/card-images/list-images.php`) → same-origin in prod, and rides the `/card-images` dev proxy
   (`proxy.conf.mjs`) on localhost (forwards to the password-protected host with `.env.local`

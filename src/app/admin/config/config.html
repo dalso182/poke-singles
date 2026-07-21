@@ -164,6 +164,24 @@ Cédula jurídica: 3-101-…"
             placeholder="Estamos actualizando el inventario, volvemos en un rato."
           ></textarea>
         </mat-form-field>
+        @if (imagePickerEnabled) {
+          <div class="admin-config__image-row" style="grid-column: span 2">
+            @if (maintenanceImageUrl(); as url) {
+              <img class="admin-config__thumb" [src]="url" alt="Imagen de mantenimiento" />
+              <app-btn variant="ghost" size="sm" (click)="clearMaintenanceImage()">
+                <mat-icon>close</mat-icon>
+                Quitar
+              </app-btn>
+            }
+            <app-btn variant="subtle" (click)="openMaintenanceImagePicker()">
+              <mat-icon>image</mat-icon>
+              {{ maintenanceImageUrl() ? 'Cambiar imagen' : 'Elegir imagen' }}
+            </app-btn>
+            <p class="muted admin-config__image-hint">
+              Opcional: se muestra en la página de mantenimiento en lugar del ícono.
+            </p>
+          </div>
+        }
       </app-form-grid>
     </app-form-section>
 

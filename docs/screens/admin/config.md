@@ -1,6 +1,6 @@
 # Admin — Store configuration (Configuración)
 
-> Part of the Poke-Singles docs set. Verified against source on 2026-07-06. Load together with /CLAUDE.md.
+> Part of the Poke-Singles docs set. Verified against source on 2026-07-20. Load together with /CLAUDE.md.
 
 ## Purpose
 
@@ -16,7 +16,7 @@ Single admin form that edits the `app_settings` singleton row — the store-wide
 
 | File | Role |
 |---|---|
-| `src/app/admin/config/config.ts` | `AdminConfig` component (`selector: 'app-admin-config'`) — reactive form, save, TCGdex import |
+| `src/app/admin/config/config.ts` | `AdminConfig` component (`selector: 'app-admin-config'`) — reactive form, save, maintenance-image picker, TCGdex import |
 | `src/app/admin/config/config.html` | Template: page header + six `<app-form-section>`s + Operaciones panel |
 | `src/app/admin/config/config.scss` | `.admin-config` (max-width 800px), `__form`, `__hint`, `__actions`, `__advanced`, `__op`, `__op-text`, `.muted` |
 | `src/app/core/settings/app-settings.service.ts` | `AppSettingsService` — cached singleton read + update |
@@ -28,6 +28,7 @@ Single admin form that edits the `app_settings` singleton row — the store-wide
 | `supabase/migrations/20260525003600_price_review_cron.sql` | Weekly pg_cron job that honors `price_review_enabled` |
 | `supabase/migrations/20260528000000_loyalty_points.sql` | Loyalty settings columns (+ ledger/trigger/report RPC) |
 | `supabase/migrations/20260704000000_pokeball_redemption.sql` | `pokeball_tiers` column (NOT surfaced on this screen) |
+| `supabase/migrations/20260720000000_app_settings_maintenance_image.sql` | `maintenance_image_url` column |
 
 ## UI anatomy
 
@@ -39,7 +40,7 @@ Single admin form that edits the `app_settings` singleton row — the store-wide
    - **"Notificaciones de pedidos"** — hint `"Cuando un cliente realiza un pedido, se envía un correo a estas direcciones (separadas por coma) además del correo de confirmación al cliente. Dejar vacío para no notificar."`; span-2 textarea **"Destinatarios"** (`order_notification_recipients`, rows 2, placeholder `ventas@poke-singles.com, diego@poke-singles.com`).
    - **"Revisión de precios"** — hint explains scope: only **singles en NM (Near Mint)** with price ≥ floor are reviewed against TCGplayer market (always NM) converted with the exchange rate; deviations above the threshold in *either direction* land in the *Revisión de precios* queue; weekly auto-run + manual trigger from that screen. Controls: `<app-labeled-toggle formControlName="price_review_enabled">` `"Activar revisión semanal"` (span 2), **"Umbral de desviación"** (`price_review_threshold_pct`, `min=0.01`, `max=100`, `step=0.5`, suffix `%`), **"Piso de valor"** (`price_review_floor_crc`, `min=0`, `step=500`, prefix `₡`).
    - **"Puntos de fidelidad"** — hint: orders award points when they reach **Pagado**, computed on net merchandise (subtotal − discount, *sin incluir el envío*); paid-then-cancelled orders get reversed; `"La canasta de canje de puntos llegará en una fase posterior."` Controls: `<app-labeled-toggle formControlName="loyalty_enabled">` `"Activar puntos de fidelidad"` (span 2), **"Colones por punto"** (`loyalty_colones_per_point`, `min=1`, `step=100`, prefix `₡`, hint `"1 punto por cada ₡1000 gastados (sin envío)."`).
-   - **"Modo mantenimiento"** — hint `"Cuando esté activo, la tienda mostrará un mensaje y no aceptará pedidos. La lógica del frontend se conectará después."`; `<app-labeled-toggle formControlName="maintenance_mode">` `"Activar modo mantenimiento"` (span 2) and span-2 textarea **"Mensaje a mostrar"** (`maintenance_message`, rows 3, placeholder `"Estamos actualizando el inventario, volvemos en un rato."`).
+   - **"Modo mantenimiento"** — hint `"Cuando esté activo, la tienda mostrará un mensaje y no aceptará pedidos. La lógica del frontend se conectará después."`; `<app-labeled-toggle formControlName="maintenance_mode">` `"Activar modo mantenimiento"` (span 2), span-2 textarea **"Mensaje a mostrar"** (`maintenance_message`, rows 3, placeholder `"Estamos actualizando el inventario, volvemos en un rato."`), and — only when `imagePickerEnabled` — a span-2 `.admin-config__image-row`: thumbnail preview (`.admin-config__thumb`, max 96×220 px) + ghost `"Quitar"` when an image is set, subtle `<app-btn>` `"Elegir imagen"` / `"Cambiar imagen"` opening `ImagePickerDialog` with `data: { startPath: 'maintenance' }`, and hint `"Opcional: se muestra en la página de mantenimiento en lugar del ícono."`
 4. **`.admin-config__actions`** — `<app-btn variant="primary">` `"Guardar cambios"`, disabled when `form.invalid || form.pristine || saving() || loading()`.
 5. **"Operaciones"** section (`.admin-config__advanced`, outside the form) — `.admin-config__op` row: bold title `"Importar histórico de sets de TCGdex"`, explanatory hint (one-time, safe to re-run, never overwrites existing sets), and a ghost `<app-btn>` with `<mat-icon>cloud_download</mat-icon>` labeled `"Importar"` / `"Importando…"`; an indeterminate progress bar shows while `importing()`.
 
@@ -49,7 +50,7 @@ Single admin form that edits the `app_settings` singleton row — the store-wide
 
 - `get()` — always-fresh read (used by this screen; also by `ReportsService.runPriceReviewNow`). Fetches `app_settings` where `id = true` via `.single()` and refreshes the cache.
 - `load(maxAgeMs = 60_000)` — cached read with a 60 s TTL; concurrent callers share one in-flight promise. Used by the maintenance guard, order confirmation, product detail, pokeball dialog.
-- `getMaintenance()` — `{ on: !!maintenance_mode, message: maintenance_message }` from the cached row (drives `maintenanceGuard` + the `/maintenance` screen).
+- `getMaintenance()` — `{ on: !!maintenance_mode, message: maintenance_message, imageUrl: maintenance_image_url }` from the cached row (drives `maintenanceGuard` + the `/maintenance` screen).
 - `update(patch: AppSettingsUpdate)` — `UPDATE … WHERE id = true`, returns the row and re-primes the cache.
 
 ### `app_settings` — every column, with its migration
@@ -61,6 +62,7 @@ Singleton enforcement: `id boolean primary key default true check (id)` — only
 | `exchange_rate_usd_crc` | `numeric(12,4)`, nullable | `20260502002700_app_settings.sql` | Price-review runs (market USD → CRC); add-product suggested pricing (`add-product.ts`) |
 | `maintenance_mode` | `boolean not null default false` | `20260502002700` | `maintenanceGuard` (`src/app/core/auth/maintenance.guard.ts`) + `/maintenance` screen |
 | `maintenance_message` | `text`, nullable | `20260502002700` | `/maintenance` screen (`src/app/maintenance/maintenance.ts`) |
+| `maintenance_image_url` | `text`, nullable | `20260720000000_app_settings_maintenance_image.sql` | `/maintenance` screen — root-relative `/card-images/maintenance/…` path shown in place of the wrench icon |
 | `sinpe_phone` | `text`, nullable | `20260508000700_app_settings_payment_fields.sql` | Order-confirmation payment instructions; `send-order-email` edge fn |
 | `whatsapp_number` | `text`, nullable | `20260508000700` | Order confirmation + product detail `wa.me` links (both fall back to `'50663452039'` when unset); `send-order-email` |
 | `bank_account_info` | `text`, nullable | `20260508000700` | Order confirmation transfer block; `send-order-email` |
@@ -79,10 +81,11 @@ Singleton enforcement: `id boolean primary key default true check (id)` — only
 
 ## State & data flow
 
-- Signals: `current = signal<AppSettingsRow | null>(null)`, `loading`, `saving`, `importing` (all boolean signals, default false).
-- `form` — `fb.nonNullable.group` with controls exactly matching the 12 editable keys. Validators: `exchange_rate_usd_crc` `min(0)`; `price_review_threshold_pct` `required, min(0.01), max(100)` (initial 10); `price_review_floor_crc` `required, min(0)` (initial 5000); `loyalty_colones_per_point` `required, min(1)` (initial 1000).
-- Constructor calls `bootstrap()`: `settings.get()` → `current.set(row)` → `form.patchValue(...)` (nullables coalesced to `''`) → `form.markAsPristine()`. Errors snackbar (`'Error desconocido'` fallback, `'OK'`, 5000 ms).
-- `onSave()` (no-op if invalid): builds an `AppSettingsUpdate` from `getRawValue()` — text fields are `trim() || null`; `order_notification_recipients` is trimmed but kept as a string (its column is `not null`); numbers via `Number(...)`; `exchange_rate_usd_crc` maps `null`/`''` → `null`. Then `settings.update(patch)`, `current.set(updated)`, `markAsPristine()`, snackbar `"Configuración guardada"` (`'OK'`, 3000 ms).
+- Signals: `current = signal<AppSettingsRow | null>(null)`, `loading`, `saving`, `importing` (boolean signals, default false), `maintenanceImageUrl = signal<string | null>(null)` (the picked image — NOT a form control; announcement-edit pattern), plus `imagePickerEnabled = imageBrowser.isEnabled()` gating the image row.
+- `form` — `fb.nonNullable.group` with controls exactly matching the 12 form-editable keys (`maintenance_image_url` is the 13th editable key, carried by the signal). Validators: `exchange_rate_usd_crc` `min(0)`; `price_review_threshold_pct` `required, min(0.01), max(100)` (initial 10); `price_review_floor_crc` `required, min(0)` (initial 5000); `loyalty_colones_per_point` `required, min(1)` (initial 1000).
+- Constructor calls `bootstrap()`: `settings.get()` → `current.set(row)` → `maintenanceImageUrl.set(row.maintenance_image_url)` → `form.patchValue(...)` (nullables coalesced to `''`) → `form.markAsPristine()`. Errors snackbar (`'Error desconocido'` fallback, `'OK'`, 5000 ms).
+- `onSave()` (no-op if invalid): builds an `AppSettingsUpdate` from `getRawValue()` — text fields are `trim() || null`; `order_notification_recipients` is trimmed but kept as a string (its column is `not null`); numbers via `Number(...)`; `exchange_rate_usd_crc` maps `null`/`''` → `null`; `maintenance_image_url` comes from the signal. Then `settings.update(patch)`, `current.set(updated)`, `markAsPristine()`, snackbar `"Configuración guardada"` (`'OK'`, 3000 ms).
+- `openMaintenanceImagePicker()` — opens `ImagePickerDialog` (880 px, `data: { startPath: 'maintenance' }` so it opens inside — creating if needed — `/card-images/maintenance/`); on pick sets `maintenanceImageUrl` to the root-relative `result.url` and `form.markAsDirty()` (that's what enables "Guardar cambios"). `clearMaintenanceImage()` — sets it `null` + `markAsDirty()`.
 - Component providers pin `MAT_FORM_FIELD_DEFAULT_OPTIONS` to `{ floatLabel: 'always' }` — zoneless workaround: async `patchValue()` doesn't notify CD, so resting outline labels would cover prefilled values until focused.
 
 ## Behaviors & edge cases
