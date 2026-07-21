@@ -76,6 +76,12 @@ const ICONS: Record<string, string> = {
     '<path d="M2.5 7.5a1 1 0 0 1 1-1h13a1 1 0 0 1 1 1v2a1.5 1.5 0 0 0 0 3v2a1 1 0 0 1-1 1h-13a1 1 0 0 1-1-1v-2a1.5 1.5 0 0 0 0-3v-2z" />' +
       '<path d="M8 6.5v8" stroke-dasharray="1.5 1.8" />',
   ),
+  // Subastas: a gavel (scaled-down lucide "gavel" monoline).
+  'nav-gavel': SVG(
+    '<path d="M12.1 10.4l-6.6 6.6a1.6 1.6 0 1 1-2.3-2.3l6.6-6.6" />' +
+      '<path d="M13.3 13.3l5-5" /><path d="M6.7 6.7l5-5" />' +
+      '<path d="M7.5 5.8l6.7 6.7" /><path d="M17.5 9.2l-6.7-6.7" />',
+  ),
   'nav-ofertas': SVG(
     '<path d="M10.6 3H4a1 1 0 0 0-1 1v6.6a1 1 0 0 0 .3.7l6.4 6.4a1 1 0 0 0 1.4 0l6-6a1 1 0 0 0 0-1.4L10.7 3.3a1 1 0 0 0-.7-.3z" />' +
       '<circle cx="6.8" cy="6.8" r="1.1" />',
@@ -223,6 +229,7 @@ export class Navigation {
             children: childrenFor('sellado'),
           },
           { key: 'rifas', label: 'Rifas', icon: 'nav-raffle', path: '/rifas' },
+          { key: 'subastas', label: 'Subastas', icon: 'nav-gavel', path: '/subastas' },
           { key: 'ofertas', label: 'Ofertas', icon: 'nav-ofertas', path: '/ofertas' },
           {
             key: 'accesorios',

@@ -1,6 +1,6 @@
 # Routing & guards
 
-> Part of the Poke-Singles docs set. Verified against source on 2026-07-06. Load together with /CLAUDE.md.
+> Part of the Poke-Singles docs set. Verified against source on 2026-07-20. Load together with /CLAUDE.md.
 
 ## Purpose
 
@@ -49,6 +49,8 @@ All components are lazy-loaded via `loadComponent: () => import(...).then(m => m
 | `products/:id/edit` | `ProductEdit` | |
 | `raffles` | `Raffles` | `pathMatch: 'full'` |
 | `raffles/:id` | `RaffleDetail` | |
+| `auctions` | `Auctions` | `pathMatch: 'full'` |
+| `auctions/:id` | `AuctionDetail` | `:id` = product uuid |
 | `categories` | `Categories` | |
 | `sellers` | `Sellers` | `pathMatch: 'full'` |
 | `sellers/:id` | `SellerDetail` | Per-seller consignment payouts (Sellado / Singles) |
@@ -86,6 +88,8 @@ There is **no** `/admin/card-types` route. `src/app/admin/card-types/card-types.
 | `products` | `CardList` | Query-param inputs: `sets`, `types`, `tipo`, `sort`, `categoria` |
 | `buscar` | `SearchResults` | Query-param inputs: `q`, `sort`, `sets`, `types` |
 | `rifas` | `Rifas` | |
+| `subastas` | `Subastas` | |
+| `subastas/:slug` | `SubastaDetail` | `slug` is `input.required<string>()`. **No auth guard** — bidding gates sign-in at action time (in-place LoginDialog). |
 | `ofertas` | `CardList` (reused) | `data: { onSaleOnly: true, basePath: '/ofertas' }` — flips CardList into discounted-only mode |
 | `categoria/:categorySlug` | — redirect | Function `redirectTo`: `inject(Router).createUrlTree(['/products'], { queryParams: { categoria: params['categorySlug'], ...queryParams } })`. Legacy category URLs become the `?categoria=` facet on `/products`, preserving incoming query params (e.g. `?tipo=`). |
 | `products/:slug` | `Detail` | `slug` is `input.required<string>()` |

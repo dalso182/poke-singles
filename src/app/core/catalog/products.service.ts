@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { SupabaseService } from '../supabase/supabase.service';
 import { CategoriesService } from './categories.service';
 import type {
+  AuctionListingItem,
   ProductInsert,
   ProductListRow,
   ProductRow,
@@ -32,6 +33,10 @@ export interface ProductListParams {
    *  the home rails so raffles only ever surface on /rifas. No-op if the Rifas
    *  category doesn't exist. */
   excludeRaffles?: boolean;
+  /** Exclude auction products (category slug = 'subastas') from the result.
+   *  Used by the home rails so auctions only ever surface on /subastas. No-op
+   *  if the Subastas category doesn't exist. */
+  excludeAuctions?: boolean;
   /** Apply the public storefront-visibility predicate (quantity > 0 AND price > 0)
    *  in the query itself. Storefront surfaces (home rails) must set this:
    *  visibility can't lean on RLS alone because an admin session bypasses
@@ -97,12 +102,26 @@ export class ProductsService {
     return this._raffleCategoryId;
   }
 
+  /** Memoised id of the 'subastas' category — same contract as
+   *  `_raffleCategoryId` above. */
+  private _auctionCategoryId: string | null | undefined;
+
+  /** Lazily resolve + cache the Subastas category id. Used to route auction
+   *  slugs to /subastas and exclude them from the home rails. */
+  async auctionCategoryId(): Promise<string | null> {
+    if (this._auctionCategoryId !== undefined) return this._auctionCategoryId;
+    const cats = await this.categories.list();
+    this._auctionCategoryId = cats.find((c) => c.slug === 'subastas')?.id ?? null;
+    return this._auctionCategoryId;
+  }
+
   async list(params: ProductListParams = {}): Promise<ProductListResult> {
     const page = Math.max(1, params.page ?? 1);
     const pageSize = Math.max(1, Math.min(200, params.pageSize ?? 25));
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
     const raffleId = params.excludeRaffles ? await this.raffleCategoryId() : null;
+    const auctionId = params.excludeAuctions ? await this.auctionCategoryId() : null;
 
     let query = (this.supabase.client as any)
       .from('products')
@@ -122,6 +141,9 @@ export class ProductsService {
     }
     if (raffleId) {
       query = query.neq('category_id', raffleId);
+    }
+    if (auctionId) {
+      query = query.neq('category_id', auctionId);
     }
     if (params.categoryId) {
       query = query.eq('category_id', params.categoryId);
@@ -181,6 +203,31 @@ export class ProductsService {
       .select('*');
     if (error) throw error;
     return (data ?? []) as RaffleCardItem[];
+  }
+
+  /**
+   * Public auction listing for /subastas — reads the `subastas_listing` view
+   * (products ⨝ auctions ⨝ sets), already filtered to active Subastas-category
+   * products and ordered actives-first by closing date. Carries ends_at /
+   * status / current_bid so the page can split Activas vs Finalizadas.
+   */
+  async listAuctions(): Promise<AuctionListingItem[]> {
+    const { data, error } = await (this.supabase.client as any)
+      .from('subastas_listing')
+      .select('*');
+    if (error) throw error;
+    return (data ?? []) as AuctionListingItem[];
+  }
+
+  /** One auction listing row by product slug (for /subastas/:slug). */
+  async getAuctionBySlug(slug: string): Promise<AuctionListingItem | null> {
+    const { data, error } = await (this.supabase.client as any)
+      .from('subastas_listing')
+      .select('*')
+      .eq('slug', slug)
+      .maybeSingle();
+    if (error) throw error;
+    return (data as AuctionListingItem | null) ?? null;
   }
 
   async get(id: string): Promise<ProductRow | null> {

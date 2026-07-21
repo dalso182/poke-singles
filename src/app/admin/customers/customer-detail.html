@@ -34,6 +34,9 @@
             <div class="info__id">
               <div class="info__name">{{ c.full_name || 'Sin nombre' }}</div>
               <div class="info__tag">{{ recurringTag(c.order_count) }}</div>
+              @if (c.auction_banned_at) {
+                <app-pill tone="red">Vetado subastas</app-pill>
+              }
             </div>
           </div>
 
@@ -73,6 +76,26 @@
                 <span class="info__dot"></span>
                 Sin dirección guardada.
               </div>
+            }
+          </div>
+
+          <div class="info__ban">
+            <div class="info__ban-label">Subastas</div>
+            @if (c.auction_banned_at) {
+              <p class="info__ban-state info__ban-state--banned">
+                Vetado desde el {{ c.auction_banned_at | date: 'mediumDate' }}.
+                @if (c.auction_ban_reason) {
+                  <br /><span class="info__dim">Motivo: {{ c.auction_ban_reason }}</span>
+                }
+              </p>
+              <app-btn variant="subtle" size="sm" [disabled]="togglingBan()" (click)="onToggleBan()">
+                Quitar veto
+              </app-btn>
+            } @else {
+              <p class="info__ban-state">Puede participar en subastas.</p>
+              <app-btn variant="danger" size="sm" [disabled]="togglingBan()" (click)="onToggleBan()">
+                Vetar de subastas
+              </app-btn>
             }
           </div>
         </div>

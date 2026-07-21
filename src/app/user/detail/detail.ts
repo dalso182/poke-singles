@@ -166,6 +166,11 @@ export class Detail implements OnInit {
         void this.router.navigate(['/rifas']);
         return;
       }
+      // Auctions have their own detail page — redirect to it.
+      if (product.category_id === (await this.products.auctionCategoryId())) {
+        void this.router.navigate(['/subastas', product.slug]);
+        return;
+      }
       this.product.set(product);
 
       // Run the supporting fetches in parallel. SetsService.list() and

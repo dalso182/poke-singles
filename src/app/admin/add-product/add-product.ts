@@ -50,6 +50,7 @@ import {
 import { CategoriesService } from '../../core/catalog/categories.service';
 import { CardTypesService } from '../../core/catalog/card-types.service';
 import { ProductsService } from '../../core/catalog/products.service';
+import { AuctionsService } from '../../core/catalog/auctions.service';
 import { RafflesService } from '../../core/catalog/raffles.service';
 import { SellersService } from '../../core/catalog/sellers.service';
 import { SetsService } from '../../core/catalog/sets.service';
@@ -110,6 +111,7 @@ export class AddProduct {
   private readonly fb = inject(FormBuilder);
   private readonly products = inject(ProductsService);
   private readonly raffles = inject(RafflesService);
+  private readonly auctions = inject(AuctionsService);
   private readonly categories = inject(CategoriesService);
   private readonly cardTypes = inject(CardTypesService);
   private readonly sellers = inject(SellersService);
@@ -178,6 +180,13 @@ export class AddProduct {
     const id = this.selectedCategoryId();
     if (!id) return false;
     return this.categoriesList().find((c) => c.slug === 'rifas')?.id === id;
+  });
+  /** True when the chosen category is the "Subastas" bucket — reveals the
+   *  auction fields (end date + increment + anti-snipe). */
+  protected readonly isAuction = computed(() => {
+    const id = this.selectedCategoryId();
+    if (!id) return false;
+    return this.categoriesList().find((c) => c.slug === 'subastas')?.id === id;
   });
   /** True when the chosen category is one where card-only fields make sense
    *  (Singles / Graded) — gates Pokémon, rareza, número, condición, variante. */
@@ -265,6 +274,12 @@ export class AddProduct {
     description: [''],
     draw_at: [null as string | null],
     market_price: [null as number | null, [Validators.min(0)]],
+    // Auction-only fields, shown when the selected category is "Subastas".
+    // `auction_ends_at` is a datetime-local string in the admin's timezone,
+    // converted to ISO (timestamptz) at the persistence boundary.
+    auction_ends_at: [null as string | null],
+    auction_min_increment: [1000 as number | null, [Validators.min(1)]],
+    auction_anti_snipe_minutes: [5 as number | null, [Validators.min(0), Validators.max(60)]],
     // TCGdex-derived metadata. Not rendered as form inputs — patched by
     // `onCardSelected` and serialised on submit. Manual mode leaves them null.
     card_ref: [null as string | null],
@@ -301,11 +316,12 @@ export class AddProduct {
       this.setsById.set(new Map(sets.map((s) => [s.id, s])));
       this.cardTypesList.set(types);
       this.sellersList.set(sellers);
-      // "Agregar rifa" deep-links here with ?category=rifas — preselect the
-      // Rifas category so the Datos de la rifa section is revealed.
-      if (this.route.snapshot.queryParamMap.get('category') === 'rifas') {
-        const rifas = cats.find((c) => c.slug === 'rifas');
-        if (rifas) this.form.patchValue({ category_id: rifas.id });
+      // "Agregar rifa" / "Agregar subasta" deep-link here with ?category=<slug>
+      // — preselect that category so its conditional section is revealed.
+      const wantedSlug = this.route.snapshot.queryParamMap.get('category');
+      if (wantedSlug === 'rifas' || wantedSlug === 'subastas') {
+        const cat = cats.find((c) => c.slug === wantedSlug);
+        if (cat) this.form.patchValue({ category_id: cat.id });
       }
       this.refreshSlug();
     } catch (err) {
@@ -463,6 +479,9 @@ export class AddProduct {
       description: '',
       draw_at: null,
       market_price: null,
+      auction_ends_at: null,
+      auction_min_increment: 1000,
+      auction_anti_snipe_minutes: 5,
       card_ref: null,
       illustrator: null,
       regulation_mark: null,
@@ -549,22 +568,24 @@ export class AddProduct {
         pokemon_name: isCard ? raw.pokemon_name || null : null,
         slug: raw.slug,
         rarity: isCard ? raw.rarity || null : null,
-        // Raffles are single-card prizes, so they keep the card number (it shows
-        // on the /rifas tile next to the set) even though the other card-only
-        // fields stay hidden for them — same exception as `condition` below.
-        card_number: isCard || this.isRaffle() ? raw.card_number || null : null,
+        // Raffles and auctions are single-card prizes, so they keep the card
+        // number (it shows on the tile next to the set) even though the other
+        // card-only fields stay hidden for them — same exception as `condition`.
+        card_number: isCard || this.isRaffle() || this.isAuction() ? raw.card_number || null : null,
         image_url: raw.image_url || null,
         category_id: raw.category_id,
         set_id: raw.set_id || null,
         seller_id: raw.seller_id || null,
-        // Raffles are single-card prizes too, so they keep their condition even
-        // though the rest of the card-only fields stay hidden for them.
-        condition: isCard || this.isRaffle() ? raw.condition || null : null,
+        // Raffles/auctions are single-card prizes too, so they keep their
+        // condition even though the rest of the card-only fields stay hidden.
+        condition: isCard || this.isRaffle() || this.isAuction() ? raw.condition || null : null,
         language: raw.language,
         variant: isCard ? raw.variant || null : null,
         price: Number(raw.price),
         sale_price: toNullableNumber(raw.sale_price),
-        quantity: Number(raw.quantity),
+        // An auction sells exactly one card — the quantity input is hidden and
+        // the value pinned so a stale entry can't create phantom stock.
+        quantity: this.isAuction() ? 1 : Number(raw.quantity),
         featured: raw.featured,
         description: raw.description || null,
         card_ref: isCard ? raw.card_ref || null : null,
@@ -588,6 +609,13 @@ export class AddProduct {
         await this.raffles.upsert(created.id, {
           draw_at: raw.draw_at || null,
           market_price: toNullableNumber(raw.market_price),
+        });
+      }
+      if (this.isAuction()) {
+        await this.auctions.upsert(created.id, {
+          ends_at: localDatetimeToIso(raw.auction_ends_at),
+          min_increment: toNullableNumber(raw.auction_min_increment),
+          anti_snipe_minutes: toNullableNumber(raw.auction_anti_snipe_minutes),
         });
       }
       this.snack.open('Producto creado', 'Editar', { duration: 5000 })
@@ -625,6 +653,9 @@ export class AddProduct {
       description: '',
       draw_at: null,
       market_price: null,
+      auction_ends_at: null,
+      auction_min_increment: 1000,
+      auction_anti_snipe_minutes: 5,
       card_ref: null,
       illustrator: null,
       regulation_mark: null,
@@ -657,4 +688,12 @@ function toNullableNumber(value: unknown): number | null {
   if (value === null || value === undefined || value === '') return null;
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
+}
+
+/** `datetime-local` value ("2026-07-20T18:30", admin's local time) → ISO
+ *  timestamptz string for the DB. Empty/invalid → null. */
+function localDatetimeToIso(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }

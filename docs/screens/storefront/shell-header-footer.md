@@ -55,7 +55,7 @@ Hosted in the left `mat-sidenav`. Two visual modes driven by the required input 
 Sections (from the `sections()` computed):
 
 - key `top` (no label): "Home" → `/` (exact).
-- "Explorar": "Todo" → `/products` (no params); "Singles" → `/products?categoria=singles`; "Sellado" → `/products?categoria=sellado` (+ children); "Rifas" → `/rifas`; "Ofertas" → `/ofertas`; "Accesorios" → `/products?categoria=accesorios` (+ children).
+- "Explorar": "Todo" → `/products` (no params); "Singles" → `/products?categoria=singles`; "Sellado" → `/products?categoria=sellado` (+ children); "Rifas" → `/rifas`; "Subastas" → `/subastas` (icon `nav-gavel`, a scaled-down lucide gavel monoline); "Ofertas" → `/ofertas`; "Accesorios" → `/products?categoria=accesorios` (+ children).
 - "Cuenta": "Carrito" → `/cart` (live `cartCount()` badge — `.nav-meta` expanded, `.nav-badge` collapsed); "Mi cuenta" → `/account`; "Admin" → `/admin` (only when `AuthService.isAdmin()`).
 - "Información": "Sobre nosotros" → `/info/sobre-nosotros`; "Políticas de envío" → `/info/politica-pedidos-envios`.
 
@@ -73,7 +73,7 @@ Second `mat-sidenav` (`position="end"`, `mode="over"`, class `user-shell-cart-dr
 
 1. `.brand-bar` strip (aria-hidden).
 2. `.footer-grid` — three `nav.footer-col` columns from the `columns` array:
-   - "Tienda": "Ofertas" → `/ofertas`; "Nuevos ingresos" → `/products?sort=recent`; "Rifas" → `/rifas`; "Sobre nosotros" → `/info/sobre-nosotros`.
+   - "Tienda": "Ofertas" → `/ofertas`; "Nuevos ingresos" → `/products?sort=recent`; "Rifas" → `/rifas`; "Subastas" → `/subastas`; "Sobre nosotros" → `/info/sobre-nosotros`.
    - "Información": "Estado de cartas" → `/info/estado-de-cartas`; "Métodos de pago y envío" → `/info/metodos-pago-envio`; "Política de pedidos y envíos" → `/info/politica-pedidos-envios`.
    - "Mi cuenta": "Mi cuenta" → `/account`; "Mis órdenes" → `/account/pedidos`.
    Links support an alternate external form (`href`, new-tab, `rel="noopener"`) but every current entry is internal (`route`).

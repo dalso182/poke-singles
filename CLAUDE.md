@@ -71,13 +71,13 @@ details (fakes in `src/app/testing/`, e2e fixtures/env keys, gotchas):
 src/app/
 ├── app.ts / app.routes.ts / app.config.ts   Root, top-level routes, providers
 ├── user/      Customer-facing branch (UserShell): header, nav, footer, card-list,
-│              search-results, detail, rifas, cart-drawer, cart-page, checkout,
-│              order-confirmation, account (+pokedex), static-page, dialogs
-│              (announcement + card-conditions)                                       → storefront
+│              search-results, detail, rifas, subastas (+detail w/ live bidding),
+│              cart-drawer, cart-page, checkout, order-confirmation, account
+│              (+pokedex), static-page, dialogs (announcement + card-conditions)      → storefront
 ├── admin/     Admin branch (AdminShell, adminGuard): dashboard, products (+add/edit),
 │              categories, filters (embeds card-types), sets, sellers, coupons,
-│              shipping-methods, orders, customers, raffles, reports, price-review,
-│              pages, announcements, config                                           → admin
+│              shipping-methods, orders, customers, raffles, auctions, reports,
+│              price-review, pages, announcements, config                             → admin
 ├── auth/      Shared login-dialog (magic link / password / Google)                  → storefront + database
 ├── core/      Services: announcements, auth, cart, catalog, customers, dashboard,
 │              images, loyalty, orders, pokemon, presence, preview, reports,
@@ -101,10 +101,12 @@ Each skill describes its own subtree in detail.
 `/admin/*` → AdminShell (lazy, `adminGuard`): dashboard, products(+new/:id/edit),
 categories, filters (card-types live here — no card-types route), sets, sellers(+:id),
 coupons(+new/:id/edit), shipping-methods, orders(+:id), customers(+:id), raffles(+:id),
-reports, price-review, pages(+new/:id/edit), announcements(+new/:id/edit), config.
+auctions(+:id), reports, price-review, pages(+new/:id/edit), announcements(+new/:id/edit),
+config.
 `/library` → designer reference (no shell). `/mantenimiento` → standalone maintenance
 screen. `/` → UserShell (`maintenanceGuard`): home, products, ofertas, products/:slug,
-buscar, rifas, cart, checkout(+confirmation/:id), info/:slug,
+buscar, rifas, subastas(+:slug — bidding gates sign-in at action time, no route guard),
+cart, checkout(+confirmation/:id), info/:slug,
 account(`customerGuard`, + direccion/pedidos/puntos/pokedex deep links);
 categoria/:slug redirects to /products?categoria=. **Specific paths must come before the
 empty-path UserShell** or the router mis-matches `/admin`, `/library`, `/mantenimiento`.

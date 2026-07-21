@@ -132,9 +132,10 @@ export class CardList {
     () => !this.onSaleOnly(),
   );
 
-  /** Active categories for the facet (rifas has its own /rifas page). */
+  /** Active categories for the facet (rifas and subastas have their own
+   *  dedicated pages). */
   protected readonly categoriesForFilter = computed<CategoryRow[]>(() =>
-    this.categories().filter((c) => c.slug !== 'rifas'),
+    this.categories().filter((c) => c.slug !== 'rifas' && c.slug !== 'subastas'),
   );
 
   /** Display name for the active category (falls back to the raw slug until

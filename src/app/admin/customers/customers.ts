@@ -13,6 +13,7 @@ import { FilterBar } from '../../shared/table/filter-bar/filter-bar';
 import { TableCard } from '../../shared/table/table-card/table-card';
 import { SearchInput } from '../../shared/table/controls/search-input/search-input';
 import { Money } from '../../shared/table/cells/money-cell/money-cell';
+import { Pill } from '../../shared/table/cells/pill/pill';
 import { Btn } from '../../shared/table/controls/btn/btn';
 import { PaginationFooter } from '../../shared/table/pagination-footer/pagination-footer';
 
@@ -28,6 +29,7 @@ import { PaginationFooter } from '../../shared/table/pagination-footer/paginatio
     TableCard,
     SearchInput,
     Money,
+    Pill,
     Btn,
     PaginationFooter,
   ],
@@ -93,6 +95,32 @@ export class Customers {
 
   protected goToView(id: string): void {
     this.router.navigate(['/admin/customers', id]);
+  }
+
+  /** Quick auctions-ban toggle from the row, with the snackbar-undo idiom
+   *  (mirrors products-list.onToggleActive). Reason-less here — the detail
+   *  screen offers an optional reason. */
+  protected async onToggleBan(row: CustomerRow): Promise<void> {
+    const banning = row.auction_banned_at === null;
+    const name = row.full_name || row.email;
+    const question = banning
+      ? `¿Vetar a ${name} de las subastas? No podrá pujar hasta que se restaure.`
+      : `¿Restaurar a ${name}? Podrá volver a pujar en subastas.`;
+    if (!confirm(question)) return;
+    try {
+      await this.customers.setAuctionBan(row.id, banning);
+      const ref = this.snack.open(
+        banning ? 'Cliente vetado de subastas' : 'Veto de subastas removido',
+        'Deshacer',
+        { duration: 5000 },
+      );
+      ref.onAction().subscribe(() => {
+        this.customers.setAuctionBan(row.id, !banning).then(() => this.refresh());
+      });
+      await this.refresh();
+    } catch (err) {
+      this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
+    }
   }
 
   private errorMessage(err: unknown): string {

@@ -9,6 +9,7 @@ The single-product page: a large card image with hover shine, a buy panel (price
 - The `:slug` param binds to the component via `withComponentInputBinding()`: `readonly slug = input.required<string>()`.
 - No query params, no route data.
 - Raffle products (category = `rifas`) have no detail page: if the fetched product's `category_id` equals `ProductsService.raffleCategoryId()`, the component immediately `router.navigate(['/rifas'])`.
+- Auction products (category = `subastas`) have their **own** detail page: `category_id === auctionCategoryId()` → `router.navigate(['/subastas', product.slug])` (see [subasta-detail](./subasta-detail.md)).
 - Reached from `<app-product-card>` tiles (grids, home rails, search), cart line links, and order-confirmation item links.
 
 ## Files

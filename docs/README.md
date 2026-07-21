@@ -35,6 +35,8 @@ if a doc's claims disagree with the code, the code has moved — update the doc.
 | [search-results](screens/storefront/search-results.md) | `/buscar` |
 | [detail](screens/storefront/detail.md) | `/products/:slug` |
 | [rifas](screens/storefront/rifas.md) | `/rifas` |
+| [subastas](screens/storefront/subastas.md) | `/subastas` |
+| [subasta-detail](screens/storefront/subasta-detail.md) | `/subastas/:slug` (bidding, realtime, login-then-bid) |
 | [cart-drawer](screens/storefront/cart-drawer.md) | overlay (no route) — includes the `CartService` deep-dive |
 | [cart-page](screens/storefront/cart-page.md) | `/cart` |
 | [checkout](screens/storefront/checkout.md) | `/checkout` |
@@ -71,6 +73,8 @@ if a doc's claims disagree with the code, the code has moved — update the doc.
 | [customer-detail](screens/admin/customer-detail.md) | `/admin/customers/:id` |
 | [raffles](screens/admin/raffles.md) | `/admin/raffles` |
 | [raffle-detail](screens/admin/raffle-detail.md) | `/admin/raffles/:id` |
+| [auctions](screens/admin/auctions.md) | `/admin/auctions` |
+| [auction-detail](screens/admin/auction-detail.md) | `/admin/auctions/:id` (bid log, reassign/relist) |
 | [reports](screens/admin/reports.md) | `/admin/reports` (all five report panels) |
 | [pages](screens/admin/pages.md) | `/admin/pages`, `/admin/pages/new`, `/admin/pages/:id/edit` |
 | [announcements](screens/admin/announcements.md) | `/admin/announcements`, `/admin/announcements/new`, `/admin/announcements/:id/edit` |

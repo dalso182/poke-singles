@@ -40,8 +40,10 @@ Admin status = `app_metadata.role === 'admin'` (→ `database` skill for `is_adm
 | `/admin/coupons/new`, `/:id/edit` | CouponEdit | type-reactive form (PERCENTAGE / FIXED_ON_THRESHOLD) |
 | `/admin/raffles` | Raffles | Activas / Completadas toggle, "Agregar rifa" |
 | `/admin/raffles/:id` | RaffleDetail | participants + payment, draw winner |
-| `/admin/customers` | Customers | list: search (name/email/phone) + pagination, order_count / total_spent / last_order |
-| `/admin/customers/:id` | CustomerDetail | profile + saved address + stats + order history (rows → `/admin/orders/:id`) |
+| `/admin/auctions` | Auctions | Activas / Finalizadas toggle, "Agregar subasta" (`?category=subastas`), live bid columns |
+| `/admin/auctions/:id` | AuctionDetail | full-name bid log, winner block + order link, Cancelar y reasignar / Relanzar subasta |
+| `/admin/customers` | Customers | list: search (name/email/phone) + pagination, order_count / total_spent / last_order, "Vetado subastas" pill + Vetar/Restaurar row action |
+| `/admin/customers/:id` | CustomerDetail | profile + saved address + stats + order history (rows → `/admin/orders/:id`) + auctions-ban block (Vetar with optional reason / Quitar veto) |
 | `/admin/orders` | Orders | list: status/payment filters + search, consignment indicator (storefront icon) on orders containing seller items |
 | `/admin/orders/:id` | OrderDetail | item-by-item detail with seller badges (code pill, shown only on consigned items) |
 | `/admin/reports` | Reports | 5-tab hub: Pedidos por cliente, Actividad de clientes, Búsquedas, Cupones, Puntos (see Reports below) |
@@ -173,6 +175,21 @@ the winner** (blocked until entries are paid — `draw_raffle` raises `UNPAID_EN
 participant names for the wheel. Draw mechanics, `rifas_listing`, and exclusion rules →
 `database` skill. Customer-facing `/rifas` → `storefront` skill.
 
+## Auctions admin
+
+An auction is a product in the Subastas category; config (`ends_at` datetime-local,
+`min_increment`, `anti_snipe_minutes`) is set on the admin product form and saved via
+`AuctionsService.upsert`. `/admin/auctions` (Auctions) lists Activas/Finalizadas from
+`admin_auctions_summary`; sidenav badge = active count. `/admin/auctions/:id` (AuctionDetail,
+`:id` = product uuid) shows config + the **full-name** bid log (invalidated rounds greyed
+"Ronda anterior"), the winner block linking the auto-created order, and the non-payment
+tools: **Cancelar y reasignar** (cancels the order via `cancel_order`, crowns the next
+eligible bidder — excludes the old winner, skips banned — and re-fires the winner email) and
+**Relanzar subasta** (`prompt()` for the new close, archives bids, reopens). Auctions close
+themselves via cron — there is no manual "Finalizar". Data mechanics → `database` skill;
+customer bidding UX → `storefront` skill; docs: `docs/screens/admin/auctions.md` +
+`auction-detail.md`.
+
 ## Customers admin
 
 `/admin/customers` (Customers) lists **registered accounts** — searchable (name/email/phone)
@@ -182,6 +199,13 @@ same stats, and full order history (rows link to `/admin/orders/:id`). `Customer
 (`src/app/core/customers/`) wraps two admin RPCs — `admin_customers` (list) and `admin_customer`
 (detail) — which are needed because customer email lives in `auth.users`, not on `profiles`
 (→ `database` skill).
+
+**Auctions ban** (auctions-only — shopping/raffles unaffected): the list has a Vetar/Restaurar
+row action with snackbar-Deshacer + a red "Vetado subastas" pill; the detail has a Subastas
+block (banned-since date + optional motivo, ban via `prompt()` reason / unban via `confirm()`).
+Both call `CustomersService.setAuctionBan` → `admin_set_auction_ban` RPC
+(`profiles.auction_banned_at` / `auction_ban_reason`); `place_bid` rejects banned users and
+the winner pick skips their bids.
 
 The Clientes nav item pointed here before the screen existed (a dead link); it now resolves.
 Guests who checked out without an account don't appear here — they live in the Pedidos screen.

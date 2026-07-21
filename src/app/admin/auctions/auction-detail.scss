@@ -1,0 +1,136 @@
+// Mirrors raffle-detail.scss — same panel/winner/table treatment.
+
+.auction-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 960px;
+}
+
+.auction-detail__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  h1 {
+    margin: 4px 0 0;
+  }
+}
+
+.auction-detail__panel {
+  padding: 8px;
+}
+
+.auction-detail__info {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.auction-detail__thumb {
+  width: 104px;
+  height: 146px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex: 0 0 auto;
+}
+
+.auction-detail__meta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  dl {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 4px 16px;
+    margin: 0;
+  }
+
+  dt {
+    color: var(--text-secondary);
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  dd {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+  }
+}
+
+.auction-detail__winner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent-amber) 12%, transparent);
+
+  mat-icon {
+    color: var(--accent-amber);
+  }
+
+  strong {
+    display: block;
+  }
+
+  .muted {
+    font-size: 12px;
+    display: block;
+  }
+
+  &--void {
+    background: var(--surface-tonal);
+
+    mat-icon {
+      color: var(--text-tertiary);
+    }
+  }
+}
+
+.auction-detail__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.auction-detail__winner-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.auction-detail__scroll {
+  overflow-x: auto;
+}
+
+.auction-detail__orderlink {
+  display: inline-block;
+  margin-top: 4px;
+  color: var(--brand-blue);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.auction-detail__email {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-tertiary);
+}
+
+// Invalidated bids (previous rounds after a relist) read as archived.
+.auction-detail__row--stale.mat-mdc-row {
+  opacity: 0.55;
+}
+
+.muted {
+  color: var(--text-secondary);
+}

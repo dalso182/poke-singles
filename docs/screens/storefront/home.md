@@ -33,8 +33,8 @@ Top to bottom:
 
 ## Services & backend
 `Home.bootstrap()` runs three fetches in one `Promise.all`:
-- `products.list({ pageSize: 12, excludeRaffles: true, inStockOnly: true })` → `recent` — PostgREST select on **`products`** with embedded `sets(name, printed_total)` and `sellers(code, name)`, ordered `last_restocked_at DESC NULLS LAST, created_at DESC`, filtered `active = true`, `quantity > 0`, `price > 0`, `category_id <> raffleCategoryId`.
-- `products.list({ featured: true, pageSize: 12, excludeRaffles: true, inStockOnly: true })` → `featured` — same query plus `featured = true`.
+- `products.list({ pageSize: 12, excludeRaffles: true, excludeAuctions: true, inStockOnly: true })` → `recent` — PostgREST select on **`products`** with embedded `sets(name, printed_total)` and `sellers(code, name)`, ordered `last_restocked_at DESC NULLS LAST, created_at DESC`, filtered `active = true`, `quantity > 0`, `price > 0`, `category_id <>` the rifas AND subastas category ids.
+- `products.list({ featured: true, pageSize: 12, excludeRaffles: true, excludeAuctions: true, inStockOnly: true })` → `featured` — same query plus `featured = true`.
 - `products.search({ q: '', sort: DEFAULT_SORT_NO_QUERY, onSaleOnly: true, pageSize: 8 })` → `offers` — the **`search_products`** RPC (security invoker, reads the `products_search` view) with `p_on_sale_only: true`. `DEFAULT_SORT_NO_QUERY = 'price-desc'`, deliberately matching the `/ofertas` default so "Ver todo" continues seamlessly.
 
 Raffle exclusion resolves the Rifas category id once via `ProductsService.raffleCategoryId()` (memoised; reads `CategoriesService.list()` and finds `slug === 'rifas'`).

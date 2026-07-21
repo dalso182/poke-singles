@@ -30,6 +30,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ProductsService } from '../../core/catalog/products.service';
 import { SetsService } from '../../core/catalog/sets.service';
 import { CouponsService } from '../../core/catalog/coupons.service';
+import { AuctionsService } from '../../core/catalog/auctions.service';
 import { RafflesService } from '../../core/catalog/raffles.service';
 import { OrdersService } from '../../core/orders/orders.service';
 
@@ -80,6 +81,7 @@ export class AdminShell implements OnInit {
   private readonly sets = inject(SetsService);
   private readonly coupons = inject(CouponsService);
   private readonly raffles = inject(RafflesService);
+  private readonly auctions = inject(AuctionsService);
   private readonly orders = inject(OrdersService);
 
   protected readonly sidenavOpen = signal(true);
@@ -94,6 +96,7 @@ export class AdminShell implements OnInit {
   // a zero on first paint.
   protected readonly productCount = signal<number | null>(null);
   protected readonly raffleCount = signal<number | null>(null);
+  protected readonly auctionCount = signal<number | null>(null);
   protected readonly couponCount = signal<number | null>(null);
   protected readonly setCount = signal<number | null>(null);
   protected readonly pendingOrderCount = signal<number | null>(null);
@@ -127,6 +130,7 @@ export class AdminShell implements OnInit {
         { label: 'Filtros', icon: 'tune', path: '/admin/filters' },
         { label: 'Vendedores', icon: 'storefront', path: '/admin/sellers' },
         { label: 'Rifas', icon: 'confirmation_number', path: '/admin/raffles', count: this.raffleCount },
+        { label: 'Subastas', icon: 'gavel', path: '/admin/auctions', count: this.auctionCount },
       ],
     },
     {
@@ -198,6 +202,12 @@ export class AdminShell implements OnInit {
       .listSummary()
       .then((rows) =>
         this.raffleCount.set(rows.filter((r) => r.status === 'scheduled').length),
+      )
+      .catch(() => {});
+    void this.auctions
+      .listSummary()
+      .then((rows) =>
+        this.auctionCount.set(rows.filter((r) => r.status === 'active').length),
       )
       .catch(() => {});
     void this.orders

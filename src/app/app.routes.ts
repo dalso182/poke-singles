@@ -46,6 +46,17 @@ export const routes: Routes = [
           import('./admin/raffles/raffle-detail').then((m) => m.RaffleDetail),
       },
       {
+        path: 'auctions',
+        pathMatch: 'full',
+        loadComponent: () =>
+          import('./admin/auctions/auctions').then((m) => m.Auctions),
+      },
+      {
+        path: 'auctions/:id',
+        loadComponent: () =>
+          import('./admin/auctions/auction-detail').then((m) => m.AuctionDetail),
+      },
+      {
         path: 'categories',
         loadComponent: () =>
           import('./admin/categories/categories').then((m) => m.Categories),
@@ -206,6 +217,15 @@ export const routes: Routes = [
       {
         path: 'rifas',
         loadComponent: () => import('./user/rifas/rifas').then((m) => m.Rifas),
+      },
+      {
+        path: 'subastas',
+        loadComponent: () => import('./user/subastas/subastas').then((m) => m.Subastas),
+      },
+      {
+        path: 'subastas/:slug',
+        loadComponent: () =>
+          import('./user/subastas/subasta-detail').then((m) => m.SubastaDetail),
       },
       {
         // Reuses CardList; route data flips it into discounted-only mode and

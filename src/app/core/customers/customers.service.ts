@@ -48,6 +48,7 @@ export class CustomersService {
       last_order_at: r.last_order_at,
       order_count: Number(r.order_count) || 0,
       total_spent: Number(r.total_spent) || 0,
+      auction_banned_at: r.auction_banned_at,
     }));
     // total_count is identical across rows (window aggregate); 0 on empty page.
     const total = rpcRows.length > 0 ? Number(rpcRows[0].total_count) || 0 : 0;
@@ -81,6 +82,23 @@ export class CustomersService {
       })),
       caught_pokemon_numbers: c.caught_pokemon_numbers ?? [],
     };
+  }
+
+  /** Set or clear the auctions-only ban on a customer. Backed by
+   *  admin_set_auction_ban (security definer + is_admin guard); place_bid
+   *  rejects banned users and the close flow skips their bids. */
+  async setAuctionBan(
+    userId: string,
+    banned: boolean,
+    reason?: string,
+  ): Promise<{ ok: boolean; auction_banned_at: string | null }> {
+    const { data, error } = await (this.supabase.client as any).rpc('admin_set_auction_ban', {
+      p_user_id: userId,
+      p_banned: banned,
+      p_reason: reason ?? null,
+    });
+    if (error) throw error;
+    return data as { ok: boolean; auction_banned_at: string | null };
   }
 
   /** Top customers by Pokémon captured, for the dashboard "Top Pokédex" panel.

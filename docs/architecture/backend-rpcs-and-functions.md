@@ -1,6 +1,6 @@
 # Backend RPCs, edge functions & PHP endpoints
 
-> Part of the Poke-Singles docs set. Verified against source on 2026-07-08. Load together with /CLAUDE.md.
+> Part of the Poke-Singles docs set. Verified against source on 2026-07-20. Load together with /CLAUDE.md.
 
 ## Purpose
 
@@ -118,6 +118,32 @@ DEFINER + is_admin guard. Caller: `RafflesService.adminSummary` (`raffles.servic
 
 Public raffle listing is NOT an RPC — it's the `rifas_listing` definer view (see data-model). Raffle buyers in admin come from a direct `order_items ⨝ orders` select (`OrdersService.listRaffleBuyers`).
 
+### Auctions (`20260717000000`…`20260719000100`)
+
+#### `place_bid(p_product_id uuid, p_amount numeric) returns jsonb`
+
+DEFINER, **granted to `authenticated` only** (revoked from anon/public). Caller: `BidsService.placeBid` from `/subastas/:slug`. Envelope like `place_order` (`{ok:false, error:CODE, …}`); only a missing session raises (`NOT_AUTHORIZED`). Locks the auctions row `FOR UPDATE` (serializes concurrent bids + the cron close). Codes: `INVALID_AMOUNT` (non-whole colones / ≤ 0 / > 99 999 999), `NOT_AN_AUCTION`, `AUCTION_NOT_ACTIVE` (product inactive/deleted, status ≠ active, no `ends_at`), `AUCTION_ENDED`, `AUCTION_BANNED` (`profiles.auction_banned_at`), `ALREADY_LEADING`, `BID_TOO_LOW` (+ `min_next` = `current_bid + min_increment` else `products.price`). Anti-snipe: < `anti_snipe_minutes` left → `ends_at := now() + window`. Inserts the bid with a bidder name/email **snapshot**, updates denormalized `current_bid`/`bid_count`/`leader_user_id`/`ends_at` (fires `tg_auction_broadcast` → `realtime.send` on public topic `auction:<product_id>`, event `auction_update`, masked payload). Success: `{ok, bid_id, current_bid, bid_count, ends_at, extended}`.
+
+#### `process_auctions() returns void` — the per-minute worker (`20260718000100`, cron `auctions-minutely` in `..000200`)
+
+DEFINER, execute revoked from all client roles — pg_cron only (`* * * * *`). Two scans: **(1) reminders** — `UPDATE … SET reminder_sent_at = now() … RETURNING` (stamp-first, once-only even if the send fails) for active auctions with bids entering their final 30 min → best-effort `net.http_post` to Vault `auction_reminder_url`; **(2) close** — `FOR UPDATE SKIP LOCKED` over active auctions past `ends_at`, each in its own exception guard: no bids → `status='void'`; else `auction_create_winner_order()` then a **single UPDATE** writing `status='ended'`, `closed_at`, and all `winner_*` columns — the `winner_order_id` transition fires `auctions_notify_result` → pg_net → `send-auction-result`.
+
+#### `auction_create_winner_order(p_product_id uuid, p_exclude_user uuid = null) returns jsonb`
+
+DEFINER, internal (execute revoked; called by `process_auctions` + `reassign_auction_winner`). Picks the top live bid — excluding `p_exclude_user`, **banned profiles, and deleted accounts** — and creates the winner's normal `orders` row: pending, `payment_method 'sinpe_or_transfer'`, `shipping_method_name 'Por coordinar'` (`shipping_method_id` null, amount 0), `subtotal = total =` the bid, phone/address prefilled from the profile, notes `"Orden generada automáticamente por subasta ganada."`; plus the v10-style `order_items` snapshot (qty 1), guarded stock decrement, and a `customer_activity` row (`client_ip()` is null in cron context). Returns `{order_id, bid_id, user_id, winner_name, winner_email}` or NULL (caller voids).
+
+#### `reassign_auction_winner(p_product_id uuid) returns jsonb` / `relist_auction(p_product_id uuid, p_ends_at timestamptz) returns jsonb` — `20260719000100`
+
+DEFINER + `is_admin()` (raises `NOT_AUTHORIZED`). Callers: `AuctionsService.reassign/relist` from `/admin/auctions/:id`. **Reassign**: requires `ended` + winner order (`NO_WINNER_TO_REASSIGN`); cancels the defaulted order via **`cancel_order()`** (restock/coupon/loyalty identical to a manual cancel; `ALREADY_TERMINAL` tolerated), re-picks excluding the old winner, swaps winner columns in one UPDATE (re-fires the winner email) → `{outcome:'reassigned'|'void'}`. **Relist**: requires `ended|void` (`AUCTION_STILL_ACTIVE`) + future date (`INVALID_END_DATE`); cancels any winner order, stamps `invalidated_at` on live bids, resets all live/winner columns + `relist_count+1` + `status='active'`, ensures `products.quantity = 1`. Nested `cancel_order`'s `is_admin()` passes because the JWT claim is request-scoped.
+
+#### `admin_set_auction_ban(p_user_id uuid, p_banned boolean, p_reason text = null) returns jsonb` — `20260719000000`
+
+DEFINER + `is_admin()`. Caller: `CustomersService.setAuctionBan` (customers list + detail). Sets/clears `profiles.auction_banned_at` / `auction_ban_reason`; `CUSTOMER_NOT_FOUND` envelope on a bad id.
+
+#### `admin_auctions_summary() returns table(...)` / helpers
+
+`admin_auctions_summary` mirrors `admin_raffles_summary` (one row per subastas-category product + live state + winner order number + `bidders` distinct count). Helpers: `auction_category_id()` (DEFINER STABLE zero-arg, mirror of `raffle_category_id`), `mask_bidder_name(text)` (IMMUTABLE — 'Diego Alvarez' → 'D***o A.', blank → 'Anónimo'; used by the public views + broadcast payload). Public reads are the `subastas_listing` / `subastas_bids` definer views (see data-model), not RPCs. **`place_order` v11 (`20260717000300`) rejects auction products with `AUCTION_NOT_PURCHASABLE`** — the cart must never sell an auction card at starting price.
+
 ### Admin dashboard & customers
 
 #### `admin_dashboard_stats() returns jsonb` — final `20260525003400` (adds inventory value)
@@ -222,6 +248,18 @@ All use the auto-injected `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`. Four hav
 - **Behavior**: reads raffle + product + participants via service role; emails each participant individually through Resend (winner gets a congrats variant), plus an admin summary; stamps `raffles.notified_at`.
 - **Env**: same Resend quartet as send-order-email.
 
+#### `send-auction-result`
+
+- **Invoked by**: the `auctions_notify_result` DB trigger via pg_net (Vault: `auction_result_url` + `supabase_anon_key`); body `{product_id}`. Fires on every `winner_order_id` transition — the initial close AND admin reassignment.
+- **Behavior**: reads auction + product + winner order via service role; sends the winner "🏆 ¡Ganaste la subasta!" (card image, winning amount, order `#number`, SINPE/bank/WhatsApp payment instructions from `app_settings`, and the commit-to-pay reminder) plus an admin summary (winner, amount, order link); `void` closes only notify the admin ("Subasta sin pujas"); stamps `auctions.notified_at`.
+- **Env**: same Resend quartet.
+
+#### `send-auction-reminder`
+
+- **Invoked by**: `process_auctions()` (pg_cron) via pg_net (Vault: `auction_reminder_url` + `supabase_anon_key`); body `{product_id}`. At most once per auction per round (`reminder_sent_at` stamped before dispatch).
+- **Behavior**: emails every distinct live bidder "⏰ Cierra pronto": current bid, closing time formatted in `America/Costa_Rica`, a leading/outbid line, and a button back to `/subastas/:slug`.
+- **Env**: same Resend quartet.
+
 #### `send-signup-email`
 
 - **Invoked by**: the `on_auth_user_created` trigger (`handle_new_user()`) via pg_net (Vault: `signup_email_url` + `supabase_anon_key`); body `{user_id}`. Notification failure never blocks account creation (exception swallowed in the trigger).
@@ -247,7 +285,7 @@ These exist because product images are self-hosted static files on SiteGround (n
 - **Adding params**: append with defaults at the tail so existing named-arg callers keep resolving (precedent: `p_on_sale_only`, `p_category_slug`, `p_sort`).
 - **Grants are explicit**: every new function needs `grant execute ... to authenticated` (and `anon` only when guests genuinely call it: `search_*`, counts, `get_guest_order`, `attach_payment_proof`, `log_search`, `order_accepts_proof`, `category_id_by_slug`, `raffle_category_id`, `count_search_products`).
 - **pg_net calls use the `net` schema** (`net.http_post`) — `extensions.http_post` does not exist on this project and the exception guards will silently eat the mistake.
-- **Vault secrets are per-environment setup**, created manually in the SQL editor: `signup_email_url`, `raffle_result_url`, `price_check_url`, `supabase_anon_key`. Missing secrets = notifications silently skipped (by design).
+- **Vault secrets are per-environment setup**, created manually in the SQL editor: `signup_email_url`, `raffle_result_url`, `price_check_url`, `auction_result_url`, `auction_reminder_url`, `supabase_anon_key`. Missing secrets = notifications silently skipped (by design). (The two auction URLs exist on dev; **create them on prod at cutover**.)
 - **Resend is the only mail provider**; sender identity comes from `MAIL_FROM_ADDRESS`/`MAIL_FROM_NAME` env vars on the functions, recipients from `app_settings.order_notification_recipients`.
 - The TCGplayer variant-picking logic exists **twice** (client `tcgplayer-pricing.ts` and `price-check/index.ts`) and is kept in sync by hand — change both.
 

@@ -39,6 +39,7 @@ import { ImageBrowserService } from '../../core/images/image-browser.service';
 import { CategoriesService } from '../../core/catalog/categories.service';
 import { CardTypesService } from '../../core/catalog/card-types.service';
 import { ProductsService } from '../../core/catalog/products.service';
+import { AuctionsService } from '../../core/catalog/auctions.service';
 import { RafflesService } from '../../core/catalog/raffles.service';
 import { SellersService } from '../../core/catalog/sellers.service';
 import {
@@ -87,6 +88,7 @@ export class ProductEdit implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly products = inject(ProductsService);
   private readonly raffles = inject(RafflesService);
+  private readonly auctions = inject(AuctionsService);
   private readonly categories = inject(CategoriesService);
   private readonly cardTypes = inject(CardTypesService);
   private readonly sellers = inject(SellersService);
@@ -128,6 +130,13 @@ export class ProductEdit implements OnInit {
     const id = this.selectedCategoryId();
     if (!id) return false;
     return this.categoriesList().find((c) => c.slug === 'rifas')?.id === id;
+  });
+  /** True when the chosen category is the "Subastas" bucket — reveals the
+   *  auction fields (end date + increment + anti-snipe). */
+  protected readonly isAuction = computed(() => {
+    const id = this.selectedCategoryId();
+    if (!id) return false;
+    return this.categoriesList().find((c) => c.slug === 'subastas')?.id === id;
   });
   /** True when the chosen category is one where card-only fields make sense
    *  (Singles / Graded) — gates Pokémon, rareza, número, condición, variante. */
@@ -188,6 +197,11 @@ export class ProductEdit implements OnInit {
       // raffles table. Only shown when category is "Rifas"; notes reuse description.
       draw_at: [null as string | null],
       market_price: [null as number | null, [Validators.min(0)]],
+      // Auction config (datetime-local in the admin's timezone; converted to
+      // ISO at the persistence boundary). Only shown when category is Subastas.
+      auction_ends_at: [null as string | null],
+      auction_min_increment: [1000 as number | null, [Validators.min(1)]],
+      auction_anti_snipe_minutes: [5 as number | null, [Validators.min(0), Validators.max(60)]],
     },
     { validators: salePriceBelowPrice },
   );
@@ -201,12 +215,13 @@ export class ProductEdit implements OnInit {
   private async bootstrap(): Promise<void> {
     this.loading.set(true);
     try {
-      const [cats, types, product, assignedTypeIds, raffleRow, sellers] = await Promise.all([
+      const [cats, types, product, assignedTypeIds, raffleRow, auctionRow, sellers] = await Promise.all([
         this.categories.list(),
         this.cardTypes.list({ activeOnly: true }),
         this.products.get(this.id()),
         this.products.getCardTypeIds(this.id()),
         this.raffles.get(this.id()),
+        this.auctions.get(this.id()),
         this.sellers.list(),
       ]);
       this.categoriesList.set(cats);
@@ -227,6 +242,10 @@ export class ProductEdit implements OnInit {
         // From the raffles row; stored at UTC midnight, take the date portion.
         draw_at: raffleRow?.draw_at ? raffleRow.draw_at.slice(0, 10) : null,
         market_price: raffleRow?.market_price ?? null,
+        // From the auctions row; timestamptz → the admin's local datetime.
+        auction_ends_at: isoToLocalDatetime(auctionRow?.ends_at),
+        auction_min_increment: auctionRow?.min_increment ?? 1000,
+        auction_anti_snipe_minutes: auctionRow?.anti_snipe_minutes ?? 5,
       });
     } catch (err) {
       this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });
@@ -315,16 +334,16 @@ export class ProductEdit implements OnInit {
         slug: raw.slug,
         description: raw.description || null,
         rarity: isCard ? raw.rarity || null : null,
-        // Raffles are single-card prizes, so they keep the card number (it shows
-        // on the /rifas tile next to the set) even though the other card-only
-        // fields stay hidden for them — same exception as `condition` below.
-        card_number: isCard || this.isRaffle() ? raw.card_number || null : null,
+        // Raffles and auctions are single-card prizes, so they keep the card
+        // number (it shows on the tile next to the set) even though the other
+        // card-only fields stay hidden for them — same exception as `condition`.
+        card_number: isCard || this.isRaffle() || this.isAuction() ? raw.card_number || null : null,
         image_url: raw.image_url || null,
         set_id: raw.set_id || null,
         category_id: raw.category_id,
-        // Raffles are single-card prizes too, so they keep their condition even
-        // though the rest of the card-only fields stay hidden for them.
-        condition: isCard || this.isRaffle() ? raw.condition || null : null,
+        // Raffles/auctions are single-card prizes too, so they keep their
+        // condition even though the rest of the card-only fields stay hidden.
+        condition: isCard || this.isRaffle() || this.isAuction() ? raw.condition || null : null,
         language: raw.language,
         variant: isCard ? raw.variant || null : null,
         price: Number(raw.price),
@@ -337,6 +356,13 @@ export class ProductEdit implements OnInit {
         await this.raffles.upsert(product.id, {
           draw_at: raw.draw_at || null,
           market_price: toNullableNumber(raw.market_price),
+        });
+      }
+      if (this.isAuction()) {
+        await this.auctions.upsert(product.id, {
+          ends_at: localDatetimeToIso(raw.auction_ends_at),
+          min_increment: toNullableNumber(raw.auction_min_increment),
+          anti_snipe_minutes: toNullableNumber(raw.auction_anti_snipe_minutes),
         });
       }
       // Singles/graded → multi Rareza; sealed/accesorios → one sub-type; else none.
@@ -447,4 +473,22 @@ function toNullableNumber(value: unknown): number | null {
   if (value === null || value === undefined || value === '') return null;
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
+}
+
+/** `datetime-local` value ("2026-07-20T18:30", admin's local time) → ISO
+ *  timestamptz string for the DB. Empty/invalid → null. */
+function localDatetimeToIso(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+/** ISO timestamptz from the DB → `datetime-local` value in the admin's local
+ *  timezone ("2026-07-20T18:30"). Null/invalid → null. */
+function isoToLocalDatetime(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }

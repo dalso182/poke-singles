@@ -21,6 +21,9 @@
           <div class="customers__customer">
             <strong>{{ row.full_name || 'Sin nombre' }}</strong>
             <span class="customers__email">{{ row.email }}</span>
+            @if (row.auction_banned_at) {
+              <app-pill tone="red">Vetado subastas</app-pill>
+            }
           </div>
         </td>
       </ng-container>
@@ -62,6 +65,13 @@
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef></th>
         <td mat-cell *matCellDef="let row" class="is-right">
+          <app-btn
+            [variant]="row.auction_banned_at ? 'subtle' : 'danger'"
+            size="sm"
+            (click)="onToggleBan(row)"
+          >
+            {{ row.auction_banned_at ? 'Restaurar' : 'Vetar' }}
+          </app-btn>
           <app-btn variant="ghost" size="sm" (click)="goToView(row.id)">Ver</app-btn>
         </td>
       </ng-container>

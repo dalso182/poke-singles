@@ -116,6 +116,7 @@ export type Database = {
           legacy_sales_total_crc: number
           loyalty_colones_per_point: number
           loyalty_enabled: boolean
+          maintenance_image_url: string | null
           maintenance_message: string | null
           maintenance_mode: boolean
           order_notification_recipients: string
@@ -135,6 +136,7 @@ export type Database = {
           legacy_sales_total_crc?: number
           loyalty_colones_per_point?: number
           loyalty_enabled?: boolean
+          maintenance_image_url?: string | null
           maintenance_message?: string | null
           maintenance_mode?: boolean
           order_notification_recipients?: string
@@ -154,6 +156,7 @@ export type Database = {
           legacy_sales_total_crc?: number
           loyalty_colones_per_point?: number
           loyalty_enabled?: boolean
+          maintenance_image_url?: string | null
           maintenance_message?: string | null
           maintenance_mode?: boolean
           order_notification_recipients?: string
@@ -166,6 +169,170 @@ export type Database = {
           whatsapp_number?: string | null
         }
         Relationships: []
+      }
+      auctions: {
+        Row: {
+          anti_snipe_minutes: number
+          bid_count: number
+          closed_at: string | null
+          created_at: string
+          current_bid: number | null
+          ends_at: string | null
+          leader_user_id: string | null
+          min_increment: number
+          notified_at: string | null
+          product_id: string
+          relist_count: number
+          reminder_sent_at: string | null
+          status: string
+          updated_at: string
+          winner_bid_id: string | null
+          winner_email: string | null
+          winner_name: string | null
+          winner_order_id: string | null
+          winner_user_id: string | null
+        }
+        Insert: {
+          anti_snipe_minutes?: number
+          bid_count?: number
+          closed_at?: string | null
+          created_at?: string
+          current_bid?: number | null
+          ends_at?: string | null
+          leader_user_id?: string | null
+          min_increment?: number
+          notified_at?: string | null
+          product_id: string
+          relist_count?: number
+          reminder_sent_at?: string | null
+          status?: string
+          updated_at?: string
+          winner_bid_id?: string | null
+          winner_email?: string | null
+          winner_name?: string | null
+          winner_order_id?: string | null
+          winner_user_id?: string | null
+        }
+        Update: {
+          anti_snipe_minutes?: number
+          bid_count?: number
+          closed_at?: string | null
+          created_at?: string
+          current_bid?: number | null
+          ends_at?: string | null
+          leader_user_id?: string | null
+          min_increment?: number
+          notified_at?: string | null
+          product_id?: string
+          relist_count?: number
+          reminder_sent_at?: string | null
+          status?: string
+          updated_at?: string
+          winner_bid_id?: string | null
+          winner_email?: string | null
+          winner_name?: string | null
+          winner_order_id?: string | null
+          winner_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auctions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "available_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auctions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auctions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products_search"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auctions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "rifas_listing"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auctions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "subastas_listing"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auctions_winner_bid_fk"
+            columns: ["winner_bid_id"]
+            isOneToOne: false
+            referencedRelation: "bids"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auctions_winner_bid_fk"
+            columns: ["winner_bid_id"]
+            isOneToOne: false
+            referencedRelation: "subastas_bids"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auctions_winner_order_id_fkey"
+            columns: ["winner_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bids: {
+        Row: {
+          amount: number
+          bidder_email: string
+          bidder_name: string
+          created_at: string
+          id: string
+          invalidated_at: string | null
+          product_id: string
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          bidder_email: string
+          bidder_name: string
+          created_at?: string
+          id?: string
+          invalidated_at?: string | null
+          product_id: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          bidder_email?: string
+          bidder_name?: string
+          created_at?: string
+          id?: string
+          invalidated_at?: string | null
+          product_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bids_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "auctions"
+            referencedColumns: ["product_id"]
+          },
+        ]
       }
       card_details: {
         Row: {
@@ -269,6 +436,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "rifas_listing"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "subastas_listing"
             referencedColumns: ["id"]
           },
         ]
@@ -593,6 +767,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "subastas_listing"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "order_items_seller_id_fkey"
             columns: ["seller_id"]
             isOneToOne: false
@@ -806,6 +987,13 @@ export type Database = {
             referencedRelation: "rifas_listing"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "price_reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "subastas_listing"
+            referencedColumns: ["id"]
+          },
         ]
       }
       product_card_types: {
@@ -858,6 +1046,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "rifas_listing"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_card_types_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "subastas_listing"
             referencedColumns: ["id"]
           },
         ]
@@ -1004,6 +1199,8 @@ export type Database = {
       }
       profiles: {
         Row: {
+          auction_ban_reason: string | null
+          auction_banned_at: string | null
           avatar_pokemon_number: number | null
           caught_pokemon_numbers: number[]
           created_at: string
@@ -1014,6 +1211,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          auction_ban_reason?: string | null
+          auction_banned_at?: string | null
           avatar_pokemon_number?: number | null
           caught_pokemon_numbers?: number[]
           created_at?: string
@@ -1024,6 +1223,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          auction_ban_reason?: string | null
+          auction_banned_at?: string | null
           avatar_pokemon_number?: number | null
           caught_pokemon_numbers?: number[]
           created_at?: string
@@ -1111,6 +1312,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: true
             referencedRelation: "rifas_listing"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "subastas_listing"
             referencedColumns: ["id"]
           },
           {
@@ -1562,8 +1770,76 @@ export type Database = {
         }
         Relationships: []
       }
+      subastas_bids: {
+        Row: {
+          amount: number | null
+          avatar_pokemon_number: number | null
+          bidder_masked: string | null
+          created_at: string | null
+          id: string | null
+          is_mine: boolean | null
+          product_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bids_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "auctions"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
+      subastas_listing: {
+        Row: {
+          anti_snipe_minutes: number | null
+          bid_count: number | null
+          card_number: string | null
+          closed_at: string | null
+          condition: string | null
+          current_bid: number | null
+          ends_at: string | null
+          id: string | null
+          image_url: string | null
+          min_increment: number | null
+          name: string | null
+          notes: string | null
+          quantity: number | null
+          set_name: string | null
+          set_printed_total: number | null
+          slug: string | null
+          starting_price: number | null
+          status: string | null
+          winner_masked: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      admin_auctions_summary: {
+        Args: never
+        Returns: {
+          active: boolean
+          bid_count: number
+          bidders: number
+          closed_at: string
+          current_bid: number
+          ends_at: string
+          image_url: string
+          min_increment: number
+          name: string
+          product_id: string
+          quantity: number
+          relist_count: number
+          reminder_sent_at: string
+          slug: string
+          starting_price: number
+          status: string
+          winner_name: string
+          winner_order_id: string
+          winner_order_number: number
+        }[]
+      }
       admin_coupons_report: {
         Args: {
           p_date_end?: string
@@ -1656,6 +1932,7 @@ export type Database = {
           p_sort?: string
         }
         Returns: {
+          auction_banned_at: string
           created_at: string
           email: string
           full_name: string
@@ -1837,8 +2114,17 @@ export type Database = {
           seller_name: string
         }[]
       }
+      admin_set_auction_ban: {
+        Args: { p_banned: boolean; p_reason?: string; p_user_id: string }
+        Returns: Json
+      }
       attach_payment_proof: {
         Args: { p_email: string; p_file_path: string; p_order_id: string }
+        Returns: Json
+      }
+      auction_category_id: { Args: never; Returns: string }
+      auction_create_winner_order: {
+        Args: { p_exclude_user?: string; p_product_id: string }
         Returns: Json
       }
       calculate_coupon_discount: {
@@ -1906,10 +2192,21 @@ export type Database = {
         Args: { p_category_slug?: string; p_found?: number; p_term: string }
         Returns: undefined
       }
+      mask_bidder_name: { Args: { p_name: string }; Returns: string }
       open_pokeball: { Args: { p_tier: string }; Returns: Json }
       order_accepts_proof: { Args: { p_prefix: string }; Returns: boolean }
+      place_bid: {
+        Args: { p_amount: number; p_product_id: string }
+        Returns: Json
+      }
       place_order: { Args: { p_input: Json }; Returns: Json }
+      process_auctions: { Args: never; Returns: undefined }
       raffle_category_id: { Args: never; Returns: string }
+      reassign_auction_winner: { Args: { p_product_id: string }; Returns: Json }
+      relist_auction: {
+        Args: { p_ends_at: string; p_product_id: string }
+        Returns: Json
+      }
       sealed_payout_fees: {
         Args: {
           p_order_seller_units?: number

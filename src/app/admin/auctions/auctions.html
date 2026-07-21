@@ -1,0 +1,119 @@
+<app-page-header
+  kicker="Ventas"
+  title="Subastas"
+  sub="Subastas activas, sus pujas, y el historial de ventas al mejor postor"
+>
+  <app-btn variant="primary" (click)="goToNew()">
+    <mat-icon>add</mat-icon>
+    Agregar subasta
+  </app-btn>
+</app-page-header>
+
+<app-pill-tabs class="auctions__tabs" [tabs]="filterTabs()" [value]="filter()" (valueChange)="onFilterChange($event)" />
+
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<app-table-card>
+  <div class="auctions__scroll">
+    <table mat-table [dataSource]="visibleRows()" class="app-table app-table--cozy">
+      <ng-container matColumnDef="image">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let row">
+          <app-thumb [src]="row.image_url" />
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>Subasta</th>
+        <td mat-cell *matCellDef="let row">
+          <strong class="auctions__name">{{ row.name }}</strong>
+          @if (!row.active) {
+            <span class="auctions__inactive"> · inactiva</span>
+          }
+          @if (row.relist_count > 0) {
+            <span class="auctions__inactive"> · relanzada ×{{ row.relist_count }}</span>
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="ends">
+        <th mat-header-cell *matHeaderCellDef>Cierre</th>
+        <td mat-cell *matCellDef="let row" class="is-mono is-dim">
+          @if (row.status === 'active') {
+            @if (row.ends_at) {
+              {{ row.ends_at | date: 'd/MM/yyyy, HH:mm' }}
+            } @else {
+              Por definir
+            }
+          } @else if (row.closed_at) {
+            {{ row.closed_at | date: 'd/MM/yyyy, HH:mm' }}
+          } @else {
+            —
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="bid">
+        <th mat-header-cell *matHeaderCellDef class="is-right">Puja actual</th>
+        <td mat-cell *matCellDef="let row" class="is-right">
+          @if (row.current_bid != null) {
+            <app-money [value]="row.current_bid" />
+          } @else {
+            <span class="is-mono is-dim">₡{{ row.starting_price | number: '1.0-0' }} inicial</span>
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="bids">
+        <th mat-header-cell *matHeaderCellDef class="is-right">Pujas</th>
+        <td mat-cell *matCellDef="let row" class="is-right is-mono">
+          {{ row.bid_count }}
+          @if (row.bidders > 0) {
+            <span class="is-dim">({{ row.bidders }} postor{{ row.bidders === 1 ? '' : 'es' }})</span>
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>Estado</th>
+        <td mat-cell *matCellDef="let row">
+          <app-pill [tone]="statusTone(row.status)">{{ statusLabel(row.status) }}</app-pill>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="winner">
+        <th mat-header-cell *matHeaderCellDef>Ganador</th>
+        <td mat-cell *matCellDef="let row">
+          @if (row.winner_name) {
+            {{ row.winner_name }}
+            @if (row.winner_order_number != null) {
+              <span class="is-mono is-dim">#{{ row.winner_order_number }}</span>
+            }
+          } @else {
+            <span class="is-mono is-dim">—</span>
+          }
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr
+        mat-row
+        *matRowDef="let row; columns: displayedColumns"
+        class="auctions__row"
+        (click)="goTo(row.product_id)"
+      ></tr>
+    </table>
+  </div>
+
+  @if (!loading() && visibleRows().length === 0) {
+    <p class="auctions__empty">
+      @if (filter() === 'active') {
+        No hay subastas activas. Usa "Agregar subasta" para crear una.
+      } @else {
+        Todavía no hay subastas finalizadas.
+      }
+    </p>
+  }
+</app-table-card>

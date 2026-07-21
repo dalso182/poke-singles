@@ -1,6 +1,6 @@
 # Admin — Customers list (Clientes)
 
-> Part of the Poke-Singles docs set. Verified against source on 2026-07-06. Load together with /CLAUDE.md.
+> Part of the Poke-Singles docs set. Verified against source on 2026-07-20. Load together with /CLAUDE.md.
 
 ## Purpose
 
@@ -33,12 +33,12 @@ Top to bottom (all shared primitives are documented in the design manifest — s
 3. **`<mat-progress-bar mode="indeterminate">`** — shown only while `loading()`.
 4. **`<app-table-card>`** wrapping:
    - `.customers__scroll` (horizontal overflow guard) with a `mat-table` (`class="app-table app-table--comfy"`). `displayedColumns = ['customer', 'phone', 'orders', 'spent', 'last', 'actions']`:
-     - **Cliente** — `.customers__customer`: `<strong>` full name (fallback `"Sin nombre"`) over `.customers__email` (mono, dim).
+     - **Cliente** — `.customers__customer`: `<strong>` full name (fallback `"Sin nombre"`) over `.customers__email` (mono, dim), plus a red `<app-pill>` `"Vetado subastas"` when `row.auction_banned_at` is set.
      - **Teléfono** — mono; em-dash `—` (class `is-dim`) when null.
      - **Pedidos** — right-aligned, mono, `row.order_count`.
      - **Total gastado** — right-aligned `<app-money [value]="row.total_spent" />`.
      - **Último pedido** — `row.last_order_at | date: 'short'`, or `—` when null.
-     - **(actions)** — `<app-btn variant="ghost" size="sm">` labeled `"Ver"` → `goToView(row.id)`.
+     - **(actions)** — the auctions-ban toggle (`"Vetar"` danger / `"Restaurar"` subtle → `onToggleBan(row)`) followed by `<app-btn variant="ghost" size="sm">` labeled `"Ver"` → `goToView(row.id)`.
    - Empty state: `.customers__empty` paragraph `"Sin clientes en este filtro."` (only when `!loading() && rows().length === 0`).
    - **`<app-pagination-footer>`** — `perPageOptions = [10, 25, 50, 100]`, wired to `onPage` / `onPerPage`.
 
@@ -53,6 +53,7 @@ Top to bottom (all shared primitives are documented in the design manifest — s
   - Pagination: `count(*) over()` returned as `total_count` on every row; the service reads it from `rows[0]` (0 when the page is empty).
   - The service coerces `order_count` / `total_spent` with `Number(...) || 0` because bigint/numeric aggregates may arrive as strings; clamps `page >= 1` and `1 <= pageSize <= 200`, default `pageSize` 25.
 - **`CustomersService.getCustomer(id)`** → RPC `admin_customer(p_id)` — used by the detail screen, see [customer-detail.md](./customer-detail.md).
+- **`CustomersService.setAuctionBan(userId, banned, reason?)`** → RPC **`admin_set_auction_ban(p_user_id, p_banned, p_reason)`** (`SECURITY DEFINER` + `is_admin()`, migration `20260719000000`): sets/clears `profiles.auction_banned_at` + `auction_ban_reason`. `place_bid` rejects banned users with `AUCTION_BANNED`, and the auction close/reassign winner pick skips their bids. Auctions-only — shopping and raffles are unaffected. The list RPC surfaces `auction_banned_at` (added in the same migration via the drop-then-recreate rule).
 - **`CustomersService.pokedexLeaderboard(limit = 10)`** → RPC `admin_pokedex_leaderboard(p_limit)` — used by the dashboard "Top Pokédex" panel, not by this screen.
 
 ## State & data flow
@@ -72,6 +73,7 @@ Flow: a constructor `effect()` reads `searchValue()`, resets `page` to 1, and ca
 - **Error:** snackbar only — rows keep whatever the last successful fetch returned.
 - **Debounce:** 250 ms on the search box; page resets to 1 on every committed search change.
 - No date filtering, no export, no row-click navigation (only the `"Ver"` button navigates).
+- **Ban toggle** (`onToggleBan`): native `confirm()` ("¿Vetar a {name} de las subastas?…" / "¿Restaurar a {name}?…"), then `setAuctionBan` with the snackbar-**Deshacer** idiom (mirrors products-list `onToggleActive`) and a `refresh()`. Reason-less here — the detail screen offers the optional reason.
 
 ## Gotchas / invariants
 

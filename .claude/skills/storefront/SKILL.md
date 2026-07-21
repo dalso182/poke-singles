@@ -23,8 +23,9 @@ channel that feeds the admin dashboard's "people online" tile (→ `database` / 
 
 `/` Home · `/products` CardList · `/products/:slug` Detail (slug via
 `input.required<string>()`) · `/buscar` SearchResults (`q` + `sort` URL params) · `/rifas`
-Rifas · `/cart` CartPage · `/account` Account (`customerGuard`). Specific paths are declared
-before the empty-path UserShell wrapper (router-ordering requirement).
+Rifas · `/subastas` Subastas + `/subastas/:slug` SubastaDetail (public; bidding gates
+sign-in at action time) · `/cart` CartPage · `/account` Account (`customerGuard`). Specific
+paths are declared before the empty-path UserShell wrapper (router-ordering requirement).
 
 **Maintenance gate.** The whole UserShell branch carries `maintenanceGuard`
 (`src/app/core/auth/maintenance.guard.ts`) as both `canActivate` + `canActivateChild`. When
@@ -130,6 +131,31 @@ Full RPC contract → `database` skill.
 `quantity + entries_sold`), a day countdown (gold "coming soon" under 3 days), set + card-number
 meta, and `market_price` (to show the raffle isn't profiteering). Entries are bought through the
 normal cart → checkout pipeline. Data side → `database` skill.
+
+## Auctions (customer view)
+
+`/subastas` reads the `subastas_listing` view, split **Activas** / **Finalizadas**; tile
+`shared/auction-card/` links to `/subastas/:slug` (unlike raffles, auctions HAVE a detail
+page — `/products/:slug` redirects auction slugs there). The detail page
+(`src/app/user/subastas/subasta-detail.ts`) holds the whole bidding UX:
+
+- **Live updates**: `AuctionLiveService` (`src/app/core/auctions/auction-live.service.ts`)
+  subscribes one public Broadcast channel `auction:<product_id>` per open detail page
+  (pushed by a DB trigger via `realtime.send`); payloads are treated as optimistic hints —
+  the page re-fetches `subastas_bids` + the listing row on every event. `teardown()` in
+  `ngOnDestroy`. `shared/countdown/` ticks per second and reacts to anti-snipe extensions.
+- **Login-then-bid** (first in-place login-resume in the app): signed-out "Pujar" lazily
+  opens `LoginDialog` and continues only on `'signed-in'`/`'signed-up'` — no navigation.
+- **Commit confirmation**: every bid opens `BidConfirmDialog` — checkbox "Entiendo que al
+  pujar me comprometo a pagar si gano…" gates "Confirmar puja".
+- **`BidsService.placeBid`** maps the `place_bid` envelope to Spanish snackbars
+  (`BID_TOO_LOW` re-prefills `min_next`; `AUCTION_BANNED`, `ALREADY_LEADING`, ended…).
+- Bid history is **masked server-side** (`bidder_masked` "D***o A." + Pokémon avatar +
+  `is_mine`).
+
+The winner pays through the normal order pipeline (the cron auto-creates their pending
+order). Data side, cron + emails → `database` skill; admin side → `admin` skill; docs:
+`docs/screens/storefront/subastas.md` + `subasta-detail.md`.
 
 ## Account + auth UI
 

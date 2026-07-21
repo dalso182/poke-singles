@@ -117,6 +117,33 @@
   border-top: 1px solid var(--border-subtle);
 }
 
+// Auctions-ban block — same visual weight as the address section.
+.info__ban {
+  margin: 0 22px 22px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.info__ban-label {
+  font-family: var(--font-brand);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.1px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.info__ban-state {
+  margin: 0 0 10px;
+  font-family: var(--font-brand);
+  font-size: 13.5px;
+  color: var(--text-secondary);
+
+  &--banned {
+    color: var(--danger);
+  }
+}
+
 .info__address-label {
   font-family: var(--font-brand);
   font-size: 12.5px;

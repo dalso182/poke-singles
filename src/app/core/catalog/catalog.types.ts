@@ -370,6 +370,108 @@ export interface RaffleRow {
   updated_at: string;
 }
 
+export type AuctionStatus = 'active' | 'ended' | 'void';
+
+/** Shape the /subastas screens need — matches the `subastas_listing` view
+ *  (products ⨝ auctions ⨝ sets) returned by ProductsService.listAuctions().
+ *  `notes` comes from products.description; live state from the auctions table.
+ *  winner_masked is already masked server-side (mask_bidder_name). */
+export interface AuctionListingItem {
+  id: string;
+  slug: string;
+  name: string;
+  image_url: string | null;
+  starting_price: number;
+  quantity: number;
+  notes: string | null;
+  condition: string | null;
+  card_number: string | null;
+  set_name: string | null;
+  set_printed_total: number | null;
+  ends_at: string | null;
+  status: AuctionStatus;
+  min_increment: number | null;
+  anti_snipe_minutes: number | null;
+  current_bid: number | null;
+  bid_count: number;
+  winner_masked: string | null;
+  closed_at: string | null;
+}
+
+/** One row of the public `subastas_bids` view: masked bid history. `is_mine`
+ *  lets a signed-in bidder spot their own bids. */
+export interface AuctionBidItem {
+  id: string;
+  product_id: string;
+  amount: number;
+  created_at: string;
+  bidder_masked: string;
+  avatar_pokemon_number: number | null;
+  is_mine: boolean;
+}
+
+/** Admin auction list row from the admin_auctions_summary() RPC. */
+export interface AuctionSummaryRow {
+  product_id: string;
+  name: string;
+  image_url: string | null;
+  slug: string;
+  starting_price: number;
+  quantity: number;
+  active: boolean;
+  ends_at: string | null;
+  status: AuctionStatus;
+  min_increment: number | null;
+  current_bid: number | null;
+  bid_count: number;
+  /** Distinct (non-invalidated) bidders. */
+  bidders: number;
+  winner_name: string | null;
+  winner_order_id: string | null;
+  winner_order_number: number | null;
+  reminder_sent_at: string | null;
+  closed_at: string | null;
+  relist_count: number;
+}
+
+/** A row of the `auctions` table (admin-read). 1:1 with a Subastas-category
+ *  product. Live state (current_bid/bid_count/leader) is owned by place_bid;
+ *  winner/closed_at by process_auctions + reassign/relist. */
+export interface AuctionRow {
+  product_id: string;
+  ends_at: string | null;
+  min_increment: number;
+  anti_snipe_minutes: number;
+  status: AuctionStatus;
+  current_bid: number | null;
+  bid_count: number;
+  leader_user_id: string | null;
+  winner_user_id: string | null;
+  winner_bid_id: string | null;
+  winner_order_id: string | null;
+  winner_name: string | null;
+  winner_email: string | null;
+  reminder_sent_at: string | null;
+  notified_at: string | null;
+  closed_at: string | null;
+  relist_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/** A raw row of the `bids` table (admin-read: full names + emails).
+ *  invalidated_at non-null = archived by a relist ("ronda anterior"). */
+export interface BidRow {
+  id: string;
+  product_id: string;
+  user_id: string | null;
+  bidder_name: string;
+  bidder_email: string;
+  amount: number;
+  invalidated_at: string | null;
+  created_at: string;
+}
+
 export interface TcgdexCardRow {
   card_ref: string;
   data: unknown;
@@ -776,6 +878,8 @@ export interface CustomerRow {
   order_count: number;
   total_spent: number;
   last_order_at: string | null;
+  /** Non-null = banned from bidding in auctions (auctions-only ban). */
+  auction_banned_at: string | null;
 }
 
 /** A customer's order as embedded in the detail RPC payload (lightweight — not
@@ -798,6 +902,8 @@ export interface CustomerDetail extends CustomerRow {
   loyalty_balance: number;
   loyalty_transactions: LoyaltyTransactionRow[];
   caught_pokemon_numbers: number[];
+  /** Optional admin note for why the auctions ban was applied. */
+  auction_ban_reason: string | null;
 }
 
 /** One row of admin_pokedex_leaderboard(): a customer ranked by Pokémon caught. */
@@ -1132,6 +1238,8 @@ export interface AppSettingsRow {
   exchange_rate_usd_crc: number | null;
   maintenance_mode: boolean;
   maintenance_message: string | null;
+  /** Root-relative image path (under /card-images/) shown on the maintenance page. */
+  maintenance_image_url: string | null;
   sinpe_phone: string | null;
   whatsapp_number: string | null;
   bank_account_info: string | null;
@@ -1157,6 +1265,7 @@ export type AppSettingsUpdate = Partial<
     | 'exchange_rate_usd_crc'
     | 'maintenance_mode'
     | 'maintenance_message'
+    | 'maintenance_image_url'
     | 'sinpe_phone'
     | 'whatsapp_number'
     | 'bank_account_info'

@@ -219,6 +219,46 @@
         </app-form-section>
       }
 
+      @if (isAuction()) {
+        <app-form-section
+          title="Datos de la subasta"
+          subtitle="El precio es la puja de salida. La subasta cierra sola en la fecha indicada; las notas se toman del campo «Descripción» de arriba."
+        >
+          <app-form-grid [cols]="2">
+            <mat-form-field appearance="outline">
+              <mat-label>Cierre de la subasta</mat-label>
+              <input matInput type="datetime-local" formControlName="auction_ends_at" />
+              <mat-hint>Fecha y hora locales — vacío = por definir (no se puede pujar).</mat-hint>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="is-mono">
+              <mat-label>Incremento mínimo (CRC)</mat-label>
+              <input matInput type="number" formControlName="auction_min_increment" min="1" step="100" />
+              <mat-hint>Cada puja debe superar la anterior por al menos esto.</mat-hint>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="is-mono">
+              <mat-label>Anti-sniping (minutos)</mat-label>
+              <input matInput type="number" formControlName="auction_anti_snipe_minutes" min="0" max="60" />
+              <mat-hint>Una puja en los últimos N min extiende el cierre. 0 = desactivado.</mat-hint>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="is-mono">
+              <mat-label>Número en set</mat-label>
+              <input matInput formControlName="card_number" />
+              <mat-hint>Se muestra junto al set en la tarjeta de la subasta.</mat-hint>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Condición</mat-label>
+              <mat-select formControlName="condition" panelClass="admin-form-overlay">
+                <mat-option value="">—</mat-option>
+                @for (c of conditions; track c.value) {
+                  <mat-option [value]="c.value">{{ c.label }}</mat-option>
+                }
+              </mat-select>
+              <mat-hint>Estado de la carta — se muestra al cliente.</mat-hint>
+            </mat-form-field>
+          </app-form-grid>
+        </app-form-section>
+      }
+
       @if (showCardTypes()) {
         <app-form-section title="Tipos de carta" subtitle="Selecciona todas las que apliquen">
           <app-form-grid [cols]="2" [gap]="2" class="checkbox-grid">

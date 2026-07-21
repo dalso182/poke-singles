@@ -1,0 +1,45 @@
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a routerLink="/" class="breadcrumb-home" aria-label="Inicio">
+    <mat-icon>home</mat-icon>
+  </a>
+  <span class="breadcrumb-sep">›</span>
+  <span class="breadcrumb-current">Subastas</span>
+</nav>
+
+<header class="subastas-header">
+  <h1>Subastas</h1>
+  <p class="lead">
+    Pujá por cartas exclusivas y llevátelas al mejor precio. La subasta cierra
+    en la fecha indicada y la carta se vende al mejor postor.
+  </p>
+</header>
+
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<mat-tab-group mat-stretch-tabs="false" animationDuration="0ms">
+  <mat-tab label="Activas">
+    @if (!loading() && activeAuctions().length === 0) {
+      <p class="subastas-empty">No hay subastas activas en este momento. Vuelve pronto.</p>
+    } @else {
+      <div class="cards-grid">
+        @for (auction of activeAuctions(); track auction.id) {
+          <app-auction-card [auction]="auction" />
+        }
+      </div>
+    }
+  </mat-tab>
+
+  <mat-tab label="Finalizadas">
+    @if (!loading() && completedAuctions().length === 0) {
+      <p class="subastas-empty">Todavía no hay subastas finalizadas.</p>
+    } @else {
+      <div class="cards-grid">
+        @for (auction of completedAuctions(); track auction.id) {
+          <app-auction-card [auction]="auction" />
+        }
+      </div>
+    }
+  </mat-tab>
+</mat-tab-group>

@@ -75,3 +75,14 @@ verify_jwt = false
 # app_metadata.role = 'admin' (the same claim is_admin() reads) before sending.
 [functions.send-payment-reminder]
 verify_jwt = true
+
+# Auction winner + admin emails. Fired by the auctions_notify_result trigger
+# via pg_net when an auction closes with a winner (or is reassigned). No JWT
+# (the trigger has no session); reads via service-role.
+[functions.send-auction-result]
+verify_jwt = false
+
+# "Cierra en 30 minutos" reminder to all live bidders. Fired by the
+# auctions-minutely pg_cron job (process_auctions) via pg_net. No JWT.
+[functions.send-auction-reminder]
+verify_jwt = false

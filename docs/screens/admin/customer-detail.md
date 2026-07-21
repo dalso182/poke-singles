@@ -1,6 +1,6 @@
 # Admin — Customer detail (Cliente)
 
-> Part of the Poke-Singles docs set. Verified against source on 2026-07-06. Load together with /CLAUDE.md.
+> Part of the Poke-Singles docs set. Verified against source on 2026-07-20. Load together with /CLAUDE.md.
 
 ## Purpose
 
@@ -27,7 +27,8 @@ Single-customer view for the admin: identity/contact card with saved shipping ad
 | `supabase/migrations/20260525002300_admin_customers.sql` | Original `admin_customer(p_id)` (profile + stats + orders) |
 | `supabase/migrations/20260525002500_admin_customers_last_sign_in.sql` | Adds `last_sign_in_at` to the payload |
 | `supabase/migrations/20260704110000_admin_customer_loyalty.sql` | Adds `loyalty_balance` + `loyalty_transactions` to the payload |
-| `supabase/migrations/20260704120000_admin_customer_pokedex.sql` | Adds `caught_pokemon_numbers` to the payload (current function definition) |
+| `supabase/migrations/20260704120000_admin_customer_pokedex.sql` | Adds `caught_pokemon_numbers` to the payload |
+| `supabase/migrations/20260719000000_auction_ban_admin.sql` | Adds `auction_banned_at` + `auction_ban_reason` to the payload + the `admin_set_auction_ban` RPC (current function definition) |
 
 ## UI anatomy
 
@@ -38,9 +39,10 @@ Wrapper `.customer-detail` (max-width 1280px, column flex, 16px gap):
 3. **Not-found card** (when `notFound()`): `app-table-card` with `.customer-detail__not-found` — copy `"No encontramos este cliente."` and an `app-btn variant="ghost"` labeled `"Volver al listado"` → `goBack()`.
 4. **`.customer-detail__grid`** (two columns `1.1fr / 1fr`, single column under 880px), rendered inside `@if (customer(); as c)`:
    - **Info card** (`app-table-card` > `.info`):
-     - `.info__head`: `.info__avatar` — monogram circle with `initials(name)` (first letters of the first two words, uppercased, `'?'` fallback) on a stable hue derived from the name char-code sum: background `oklch(0.94 0.04 <hue>)`, color `oklch(0.40 0.08 <hue>)`. Beside it `.info__name` (fallback `"Sin nombre"`) and `.info__tag` = `recurringTag(order_count)`: `"Cliente recurrente"` when `order_count > 1`, else `"Cliente"`.
+     - `.info__head`: `.info__avatar` — monogram circle with `initials(name)` (first letters of the first two words, uppercased, `'?'` fallback) on a stable hue derived from the name char-code sum: background `oklch(0.94 0.04 <hue>)`, color `oklch(0.40 0.08 <hue>)`. Beside it `.info__name` (fallback `"Sin nombre"`) and `.info__tag` = `recurringTag(order_count)`: `"Cliente recurrente"` when `order_count > 1`, else `"Cliente"`; a red `<app-pill>` `"Vetado subastas"` appears when `c.auction_banned_at` is set.
      - `.info__rows`: label/value rows **Email** (mono), **Teléfono** (mono, `—` when null), **Registrado** (`created_at | date: 'mediumDate'`).
      - `.info__address`: label `"Dirección guardada"`; when `c.default_shipping_address` exists renders `line1`, optional `, line2`, then `city, province`, optional dim `notes`. Empty state: `.info__address-empty` with a `.info__dot` and `"Sin dirección guardada."`.
+     - `.info__ban`: label `"Subastas"`. Banned → `"Vetado desde el {mediumDate}."` (+ dim `"Motivo: {auction_ban_reason}"` when present) and `"Quitar veto"` (subtle). Not banned → `"Puede participar en subastas."` and `"Vetar de subastas"` (danger). `onToggleBan()`: banning uses native `prompt()` with an optional reason ("Motivo (opcional):", cancel aborts); unbanning uses `confirm()`. Calls `CustomersService.setAuctionBan`, snackbars, and `load()`s again. `togglingBan` signal disables the button while in flight.
    - **KPI card** (`app-table-card` > `.kpi`, 4 cells with left-border dividers):
      - `"Pedidos"` → `c.order_count`.
      - `"Total gastado"` → `₡` (`.kpi__cur`) + `c.total_spent | number: '1.0-0'`, footer `"CRC"`.

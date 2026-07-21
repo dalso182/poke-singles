@@ -1,0 +1,213 @@
+<section class="auction-detail">
+  <header class="auction-detail__header">
+    <app-icon-btn label="Volver" (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+    </app-icon-btn>
+    <div>
+      <span class="brand-eyebrow">Subasta</span>
+      <h1>{{ product()?.name }}</h1>
+    </div>
+  </header>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  @if (notFound()) {
+    <mat-card>
+      <mat-card-content>
+        <p>No se encontró la subasta.</p>
+        <app-btn variant="ghost" (click)="goBack()">Volver al listado</app-btn>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  @if (product(); as p) {
+    <mat-card class="auction-detail__panel">
+      <mat-card-content class="auction-detail__info">
+        @if (p.image_url) {
+          <img [src]="p.image_url" [alt]="p.name" class="auction-detail__thumb" />
+        }
+        <div class="auction-detail__meta">
+          <dl>
+            <dt>Estado</dt>
+            <dd>
+              <app-pill [tone]="statusTone(auction()?.status)">
+                {{ statusLabel(auction()?.status) }}
+              </app-pill>
+              @if ((auction()?.relist_count ?? 0) > 0) {
+                <span class="muted"> · relanzada ×{{ auction()!.relist_count }}</span>
+              }
+            </dd>
+            <dt>Cierre</dt>
+            <dd>
+              @if (auction()?.status === 'active') {
+                @if (auction()?.ends_at) {
+                  {{ auction()!.ends_at | date: 'd/MM/yyyy, HH:mm' }}
+                } @else {
+                  Por definir
+                }
+              } @else if (auction()?.closed_at) {
+                {{ auction()!.closed_at | date: 'd/MM/yyyy, HH:mm' }}
+              } @else {
+                —
+              }
+            </dd>
+            <dt>Puja inicial</dt>
+            <dd>₡{{ p.price | number: '1.0-0' }}</dd>
+            <dt>Puja actual</dt>
+            <dd>
+              @if (auction()?.current_bid != null) {
+                <strong>₡{{ auction()!.current_bid! | number: '1.0-0' }}</strong>
+                <span class="muted">
+                  · {{ auction()!.bid_count }} puja{{ auction()!.bid_count === 1 ? '' : 's' }}
+                  · {{ distinctBidders() }} postor{{ distinctBidders() === 1 ? '' : 'es' }}
+                </span>
+              } @else {
+                <span class="muted">Sin pujas todavía</span>
+              }
+            </dd>
+            <dt>Incremento mínimo</dt>
+            <dd>₡{{ auction()?.min_increment ?? 0 | number: '1.0-0' }}</dd>
+            <dt>Anti-sniping</dt>
+            <dd>
+              @if ((auction()?.anti_snipe_minutes ?? 0) > 0) {
+                {{ auction()!.anti_snipe_minutes }} min
+              } @else {
+                Desactivado
+              }
+            </dd>
+          </dl>
+          <app-btn variant="ghost" (click)="editProduct(p.id)">
+            <mat-icon>edit</mat-icon>
+            Editar subasta
+          </app-btn>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    @if (auction()?.status === 'ended') {
+      <div class="auction-detail__winner">
+        <mat-icon>emoji_events</mat-icon>
+        <div>
+          <strong>Ganador: {{ auction()!.winner_name }}</strong>
+          <span class="muted">
+            {{ auction()!.winner_email }}
+            · ₡{{ auction()!.current_bid ?? 0 | number: '1.0-0' }}
+            · cerrada el {{ auction()!.closed_at | date: 'short' }}
+            @if (auction()!.notified_at) {
+              · correo enviado
+            }
+          </span>
+          @if (auction()!.winner_order_id) {
+            <a
+              [routerLink]="['/admin/orders', auction()!.winner_order_id]"
+              class="auction-detail__orderlink"
+            >
+              Ver pedido del ganador →
+            </a>
+          }
+          <div class="auction-detail__winner-actions">
+            @if (auction()!.winner_order_id) {
+              <app-btn
+                variant="danger"
+                size="sm"
+                [disabled]="working()"
+                matTooltip="Cancela el pedido actual y corona al siguiente postor"
+                (click)="onReassign()"
+              >
+                <mat-icon>swap_horiz</mat-icon>
+                Cancelar y reasignar
+              </app-btn>
+            }
+            <app-btn
+              variant="ghost"
+              size="sm"
+              [disabled]="working()"
+              matTooltip="Archiva las pujas y vuelve a abrir la subasta con nueva fecha"
+              (click)="onRelist()"
+            >
+              <mat-icon>restart_alt</mat-icon>
+              Relanzar subasta
+            </app-btn>
+          </div>
+        </div>
+      </div>
+    } @else if (auction()?.status === 'void') {
+      <div class="auction-detail__winner auction-detail__winner--void">
+        <mat-icon>do_not_disturb</mat-icon>
+        <span>La subasta cerró sin pujas elegibles.</span>
+        <app-btn
+          variant="ghost"
+          size="sm"
+          [disabled]="working()"
+          (click)="onRelist()"
+        >
+          <mat-icon>restart_alt</mat-icon>
+          Relanzar subasta
+        </app-btn>
+      </div>
+    }
+
+    <mat-card class="auction-detail__panel">
+      <mat-card-header>
+        <mat-card-title>Pujas</mat-card-title>
+        <mat-card-subtitle class="muted">
+          {{ liveBids().length }} puja{{ liveBids().length === 1 ? '' : 's' }} en la ronda actual
+          @if (bids().length > liveBids().length) {
+            · {{ bids().length - liveBids().length }} de rondas anteriores
+          }
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        @if (bids().length > 0) {
+          <div class="auction-detail__scroll">
+            <table mat-table [dataSource]="bids()" class="app-table app-table--comfy">
+              <ng-container matColumnDef="bidder">
+                <th mat-header-cell *matHeaderCellDef>Postor</th>
+                <td mat-cell *matCellDef="let b">
+                  {{ b.bidder_name }}
+                  <span class="auction-detail__email">{{ b.bidder_email }}</span>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="amount">
+                <th mat-header-cell *matHeaderCellDef class="is-right">Monto</th>
+                <td mat-cell *matCellDef="let b" class="is-right is-mono">
+                  ₡{{ b.amount | number: '1.0-0' }}
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="time">
+                <th mat-header-cell *matHeaderCellDef>Fecha</th>
+                <td mat-cell *matCellDef="let b" class="is-mono is-dim">
+                  {{ b.created_at | date: 'd/MM/yyyy, HH:mm:ss' }}
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="state">
+                <th mat-header-cell *matHeaderCellDef></th>
+                <td mat-cell *matCellDef="let b">
+                  @if (b.invalidated_at) {
+                    <app-pill tone="neutral">Ronda anterior</app-pill>
+                  } @else if (b.id === topBidId()) {
+                    <app-pill tone="amber">Puja más alta</app-pill>
+                  }
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="columns"></tr>
+              <tr
+                mat-row
+                *matRowDef="let b; columns: columns"
+                [class.auction-detail__row--stale]="b.invalidated_at !== null"
+              ></tr>
+            </table>
+          </div>
+        } @else {
+          <p class="muted">Nadie ha pujado todavía.</p>
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+</section>

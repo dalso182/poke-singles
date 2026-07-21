@@ -2,6 +2,7 @@ import { Component, OnInit, computed, inject, input, signal } from '@angular/cor
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTabsModule } from '@angular/material/tabs';
 import { CustomersService } from '../../core/customers/customers.service';
@@ -27,6 +28,7 @@ type PillTone = 'neutral' | 'green' | 'amber' | 'red' | 'blue' | 'ink';
     DecimalPipe,
     RouterLink,
     MatProgressBarModule,
+    MatSnackBarModule,
     MatTableModule,
     MatTabsModule,
     BackHeader,
@@ -62,10 +64,12 @@ export class CustomerDetail implements OnInit {
 
   private readonly customers = inject(CustomersService);
   private readonly router = inject(Router);
+  private readonly snack = inject(MatSnackBar);
 
   protected readonly customer = signal<CustomerDetailRow | null>(null);
   protected readonly loading = signal(true);
   protected readonly notFound = signal(false);
+  protected readonly togglingBan = signal(false);
 
   protected readonly orderColumns = ['ref', 'total', 'status', 'date', 'actions'];
   protected readonly loyaltyColumns = ['date', 'description', 'kind', 'amount'];
@@ -84,6 +88,43 @@ export class CustomerDetail implements OnInit {
 
   protected goBack(): void {
     void this.router.navigate(['/admin/customers']);
+  }
+
+  /** Set/clear the auctions-only ban. Banning offers an optional reason
+   *  (stored on the profile, shown here); unbanning just confirms. */
+  protected async onToggleBan(): Promise<void> {
+    const c = this.customer();
+    if (!c || this.togglingBan()) return;
+    const banning = c.auction_banned_at === null;
+    const name = c.full_name || c.email;
+    let reason: string | undefined;
+    if (banning) {
+      const input = prompt(
+        `¿Vetar a ${name} de las subastas? No podrá pujar hasta que se restaure.\n\nMotivo (opcional):`,
+      );
+      if (input === null) return; // cancelled
+      reason = input.trim() || undefined;
+    } else if (!confirm(`¿Restaurar a ${name}? Podrá volver a pujar en subastas.`)) {
+      return;
+    }
+    this.togglingBan.set(true);
+    try {
+      await this.customers.setAuctionBan(c.id, banning, reason);
+      this.snack.open(
+        banning ? 'Cliente vetado de subastas' : 'Veto de subastas removido',
+        'OK',
+        { duration: 4000 },
+      );
+      await this.load();
+    } catch (err) {
+      const message =
+        err && typeof err === 'object' && 'message' in err
+          ? String((err as { message: unknown }).message)
+          : 'Error desconocido';
+      this.snack.open(message, 'OK', { duration: 5000 });
+    } finally {
+      this.togglingBan.set(false);
+    }
   }
 
   protected goToOrder(id: string): void {

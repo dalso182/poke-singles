@@ -36,8 +36,8 @@ export class Home {
   private async bootstrap(): Promise<void> {
     try {
       const [recent, featured, offers] = await Promise.all([
-        this.products.list({ pageSize: 12, excludeRaffles: true, inStockOnly: true }),
-        this.products.list({ featured: true, pageSize: 12, excludeRaffles: true, inStockOnly: true }),
+        this.products.list({ pageSize: 12, excludeRaffles: true, excludeAuctions: true, inStockOnly: true }),
+        this.products.list({ featured: true, pageSize: 12, excludeRaffles: true, excludeAuctions: true, inStockOnly: true }),
         // Same sort as the /ofertas listing so "Ver todo" continues seamlessly.
         this.products.search({ q: '', sort: DEFAULT_SORT_NO_QUERY, onSaleOnly: true, pageSize: 8 }),
       ]);

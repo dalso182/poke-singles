@@ -186,10 +186,18 @@
 
         <app-sub-section kicker="Precio e inventario" [divider]="true">
           <app-form-grid [cols]="2">
-            <mat-form-field appearance="outline" class="is-mono">
-              <mat-label>Cantidad inicial</mat-label>
-              <input matInput type="number" formControlName="quantity" min="0" />
-            </mat-form-field>
+            @if (!isAuction()) {
+              <mat-form-field appearance="outline" class="is-mono">
+                <mat-label>Cantidad inicial</mat-label>
+                <input matInput type="number" formControlName="quantity" min="0" />
+              </mat-form-field>
+            } @else {
+              <mat-form-field appearance="outline" class="is-mono">
+                <mat-label>Cantidad</mat-label>
+                <input matInput type="text" value="1" disabled />
+                <mat-hint>Una subasta vende exactamente una carta.</mat-hint>
+              </mat-form-field>
+            }
             <mat-form-field appearance="outline">
               <mat-label>Idioma</mat-label>
               <mat-select formControlName="language" panelClass="admin-form-overlay">
@@ -213,6 +221,9 @@
                 >
                   <mat-icon>open_in_new</mat-icon>
                 </a>
+              }
+              @if (isAuction()) {
+                <mat-hint>Precio de salida — la primera puja debe igualarlo o superarlo.</mat-hint>
               }
             </mat-form-field>
             <mat-form-field appearance="outline" class="is-mono">
@@ -278,6 +289,55 @@
                 formControlName="description"
                 rows="3"
                 placeholder="Reglas, cómo se anuncia el ganador, etc."
+              ></textarea>
+            </mat-form-field>
+          </app-form-grid>
+        </app-form-section>
+      }
+
+      @if (isAuction()) {
+        <app-form-section
+          title="Datos de la subasta"
+          subtitle="El precio es la puja de salida; la carta se vende al mejor postor. La subasta cierra sola en la fecha indicada."
+        >
+          <app-form-grid [cols]="2">
+            <mat-form-field appearance="outline">
+              <mat-label>Cierre de la subasta</mat-label>
+              <input matInput type="datetime-local" formControlName="auction_ends_at" />
+              <mat-hint>Fecha y hora locales — vacío = por definir (no se puede pujar).</mat-hint>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="is-mono">
+              <mat-label>Incremento mínimo (CRC)</mat-label>
+              <input matInput type="number" formControlName="auction_min_increment" min="1" step="100" />
+              <mat-hint>Cada puja debe superar la anterior por al menos esto.</mat-hint>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="is-mono">
+              <mat-label>Anti-sniping (minutos)</mat-label>
+              <input matInput type="number" formControlName="auction_anti_snipe_minutes" min="0" max="60" />
+              <mat-hint>Una puja en los últimos N min extiende el cierre. 0 = desactivado.</mat-hint>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="is-mono">
+              <mat-label>Número en set</mat-label>
+              <input matInput formControlName="card_number" />
+              <mat-hint>Se muestra junto al set en la tarjeta de la subasta.</mat-hint>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Condición</mat-label>
+              <mat-select formControlName="condition" panelClass="admin-form-overlay">
+                <mat-option value="">—</mat-option>
+                @for (c of conditions; track c.value) {
+                  <mat-option [value]="c.value">{{ c.label }}</mat-option>
+                }
+              </mat-select>
+              <mat-hint>Estado de la carta — se muestra al cliente.</mat-hint>
+            </mat-form-field>
+            <mat-form-field appearance="outline" style="grid-column: span 2">
+              <mat-label>Notas de la subasta</mat-label>
+              <textarea
+                matInput
+                formControlName="description"
+                rows="3"
+                placeholder="Reglas, detalles de pago, envío, etc."
               ></textarea>
             </mat-form-field>
           </app-form-grid>

@@ -1,0 +1,207 @@
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a routerLink="/" class="breadcrumb-home" aria-label="Inicio">
+    <mat-icon>home</mat-icon>
+  </a>
+  <span class="breadcrumb-sep">›</span>
+  <a routerLink="/subastas" class="breadcrumb-link">Subastas</a>
+  <span class="breadcrumb-sep">›</span>
+  <span class="breadcrumb-current">{{ auction()?.name ?? '…' }}</span>
+</nav>
+
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+@if (notFound()) {
+  <div class="not-found">
+    <mat-icon>search_off</mat-icon>
+    <p>No encontramos esa subasta.</p>
+    <a mat-flat-button routerLink="/subastas">Ver subastas</a>
+  </div>
+}
+
+@if (auction(); as a) {
+  <div class="detail-layout">
+    <div class="detail-image">
+      @if (a.image_url) {
+        <img [src]="a.image_url" [alt]="a.name" />
+      }
+      @if (a.status === 'ended') {
+        <span class="auction-badge auction-badge--sold">VENDIDA</span>
+      } @else if (a.status === 'void') {
+        <span class="auction-badge auction-badge--void">FINALIZADA</span>
+      }
+    </div>
+
+    <div class="detail-info">
+      <h1 class="detail-name">{{ a.name }}</h1>
+      @if (metaLine() || a.condition) {
+        <div class="detail-meta">
+          @if (metaLine()) {
+            <span>{{ metaLine() }}</span>
+          }
+          @if (a.condition) {
+            <button
+              type="button"
+              [class]="conditionClass(a.condition) + ' condition-pill--btn'"
+              (click)="openConditionsInfo($event)"
+              matTooltip="Ver guía de condiciones"
+              aria-label="Ver guía de condiciones"
+            >
+              {{ a.condition }}
+            </button>
+          }
+        </div>
+      }
+
+      @switch (a.status) {
+        @case ('ended') {
+          <div class="winner-banner">
+            <mat-icon>emoji_events</mat-icon>
+            <div>
+              <div class="winner-line">
+                Ganador: <strong>{{ a.winner_masked || 'Anónimo' }}</strong>
+              </div>
+              @if (a.current_bid != null) {
+                <div class="winner-amount">₡{{ a.current_bid! | number: '1.0-0' }}</div>
+              }
+              @if (a.closed_at) {
+                <div class="winner-date">Cerrada el {{ a.closed_at | date: 'd/MM/yyyy, HH:mm' }}</div>
+              }
+            </div>
+          </div>
+        }
+        @case ('void') {
+          <div class="winner-banner winner-banner--void">
+            <mat-icon>do_not_disturb</mat-icon>
+            <span>Subasta finalizada · sin pujas</span>
+          </div>
+        }
+        @default {
+          <div class="bid-state">
+            <div class="bid-current">
+              <span class="bid-current__label">{{ hasBids() ? 'Puja actual' : 'Puja inicial' }}</span>
+              <span class="bid-current__amount">₡{{ (a.current_bid ?? a.starting_price) | number: '1.0-0' }}</span>
+              <span class="bid-current__count">
+                {{ a.bid_count }} {{ a.bid_count === 1 ? 'puja' : 'pujas' }}
+              </span>
+            </div>
+
+            <div class="bid-close">
+              <mat-icon>schedule</mat-icon>
+              @if (a.ends_at) {
+                <span>Cierra: {{ a.ends_at | date: 'd/MM/yyyy, HH:mm' }}</span>
+                <app-countdown
+                  class="detail-countdown"
+                  [endsAt]="a.ends_at"
+                  (finished)="onCountdownFinished()"
+                />
+              } @else {
+                <span>Fecha de cierre por definir</span>
+              }
+            </div>
+
+            @if ((a.anti_snipe_minutes ?? 0) > 0) {
+              <p class="anti-snipe-note">
+                <mat-icon>bolt</mat-icon>
+                Una puja en los últimos {{ a.anti_snipe_minutes }} min extiende el
+                cierre {{ a.anti_snipe_minutes }} min.
+              </p>
+            }
+          </div>
+
+          @if (biddingOpen()) {
+            <div class="bid-box">
+              <div class="bid-box__hint">
+                Próxima puja mínima:
+                <strong>₡{{ minNextBid() | number: '1.0-0' }}</strong>
+                @if (hasBids()) {
+                  <span class="bid-box__increment">(incremento ₡{{ a.min_increment | number: '1.0-0' }})</span>
+                }
+              </div>
+              <div class="bid-box__row">
+                <div class="bid-input">
+                  <span class="bid-input__currency">₡</span>
+                  <input
+                    type="number"
+                    [min]="minNextBid()"
+                    [step]="a.min_increment ?? 1"
+                    [(ngModel)]="bidAmount"
+                    aria-label="Monto de la puja"
+                  />
+                  <button
+                    type="button"
+                    class="bid-input__bump"
+                    (click)="bumpBid()"
+                    matTooltip="Sumar un incremento"
+                  >
+                    +₡{{ a.min_increment | number: '1.0-0' }}
+                  </button>
+                </div>
+                <button
+                  mat-flat-button
+                  class="bid-btn"
+                  type="button"
+                  [disabled]="placing()"
+                  (click)="onBid()"
+                >
+                  <mat-icon>gavel</mat-icon>
+                  {{ placing() ? 'Pujando…' : 'Pujar' }}
+                </button>
+              </div>
+            </div>
+          } @else if (a.status === 'active') {
+            <p class="bidding-closed-note">
+              @if (a.ends_at) {
+                La subasta cerró — confirmando el resultado…
+              } @else {
+                La fecha de cierre aún no está definida; pronto se abrirán las pujas.
+              }
+            </p>
+          }
+
+          @if (a.notes) {
+            <p class="detail-notes">{{ a.notes }}</p>
+          }
+        }
+      }
+    </div>
+  </div>
+
+  <section class="bid-history">
+    <h2>Historial de pujas</h2>
+    @if (bidHistory().length === 0) {
+      <p class="bid-history__empty">
+        Todavía no hay pujas.
+        @if (biddingOpen()) {
+          ¡Sé la primera persona en pujar!
+        }
+      </p>
+    } @else {
+      <ol class="bid-list">
+        @for (bid of bidHistory(); track bid.id; let first = $first) {
+          <li class="bid-row" [class.bid-row--top]="first" [class.bid-row--mine]="bid.is_mine">
+            <span class="bid-avatar">
+              @if (avatarUrl(bid.avatar_pokemon_number); as url) {
+                <img [src]="url" alt="" loading="lazy" />
+              } @else {
+                <mat-icon>person</mat-icon>
+              }
+            </span>
+            <span class="bid-name">
+              {{ bid.bidder_masked }}
+              @if (bid.is_mine) {
+                <span class="bid-mine-tag">tú</span>
+              }
+            </span>
+            <span class="bid-amount">₡{{ bid.amount | number: '1.0-0' }}</span>
+            <span class="bid-time">{{ bid.created_at | date: 'd/MM, HH:mm' }}</span>
+            @if (first) {
+              <mat-icon class="bid-top-icon" matTooltip="Puja más alta">emoji_events</mat-icon>
+            }
+          </li>
+        }
+      </ol>
+    }
+  </section>
+}

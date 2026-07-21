@@ -183,6 +183,42 @@ reads the definer view `rifas_listing` (products ⨝ raffles ⨝ sets, safe colu
 `winner_email`; exposes `entries_sold`, `card_number`, `set_printed_total`, `market_price`).
 (Admin draw UI + customer view → `admin` / `storefront` skills.)
 
+## Auctions (data side) — `20260717000000`…`20260719000100`
+
+An auction is a **product in the "Subastas" category** (`auction_category_id()` helper):
+`price` = starting bid, `quantity` = 1 while live. Same catalog exclusions as raffles
+(`products_search`, both count functions, `list({ excludeAuctions })`) and the same
+public-read visibility exception (closed auctions stay listed at quantity 0). **`place_order`
+v11 rejects auction products (`AUCTION_NOT_PURCHASABLE`)** — bidding is the only sale path.
+
+Tables (admin-only RLS): **`auctions`** 1:1 (`ends_at`, `min_increment` default 1000,
+`anti_snipe_minutes` default 5, `status active/ended/void`, denormalized
+`current_bid`/`bid_count`/`leader_user_id`, winner block + `winner_order_id`,
+`reminder_sent_at`/`notified_at`/`closed_at`, `relist_count`) and **`bids`** (append-only,
+bidder name/email snapshot, `invalidated_at` = archived by a relist; partial index on live
+top-bid). Public reads via definer views **`subastas_listing`** / **`subastas_bids`**
+(names masked by `mask_bidder_name()`; `is_mine` via `auth.uid()`).
+Ban: `profiles.auction_banned_at`/`auction_ban_reason`, set by `admin_set_auction_ban`.
+
+RPCs: **`place_bid(product_id, amount)`** (definer, **authenticated only**, jsonb envelope;
+row-lock serializes bids + close; codes `BID_TOO_LOW`+`min_next` / `AUCTION_ENDED` /
+`AUCTION_BANNED` / `ALREADY_LEADING` / `INVALID_AMOUNT` — whole colones; anti-snipe pushes
+`ends_at`). **`process_auctions()`** (internal; pg_cron `auctions-minutely` `* * * * *`):
+stamp-first 30-min reminder dispatch + close scan (`FOR UPDATE SKIP LOCKED`) →
+`auction_create_winner_order()` creates the winner's normal pending order ("Por coordinar",
+total = bid) and one UPDATE flips status+winner (fires broadcast + winner email).
+**`reassign_auction_winner`** / **`relist_auction`** (admin) handle non-payment via
+`cancel_order()` + re-pick (excludes old winner, skips banned) / bid archiving + reopen.
+
+Live updates: trigger `tg_auction_broadcast` → `realtime.send()` on **public** topic
+`auction:<product_id>` (event `auction_update`, masked payload — clients re-fetch the views
+for authoritative state). First non-presence realtime use in the app.
+
+Emails: edge functions `send-auction-result` (winner + admin; stamps `notified_at`) and
+`send-auction-reminder` (all live bidders), both `verify_jwt = false`, fired by pg_net with
+Vault secrets `auction_result_url` / `auction_reminder_url` (**exist on dev; create on prod
+at cutover**). (Admin screens + storefront bidding UX → `admin` / `storefront` skills.)
+
 ## Admin dashboard & customers (data side)
 
 Three admin RPCs (all `security definer` + `is_admin()` guard, granted to `authenticated`)

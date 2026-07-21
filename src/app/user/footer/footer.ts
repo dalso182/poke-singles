@@ -44,6 +44,7 @@ export class Footer {
         { label: 'Ofertas', route: '/ofertas' },
         { label: 'Nuevos ingresos', route: '/products', queryParams: { sort: 'recent' } },
         { label: 'Rifas', route: '/rifas' },
+        { label: 'Subastas', route: '/subastas' },
         { label: 'Sobre nosotros', route: '/info/sobre-nosotros' },
       ],
     },
