@@ -192,7 +192,7 @@ public-read visibility exception (closed auctions stay listed at quantity 0). **
 v11 rejects auction products (`AUCTION_NOT_PURCHASABLE`)** — bidding is the only sale path.
 
 Tables (admin-only RLS): **`auctions`** 1:1 (`ends_at`, `min_increment` default 1000,
-`anti_snipe_minutes` default 5, `status active/ended/void`, denormalized
+`anti_snipe_minutes` default 1 (`20260720000100`), `status active/ended/void`, denormalized
 `current_bid`/`bid_count`/`leader_user_id`, winner block + `winner_order_id`,
 `reminder_sent_at`/`notified_at`/`closed_at`, `relist_count`) and **`bids`** (append-only,
 bidder name/email snapshot, `invalidated_at` = archived by a relist; partial index on live

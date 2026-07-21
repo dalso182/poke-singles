@@ -182,7 +182,7 @@ An auction IS a product in the `subastas` category (sort_order 101): `products.p
 
 #### `auctions`
 
-`product_id PK → products CASCADE`, `ends_at timestamptz` (NULL = not scheduled, bidding blocked), `min_increment numeric(12,2) NOT NULL DEFAULT 1000 CHECK (> 0)`, `anti_snipe_minutes int NOT NULL DEFAULT 5 CHECK (0..60)`, `status CHECK IN ('active','ended','void')` default `'active'`, denormalized live state `current_bid` / `bid_count` / `leader_user_id` (owned by `place_bid`), winner block `winner_user_id` / `winner_bid_id → bids SET NULL` / `winner_order_id → orders SET NULL` / `winner_name` / `winner_email` (owned by `process_auctions` / `reassign_auction_winner`), `reminder_sent_at` (30-min reminder once-guard), `notified_at` (stamped by send-auction-result), `closed_at`, `relist_count int default 0`, `created_at`, `updated_at` (trigger).
+`product_id PK → products CASCADE`, `ends_at timestamptz` (NULL = not scheduled, bidding blocked), `min_increment numeric(12,2) NOT NULL DEFAULT 1000 CHECK (> 0)`, `anti_snipe_minutes int NOT NULL DEFAULT 1 CHECK (0..60)` (default was 5 until `20260720000100`), `status CHECK IN ('active','ended','void')` default `'active'`, denormalized live state `current_bid` / `bid_count` / `leader_user_id` (owned by `place_bid`), winner block `winner_user_id` / `winner_bid_id → bids SET NULL` / `winner_order_id → orders SET NULL` / `winner_name` / `winner_email` (owned by `process_auctions` / `reassign_auction_winner`), `reminder_sent_at` (30-min reminder once-guard), `notified_at` (stamped by send-auction-result), `closed_at`, `relist_count int default 0`, `created_at`, `updated_at` (trigger).
 
 RLS: `auctions_admin_all` **only** — public access via `subastas_listing` (never exposes `winner_email` or user ids).
 

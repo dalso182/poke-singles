@@ -279,7 +279,7 @@ export class AddProduct {
     // converted to ISO (timestamptz) at the persistence boundary.
     auction_ends_at: [null as string | null],
     auction_min_increment: [1000 as number | null, [Validators.min(1)]],
-    auction_anti_snipe_minutes: [5 as number | null, [Validators.min(0), Validators.max(60)]],
+    auction_anti_snipe_minutes: [1 as number | null, [Validators.min(0), Validators.max(60)]],
     // TCGdex-derived metadata. Not rendered as form inputs — patched by
     // `onCardSelected` and serialised on submit. Manual mode leaves them null.
     card_ref: [null as string | null],
@@ -481,7 +481,7 @@ export class AddProduct {
       market_price: null,
       auction_ends_at: null,
       auction_min_increment: 1000,
-      auction_anti_snipe_minutes: 5,
+      auction_anti_snipe_minutes: 1,
       card_ref: null,
       illustrator: null,
       regulation_mark: null,
@@ -655,7 +655,7 @@ export class AddProduct {
       market_price: null,
       auction_ends_at: null,
       auction_min_increment: 1000,
-      auction_anti_snipe_minutes: 5,
+      auction_anti_snipe_minutes: 1,
       card_ref: null,
       illustrator: null,
       regulation_mark: null,

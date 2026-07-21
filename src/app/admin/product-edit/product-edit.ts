@@ -201,7 +201,7 @@ export class ProductEdit implements OnInit {
       // ISO at the persistence boundary). Only shown when category is Subastas.
       auction_ends_at: [null as string | null],
       auction_min_increment: [1000 as number | null, [Validators.min(1)]],
-      auction_anti_snipe_minutes: [5 as number | null, [Validators.min(0), Validators.max(60)]],
+      auction_anti_snipe_minutes: [1 as number | null, [Validators.min(0), Validators.max(60)]],
     },
     { validators: salePriceBelowPrice },
   );
@@ -245,7 +245,7 @@ export class ProductEdit implements OnInit {
         // From the auctions row; timestamptz → the admin's local datetime.
         auction_ends_at: isoToLocalDatetime(auctionRow?.ends_at),
         auction_min_increment: auctionRow?.min_increment ?? 1000,
-        auction_anti_snipe_minutes: auctionRow?.anti_snipe_minutes ?? 5,
+        auction_anti_snipe_minutes: auctionRow?.anti_snipe_minutes ?? 1,
       });
     } catch (err) {
       this.snack.open(this.errorMessage(err), 'OK', { duration: 5000 });

@@ -63,7 +63,7 @@ export class AuctionsService {
       product_id: productId,
       ends_at: patch.ends_at,
     };
-    // Let the DB defaults (1000 / 5) apply on first insert when left blank;
+    // Let the DB defaults (1000 / 1) apply on first insert when left blank;
     // never write NULL into the not-null config columns.
     if (patch.min_increment != null) row['min_increment'] = patch.min_increment;
     if (patch.anti_snipe_minutes != null) row['anti_snipe_minutes'] = patch.anti_snipe_minutes;
