@@ -1,7 +1,9 @@
 import { Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { AppSettingsService } from '../core/settings/app-settings.service';
+import { AuthService } from '../core/auth/auth.service';
 
 /** Default copy when the admin hasn't written a maintenance message. Mirrors
  *  the placeholder shown in the admin config form. */
@@ -21,6 +23,8 @@ const FALLBACK_MESSAGE = 'Estamos actualizando el inventario, volvemos en un rat
 export class Maintenance {
   private readonly settings = inject(AppSettingsService);
   private readonly router = inject(Router);
+  private readonly auth = inject(AuthService);
+  private readonly dialog = inject(MatDialog);
 
   protected readonly ready = signal(false);
   protected readonly message = signal(FALLBACK_MESSAGE);
@@ -44,5 +48,19 @@ export class Maintenance {
     } finally {
       this.ready.set(true);
     }
+  }
+
+  /** Hidden tester entrance (the dot in the corner): opens the shared login
+   *  dialog; on close, whitelisted testers get through via maintenanceGuard. */
+  protected async openLogin(): Promise<void> {
+    const { LoginDialog } = await import('../auth/login-dialog/login-dialog');
+    const ref = this.dialog.open(LoginDialog, {
+      panelClass: 'login-dialog-panel',
+      autoFocus: 'first-tabbable',
+      restoreFocus: true,
+    });
+    ref.afterClosed().subscribe(() => {
+      if (this.auth.isSignedIn()) void this.router.navigate(['/']);
+    });
   }
 }

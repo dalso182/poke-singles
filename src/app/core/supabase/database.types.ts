@@ -672,6 +672,21 @@ export type Database = {
           },
         ]
       }
+      maintenance_testers: {
+        Row: {
+          created_at: string
+          email: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string
@@ -2192,6 +2207,7 @@ export type Database = {
         Args: { p_category_slug?: string; p_found?: number; p_term: string }
         Returns: undefined
       }
+      maintenance_bypass_allowed: { Args: never; Returns: boolean }
       mask_bidder_name: { Args: { p_name: string }; Returns: string }
       open_pokeball: { Args: { p_tier: string }; Returns: Json }
       order_accepts_proof: { Args: { p_prefix: string }; Returns: boolean }

@@ -164,6 +164,19 @@ Cédula jurídica: 3-101-…"
             placeholder="Estamos actualizando el inventario, volvemos en un rato."
           ></textarea>
         </mat-form-field>
+        <mat-form-field appearance="outline" style="grid-column: span 2">
+          <mat-label>Accesos de prueba</mat-label>
+          <textarea
+            matInput
+            formControlName="maintenance_testers"
+            rows="2"
+            placeholder="tester1@gmail.com, tester2@gmail.com"
+          ></textarea>
+          <mat-hint>
+            Emails (separados por coma) que pueden ver la tienda aunque el mantenimiento esté
+            activo. Deben iniciar sesión.
+          </mat-hint>
+        </mat-form-field>
         @if (imagePickerEnabled) {
           <div class="admin-config__image-row" style="grid-column: span 2">
             @if (maintenanceImageUrl(); as url) {

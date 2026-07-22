@@ -42,6 +42,53 @@ export class AppSettingsService {
     };
   }
 
+  /** Whether the current session may browse the store while maintenance mode is
+   *  on (admins + whitelisted tester emails). Answered by a security-definer RPC
+   *  so the whitelist itself stays invisible to non-admins; memoized per user so
+   *  the guard doesn't round-trip on every navigation. */
+  private bypassCache: { uid: string; allowed: boolean } | null = null;
+
+  async canBypassMaintenance(): Promise<boolean> {
+    const { data: sessionData } = await this.supabase.client.auth.getSession();
+    const uid = sessionData.session?.user?.id;
+    if (!uid) return false;
+    if (this.bypassCache?.uid === uid) return this.bypassCache.allowed;
+    const { data, error } = await (this.supabase.client as any).rpc(
+      'maintenance_bypass_allowed'
+    );
+    if (error) return false;
+    this.bypassCache = { uid, allowed: !!data };
+    return this.bypassCache.allowed;
+  }
+
+  /** Admin-only: the tester whitelist (emails allowed through maintenance). */
+  async getMaintenanceTesters(): Promise<string[]> {
+    const { data, error } = await (this.supabase.client as any)
+      .from('maintenance_testers')
+      .select('email')
+      .order('email');
+    if (error) throw error;
+    return (data as { email: string }[]).map((r) => r.email);
+  }
+
+  /** Admin-only: replace the whole tester whitelist. PostgREST deletes need a
+   *  filter (pg-safeupdate), hence the catch-all gte. */
+  async setMaintenanceTesters(emails: string[]): Promise<void> {
+    const normalized = [
+      ...new Set(emails.map((e) => e.trim().toLowerCase()).filter(Boolean)),
+    ];
+    const table = (this.supabase.client as any).from('maintenance_testers');
+    const { error: delError } = await table.delete().gte('email', '');
+    if (delError) throw delError;
+    if (normalized.length) {
+      const { error } = await (this.supabase.client as any)
+        .from('maintenance_testers')
+        .insert(normalized.map((email) => ({ email })));
+      if (error) throw error;
+    }
+    this.bypassCache = null;
+  }
+
   async update(patch: AppSettingsUpdate): Promise<AppSettingsRow> {
     const { data, error } = await (this.supabase.client as any)
       .from('app_settings')

@@ -12,5 +12,13 @@
     }
     <h1>En mantenimiento</h1>
     <p class="muted">{{ message() }}</p>
+    <button
+      type="button"
+      class="maintenance__dot"
+      (click)="openLogin()"
+      aria-label="Iniciar sesión"
+    >
+      .
+    </button>
   </main>
 }

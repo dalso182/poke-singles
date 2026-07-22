@@ -75,6 +75,25 @@ Singleton enforcement: `id boolean primary key default true check (id)` — only
 | `pokeball_tiers` | `jsonb not null`, default 4-tier array (`poke`/1→1, `super`/2→3, `ultra`/3→5, `master`/4→10) | `20260704000000_pokeball_redemption.sql` | `open_pokeball()` RPC + the account Pokédex pokeball dialog. **Not editable from this screen** — tune by updating the row directly |
 | `updated_at` | `timestamptz not null default now()` | `20260502002700` | trigger-maintained |
 
+### Maintenance tester whitelist (`maintenance_testers` table)
+
+Not an `app_settings` column on purpose: that row is anon-readable (`using (true)`) and
+read with `select('*')`, so emails there would leak to every visitor. Instead
+`20260723000000_maintenance_testers.sql` adds a table (`email` PK) with a single
+admin-only RLS policy (no anon visibility) and a `security definer` RPC
+`maintenance_bypass_allowed()` → `is_admin() OR lower(jwt email) ∈ whitelist`.
+
+- Edited here via the "Accesos de prueba" comma-separated textarea in the maintenance
+  section (mirrors `order_notification_recipients` UX). Saved only when dirty —
+  `AppSettingsService.setMaintenanceTesters()` replaces the whole list (filtered delete
+  for pg-safeupdate, normalized: trim/lowercase/dedupe).
+- Consumed by `maintenanceGuard`: signed-in non-admins get one RPC call, memoized per
+  user id (`canBypassMaintenance()`), so whitelist edits apply to a tester's *next*
+  session/refresh, not mid-session.
+- Tester entrance on `/mantenimiento`: a near-invisible dot pinned bottom-right opens the
+  shared `LoginDialog`; after close, if signed in, it navigates `/` and the guard decides.
+- Testers are NOT admins: `/admin` still bounces them (`adminGuard` role check).
+
 ### TCGdex set import
 
 `onImportTcgdexSets()` → `confirm()` with the verbatim prompt `"Importar todos los sets de TCGdex que aún no existen en la base. Esta operación es típicamente de una sola vez. ¿Continuar?"` → `SetsService.syncFromTcgdex()` (`src/app/core/catalog/sets.service.ts`), which lists every TCGdex set and inserts those whose `code` isn't in `sets` (never overwrites; skips `EXCLUDED_SERIES` = TCG Pocket; swallows per-set errors). Returns `{ added, backfilled, skipped, failed, excluded }`, summarized in a snackbar joined with `' · '`: `"N sets agregados"`, plus conditionally `"N totales completados"`, `"N ya existían"`, `"N excluidos (TCG Pocket)"`, `"N fallaron"` (duration 6000 ms).

@@ -68,6 +68,7 @@ export class AdminConfig {
     ],
     maintenance_mode: [false],
     maintenance_message: [''],
+    maintenance_testers: [''],
     sinpe_phone: [''],
     whatsapp_number: [''],
     bank_account_info: [''],
@@ -95,13 +96,17 @@ export class AdminConfig {
   private async bootstrap(): Promise<void> {
     this.loading.set(true);
     try {
-      const row = await this.settings.get();
+      const [row, testers] = await Promise.all([
+        this.settings.get(),
+        this.settings.getMaintenanceTesters(),
+      ]);
       this.current.set(row);
       this.maintenanceImageUrl.set(row.maintenance_image_url);
       this.form.patchValue({
         exchange_rate_usd_crc: row.exchange_rate_usd_crc,
         maintenance_mode: row.maintenance_mode,
         maintenance_message: row.maintenance_message ?? '',
+        maintenance_testers: testers.join(', '),
         sinpe_phone: row.sinpe_phone ?? '',
         whatsapp_number: row.whatsapp_number ?? '',
         bank_account_info: row.bank_account_info ?? '',
@@ -125,6 +130,11 @@ export class AdminConfig {
     this.saving.set(true);
     try {
       const raw = this.form.getRawValue();
+      if (this.form.controls['maintenance_testers'].dirty) {
+        await this.settings.setMaintenanceTesters(
+          String(raw.maintenance_testers ?? '').split(','),
+        );
+      }
       const updated = await this.settings.update({
         exchange_rate_usd_crc:
           raw.exchange_rate_usd_crc === null || raw.exchange_rate_usd_crc === ''
