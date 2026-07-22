@@ -1,5 +1,5 @@
 # Rifas (/rifas)
-> Part of the Poke-Singles docs set. Verified against source on 2026-07-06. Load together with /CLAUDE.md.
+> Part of the Poke-Singles docs set. Verified against source on 2026-07-22. Load together with /CLAUDE.md.
 
 ## Purpose
 The customer raffle page. A raffle **is a product** in the `rifas` category: `quantity` = entries (tickets/"espacios") remaining, `price` = per-entry price, `products.description` = notes; schedule and draw result live in the 1:1 `raffles` table. The page splits raffles into "Activas" (still buyable) and "Completadas" (drawn or void) tabs of `<app-raffle-card>` tiles; tickets are bought by adding the raffle product to the ordinary cart.
@@ -12,10 +12,10 @@ The customer raffle page. A raffle **is a product** in the `rifas` category: `qu
 ## Files
 - `src/app/user/rifas/rifas.ts` — `Rifas` component (list fetch + tab split). No spec file exists.
 - `src/app/user/rifas/rifas.html` — breadcrumb, header, tab group, grids.
-- `src/app/user/rifas/rifas.scss` — page chrome only (breadcrumb, `.rifas-header`, `.cards-grid` `minmax(400px, 1fr)` / 1-col below 600px, `.rifas-empty`); the tile styles itself.
-- `src/app/shared/raffle-card/raffle-card.ts` — `RaffleCard` tile: stepper, countdown, condition pill, add-to-cart.
-- `src/app/shared/raffle-card/raffle-card.html` — status-switched tile body.
-- `src/app/shared/raffle-card/raffle-card.scss` — horizontal card layout (150px image column), `.raffle-badge` (brand red), `.raffle-countdown`, `.market-price`, winner styles.
+- `src/app/user/rifas/rifas.scss` — page chrome only (breadcrumb, `.rifas-header`, `.cards-grid` — the "Live Arena" tile recipe: `minmax(240px, 1fr)` / 2-up < 960px / 1-up < 600px, same as /subastas, `.rifas-empty`); the tile styles itself.
+- `src/app/shared/raffle-card/raffle-card.ts` — `RaffleCard` tile: stepper, day countdown, condition pill, add-to-cart, status pill mapping, `winnerHue()` seeded disc.
+- `src/app/shared/raffle-card/raffle-card.html` — the vertical "Live Arena" tile (art on top), status-switched body.
+- `src/app/shared/raffle-card/raffle-card.scss` — vertical tile mirroring `auction-card.scss` (`.tile*` vocabulary): `.tile__agotada` (brand red), `.tile__soon-chip`, `.tile__market`, buy-in-place `.tile__actions`.
 - `src/app/core/catalog/products.service.ts` — `listRaffles()` (the customer-side read).
 - `src/app/core/catalog/raffles.service.ts` — **admin-only** lifecycle (`listSummary()` → `admin_raffles_summary` RPC, `get()`/`upsert()` on `raffles`, `draw()` → `draw_raffle` RPC). It has **no customer-side methods**; its header comment explicitly points /rifas at `ProductsService.listRaffles()`.
 - `src/app/core/cart/cart.service.ts` — `add()` (ticket purchase path).
@@ -28,14 +28,15 @@ The customer raffle page. A raffle **is a product** in the `rifas` category: `qu
 2. **Header** — `.rifas-header`: `<h1>` "Rifas" + `.lead` "Participá por cartas y productos exclusivos. Comprá tus números y esperá el sorteo en la fecha indicada." (voseo — this page's copy uses it).
 3. **Loading** — `<mat-progress-bar mode="indeterminate">` while `loading()`.
 4. **Tabs** — `<mat-tab-group mat-stretch-tabs="false" animationDuration="0ms">` with "Activas" and "Completadas". Each tab: `.rifas-empty` text ("No hay rifas activas en este momento. Vuelve pronto." / "Todavía no hay rifas finalizadas.") only when `!loading()` and the list is empty, else a `.cards-grid` of `<app-raffle-card [raffle]>` tracked by `raffle.id`.
-5. **Tile** (`<app-raffle-card>`, horizontal layout — image left, info right):
-   - Root `.raffle-card` gains `product-card--on-sale` (global amber ring + `$` badge from `src/styles/_brand-utilities.scss`) when on sale **and** scheduled; `.raffle-card--sold-out` (image grayscale 0.7 / opacity 0.6) when sold out and scheduled; `.raffle-card--done` (grayscale 0.25) when not scheduled.
-   - `.card-image` — lazy `<img>`; badge overlay: status `drawn` → `.raffle-badge--won` "SORTEADA" (amber); else sold-out → `.raffle-badge` "AGOTADA" (brand red — the sanctioned sold-out-badge use).
-   - `.card-name` + `.card-meta` — `metaLine()` "SetName, #num/printedTotal" plus the condition pill: a `<button>` classed via `conditionClass()` (`condition-pill--nm|--lp|--mp`, HP/DMG → `--hp`) with `matTooltip`/`aria-label` "Ver guía de condiciones" that opens the conditions modal.
-   - `@switch (raffle().status)`:
-     - **`drawn`** — `.raffle-winner` trophy + "Ganador: **{winner_name}**"; if `draw_at`: "Sorteada el {d/MM/yyyy}" (UTC-pinned `DatePipe`); optional `.raffle-notes`.
-     - **`void`** — `.raffle-winner--void` "Rifa finalizada · sin participantes"; optional notes.
-     - **default (`scheduled`)** — `.raffle-date`: "Sorteo: {d/MM/yyyy}" + `countdown()` chip ("¡Hoy!" / "en 1 día" / "en N días"; `.raffle-countdown--soon` gold + bolt icon when < 3 days) or "Fecha por definir"; `.card-price`: `₡{price}` with `.price--sale`/`.price--original` when discounted, suffix `.price-unit` "por espacio"; `.market-price` (when `market_price != null`): "Precio de mercado: **₡{market_price}**" + note "Valor de referencia de la carta"; `.card-stock`: sold out → "Rifa completa", else ticket icon (`assets/images/raffle-ticket.png`) + "×{quantity}/{totalSpaces()}" + "disponibles"; optional `.raffle-notes` (`white-space: pre-line`); `.raffle-actions`: qty stepper (`role="group"` "Cantidad de números", aria "Menos"/"Más") + `.add-btn` — "Agregar ticket" (qty 1) / "Agregar tickets" (qty > 1) / disabled "AGOTADA".
+5. **Tile** (`<app-raffle-card>`, the vertical "Live Arena" design shared visually with `<app-auction-card>` — but the root is a `<div>`, NOT a link: raffles have no detail page, so the purchase UI lives on the tile):
+   - Root `.tile` gains `product-card--on-sale` (global amber ring + `$` badge) when on sale **and** scheduled; `.tile--done` (art `grayscale(.6) brightness(.96)`) when not scheduled. Hover lift `translateY(-3px)` gated on `@media (hover: hover)` — no pointer cursor on the root.
+   - `.tile__art` — 16/10 crop, `object-position: top center` (portrait scans show the artwork band), diagonal sheen; `image_not_supported` fallback. Overlays: status `<app-pill>` top-LEFT (`scheduled` → green dot "Activa", `drawn` → blue "Sorteada", `void` → neutral "Sin participantes"); `.tile__agotada` "AGOTADA" top-RIGHT (brand red — the sanctioned sold-out-badge use) when sold out and scheduled.
+   - `.tile__meta` — mono `metaLine()` "SET · #num/printedTotal" + the tappable condition pill (`conditionClass()`, tooltip/aria "Ver guía de condiciones" → conditions modal; kept tappable here, unlike the auction tile, because no detail page exists to host the guide). `.tile__name` bold, ellipsized, full name in `title`.
+   - `.tile__price-row` per status: **`scheduled`** — label "Por espacio" + `₡price` (`.tile__price-sale` amber + `.tile__price-original` struck when discounted); right side `.tile__tickets`: ticket icon (`assets/images/raffle-ticket.png`) + mono "×{quantity}/{totalSpaces()}", or dim "Rifa completa" when sold out. **`drawn`** — label "Ganador" + winner name (amber text) + seeded-hue `.tile__winner-disc` initial on the right. **`void`** — label "Sin participantes" + dimmed `₡price`.
+   - `.tile__market` (scheduled, when `market_price != null`): "Precio de mercado **₡X**", small dim line.
+   - `.tile__notes` — clamped to **2 lines** (`-webkit-line-clamp`), full text in `title` (no detail page to overflow into).
+   - `.tile__footer` (hairline, pushed to the tile bottom with `margin-top: auto` so rows align): **`scheduled`** — calendar icon + "Sorteo: {d/MM}" + `countdown()` `.tile__soon-chip` ("¡Hoy!" / "en 1 día" / "en N días"; `--soon` gold + bolt < 3 days) or "Fecha por definir". **`drawn`** — "Sorteada · {d/MM/yyyy}". **`void`** — "Finalizada · sin participantes".
+   - `.tile__actions` (scheduled only, below the footer): qty stepper (`role="group"` "Cantidad de números", aria "Menos"/"Más", compact 30px icon buttons) + `.tile__add-btn` (brand-blue flat) — "Agregar ticket" (qty 1) / "Agregar tickets" (qty > 1) / disabled "AGOTADA".
 
 ## Services & backend
 - `ProductsService.listRaffles()` — plain `select('*')` on the **`rifas_listing`** view. Final shape (after `20260528000100_rifas_listing_condition.sql`): `id, slug, name, image_url, price, sale_price, quantity, notes` (= `products.description`), `set_name, draw_at, status` (`coalesce(r.status, 'scheduled')`), `winner_name, total_entries, entries_sold, card_number, set_printed_total, market_price, condition`. Source: `products ⨝ raffles ⨝ sets` + a lateral sum of **non-cancelled** `order_items` quantities (= `entries_sold`); filtered to `category_id = raffle_category_id()`, `active = true`, `price > 0`; ordered `draw_at asc nulls last, created_at desc`; granted to `anon, authenticated`.
@@ -49,7 +50,7 @@ The customer raffle page. A raffle **is a product** in the `rifas` category: `qu
 - `Rifas` signals: `raffles: RaffleCardItem[]`, `loading` (starts `true`).
 - Computeds: `activeRaffles` (`status === 'scheduled'` — includes sold-out ones awaiting the draw), `completedRaffles` (`'drawn' || 'void'`).
 - Fetch happens once in the constructor (`bootstrap()`); errors → `MatSnackBar` (message or "Error desconocido", "OK", 5000 ms); `finally` clears `loading`. No URL state, no reload triggers.
-- `RaffleCard` input: `raffle` (required `RaffleCardItem`). Signals/computeds: `qty` (starts 1; `step(delta)` clamps to `[1, max(1, quantity)]`), `isOnSale` (`sale_price != null && sale_price < price`), `soldOut` (`quantity === 0`), `metaLine`, `totalSpaces` (`quantity + entries_sold` — original number of spaces), `countdown` (parses `draw_at.slice(0, 10)` as UTC midnight, compares with today's UTC date; `null` when absent/unparseable/past; `soon` = `days < 3` including today).
+- `RaffleCard` input: `raffle` (required `RaffleCardItem`). Signals/computeds: `qty` (starts 1; `step(delta)` clamps to `[1, max(1, quantity)]`), `isOnSale` (`sale_price != null && sale_price < price`), `soldOut` (`quantity === 0`), `metaLine` (joins with `' · '`), `totalSpaces` (`quantity + entries_sold` — original number of spaces), `countdown` (parses `draw_at.slice(0, 10)` as UTC midnight, compares with today's UTC date; `null` when absent/unparseable/past; `soon` = `days < 3` including today), `statusLabel`/`statusTone` (the `app-pill` mapping), `winnerHue()` (char-code hue for the winner disc).
 - `onAddToCart()` → `cart.add(id, qty())`; error → snackbar (4000 ms); success → `qty` resets to 1. The tile itself never updates `quantity`/`entries_sold` — those refresh only on the next page load.
 
 ## Behaviors & edge cases
@@ -72,9 +73,9 @@ The customer raffle page. A raffle **is a product** in the `rifas` category: `qu
 - `step()` uses `Math.max(1, quantity)` as its cap, so on a `quantity = 0` tile the stepper would allow qty 1 — harmless because the stepper and button are hidden/disabled when `soldOut()`, but don't remove those guards.
 - The tile links **nowhere** — no `routerLink`, by design (no raffle detail page). `slug` is selected by the view but unused by the UI.
 - The on-sale ring reuses the global `.product-card--on-sale` utility class on a non-product-card root — intentional (single source for the amber sale treatment), and it's suppressed for completed raffles.
-- The AGOTADA `.raffle-badge` background is `var(--brand-red)` — a sanctioned use (sold-out badge), noted in-file.
-- `countdown()` computes from `new Date()` once per signal evaluation — it won't tick across midnight without a re-render; fine for a listing page.
-- Grid/breadcrumb styling is intentionally kept in lock-step with `/products` (`minmax(400px, 1fr)`, 12px gap, 1-col < 600px).
+- The AGOTADA `.tile__agotada` background is `var(--brand-red)` — a sanctioned use (sold-out badge), noted in-file. Status pills use the semantic palette (green/blue/neutral), never brand red.
+- `countdown()` computes from `new Date()` once per signal evaluation — it won't tick across midnight without a re-render; fine for a listing page. It is deliberately day-based (NOT `app-countdown`'s ticking clock) because `draw_at` is date-only.
+- The tile grid is kept in lock-step with `/subastas` (`minmax(240px, 1fr)`, gap 16, 2-up < 960px, 1-up < 600px); the tile itself mirrors `auction-card.scss`'s `.tile*` vocabulary — visual changes should usually land in both files.
 
 ## Related docs
 - [Product detail](./detail.md)

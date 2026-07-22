@@ -6,14 +6,16 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { CartService } from '../../core/cart/cart.service';
 import { CardConditionsDialogService } from '../../core/preview/card-conditions-dialog.service';
+import { Pill } from '../table/cells/pill/pill';
 import type { RaffleCardItem } from '../../core/catalog/catalog.types';
 
 /**
- * Raffle tile for /rifas. A raffle is a product whose category is "Rifas":
- * `quantity` = entries remaining, `price` = per-entry price, the name carries
- * the entry count, `description` carries the notes. Unlike <app-product-card>
- * it shows the draw date + a quantity stepper (buy several numbers at once) and
- * links nowhere — raffles have no detail page.
+ * Raffle tile for /rifas — the "Live Arena" vertical-tile design shared with
+ * <app-auction-card>: art on top with the status pill, then meta / name /
+ * price block and a footer. A raffle is a product whose category is "Rifas":
+ * `quantity` = entries remaining, `price` = per-entry price, `description` =
+ * notes. Unlike the auction tile it is NOT a link — raffles have no detail
+ * page, so the qty stepper + add-to-cart live right on the tile.
  */
 @Component({
   selector: 'app-raffle-card',
@@ -24,6 +26,7 @@ import type { RaffleCardItem } from '../../core/catalog/catalog.types';
     MatIconModule,
     MatSnackBarModule,
     MatTooltipModule,
+    Pill,
   ],
   templateUrl: './raffle-card.html',
   styleUrl: './raffle-card.scss',
@@ -45,7 +48,7 @@ export class RaffleCard {
 
   protected readonly soldOut = computed(() => this.raffle().quantity === 0);
 
-  /** Card identity line: "Set name, #123/198" (mirrors the product card). */
+  /** Mono meta line: "SET · #006/198" (condition renders as its own pill). */
   protected readonly metaLine = computed(() => {
     const r = this.raffle();
     const number = r.card_number
@@ -53,7 +56,7 @@ export class RaffleCard {
         ? `#${r.card_number}/${r.set_printed_total}`
         : `#${r.card_number}`
       : '';
-    return [r.set_name ?? '', number].filter((s) => s && s.length > 0).join(', ');
+    return [r.set_name ?? '', number].filter((s) => s && s.length > 0).join(' · ');
   });
 
   /** Original number of ticket spaces = remaining + already sold. */
@@ -75,6 +78,36 @@ export class RaffleCard {
     const label = days === 0 ? '¡Hoy!' : days === 1 ? 'en 1 día' : `en ${days} días`;
     return { label, soon: days < 3 };
   });
+
+  protected readonly statusLabel = computed(() => {
+    switch (this.raffle().status) {
+      case 'drawn':
+        return 'Sorteada';
+      case 'void':
+        return 'Sin participantes';
+      default:
+        return 'Activa';
+    }
+  });
+
+  protected readonly statusTone = computed<'green' | 'blue' | 'neutral'>(() => {
+    switch (this.raffle().status) {
+      case 'drawn':
+        return 'blue';
+      case 'void':
+        return 'neutral';
+      default:
+        return 'green';
+    }
+  });
+
+  /** Seeded hue for the winner's fallback avatar disc. */
+  protected winnerHue(): number {
+    const s = this.raffle().winner_name || '?';
+    let sum = 0;
+    for (let i = 0; i < s.length; i++) sum += s.charCodeAt(i);
+    return Math.abs(sum) % 360;
+  }
 
   /** Maps a condition code to its pill classes — mirrors the product card. */
   protected conditionClass(condition: string | null): string {

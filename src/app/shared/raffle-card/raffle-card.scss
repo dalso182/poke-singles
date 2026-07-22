@@ -1,222 +1,74 @@
+// "Live Arena" raffle tile — vertical card mirroring auction-card.scss. NOT a
+// link (raffles have no detail page): the stepper / add button / condition
+// pill are the interactive pieces, so the root has no pointer cursor.
+
 :host {
   display: block;
 }
 
-.raffle-card {
+.tile {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
+  height: 100%;
   background: var(--surface-card);
   border: 1px solid var(--border-subtle);
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
-  transition: box-shadow 0.15s ease;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
 
-  &:hover {
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  @media (hover: hover) {
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 16px 36px -12px rgba(21, 21, 26, 0.2);
+    }
   }
 }
 
-.card-image {
-  flex: 0 0 auto;
+.tile__art {
   position: relative;
-  width: 150px;
-  background: var(--surface-card);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px;
-  box-sizing: border-box;
+  aspect-ratio: 16 / 10;
+  background: var(--surface-tonal);
+  overflow: hidden;
+  flex: 0 0 auto;
 
   img {
     width: 100%;
-    height: auto;
+    height: 100%;
+    object-fit: cover;
+    // Card scans are portrait: crop to the artwork band at the top.
+    object-position: top center;
     display: block;
-    border-radius: 3px;
   }
 }
 
-.card-info {
-  flex: 1;
-  padding: 12px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-}
-
-.card-name {
-  font-family: var(--font-brand);
-  font-weight: 700;
-  font-size: 17px;
-  color: var(--text-primary);
-  line-height: 1.3;
-  margin: 0;
-}
-
-.card-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: var(--text-secondary);
-  line-height: 1.4;
-}
-
-.raffle-date {
+.tile__art-fallback {
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-secondary);
-
-  mat-icon {
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
-    color: var(--accent-amber);
-  }
-}
-
-.raffle-countdown {
-  display: inline-flex;
-  align-items: center;
-  gap: 1px;
-  padding: 1px 8px;
-  border-radius: 999px;
-  background: var(--surface-tonal);
-  color: var(--text-secondary);
-  font-size: 12px;
-  font-weight: 700;
-
-  mat-icon {
-    font-size: 14px;
-    width: 14px;
-    height: 14px;
-  }
-
-  // < 3 days (incl. today): gold "coming soon" treatment.
-  &--soon {
-    background: color-mix(in srgb, var(--accent-amber) 18%, transparent);
-    color: var(--accent-amber);
-  }
-}
-
-.card-price {
-  font-family: var(--font-brand);
-  font-size: 20px;
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  color: var(--text-primary);
-  margin-top: 2px;
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  column-gap: 6px;
-  row-gap: 2px;
-
-  .price--original {
-    font-size: 15px;
-    font-weight: 600;
-  }
-
-  .price-unit {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 0.4px;
-    color: var(--text-tertiary);
-  }
-}
-
-.market-price {
-  font-size: 13px;
-  color: var(--text-secondary);
-
-  strong {
-    color: var(--text-primary);
-  }
-}
-
-.market-price__note {
-  display: block;
-  font-size: 11px;
+  justify-content: center;
   color: var(--text-tertiary);
 }
 
-.card-stock {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-
-.ticket-icon {
-  width: 26px;
-  height: 26px;
-  object-fit: contain;
-  display: block;
-}
-
-.ticket-count {
-  font-family: var(--font-brand);
-  font-weight: 800;
-  font-size: 16px;
-  color: var(--text-primary);
-}
-
-.ticket-label {
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.raffle-notes {
-  margin: 2px 0 0;
-  font-size: 13px;
-  line-height: 1.4;
-  color: var(--text-secondary);
-  white-space: pre-line;
-}
-
-.raffle-actions {
-  margin-top: auto;
-  padding-top: 6px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.qty-stepper {
-  display: flex;
-  align-items: center;
-  border: 1px solid var(--border-subtle);
-  border-radius: 4px;
-
-  .qty-value {
-    min-width: 28px;
-    text-align: center;
-    font-family: var(--font-brand);
-    font-weight: 700;
-    font-size: 14px;
-  }
-}
-
-.add-btn {
-  font-size: 12px;
-  height: 30px;
-  line-height: 30px;
-}
-
-// AGOTADA badge — brand red is permitted here (it's the sold-out badge, one of
-// the two sanctioned uses of --brand-red).
-.raffle-badge {
+.tile__sheen {
   position: absolute;
-  top: 8px;
-  left: 8px;
-  z-index: 2;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, 0.12) 50%, transparent 60%);
+  pointer-events: none;
+}
+
+.tile__status {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+}
+
+// AGOTADA badge — brand red is permitted here (the sold-out badge, one of the
+// two sanctioned uses of --brand-red).
+.tile__agotada {
+  position: absolute;
+  top: 10px;
+  right: 10px;
   font-family: var(--font-mono);
   font-size: 9px;
   font-weight: 700;
@@ -227,44 +79,278 @@
   border-radius: 4px;
 }
 
-.raffle-card--sold-out .card-image img {
-  filter: grayscale(0.7);
-  opacity: 0.6;
+.tile--done .tile__art img {
+  filter: grayscale(0.6) brightness(0.96);
 }
 
-// Completed raffles (drawn / void) — winner line + dimmed thumb.
-.raffle-winner {
+.tile__body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.tile__meta {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 15px;
+  min-width: 0;
+}
+
+.tile__meta-text {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tile__name {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  margin-top: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tile__price-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.tile__price-label {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.tile__price {
+  font-family: var(--font-brand);
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
   color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 
-  strong {
-    color: var(--accent-amber);
-  }
-
-  mat-icon {
-    color: var(--accent-amber);
-    font-size: 20px;
-    width: 20px;
-    height: 20px;
+  &--live {
+    color: var(--amber-text);
   }
 
   &--void {
+    color: var(--text-tertiary);
+  }
+}
+
+// Sale pair: amber sale price + small struck original (amber, never red).
+.tile__price-sale {
+  color: var(--amber-text);
+}
+
+.tile__price-original {
+  margin-left: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-decoration: line-through;
+}
+
+.tile__tickets {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+
+  &--out {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--text-tertiary);
+  }
+}
+
+.tile__ticket-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  display: block;
+}
+
+.tile__ticket-count {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.tile__winner-disc {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.tile__market {
+  font-size: 11px;
+  color: var(--text-tertiary);
+
+  strong {
     color: var(--text-secondary);
+  }
+}
+
+.tile__notes {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+// margin-top: auto pushes the footer to the tile bottom (flex column body) so
+// footers align across a row regardless of notes/market-price presence; the
+// 10px floor keeps breathing room on the tallest tile.
+.tile__footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+// Floor gap so the footer hairline never touches the content above it even
+// when margin-top: auto collapses to zero on the row's tallest tile.
+.tile__price-row,
+.tile__market,
+.tile__notes {
+  margin-bottom: 10px;
+}
+
+.tile__cal {
+  font-size: 15px;
+  width: 15px;
+  height: 15px;
+  color: var(--accent-amber);
+}
+
+.tile__draw {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-secondary);
+}
+
+.tile__soon-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--surface-tonal);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+
+  mat-icon {
+    font-size: 13px;
+    width: 13px;
+    height: 13px;
+  }
+
+  // < 3 days (incl. today): gold "coming soon" treatment.
+  &--soon {
+    background: color-mix(in srgb, var(--accent-amber) 18%, transparent);
+    color: var(--accent-amber);
+  }
+}
+
+.tile__closed {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-tertiary);
+}
+
+// ---- buy-in-place actions (raffles only; auctions bid on their detail page) ----
+.tile__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.tile__stepper {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  flex: 0 0 auto;
+
+  .mat-mdc-icon-button {
+    width: 30px;
+    height: 30px;
+    padding: 3px;
 
     mat-icon {
-      color: var(--text-tertiary);
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
     }
   }
 }
 
-.raffle-badge--won {
-  background: var(--accent-amber);
-  color: #1f2937;
+.tile__qty {
+  min-width: 24px;
+  text-align: center;
+  font-family: var(--font-brand);
+  font-weight: 700;
+  font-size: 13px;
 }
 
-.raffle-card--done .card-image img {
-  filter: grayscale(0.25);
+.tile__add-btn {
+  flex: 1;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: var(--brand-blue);
+  color: #fff;
+  font-family: var(--font-brand);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+
+  &:hover:not(:disabled) {
+    background: var(--brand-blue-dark);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  &:disabled {
+    background: var(--surface-tonal-2);
+    color: var(--text-tertiary);
+    cursor: default;
+  }
 }

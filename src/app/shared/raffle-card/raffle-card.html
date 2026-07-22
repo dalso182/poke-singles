@@ -1,26 +1,32 @@
 <div
-  class="raffle-card"
+  class="tile"
   [class.product-card--on-sale]="isOnSale() && raffle().status === 'scheduled'"
-  [class.raffle-card--sold-out]="soldOut() && raffle().status === 'scheduled'"
-  [class.raffle-card--done]="raffle().status !== 'scheduled'"
+  [class.tile--done]="raffle().status !== 'scheduled'"
 >
-  <div class="card-image">
+  <div class="tile__art">
     @if (raffle().image_url) {
       <img [src]="raffle().image_url" [alt]="raffle().name" loading="lazy" />
+    } @else {
+      <div class="tile__art-fallback">
+        <mat-icon>image_not_supported</mat-icon>
+      </div>
     }
-    @if (raffle().status === 'drawn') {
-      <span class="raffle-badge raffle-badge--won">SORTEADA</span>
-    } @else if (soldOut()) {
-      <span class="raffle-badge">AGOTADA</span>
+    <span class="tile__sheen" aria-hidden="true"></span>
+    <span class="tile__status">
+      <app-pill [tone]="statusTone()" [dot]="raffle().status === 'scheduled'">
+        {{ statusLabel() }}
+      </app-pill>
+    </span>
+    @if (soldOut() && raffle().status === 'scheduled') {
+      <span class="tile__agotada">AGOTADA</span>
     }
   </div>
 
-  <div class="card-info">
-    <h3 class="card-name">{{ raffle().name }}</h3>
+  <div class="tile__body">
     @if (metaLine() || raffle().condition) {
-      <div class="card-meta">
+      <div class="tile__meta">
         @if (metaLine()) {
-          <span>{{ metaLine() }}</span>
+          <span class="tile__meta-text">{{ metaLine() }}</span>
         }
         @if (raffle().condition) {
           <button
@@ -35,42 +41,82 @@
         }
       </div>
     }
+    <div class="tile__name" [title]="raffle().name">{{ raffle().name }}</div>
 
-    @switch (raffle().status) {
-      @case ('drawn') {
-        <div class="raffle-winner">
-          <mat-icon>emoji_events</mat-icon>
-          <span>Ganador: <strong>{{ raffle().winner_name }}</strong></span>
-        </div>
-        @if (raffle().draw_at) {
-          <div class="raffle-date">
-            <mat-icon>event_available</mat-icon>
-            <span>Sorteada el {{ raffle().draw_at | date: 'd/MM/yyyy' : 'UTC' }}</span>
-          </div>
+    <div class="tile__price-row">
+      <div>
+        @switch (raffle().status) {
+          @case ('drawn') {
+            <div class="tile__price-label">Ganador</div>
+            <div class="tile__price tile__price--live">{{ raffle().winner_name }}</div>
+          }
+          @case ('void') {
+            <div class="tile__price-label">Sin participantes</div>
+            <div class="tile__price tile__price--void">
+              ₡{{ raffle().price | number: '1.0-0' }}
+            </div>
+          }
+          @default {
+            <div class="tile__price-label">Por espacio</div>
+            <div class="tile__price">
+              @if (isOnSale()) {
+                <span class="tile__price-sale">₡{{ raffle().sale_price! | number: '1.0-0' }}</span>
+                <span class="tile__price-original">₡{{ raffle().price | number: '1.0-0' }}</span>
+              } @else {
+                ₡{{ raffle().price | number: '1.0-0' }}
+              }
+            </div>
+          }
         }
-        @if (raffle().notes) {
-          <p class="raffle-notes">{{ raffle().notes }}</p>
-        }
+      </div>
+
+      @if (raffle().status === 'drawn') {
+        <span class="tile__winner">
+          <span class="tile__winner-disc" [style.background]="'oklch(0.9 0.06 ' + winnerHue() + ')'">
+            {{ (raffle().winner_name || '?').charAt(0) }}
+          </span>
+        </span>
+      } @else if (raffle().status === 'scheduled') {
+        <span class="tile__tickets" [class.tile__tickets--out]="soldOut()">
+          @if (soldOut()) {
+            Rifa completa
+          } @else {
+            <img src="assets/images/raffle-ticket.png" alt="" class="tile__ticket-icon" />
+            <span class="tile__ticket-count">×{{ raffle().quantity }}/{{ totalSpaces() }}</span>
+          }
+        </span>
       }
-      @case ('void') {
-        <div class="raffle-winner raffle-winner--void">
-          <mat-icon>do_not_disturb</mat-icon>
-          <span>Rifa finalizada · sin participantes</span>
-        </div>
-        @if (raffle().notes) {
-          <p class="raffle-notes">{{ raffle().notes }}</p>
+    </div>
+
+    @if (raffle().status === 'scheduled' && raffle().market_price != null) {
+      <div class="tile__market">
+        Precio de mercado <strong>₡{{ raffle().market_price! | number: '1.0-0' }}</strong>
+      </div>
+    }
+
+    @if (raffle().notes) {
+      <p class="tile__notes" [title]="raffle().notes">{{ raffle().notes }}</p>
+    }
+
+    <div class="tile__footer">
+      @switch (raffle().status) {
+        @case ('drawn') {
+          <span class="tile__closed">
+            Sorteada
+            @if (raffle().draw_at) {
+              · {{ raffle().draw_at | date: 'd/MM/yyyy' : 'UTC' }}
+            }
+          </span>
         }
-      }
-      @default {
-        <div class="raffle-date">
-          <mat-icon>event</mat-icon>
+        @case ('void') {
+          <span class="tile__closed">Finalizada · sin participantes</span>
+        }
+        @default {
+          <mat-icon class="tile__cal">event</mat-icon>
           @if (raffle().draw_at) {
-            <span>Sorteo: {{ raffle().draw_at | date: 'd/MM/yyyy' : 'UTC' }}</span>
+            <span class="tile__draw">Sorteo: {{ raffle().draw_at | date: 'd/MM' : 'UTC' }}</span>
             @if (countdown(); as c) {
-              <span
-                class="raffle-countdown"
-                [class.raffle-countdown--soon]="c.soon"
-              >
+              <span class="tile__soon-chip" [class.tile__soon-chip--soon]="c.soon">
                 @if (c.soon) {
                   <mat-icon>bolt</mat-icon>
                 }
@@ -78,79 +124,46 @@
               </span>
             }
           } @else {
-            <span>Fecha por definir</span>
+            <span class="tile__draw">Fecha por definir</span>
           }
-        </div>
-
-        @if (raffle().sale_price != null && raffle().sale_price! < raffle().price) {
-          <div class="card-price">
-            <span class="price--sale">₡{{ raffle().sale_price! | number: '1.0-0' }}</span>
-            <span class="price--original">₡{{ raffle().price | number: '1.0-0' }}</span>
-            <span class="price-unit">por espacio</span>
-          </div>
-        } @else {
-          <div class="card-price">
-            ₡{{ raffle().price | number: '1.0-0' }}
-            <span class="price-unit">por espacio</span>
-          </div>
         }
-
-        @if (raffle().market_price != null) {
-          <div class="market-price">
-            Precio de mercado: <strong>₡{{ raffle().market_price! | number: '1.0-0' }}</strong>
-            <span class="market-price__note">Valor de referencia de la carta</span>
-          </div>
-        }
-
-        <div class="card-stock">
-          @if (soldOut()) {
-            Rifa completa
-          } @else {
-            <img src="assets/images/raffle-ticket.png" alt="" class="ticket-icon" />
-            <span class="ticket-count">×{{ raffle().quantity }}/{{ totalSpaces() }}</span>
-            <span class="ticket-label">disponibles</span>
-          }
-        </div>
-
-        @if (raffle().notes) {
-          <p class="raffle-notes">{{ raffle().notes }}</p>
-        }
-
-        <div class="raffle-actions">
-          @if (!soldOut()) {
-            <div class="qty-stepper" role="group" aria-label="Cantidad de números">
-              <button
-                mat-icon-button
-                type="button"
-                aria-label="Menos"
-                [disabled]="qty() <= 1"
-                (click)="step(-1)"
-              >
-                <mat-icon>remove</mat-icon>
-              </button>
-              <span class="qty-value">{{ qty() }}</span>
-              <button
-                mat-icon-button
-                type="button"
-                aria-label="Más"
-                [disabled]="qty() >= raffle().quantity"
-                (click)="step(1)"
-              >
-                <mat-icon>add</mat-icon>
-              </button>
-            </div>
-          }
-          <button
-            mat-flat-button
-            class="add-btn"
-            type="button"
-            [disabled]="soldOut()"
-            (click)="onAddToCart()"
-          >
-            {{ soldOut() ? 'AGOTADA' : (qty() === 1 ? 'Agregar ticket' : 'Agregar tickets') }}
-          </button>
-        </div>
       }
+    </div>
+
+    @if (raffle().status === 'scheduled') {
+      <div class="tile__actions">
+        @if (!soldOut()) {
+          <div class="tile__stepper" role="group" aria-label="Cantidad de números">
+            <button
+              mat-icon-button
+              type="button"
+              aria-label="Menos"
+              [disabled]="qty() <= 1"
+              (click)="step(-1)"
+            >
+              <mat-icon>remove</mat-icon>
+            </button>
+            <span class="tile__qty">{{ qty() }}</span>
+            <button
+              mat-icon-button
+              type="button"
+              aria-label="Más"
+              [disabled]="qty() >= raffle().quantity"
+              (click)="step(1)"
+            >
+              <mat-icon>add</mat-icon>
+            </button>
+          </div>
+        }
+        <button
+          class="tile__add-btn"
+          type="button"
+          [disabled]="soldOut()"
+          (click)="onAddToCart()"
+        >
+          {{ soldOut() ? 'AGOTADA' : (qty() === 1 ? 'Agregar ticket' : 'Agregar tickets') }}
+        </button>
+      </div>
     }
   </div>
 </div>

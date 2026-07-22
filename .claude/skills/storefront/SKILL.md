@@ -126,11 +126,14 @@ Full RPC contract → `database` skill.
 ## Raffles (customer view)
 
 `/rifas` reads the `rifas_listing` view and splits into **Activas** (`scheduled`) /
-**Completadas** (`drawn`/`void`, shows winner) tabs. Tile: `shared/raffle-card/` — status-aware
-(buy mode vs. winner banner), shows a ticket-icon space count (`remaining/total`, total =
-`quantity + entries_sold`), a day countdown (gold "coming soon" under 3 days), set + card-number
-meta, and `market_price` (to show the raffle isn't profiteering). Entries are bought through the
-normal cart → checkout pipeline. Data side → `database` skill.
+**Completadas** (`drawn`/`void`, shows winner) tabs. Tile: `shared/raffle-card/` — the same
+vertical "Live Arena" tile design as `shared/auction-card/` (art on top, status pill,
+`.tile*` vocabulary, shared grid recipe), but NOT a link (no raffle detail page): the qty
+stepper + "Agregar ticket" buy the entries right on the tile. Shows a ticket-icon space
+count (`remaining/total`, total = `quantity + entries_sold`), a day countdown chip (gold
+under 3 days), set + card-number meta + tappable condition pill, `market_price`, 2-line
+clamped notes, and the brand-red AGOTADA badge when full. Entries ride the normal cart →
+checkout pipeline. Data side → `database` skill.
 
 ## Auctions (customer view)
 
