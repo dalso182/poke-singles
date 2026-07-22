@@ -2,6 +2,13 @@
   <header class="dashboard__header">
     <h1>Panel de administración</h1>
     <p class="muted">Resumen del estado de la tienda.</p>
+    @if (singlesCount() !== null) {
+      <p class="dashboard__singles">
+        <mat-icon>style</mat-icon>
+        {{ singlesCount() | number: '1.0-0' }}
+        {{ singlesCount() === 1 ? 'single disponible' : 'singles disponibles' }}
+      </p>
+    }
   </header>
 
   <!-- Headline KPIs (OpenCart-style). Colored icon chips, not full-bleed tiles,

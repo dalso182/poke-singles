@@ -43,4 +43,27 @@ export class DashboardService {
       })),
     };
   }
+
+  /** SKU count of purchasable singles: category `singles`, active, with stock.
+   *  Raffles/auctions/sealed live in other categories so they're excluded by
+   *  the category filter alone. Throws on error — callers decide the fallback. */
+  async countAvailableSingles(): Promise<number> {
+    const client = this.supabase.client as any;
+    const { data: cat, error: catError } = await client
+      .from('categories')
+      .select('id')
+      .eq('slug', 'singles')
+      .maybeSingle();
+    if (catError) throw catError;
+    if (!cat?.id) throw new Error('SINGLES_CATEGORY_MISSING');
+
+    const { count, error } = await client
+      .from('products')
+      .select('id', { count: 'exact', head: true })
+      .eq('category_id', cat.id)
+      .eq('active', true)
+      .gt('quantity', 0);
+    if (error) throw error;
+    return Number(count) || 0;
+  }
 }

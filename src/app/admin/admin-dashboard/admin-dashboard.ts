@@ -37,6 +37,9 @@ export class AdminDashboard implements OnInit, OnDestroy {
   protected readonly raffleRows = signal<RaffleSummaryRow[] | null>(null);
   protected readonly topPokedex = signal<PokedexLeaderboardRow[] | null>(null);
 
+  /** Purchasable singles (active + in stock); null until loaded, hidden on error. */
+  protected readonly singlesCount = signal<number | null>(null);
+
   /** Live storefront visitor count (Realtime presence). */
   protected readonly onlineCount = this.presence.watchOnlineCount();
 
@@ -90,6 +93,10 @@ export class AdminDashboard implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     void this.dashboard.getStats().then((s) => this.stats.set(s));
+    void this.dashboard
+      .countAvailableSingles()
+      .then((n) => this.singlesCount.set(n))
+      .catch((e) => console.error('[dashboard] countAvailableSingles', e));
     void this.orders
       .listOrders({ pageSize: 8 })
       .then((r) => this.recentOrders.set(r.rows))

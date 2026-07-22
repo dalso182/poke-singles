@@ -1,5 +1,5 @@
 # Admin dashboard
-> Part of the Poke-Singles docs set. Verified against source on 2026-07-06. Load together with /CLAUDE.md.
+> Part of the Poke-Singles docs set. Verified against source on 2026-07-22. Load together with /CLAUDE.md.
 
 ## Purpose
 Landing screen of `/admin`: headline KPIs (orders, sales, customers, inventory value, live visitors), two operational tiles (pending orders, active raffles), a 30-day sales/orders trend with sparklines, and four activity panels — recent orders, newest sign-ups, recently active customers, and the Pokédex leaderboard. Everything is read-only; each block links into its admin screen.
@@ -23,7 +23,7 @@ Landing screen of `/admin`: headline KPIs (orders, sales, customers, inventory v
 
 ## UI anatomy
 Top to bottom inside `section.dashboard`:
-1. Header: `<h1>Panel de administración</h1>` + muted `"Resumen del estado de la tienda."`.
+1. Header: `<h1>Panel de administración</h1>` + muted `"Resumen del estado de la tienda."` + `.dashboard__singles` line (`style` icon + `"N singles disponibles"` / `"1 single disponible"`, `number:'1.0-0'` pipe) — rendered only once `singlesCount() !== null`.
 2. **KPI row** (`.dashboard__kpis`, five tiles with colored icon chips; `—` until stats resolve):
    - `kpi--orders` (link → `/admin/orders`): `"Pedidos totales"`, `compact(stats.total_orders)`.
    - `kpi--sales` (link → `/admin/orders`): `"Ventas totales"`, `'₡' + compact(stats.total_sales)`.
@@ -42,6 +42,7 @@ Top to bottom inside `section.dashboard`:
      - `"Top Pokédex"` (link `"Ver clientes"` → `/admin/customers`): ranked rows (`recent-user__row--ranked`) with rank number, name/email, and `catching_pokemon` icon + `caught_count`; row links to `/admin/customers/:id?tab=pokedex`. Empty: `"Aún no hay Pokémon capturados."`
 
 ## Services & backend
+- `DashboardService.countAvailableSingles()` — resolves the `categories` row with `slug = 'singles'` (`maybeSingle`; missing → throws `SINGLES_CATEGORY_MISSING`), then a `head: true, count: 'exact'` count over `products` with `category_id = <singles>`, `active = true`, `quantity > 0`. Throws on error — the dashboard `.catch()`es (console `[dashboard] countAvailableSingles`) leaving `singlesCount` null, so the header line simply stays hidden.
 - `DashboardService.getStats()` → RPC **`admin_dashboard_stats`** (security definer, gated by `is_admin()` inside the function, no client params). Returns `{ total_orders, total_sales, total_customers, pending_orders, inventory_value, series: [{ d, orders, sales }] }`. `inventory_value` = `sum(price × quantity)` over products where `active = true AND quantity > 0` (per the `DashboardStats` type doc). Service coerces every numeric with `Number(x) || 0` and returns zeroed `EMPTY_STATS` on RPC error (console-logged as `[dashboard] admin_dashboard_stats`).
 - `PresenceService.watchOnlineCount()` — subscribes to Supabase Realtime presence channel **`'online'`** (no backing table, anon key) *without tracking*, so the watching admin isn't counted. Counts presence keys having a member with `role === 'visitor'` (storefront shells call `joinAsVisitor()`). Recounts on `sync`/`join`/`leave`. `teardown()` removes the watch channel and resets the count to 0; called in `ngOnDestroy`.
 - `OrdersService.listOrders({ pageSize: 8 })` — `orders` table select `*, order_items(seller_id)` with `count: 'exact'`, ordered `created_at` desc; visible via `orders_admin_all` RLS.
@@ -50,7 +51,7 @@ Top to bottom inside `section.dashboard`:
 - `RafflesService.listSummary()` — RPC **`admin_raffles_summary`**.
 
 ## State & data flow
-Signals (all start `null` = loading): `stats: DashboardStats | null`, `recentOrders: OrderRow[] | null`, `recentCustomers`, `activeCustomers: CustomerRow[] | null`, `raffleRows: RaffleSummaryRow[] | null`, `topPokedex: PokedexLeaderboardRow[] | null`. `onlineCount` is the readonly signal returned by `watchOnlineCount()`.
+Signals (all start `null` = loading): `stats: DashboardStats | null`, `recentOrders: OrderRow[] | null`, `recentCustomers`, `activeCustomers: CustomerRow[] | null`, `raffleRows: RaffleSummaryRow[] | null`, `topPokedex: PokedexLeaderboardRow[] | null`, `singlesCount: number | null`. `onlineCount` is the readonly signal returned by `watchOnlineCount()`.
 
 Computeds:
 - `pendingCount` = `stats()?.pending_orders ?? null` (same RPC as the KPIs — no separate count query here).
@@ -59,7 +60,7 @@ Computeds:
 - `todayStr` — component-construction-time local (Costa Rica) date as `YYYY-MM-DD`.
 - `nextRaffle` — soonest active raffle with `draw_at.slice(0,10) >= todayStr`; `todayRaffle` — active raffle whose `draw_at` UTC date portion equals `todayStr`.
 
-`ngOnInit` fires all six fetches in parallel (fire-and-forget `void … .then()`); `ngOnDestroy` calls `presence.teardown()`. There is no refresh/reload trigger — data is a point-in-time snapshot except the live presence count.
+`ngOnInit` fires all seven fetches in parallel (fire-and-forget `void … .then()`); `ngOnDestroy` calls `presence.teardown()`. There is no refresh/reload trigger — data is a point-in-time snapshot except the live presence count.
 
 ## Behaviors & edge cases
 - Loading: KPI metrics render `—` while `stats() === null`; each panel shows `"Cargando…"` until its signal resolves.

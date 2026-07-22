@@ -20,6 +20,23 @@
   margin: 4px 0 0;
 }
 
+.dashboard__singles {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px 0 0;
+  font-family: var(--font-brand);
+  font-size: 15px;
+  font-weight: 700;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: var(--mat-sys-primary);
+  }
+}
+
 // ---- Headline KPI tiles -----------------------------------------------------
 
 .dashboard__kpis {
