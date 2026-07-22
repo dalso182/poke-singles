@@ -119,6 +119,9 @@ below. Tiles use the allowed palette (blue/green/amber/indigo/teal) — **never 
 
 - **Headline data** comes from one RPC, `admin_dashboard_stats()` (totals + 30-day series),
   via `DashboardService` (`src/app/core/dashboard/`). → `database` skill.
+- The header shows **"N singles disponibles"** — `DashboardService.countAvailableSingles()`,
+  a client-side head-count of `products` (category `singles`, `active`, `quantity > 0`);
+  hidden until loaded / on error.
 - **People Online** is live, not from the DB: `PresenceService` (`src/app/core/presence/`)
   counts storefront visitors over a Supabase **Realtime presence** channel; the UserShell
   announces each shopper. → `database` skill (Realtime presence).
