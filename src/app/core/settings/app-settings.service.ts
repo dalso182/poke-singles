@@ -57,8 +57,10 @@ export class AppSettingsService {
       'maintenance_bypass_allowed'
     );
     if (error) return false;
-    this.bypassCache = { uid, allowed: !!data };
-    return this.bypassCache.allowed;
+    // Only cache the positive answer: a "no" must stay re-checkable, or a user
+    // whitelisted mid-session (or freshly signed in) keeps a stale denial.
+    if (data) this.bypassCache = { uid, allowed: true };
+    return !!data;
   }
 
   /** Admin-only: the tester whitelist (emails allowed through maintenance). */
