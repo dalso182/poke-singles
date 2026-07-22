@@ -24,7 +24,7 @@ if (!dbUrl) {
 console.log('Pushing migrations to PROD (dhslfridsjdmhwzrgebv)...');
 const result = spawnSync(
   'npx',
-  ['--yes', 'supabase', 'db', 'push', '--db-url', dbUrl],
+  ['--yes', 'supabase', 'db', 'push', '--db-url', dbUrl, ...process.argv.slice(2)],
   { stdio: 'inherit', shell: process.platform === 'win32' },
 );
 process.exit(result.status ?? 1);

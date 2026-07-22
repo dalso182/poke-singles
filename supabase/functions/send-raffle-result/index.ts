@@ -23,7 +23,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const RESEND_ENDPOINT = 'https://api.resend.com/emails';
-const LOGO_URL = 'https://www.poke-singles.com/logo.png';
+const LOGO_URL = 'https://poke-singles.com/logo.png';
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
