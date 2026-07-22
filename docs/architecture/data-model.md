@@ -1,6 +1,6 @@
 # Data model (Supabase Postgres schema, RLS, views, storage)
 
-> Part of the Poke-Singles docs set. Verified against source on 2026-07-20. Load together with /CLAUDE.md.
+> Part of the Poke-Singles docs set. Verified against source on 2026-07-22. Load together with /CLAUDE.md.
 
 ## Purpose
 
@@ -217,7 +217,12 @@ Single row enforced by `id boolean PRIMARY KEY DEFAULT true CHECK (id)`; seeded 
 | `pokeball_tiers jsonb` | `20260704000000` | `[{key,label,cost,award}×4]` — poke/super/ultra/master tier economy; UI and `open_pokeball()` both read it. |
 | `legacy_order_count integer NOT NULL default 0` | `20260713000000` | Lifetime order count of the OpenCart store at the 2026-07 cutover (5953; orders up to #7303 — `orders_number_seq` continues at 7304). Not surfaced in UI yet. |
 | `legacy_sales_total_crc numeric NOT NULL default 0` | `20260713000000` | Lifetime OpenCart sales total in colones at cutover (₡64.6M). Not surfaced in UI yet. |
+| `maintenance_image_url text` | `20260720000000` | Root-relative `/card-images/maintenance/…` image shown on `/mantenimiento` instead of the wrench icon. |
 | `updated_at` | initial | Trigger-maintained. |
+
+#### `maintenance_testers` (`20260723000000`)
+
+Tester whitelist for maintenance mode: `email text PK`, `created_at`. Deliberately **not** an `app_settings` column — that row is anon-readable and read with `select('*')`, so emails there would leak. RLS: single `maintenance_testers_admin_all` policy (`is_admin()`), no anon visibility at all. Companion RPC `maintenance_bypass_allowed()` (`security definer`, granted to `authenticated`): `is_admin() OR lower(jwt email) ∈ whitelist` — how `maintenanceGuard` asks without exposing the list. Managed from `/admin/config` ("Accesos de prueba", comma-separated; replace-all writes).
 
 #### `static_pages` (`20260510000000`)
 
@@ -290,8 +295,8 @@ Policies on `storage.objects` (final state after `20260629000000`):
 
 - `orders_number_seq` — starts 7300 (legacy OpenCart continuation), owned by `orders.order_number`.
 - `pg_net` (schema `net` — **not** `extensions`; two fix migrations `20260525000400`/`20260525000500` exist because `extensions.http_post` didn't exist and the exception guards silently ate every notification) — used by `handle_new_user`, `notify_raffle_result`, and the cron job.
-- `pg_cron` — one job: `price-check-weekly`, `0 10 * * 1` (Mon 04:00 Costa Rica). Body honors `app_settings.price_review_enabled` and posts to the Vault-stored `price_check_url`.
-- Vault secrets expected per environment: `signup_email_url`, `raffle_result_url`, `price_check_url`, `supabase_anon_key`.
+- `pg_cron` — two jobs: `price-check-weekly` (`0 10 * * 1`, Mon 04:00 Costa Rica; honors `app_settings.price_review_enabled`, posts to the Vault-stored `price_check_url`) and `auctions-minutely` (`* * * * *`, runs `process_auctions()`; failures swallowed so one bad tick never breaks the schedule).
+- Vault secrets expected per environment: `signup_email_url`, `raffle_result_url`, `price_check_url`, `auction_result_url`, `auction_reminder_url`, `supabase_anon_key`.
 
 ## Contracts & conventions
 

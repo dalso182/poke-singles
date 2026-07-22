@@ -1,8 +1,10 @@
 # Poke-Singles — Claude project notes
 
-Migration of **poke-singles.com**, a Pokémon singles e-commerce store in Costa Rica
-(~5,000 SKUs), from **OpenCart 3.0** to a new **Angular 21 + Supabase** stack on
-SiteGround. The OpenCart site stays live until the new one ships.
+**poke-singles.com**, a Pokémon singles e-commerce store in Costa Rica — an
+**Angular 21 + Supabase** stack on SiteGround that replaced the old OpenCart 3.0 site.
+**Live since 2026-07-22** (launched behind maintenance mode for a restock window; the
+maintenance toggle + tester whitelist live in `/admin/config`). The old OpenCart site is
+parked in `public_html_opencart` as the rollback until decommission.
 
 This file is the always-on context. **Deeper, domain-specific detail lives in skills**
 under `.claude/skills/` — see the index at the bottom. Reach for the matching skill
@@ -39,11 +41,11 @@ If brand red shows up anywhere else, the wiring leaked — fix before shipping. 
 stragglers to reconcile are listed in `docs/architecture/theming.md`.) Rationale +
 implementation → `theme` skill.
 
-## Hard rule: never deploy to the live OpenCart root
+## Hard rule: never deploy into the OpenCart backup
 
-`scripts/deploy.mjs` refuses any upload to a path matching `/poke-singles.com/public_html`
-(the live store) and prod creds are left blank in `.env.local` by convention. Both layers
-must be defeated deliberately to ship to the live site (cutover day). → `deploy` skill.
+Post-cutover, `deploy:prod` targets the live root (`poke-singles.com/public_html`) on
+purpose. `scripts/deploy.mjs` now refuses any upload into `public_html_opencart` — the
+parked OpenCart site, kept as the rollback until decommission. → `deploy` skill.
 
 ## Local commands
 
@@ -114,11 +116,12 @@ Full route table → `docs/architecture/routing-and-guards.md`.
 
 ## Out of scope right now (each gets its own plan when picked up)
 
-- Domain cutover to `poke-singles.com` (prod project + `:prod` scripts are wired; remaining:
-  prod test-data cleanup, prod auth config, go-live deploy — plan: `the-time-is-coming-distributed-pascal.md`)
 - Invoice download for customer orders (history itself is shipped at `/account/pedidos`)
-- 301 redirect map from old OpenCart URLs → `migration`
+- Fuller 301 redirect map from old OpenCart URLs (the live `.htaccess` only does www→apex
+  + `index.php` → `/`) → `migration`
 - SSR / static prerendering (`ng add @angular/ssr`)
+- Post-launch cleanup: retire the `new.` subdomain; decommission `public_html_opencart`
+  + archived MySQL dump after a few confident months
 
 ---
 

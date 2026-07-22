@@ -12,8 +12,11 @@ description: >-
 
 # OpenCart → Supabase migration
 
-The legacy store is **OpenCart 3.0**; the rebuild imports its active, in-stock catalog into
-Supabase with TCGdex enrichment. The OpenCart site stays live until cutover.
+The legacy store is **OpenCart 3.0**. **Cutover happened 2026-07-22** — the new site is
+live at poke-singles.com and launched with an EMPTY catalog (no OC import; Diego restocks
+via `/admin/products/new`). The OC import pipeline below is **retired/historical**; OC
+lifetime totals (5,953 orders / ₡64.6M) live in `app_settings.legacy_*`, order numbering
+continued from 7304, and the OC site is parked in `public_html_opencart`.
 
 ## Dev seeding (not migration)
 

@@ -1,6 +1,6 @@
 # Maintenance page
 
-> Part of the Poke-Singles docs set. Verified against source on 2026-07-20. Load together with /CLAUDE.md.
+> Part of the Poke-Singles docs set. Verified against source on 2026-07-22. Load together with /CLAUDE.md.
 
 ## Purpose
 
@@ -10,7 +10,7 @@ The full-page maintenance screen at `/mantenimiento`, shown to non-admin visitor
 
 - **Path:** `/mantenimiento` — top-level route in `src/app/app.routes.ts`, lazy `loadComponent` → `Maintenance`. **No guard on the route itself** — it is the fallback, so gating it would loop.
 - **Ordering invariant** (comment in `app.routes.ts` verbatim): "Standalone maintenance screen (no shell). Redirect target of maintenanceGuard; must come before the empty-path UserShell so the catch-all doesn't swallow it. Not itself gated — it's the fallback." The empty-path UserShell route matches everything under `/`, so `/mantenimiento` (like `/admin` and `/library`) must be declared **above** it or the router would render UserShell (and re-run `maintenanceGuard`) instead.
-- **Who gets sent here:** `maintenanceGuard` is `canActivate` + `canActivateChild` on the empty-path UserShell route — every storefront navigation. Admins bypass. `/admin/*` and `/library` are **not** gated by maintenance.
+- **Who gets sent here:** `maintenanceGuard` is `canActivate` + `canActivateChild` on the empty-path UserShell route — every storefront navigation. Admins bypass, and so do signed-in emails on the `maintenance_testers` whitelist (via the `maintenance_bypass_allowed` RPC — see [Config](../admin/config.md)). `/admin/*` and `/library` are **not** gated by maintenance.
 
 ## Files
 
@@ -31,8 +31,9 @@ Rendered only once `ready()` is true (avoids a flash of the fallback copy before
 3. When `imageUrl()` is set: `<img class="maintenance__image">` — the admin-picked image (root-relative `/card-images/maintenance/…` path, 1200 px wide max, shrinks with the viewport, `border-radius: 12px`). Otherwise: `mat-icon` "build" (`.maintenance__icon`, 64 px, `--text-tertiary`).
 4. `<h1>` "En mantenimiento".
 5. `<p class="muted">{{ message() }}</p>` — the admin-authored `maintenance_message`, or the fallback "Estamos actualizando el inventario, volvemos en un rato." when blank/whitespace.
+6. **The tester dot** — `<button class="maintenance__dot" aria-label="Iniciar sesión">.</button>`: a deliberately faint dot (`opacity: 0.5`, `--text-tertiary`, 20 px) pinned `position: fixed` to the bottom-right corner with a small negative margin. Clicking it lazy-opens the shared `LoginDialog` (same options as `admin.guard.ts`); on close, if signed in, navigates `/` and the guard decides — whitelisted testers get through, everyone else bounces back here.
 
-No buttons, links, or countdown — the only exit is the automatic bounce when maintenance turns off.
+No other buttons, links, or countdown — the exits are the automatic bounce when maintenance turns off and the dot for whitelisted testers.
 
 ## Services & backend
 
@@ -62,7 +63,7 @@ No buttons, links, or countdown — the only exit is the automatic bounce when m
 - **Never add `maintenanceGuard` to the `/mantenimiento` route** — with maintenance on it would redirect to itself. The component's own off-state bounce is the only redirect logic it needs.
 - **`FALLBACK_MESSAGE` is duplicated by convention** with the admin config form's placeholder ("Mirrors the placeholder shown in the admin config form" — comment in `maintenance.ts`). Change both together.
 - The guard treats *any* truthy `maintenance_mode` as on (`!!s.maintenance_mode`); the message is used only when non-blank after `trim()`.
-- Guard checks run per navigation, not per session — don't cache the guard's decision anywhere; the 60 s TTL in `AppSettingsService.load()` is the intended (and only) caching layer.
+- Guard checks run per navigation, not per session. Caching layers: the 60 s TTL in `AppSettingsService.load()` for the settings row, plus `canBypassMaintenance()` memoizing **only positive** RPC answers per uid — never cache a denial (a stale `false` blocked a freshly whitelisted tester once; see the 2026-07-22 fix).
 - The screen deliberately has **no UserShell chrome** — don't wrap it in the shell or add nav links; it must stay usable while the rest of the storefront is considered "down".
 - `app_settings` is a singleton row keyed `id = true`; all reads/writes use `.eq('id', true)`.
 

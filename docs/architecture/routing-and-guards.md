@@ -174,7 +174,8 @@ Applied as `canActivate` + `canActivateChild` on the empty-path UserShell branch
 1. `await auth.ready`
 2. `auth.isAdmin()` → `true` (admins bypass so they can preview the store and reach `/admin/config` to turn maintenance off; `/admin` itself is not under this guard).
 3. `await settings.getMaintenance()` → reads `app_settings.maintenance_mode` through `AppSettingsService.load()`, which caches the singleton row with a **60,000 ms default TTL** (`load(maxAgeMs = 60_000)`) and coalesces concurrent calls, so the guard does not round-trip per navigation.
-4. Maintenance on → returns `createUrlTree(['/mantenimiento'])`; otherwise `true`.
+4. Maintenance on + signed in → `settings.canBypassMaintenance()`: the `maintenance_bypass_allowed` security-definer RPC (admin OR email on the admin-only `maintenance_testers` whitelist, JWT-email match, case-insensitive). Only a **positive** answer is memoized (per uid) — a denial is re-checked every navigation so a mid-session whitelist add takes effect. Anon visitors skip the RPC entirely.
+5. Still denied → returns `createUrlTree(['/mantenimiento'])`; otherwise `true`.
 
 ### Guard return semantics
 
