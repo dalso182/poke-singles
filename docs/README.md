@@ -86,6 +86,12 @@ if a doc's claims disagree with the code, the code has moved — update the doc.
 |---|---|
 | [library](screens/library.md) | `/library` — designer reference gallery (no shell) |
 
+## Runbooks (`docs/runbooks/`)
+
+| Doc | Use when… |
+|---|---|
+| [adding-a-new-set](runbooks/adding-a-new-set.md) | A new TCG set releases and you want it sellable — image fetch/upload, set-row creation paths, edge cases |
+
 ## Keeping this fresh
 
 When a commit changes a screen's behavior, update its doc in the same batch: fix stale

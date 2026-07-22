@@ -54,6 +54,8 @@ export class Footer {
         { label: 'Estado de cartas', route: '/info/estado-de-cartas' },
         { label: 'Métodos de pago y envío', route: '/info/metodos-pago-envio' },
         { label: 'Política de pedidos y envíos', route: '/info/politica-pedidos-envios' },
+        { label: 'Términos de servicio', route: '/info/terminos-de-servicio' },
+        { label: 'Política de privacidad', route: '/info/politica-de-privacidad' },
       ],
     },
     {
