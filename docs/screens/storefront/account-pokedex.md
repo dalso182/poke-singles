@@ -1,6 +1,6 @@
 # Account — Pokédex panel & Pokéball redemption
 
-> Part of the Poke-Singles docs set. Verified against source on 2026-07-06. Load together with /CLAUDE.md.
+> Part of the Poke-Singles docs set. Verified against source on 2026-07-22. Load together with /CLAUDE.md.
 
 ## Purpose
 
@@ -19,7 +19,7 @@ The customer's Pokédex: the full national dex (~1,025 entries) grouped by regio
 - `src/app/user/account/pokedex/pokedex.scss` — `.pdx__*` styles; grid sized off `--pdx-tile`; tiles use `content-visibility: auto` + `contain-intrinsic-size` so all tiles can render at once cheaply.
 - `src/app/user/account/pokedex/pokeball-dialog/pokeball-dialog.ts` — `PokeballDialog` (`app-pokeball-dialog`): choose → open → reveal flow.
 - `src/app/user/account/pokedex/pokeball-dialog/pokeball-dialog.html` — the three `@switch (step())` stages.
-- `src/app/user/account/pokedex/pokeball-dialog/pokeball-dialog.scss` — `.pbd__*`; CSS-drawn ball art (`.pbd__ball--{key}`), shake/burst animations.
+- `src/app/user/account/pokedex/pokeball-dialog/pokeball-dialog.scss` — `.pbd__*`; ball image sizing (`.pbd__ball`, `--big` 120px), shake/burst animations.
 - `src/app/core/pokemon/pokemon.service.ts` — `PokemonService`: national-dex reference data + sprite/portrait URLs; `POKEDEX_REGIONS` constant.
 - `src/app/core/loyalty/loyalty.service.ts` — `LoyaltyService.openPokeball()`, shared `balance` signal.
 - `src/app/core/auth/profiles.service.ts` — owned set rides on the cached profile (`caught_pokemon_numbers`).
@@ -35,7 +35,7 @@ The customer's Pokédex: the full national dex (~1,025 entries) grouped by regio
 4. **Region sections** (`#regionSection`, `id="region-{key}"`, `data-region` attr): header with region label + per-region count "`{{ progress().byRegion.get(r.key) ?? 0 }} / {{ r.list.length }}`"; then `.pdx__grid` of `.pdx__card` tiles (modifier `.pdx__card--locked` when not caught → greyed). Each tile: `.pdx__thumb` (white frame; hidden `.pdx__ph` dex-number placeholder revealed by `onImgError`), lazy `<img class="pdx__img">` from the pokemondb CDN, `#{{ dex(p.number) }}` (zero-padded to 4, e.g. `#0007`), and `{{ p.displayName }}`.
 5. **Back-to-top FAB** (`.pdx__top`, fixed bottom-right, aria-label "Volver arriba") once scrolled past 600 px.
 6. **Pokéball dialog** (width 720px, maxWidth 95vw, maxHeight 85vh, `autoFocus: 'first-tabbable'`, `restoreFocus: true`), title "Capturar más Pokémon", three steps:
-   - **choose**: intro "Canjea tus Poke-Monedas por Pokébolas y captura Pokémon al azar para tu Pokédex.", balance chip "Tienes {{ balance() }} Poke-Monedas" with `assets/images/coin-sm.png`; one `.pbd__tier` card per tier — CSS ball art `.pbd__ball--{{ t.key }}`, `{{ t.label }}`, "Otorga {{ t.award }} Pokémon", cost via `costLabel()` (`"N Poke-Moneda"` singular / `"N Poke-Monedas"` plural), CTA "Canjear" (disabled when unaffordable) and, when unaffordable, the hint `EARN_HINT` = "Ganarás Poke-Monedas con tus compras".
+   - **choose**: intro "Canjea tus Poke-Monedas por Pokébolas y captura Pokémon al azar para tu Pokédex.", balance chip "Tienes {{ balance() }} Poke-Monedas" with `assets/images/coin-sm.png`; one `.pbd__tier` card per tier — ball artwork `<img class="pbd__ball" [src]="ballSrc(t.key)">`, `{{ t.label }}`, "Otorga {{ t.award }} Pokémon", cost via `costLabel()` (`"N Poke-Moneda"` singular / `"N Poke-Monedas"` plural), CTA "Canjear" (disabled when unaffordable) and, when unaffordable, the hint `EARN_HINT` = "Ganarás Poke-Monedas con tus compras".
    - **open**: big ball (`.pbd__ball--big`; `.is-shaking` while the RPC is in flight, `.is-bursting` during the 350 ms burst), tier name + cost, button "Abrir" → "Abriendo…" while opening/bursting, link "Volver".
    - **reveal**: "¡Capturaste 1 Pokémon!" or "¡Capturaste N Pokémon!"; awarded sprites (88×88) zoom in staggered `i * 140` ms with name labels. Actions: "Abrir otra" (back to choose) + "Listo" (close). Non-reveal steps show "Cerrar" instead.
    - Error line `.pbd__error` renders `errorMsg()` on the choose/open steps.
@@ -97,7 +97,7 @@ The customer's Pokédex: the full national dex (~1,025 entries) grouped by regio
 - Scroll-spy roots against the closest `mat-sidenav-content` — if the UserShell markup changes, the observer silently falls back to the viewport (may mis-highlight).
 - The scroll listener binds once (`scrollBound`) inside a reactive effect — safe, but it never rebinds if the scroll root element itself is replaced.
 - The account page loads points history independently; only `coinsSpent` keeps it consistent after redemptions (see [account.md](./account.md)).
-- Ball artwork is CSS-drawn placeholder (`.pbd__ball--{key}` classes keyed by tier key: `poke`, `super`, `ultra`, `master`); template comment says to swap for `<img>` when artwork lands — new tier keys added in DB get no art class until SCSS follows.
+- Ball artwork is PNG `<img>`s resolved by `ballSrc(key)` from the `BALL_ART` map in `pokeball-dialog.ts` (tier keys `poke`/`super`/`ultra`/`master` → `assets/images/balls/PKS-*.png`); an unknown tier key added in the DB falls back to the Poké Ball art until the map gains an entry.
 
 ## Related docs
 

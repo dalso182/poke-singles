@@ -23,8 +23,7 @@
       <div class="pbd__tiers">
         @for (t of tiers(); track t.key) {
           <div class="pbd__tier">
-            <!-- Placeholder art (CSS-drawn); swap for an <img> when artwork lands. -->
-            <span class="pbd__ball pbd__ball--{{ t.key }}" aria-hidden="true"></span>
+            <img class="pbd__ball" [src]="ballSrc(t.key)" alt="" aria-hidden="true" />
             <span class="pbd__tier-name">{{ t.label }}</span>
             <span class="pbd__tier-award">Otorga {{ t.award }} Pokémon</span>
             <span class="pbd__tier-cost brand-mono">{{ costLabel(t) }}</span>
@@ -48,12 +47,14 @@
     @case ('open') {
       @if (selected(); as tier) {
         <div class="pbd__stage">
-          <span
-            class="pbd__ball pbd__ball--{{ tier.key }} pbd__ball--big"
+          <img
+            class="pbd__ball pbd__ball--big"
+            [src]="ballSrc(tier.key)"
+            alt=""
             [class.is-shaking]="opening()"
             [class.is-bursting]="bursting()"
             aria-hidden="true"
-          ></span>
+          />
           <span class="pbd__stage-name">{{ tier.label }}</span>
           <span class="pbd__stage-meta brand-mono">{{ costLabel(tier) }}</span>
 

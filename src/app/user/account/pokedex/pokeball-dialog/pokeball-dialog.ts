@@ -14,6 +14,14 @@ import type { PokeballTier } from '../../../../core/catalog/catalog.types';
 /** Exact copy requested for unaffordable tiers. */
 const EARN_HINT = 'Ganarás Poke-Monedas con tus compras';
 
+/** Ball artwork per tier key (app_settings.pokeball_tiers). */
+const BALL_ART: Record<string, string> = {
+  poke: 'assets/images/balls/PKS-POKEBALL.png',
+  super: 'assets/images/balls/PKS-SUPERBALL.png',
+  ultra: 'assets/images/balls/PKS-ULTRABALL.png',
+  master: 'assets/images/balls/PKS-MASTERBALL.png',
+};
+
 /** Friendly Spanish messages for open_pokeball business errors. */
 const ERROR_MESSAGES: Record<string, string> = {
   INSUFFICIENT_POINTS: 'No tienes suficientes Poke-Monedas.',
@@ -81,6 +89,10 @@ export class PokeballDialog {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  protected ballSrc(key: string): string {
+    return BALL_ART[key] ?? BALL_ART['poke'];
   }
 
   protected canAfford(tier: PokeballTier): boolean {

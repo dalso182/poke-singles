@@ -1,6 +1,5 @@
 $navy: var(--mat-sys-primary, #1e3a8a);
 $navy-dark: #172e6e;
-$shell: #23233f; // pokeball band/button outline
 
 .pbd__title {
   font-family: var(--font-brand);
@@ -96,48 +95,15 @@ $shell: #23233f; // pokeball band/button outline
   color: var(--text-tertiary);
 }
 
-// CSS-drawn pokeball placeholder. Artwork colors, deliberately NOT
-// var(--brand-red) (theme rule: brand red keeps its three allowed uses).
+// Tier ball artwork (assets/images/balls/PKS-*.png, transparent PNGs).
 .pbd__ball {
-  --ball-top: #e3350d; // classic pokeball red, not #CE1126
-  position: relative;
   width: 64px;
   height: 64px;
-  border-radius: 50%;
-  border: 2px solid $shell;
-  background: linear-gradient(
-    to bottom,
-    var(--ball-top) 0 44%,
-    $shell 44% 56%,
-    #fff 56% 100%
-  );
-
-  &::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: #fff;
-    border: 3px solid $shell;
-  }
-
-  &--super { --ball-top: #2e6eb5; }
-  &--ultra { --ball-top: #fdd23c; }
-  &--master { --ball-top: #6d28a8; }
+  object-fit: contain;
 
   &--big {
     width: 120px;
     height: 120px;
-
-    &::after {
-      width: 28px;
-      height: 28px;
-      border-width: 4px;
-    }
   }
 
   &.is-shaking {

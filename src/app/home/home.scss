@@ -26,6 +26,18 @@
   font-size: 14px;
 }
 
+// Promo banner strip below the hero. The art is a very wide transparent PNG
+// (~4:1), so it just scales fluidly with the column — no crop, no frame.
+.home-banner {
+  margin-bottom: 32px;
+}
+
+.home-banner__img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 // Section heading rail.
 .home-section {
   margin-bottom: 32px;

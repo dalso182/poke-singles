@@ -1,8 +1,8 @@
 # Home (landing page)
-> Part of the Poke-Singles docs set. Verified against source on 2026-07-06. Load together with /CLAUDE.md.
+> Part of the Poke-Singles docs set. Verified against source on 2026-07-22. Load together with /CLAUDE.md.
 
 ## Purpose
-The customer landing page at `/`. Shows a branded hero, two auto-scrolling product marquees ("Recientes" and "Destacadas") and a static "Ofertas que te pueden interesar" grid of discounted products. All three data rails are read-only entry points into the catalog — the page itself has no filters or pagination.
+The customer landing page at `/`. Shows a branded hero, a promo banner strip, two auto-scrolling product marquees ("Recientes" and "Destacadas") and a static "Ofertas que te pueden interesar" grid of discounted products. All three data rails are read-only entry points into the catalog — the page itself has no filters or pagination.
 
 ## Route & access
 - Path: `` (empty child of the UserShell route, `pathMatch: 'full'`), i.e. `/`.
@@ -12,8 +12,8 @@ The customer landing page at `/`. Shows a branded hero, two auto-scrolling produ
 
 ## Files
 - `src/app/home/home.ts` — `Home` component: three rail signals + one `bootstrap()` fetch.
-- `src/app/home/home.html` — hero, loading bar, three sections.
-- `src/app/home/home.scss` — `.home-hero`, `.home-section`, `.home-empty`, `.cards-grid` (offers grid).
+- `src/app/home/home.html` — hero, promo banner, loading bar, three sections.
+- `src/app/home/home.scss` — `.home-hero`, `.home-banner`, `.home-section`, `.home-empty`, `.cards-grid` (offers grid).
 - `src/app/home/home.spec.ts` — smoke spec (passes; router provided via `provideRouter([])`).
 - `src/app/shared/marquee/marquee.{ts,html,scss}` — `Marquee` auto-scroll strip.
 - `src/app/shared/product-card/product-card.{ts,html,scss}` — `ProductCard` tile used in marquees and the offers grid.
@@ -21,11 +21,12 @@ The customer landing page at `/`. Shows a branded hero, two auto-scrolling produ
 
 ## UI anatomy
 Top to bottom:
-1. **Hero** — `.home-hero` card with the `.brand-bar` gradient strip on its top edge (a sanctioned brand-red use). Inside `.home-hero__inner`: eyebrow "Bienvenido", `<h1>` "Poke-Singles Costa Rica", lead "Singles auténticas, condición verificada, envío seguro a todo el país.".
-2. **Loading bar** — `<mat-progress-bar mode="indeterminate">` while `loading()`.
-3. **Section "Recientes"** — `.home-section` with header `<h2>Recientes</h2>` and link "Ver todo →" (`routerLink="/products"`, class `.home-section__more`, amber `var(--accent-amber)`). Body: `<app-marquee [items]="recent()" direction="left" />`, or empty text "Aún no hay cartas en stock." (`.home-empty`) when loaded and empty.
-4. **Section "Destacadas"** — rendered only when `featured().length > 0`. No "Ver todo" link. `<app-marquee [items]="featured()" direction="right" />` (scrolls the opposite way).
-5. **Section "Ofertas que te pueden interesar"** — rendered only when `offers().length > 0`. Header link "Ver todo →" to `/ofertas`. Body: static `.cards-grid` (`repeat(auto-fill, minmax(400px, 1fr))`, gap 12px, single column below 600px) of `<app-product-card [card]="card" />`, tracked by `card.id`.
+1. **Hero** — `.home-hero` card with the `.brand-bar` gradient strip on its top edge (a sanctioned brand-red use). Inside `.home-hero__inner`: eyebrow "Bienvenido", `<h1>` "Poke-Singles Costa Rica", lead "Encuentra y compra singles: explora el catálogo por nombre o expansión, te enviamos a tu tienda favorita y a todo el país por medio de Correos de Costa Rica.".
+2. **Promo banner** — `.home-banner` section with a single `<img class="home-banner__img">` (`assets/images/banners/test.png`, alt "Promoción Poke-Singles"). Static placeholder for a future rotating banner; the art is a very wide (~4:1) transparent PNG that scales fluidly to the column width — no crop, frame, or rounded corners (the artwork's own black rules run edge to edge by design).
+3. **Loading bar** — `<mat-progress-bar mode="indeterminate">` while `loading()`.
+4. **Section "Recientes"** — `.home-section` with header `<h2>Recientes</h2>` and link "Ver todo →" (`routerLink="/products"`, class `.home-section__more`, amber `var(--accent-amber)`). Body: `<app-marquee [items]="recent()" direction="left" />`, or empty text "Aún no hay cartas en stock." (`.home-empty`) when loaded and empty.
+5. **Section "Destacadas"** — rendered only when `featured().length > 0`. No "Ver todo" link. `<app-marquee [items]="featured()" direction="right" />` (scrolls the opposite way).
+6. **Section "Ofertas que te pueden interesar"** — rendered only when `offers().length > 0`. Header link "Ver todo →" to `/ofertas`. Body: static `.cards-grid` (`repeat(auto-fill, minmax(400px, 1fr))`, gap 12px, single column below 600px) of `<app-product-card [card]="card" />`, tracked by `card.id`.
 
 **Marquee internals** (`src/app/shared/marquee/`): inputs `items` (required, `ProductCardItem[]`), `direction` (`'left' | 'right'`, default `'left'`), `durationSeconds` (default **56**). Template renders the item list twice inside `.marquee__track` (second `.marquee__group` is `aria-hidden="true"`); `@keyframes marquee-scroll` translates the track `-50%` for a seamless loop, `--marquee-duration` CSS var carries the duration, `.marquee--right` plays the animation in reverse. Pauses on `:hover` and `:focus-within`. Edge fade via `mask-image` gradient (transparent → 6% → 94% → transparent). Each `.marquee__item` is fixed at 360px wide with 12px right margin.
 
