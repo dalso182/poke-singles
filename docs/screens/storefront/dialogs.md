@@ -1,6 +1,6 @@
 # Storefront-global dialogs (announcement & card conditions)
 
-> Part of the Poke-Singles docs set. Verified against source on 2026-07-14. Load together with /CLAUDE.md.
+> Part of the Poke-Singles docs set. Verified against source on 2026-07-22. Load together with /CLAUDE.md.
 
 ## Purpose
 
@@ -37,7 +37,7 @@ Neither dialog is routed; both are opened programmatically by root-provided serv
 - `mat-dialog-actions.announcement-dialog__actions` (left-aligned):
   - When `link_path` AND `link_label` are set: `mat-flat-button color="primary"` with the `link_label` (closes + `router.navigateByUrl(link_path)`) followed by a `mat-stroked-button` "Entendido".
   - Otherwise: a single `mat-flat-button color="primary"` "Entendido". **Entendido is always present** — it's modal chrome, not content.
-- Dialog config: `panelClass: 'announcement-dialog-panel'`, `width: '600px'`, `maxWidth: '95vw'`, `autoFocus: 'first-tabbable'`, `restoreFocus: true`.
+- Dialog config: `panelClass: 'announcement-dialog-panel'`, `width: '800px'`, `maxWidth: '95vw'`, `autoFocus: 'first-tabbable'`, `restoreFocus: true`.
 
 ### Card-conditions dialog
 
@@ -85,7 +85,7 @@ Neither dialog is routed; both are opened programmatically by root-provided serv
 - **Admins always see the active modal** (once per page load) and never affect `view_count` or seen-flags — deliberate, for iterating on content.
 - **Conditions dialog always opens**, even when content failed to load (shows the fallback error line with a hardcoded "Estado de cartas" title).
 - **Sanitization**: both dialogs deliberately bypass HTML sanitization — content is admin-authored under admin-only write RLS (announcements from the constrained rich-text editor, static pages from the raw-HTML editor).
-- **Responsive**: widths 600px (announcement) / 640px (conditions) collapse to `95vw`; the announcement image column stacks under the text below 600px.
+- **Responsive**: widths 800px (announcement) / 640px (conditions) collapse to `95vw`; the announcement image column stacks under the text below a 600px viewport.
 
 ## Gotchas / invariants
 
@@ -97,6 +97,7 @@ Neither dialog is routed; both are opened programmatically by root-provided serv
 - **Seeded conditions HTML hot-links an image from the live OpenCart domain** (`poke-singles.com/image/catalog/Logo-Borde-400x400.png`). After OpenCart cutover/decommission that image 404s unless the content is edited or the asset migrated.
 - **Conditions slug coupling**: the constant `'estado-de-cartas'` must match the seeded row; renaming the slug silently degrades the dialog to the error line.
 - All four condition-dialog call sites use `event.stopPropagation()`-style handlers (`openConditionsInfo($event)`) so the click doesn't also trigger the product-card navigation — keep that when adding new triggers.
+- **Branded top bar vs. the scrolling body**: the global 3px red-amber accent bar is a `background-image` on `.mat-mdc-dialog-surface` (painted *behind* the content). Because this dialog's `mat-dialog-content` scrolls, a scoped rule in `src/styles/_material-overrides.scss` (`.announcement-dialog-panel .mat-mdc-dialog-surface`) pins the bar to the top edge (`background-origin: border-box`) and adds `padding-top: 10px` so scrolled text clips *below* the bar instead of riding over it. The component's `.announcement-dialog__content` top padding is trimmed by that same 10px (24→14 desktop, 20→10 mobile) to keep the resting look — change one, change the other.
 
 ## Related docs
 

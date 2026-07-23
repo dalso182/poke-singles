@@ -43,7 +43,11 @@
   overflow-y: auto;
   overflow-x: hidden;
   overflow-wrap: anywhere;
-  padding: 24px 32px 8px;
+  // Top padding trimmed by 10px to offset the surface's padding-top (see the
+  // .announcement-dialog-panel rule in _material-overrides): 10 + 14 = the same
+  // 24px of air above the logo at rest, but the scroll clip now sits below the
+  // branded top bar.
+  padding: 14px 32px 8px;
 }
 
 .announcement-dialog__body {
@@ -95,7 +99,7 @@
 
 @media (max-width: 599px) {
   .announcement-dialog__content {
-    padding: 20px 20px 4px;
+    padding: 10px 20px 4px;
   }
 
   .announcement-dialog__actions {

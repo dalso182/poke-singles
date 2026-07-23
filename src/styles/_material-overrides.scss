@@ -92,6 +92,16 @@ html {
   background-position: top center;
 }
 
+// The announcement/welcome modal scrolls its own body. Keep the branded top
+// accent bar pinned to the true top edge (background-origin: border-box) and
+// push the scroll region a few px below it, so scrolled text clips cleanly
+// under the bar instead of riding over it. Scoped to this panel so it never
+// touches other (non-scrolling) dialogs.
+.announcement-dialog-panel .mat-mdc-dialog-surface {
+  padding-top: 10px;
+  background-origin: border-box;
+}
+
 .mat-mdc-button,
 .mat-mdc-unelevated-button,
 .mat-mdc-outlined-button,

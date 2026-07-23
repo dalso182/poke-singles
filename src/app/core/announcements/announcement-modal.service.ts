@@ -111,7 +111,7 @@ export class AnnouncementModalService {
       const ref = this.dialog.open(AnnouncementDialog, {
         data: { announcement: active },
         panelClass: 'announcement-dialog-panel',
-        width: '600px',
+        width: '800px',
         maxWidth: '95vw',
         autoFocus: 'first-tabbable',
         restoreFocus: true,
