@@ -37,7 +37,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
   protected readonly raffleRows = signal<RaffleSummaryRow[] | null>(null);
   protected readonly topPokedex = signal<PokedexLeaderboardRow[] | null>(null);
 
-  /** Purchasable singles (active + in stock); null until loaded, hidden on error. */
+  /** Purchasable singles (active + in stock); null until loaded — tile shows '—'. */
   protected readonly singlesCount = signal<number | null>(null);
 
   /** Live storefront visitor count (Realtime presence). */

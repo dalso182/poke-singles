@@ -106,8 +106,8 @@ KPI cards, monogram avatar) + the `.app-table` order history — no new componen
 
 ## Dashboard
 
-`/admin/` (AdminDashboard) leads with five KPI tiles — **Total Orders, Total Sales, Total
-Customers, Inventory Value, People Online** — then a 2-up panel grid: 30-day **sales/orders
+`/admin/` (AdminDashboard) leads with six KPI tiles — **Total Orders, Total Sales, Total
+Customers, Inventory Value, Available Singles, People Online** — then a 2-up panel grid: 30-day **sales/orders
 trend** sparklines, a **recent-orders** panel, and two customer panels — **Últimos registros**
 (newest sign-ups, by `created_at`, shows registration date) and **Actividad reciente**
 (most recently active, by `last_sign_in_at`, shows last-login `d/MM HH:mm` or "Nunca").
@@ -119,9 +119,9 @@ below. Tiles use the allowed palette (blue/green/amber/indigo/teal) — **never 
 
 - **Headline data** comes from one RPC, `admin_dashboard_stats()` (totals + 30-day series),
   via `DashboardService` (`src/app/core/dashboard/`). → `database` skill.
-- The header shows **"N singles disponibles"** — `DashboardService.countAvailableSingles()`,
-  a client-side head-count of `products` (category `singles`, `active`, `quantity > 0`);
-  hidden until loaded / on error.
+- **Available Singles** ("Singles disponibles", links → `/admin/products`) —
+  `DashboardService.countAvailableSingles()`, a client-side head-count of `products`
+  (category `singles`, `active`, `quantity > 0`); `—` until loaded / on error.
 - **People Online** is live, not from the DB: `PresenceService` (`src/app/core/presence/`)
   counts storefront visitors over a Supabase **Realtime presence** channel; the UserShell
   announces each shopper. → `database` skill (Realtime presence).

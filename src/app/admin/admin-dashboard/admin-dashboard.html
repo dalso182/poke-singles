@@ -2,13 +2,6 @@
   <header class="dashboard__header">
     <h1>Panel de administración</h1>
     <p class="muted">Resumen del estado de la tienda.</p>
-    @if (singlesCount() !== null) {
-      <p class="dashboard__singles">
-        <mat-icon>style</mat-icon>
-        {{ singlesCount() | number: '1.0-0' }}
-        {{ singlesCount() === 1 ? 'single disponible' : 'singles disponibles' }}
-      </p>
-    }
   </header>
 
   <!-- Headline KPIs (OpenCart-style). Colored icon chips, not full-bleed tiles,
@@ -45,6 +38,14 @@
         <span class="kpi__metric">{{ stats() ? '₡' + compact(stats()!.inventory_value) : '—' }}</span>
       </span>
     </div>
+
+    <a class="kpi kpi--singles" routerLink="/admin/products">
+      <span class="kpi__icon"><mat-icon>style</mat-icon></span>
+      <span class="kpi__body">
+        <span class="kpi__label">Singles disponibles</span>
+        <span class="kpi__metric">{{ singlesCount() !== null ? compact(singlesCount()!) : '—' }}</span>
+      </span>
+    </a>
 
     <div class="kpi kpi--online">
       <span class="kpi__icon"><mat-icon>visibility</mat-icon></span>

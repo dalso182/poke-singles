@@ -2,7 +2,7 @@
 > Part of the Poke-Singles docs set. Verified against source on 2026-07-22. Load together with /CLAUDE.md.
 
 ## Purpose
-Landing screen of `/admin`: headline KPIs (orders, sales, customers, inventory value, live visitors), two operational tiles (pending orders, active raffles), a 30-day sales/orders trend with sparklines, and four activity panels — recent orders, newest sign-ups, recently active customers, and the Pokédex leaderboard. Everything is read-only; each block links into its admin screen.
+Landing screen of `/admin`: headline KPIs (orders, sales, customers, inventory value, available singles, live visitors), two operational tiles (pending orders, active raffles), a 30-day sales/orders trend with sparklines, and four activity panels — recent orders, newest sign-ups, recently active customers, and the Pokédex leaderboard. Everything is read-only; each block links into its admin screen.
 
 ## Route & access
 - Path: `/admin` (empty child path, `pathMatch: 'full'`), lazy `AdminDashboard`, rendered inside `AdminShell`.
@@ -23,12 +23,13 @@ Landing screen of `/admin`: headline KPIs (orders, sales, customers, inventory v
 
 ## UI anatomy
 Top to bottom inside `section.dashboard`:
-1. Header: `<h1>Panel de administración</h1>` + muted `"Resumen del estado de la tienda."` + `.dashboard__singles` line (`style` icon + `"N singles disponibles"` / `"1 single disponible"`, `number:'1.0-0'` pipe) — rendered only once `singlesCount() !== null`.
-2. **KPI row** (`.dashboard__kpis`, five tiles with colored icon chips; `—` until stats resolve):
+1. Header: `<h1>Panel de administración</h1>` + muted `"Resumen del estado de la tienda."`.
+2. **KPI row** (`.dashboard__kpis`, six tiles with colored icon chips; `—` until stats resolve):
    - `kpi--orders` (link → `/admin/orders`): `"Pedidos totales"`, `compact(stats.total_orders)`.
    - `kpi--sales` (link → `/admin/orders`): `"Ventas totales"`, `'₡' + compact(stats.total_sales)`.
    - `kpi--customers` (non-link div): `"Clientes"`, `compact(stats.total_customers)`.
    - `kpi--inventory` (non-link div): `"Valor de inventario"`, `'₡' + compact(stats.inventory_value)`.
+   - `kpi--singles` (link → `/admin/products`, violet `#7c3aed` accent, `style` icon): `"Singles disponibles"`, `compact(singlesCount()!)` — `—` while `singlesCount() === null` (loading or fetch error).
    - `kpi--online` (non-link div): pulsing `.kpi__live` dot + `"En línea ahora"`, `onlineCount()` (live Realtime presence).
 3. **Operational tiles** (`.dashboard__tiles`):
    - Pedidos tile → `/admin/orders?status=pending`. Metric = `pendingCount()`; caption `"Sin pendientes ✓"` / `"Pedido pendiente"` / `"Pedidos pendientes"`; CTA `"Ver pendientes"` when > 0.
@@ -42,7 +43,7 @@ Top to bottom inside `section.dashboard`:
      - `"Top Pokédex"` (link `"Ver clientes"` → `/admin/customers`): ranked rows (`recent-user__row--ranked`) with rank number, name/email, and `catching_pokemon` icon + `caught_count`; row links to `/admin/customers/:id?tab=pokedex`. Empty: `"Aún no hay Pokémon capturados."`
 
 ## Services & backend
-- `DashboardService.countAvailableSingles()` — resolves the `categories` row with `slug = 'singles'` (`maybeSingle`; missing → throws `SINGLES_CATEGORY_MISSING`), then a `head: true, count: 'exact'` count over `products` with `category_id = <singles>`, `active = true`, `quantity > 0`. Throws on error — the dashboard `.catch()`es (console `[dashboard] countAvailableSingles`) leaving `singlesCount` null, so the header line simply stays hidden.
+- `DashboardService.countAvailableSingles()` — resolves the `categories` row with `slug = 'singles'` (`maybeSingle`; missing → throws `SINGLES_CATEGORY_MISSING`), then a `head: true, count: 'exact'` count over `products` with `category_id = <singles>`, `active = true`, `quantity > 0`. Throws on error — the dashboard `.catch()`es (console `[dashboard] countAvailableSingles`) leaving `singlesCount` null, so the tile keeps showing `—`.
 - `DashboardService.getStats()` → RPC **`admin_dashboard_stats`** (security definer, gated by `is_admin()` inside the function, no client params). Returns `{ total_orders, total_sales, total_customers, pending_orders, inventory_value, series: [{ d, orders, sales }] }`. `inventory_value` = `sum(price × quantity)` over products where `active = true AND quantity > 0` (per the `DashboardStats` type doc). Service coerces every numeric with `Number(x) || 0` and returns zeroed `EMPTY_STATS` on RPC error (console-logged as `[dashboard] admin_dashboard_stats`).
 - `PresenceService.watchOnlineCount()` — subscribes to Supabase Realtime presence channel **`'online'`** (no backing table, anon key) *without tracking*, so the watching admin isn't counted. Counts presence keys having a member with `role === 'visitor'` (storefront shells call `joinAsVisitor()`). Recounts on `sync`/`join`/`leave`. `teardown()` removes the watch channel and resets the count to 0; called in `ngOnDestroy`.
 - `OrdersService.listOrders({ pageSize: 8 })` — `orders` table select `*, order_items(seller_id)` with `count: 'exact'`, ordered `created_at` desc; visible via `orders_admin_all` RLS.

@@ -20,23 +20,6 @@
   margin: 4px 0 0;
 }
 
-.dashboard__singles {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin: 10px 0 0;
-  font-family: var(--font-brand);
-  font-size: 15px;
-  font-weight: 700;
-
-  mat-icon {
-    font-size: 18px;
-    width: 18px;
-    height: 18px;
-    color: var(--mat-sys-primary);
-  }
-}
-
 // ---- Headline KPI tiles -----------------------------------------------------
 
 .dashboard__kpis {
@@ -114,6 +97,8 @@ a.kpi:hover {
 // Indigo for stored-value / assets — distinct from the four other accents and
 // deliberately NOT brand red (reserved for brand bar, sale prices, sold-out).
 .kpi--inventory { --kpi-accent: #4338ca; }
+// Violet for the card catalog — distinct from the other accents and NOT brand red.
+.kpi--singles   { --kpi-accent: #7c3aed; }
 // Teal reads as a live / info accent — deliberately NOT brand red, which stays
 // reserved for the brand bar, sale prices, and the sold-out badge.
 .kpi--online    { --kpi-accent: #0f766e; }
