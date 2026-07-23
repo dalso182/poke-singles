@@ -135,7 +135,9 @@ below. Tiles use the allowed palette (blue/green/amber/indigo/teal) — **never 
 ## Add / edit product
 
 New-product form uses TCGdex card + set **typeaheads** (`shared/card-typeahead/` with set
-filter; `shared/set-typeahead/` over cached `SetsService.list`), the image picker, a default
+filter — searches by name OR by printed card number, e.g. `112/125`, `TG01/TG30`, or a bare
+`112` once a set is picked; `shared/set-typeahead/` over cached `SetsService.list`), the image
+picker, a default
 "Singles" category, and a multi-select for card-types. ProductEdit offers a quick-update card
 plus the full form. Catalog services live in `src/app/core/catalog/` (`ProductsService`,
 `CategoriesService`, `SetsService`, `CardTypesService`, `CouponsService`, `TcgdexCardsService`).

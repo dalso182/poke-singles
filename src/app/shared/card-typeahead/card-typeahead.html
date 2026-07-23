@@ -16,7 +16,7 @@
             <img [src]="thumb" alt="" style="width: 28px; height: 39px; object-fit: contain;" />
           }
           <span>{{ card.name }}</span>
-          <span class="brand-mono" style="margin-left: auto; opacity: 0.6; font-size: 11px;">{{ card.id }}</span>
+          <span class="brand-mono" style="margin-left: auto; opacity: 0.6; font-size: 11px;">{{ setLabel(card) }}</span>
         </span>
       </mat-option>
     }

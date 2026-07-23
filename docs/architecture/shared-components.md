@@ -1,6 +1,6 @@
 # Shared components
 
-> Part of the Poke-Singles docs set. Verified against source on 2026-07-06. Load together with /CLAUDE.md.
+> Part of the Poke-Singles docs set. Verified against source on 2026-07-22. Load together with /CLAUDE.md.
 
 ## Purpose
 
@@ -89,7 +89,7 @@ These are **controlled components**: the page owns selection state in the URL (q
 ### Family 4 — typeaheads
 
 - `app-set-typeahead` — autocompletes over **local** catalog sets (`SetsService`); emits the selected set id, no free text; public `reload()` method.
-- `app-card-typeahead` — **async** autocomplete against the TCGdex API; optional `setCode` narrows to one set; emits the full `Card` (from `@tcgdex/sdk`).
+- `app-card-typeahead` — **async** autocomplete against the TCGdex API; optional `setCode` narrows to one set; emits the full `Card` (from `@tcgdex/sdk`). Besides name search, it recognizes card-number queries (`"112/125"`, `"TG01/TG30"` — printed number/total → candidate sets by `cardCount.official`) and, with a set picked, bare numbers (`"112"`); details in [add-product](../screens/admin/add-product.md).
 
 Used by the admin add-product flow (set → card → auto-populate) and product-edit. Not used on the storefront.
 
