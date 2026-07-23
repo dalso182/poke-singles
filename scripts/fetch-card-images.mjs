@@ -28,10 +28,14 @@
 // renamed on success, so an interrupted run never leaves a truncated "complete" file.
 //
 // Cards with no contributed scan (no `image` field) are skipped and recorded in
-// card-images/missing-images.json — except the SWSH gallery-subset sets (Trainer
-// Gallery / Galarian Gallery / Shiny Vault), which TCGdex has no scans for at all:
-// those fall back to images.pokemontcg.io (PNG, transcoded to --ext via sharp) and
-// land at the same <serie>/<set>/<localId>.<ext> path. The run never touches Supabase.
+// card-images/missing-images.json — except two families TCGdex has no scans for at
+// all, which fall back to images.pokemontcg.io (PNG, transcoded to --ext via sharp)
+// and land at the same <serie>/<set>/<localId>.<ext> path:
+//   • the SWSH gallery-subset sets (Trainer / Galarian Gallery, Shiny Vault) whose
+//     numbers match TCGdex localIds 1:1 — see PTCGIO_FALLBACK_SETS; and
+//   • the Celebrations Classic Collection, whose numbering diverges and is pinned
+//     card-by-card — see PTCGIO_CARD_MAP.
+// The run never touches Supabase.
 
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -75,16 +79,66 @@ if (!['webp', 'png', 'jpg'].includes(EXT)) abort(`invalid --ext=${EXT} (expected
 
 const tcgdex = new TCGdex(LANG);
 
-// TCGdex gallery-subset sets with no scans on assets.tcgdex.net (0/N images).
-// pokemontcg.io has them all and its card numbers match TCGdex localIds 1:1
-// (GG04, TG01, SV001…). Values are the pokemontcg.io set ids. sma (Hidden Fates
-// Shiny Vault) and the embedded swsh10 TG cards are covered by TCGdex already.
+// Sets where TCGdex is missing scans that pokemontcg.io HAS, and the pokemontcg.io
+// card number matches the TCGdex localId 1:1 — so the fallback URL is simply
+// <ptcgioSet>/<localId>_hires.png. The fallback fires per-card (only when
+// card.image is absent), so a mostly-scanned set with one gap costs exactly one
+// pokemontcg.io fetch. Two kinds live here:
+//   • the SWSH gallery subsets (Trainer / Galarian Gallery, Shiny Vault), which
+//     TCGdex has no scans for at all (0/N images, GG04 / TG01 / SV001…); and
+//   • base Celebrations, fully scanned on TCGdex EXCEPT localId 25 (Mew).
+// sma (Hidden Fates Shiny Vault) and the embedded swsh10 TG cards are covered by
+// TCGdex already. Where the numbering does NOT line up, use PTCGIO_CARD_MAP below.
 const PTCGIO_FALLBACK_SETS = {
   'swsh9.5tg': 'swsh9tg',
   'swsh11.5tg': 'swsh11tg',
   'swsh12.5tg': 'swsh12tg',
   'swsh12.5gg': 'swsh12pt5gg',
   'swsh4.5sv': 'swsh45sv',
+  cel25: 'cel25', // only localId 25 (Mew) is scanless; 1–24 come from TCGdex
+};
+
+// A second class of scanless set: TCGdex has no scans AND pokemontcg.io does NOT
+// number the cards the same way, so there's no localId→filename formula like the
+// map above. The Celebrations Classic Collection (TCGdex `cel25cc` → pokemontcg.io
+// `cel25c`) reuses each card's ORIGINAL number, disambiguates the duplicates with
+// a letter suffix (four "15"s → 15_A…15_D), and spells some names differently
+// (Mewtwo EX vs Mewtwo-EX, the δ/☆ glyphs) — so the only reliable link is
+// card-by-card, matched by name and pinned here. Values are the pokemontcg.io
+// image stem; the file pulled is https://images.pokemontcg.io/<set>/<stem>_hires.png
+// (all 25 verified 200). The target still lands at cel25cc/<localId>.<ext>, which
+// is exactly the path prepare-for-prod.mjs writes into products.image_url.
+const PTCGIO_CARD_MAP = {
+  cel25cc: {
+    ptcgioSet: 'cel25c',
+    cards: {
+      CC001: '2_A',   // Blastoise
+      CC002: '4_A',   // Charizard
+      CC003: '15_A',  // Venusaur
+      CC004: '73_A',  // Imposter Professor Oak
+      CC005: '8_A',   // Dark Gyarados
+      CC006: '15_B',  // Here Comes Team Rocket!
+      CC007: '15_C',  // Rocket's Zapdos
+      CC008: '24_A',  // _____'s Pikachu
+      CC009: '20_A',  // Cleffa
+      CC010: '66_A',  // Shining Magikarp
+      CC011: '9_A',   // Team Magma's Groudon
+      CC012: '86_A',  // Rocket's Admin.
+      CC013: '88_A',  // Mew ex
+      CC014: '93_A',  // Gardevoir ex δ
+      CC015: '17_A',  // Umbreon ☆
+      CC016: '15_D',  // Claydol
+      CC017: '109_A', // Luxray GL LV.X
+      CC018: '145_A', // Garchomp C LV.X
+      CC019: '107_A', // Donphan
+      CC020: '113_A', // Reshiram
+      CC021: '114_A', // Zekrom
+      CC022: '54_A',  // Mewtwo-EX
+      CC023: '97_A',  // Xerneas-EX
+      CC024: '76_A',  // M Rayquaza-EX
+      CC025: '60_A',  // Tapu Lele-GX
+    },
+  },
 };
 
 // ---- Helpers -------------------------------------------------------------
@@ -238,6 +292,17 @@ async function main() {
         if (ptcgioSet) {
           tasks.push({
             url: `https://images.pokemontcg.io/${ptcgioSet}/${card.localId}_hires.png`,
+            target,
+            transcode: true,
+          });
+          continue;
+        }
+        // Per-card pokemontcg.io map (numbering differs; see PTCGIO_CARD_MAP).
+        const mapped = PTCGIO_CARD_MAP[set.id];
+        const stem = mapped?.cards[card.localId];
+        if (mapped && stem) {
+          tasks.push({
+            url: `https://images.pokemontcg.io/${mapped.ptcgioSet}/${stem}_hires.png`,
             target,
             transcode: true,
           });

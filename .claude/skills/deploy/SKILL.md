@@ -89,7 +89,9 @@ The store can serve its own card art instead of hotlinking the TCGdex CDN. Layou
 `card-images/<serie>/<set>/<localId>.webp` (e.g. `card-images/swsh/swsh3/136.webp`). **Reference
 images by relative path** (`/card-images/...`) so the same catalog rows resolve on every domain
 (dev., the prod root, localhost via proxy). The tree lives on the `dev.` and prod docroots
-(server-side copied at cutover — `cp -a` over SSH, never re-uploaded from local).
+(the full ~2 GB tree was server-side copied dev→prod at cutover — `cp -a` over SSH, not
+re-uploaded from local; incremental set additions since then go up per-set with
+`images:upload --env=prod --sets=<id>` — see the scanless-set runbook below).
 `upload-images.mjs` stamps `auth-config.php`
 per `--env` from the matching environment file so each site's PHP gate validates against its
 own Supabase project.
@@ -104,8 +106,46 @@ npm run images:upload:endpoints                 # push server/*.php only (no ima
 `./card-images/` lives outside `dist/`, so a normal `deploy:*` can never sweep it up. The PHP
 picker endpoints that live alongside the images → `admin` skill.
 
-TCGdex has **no scans for the five SWSH gallery-subset sets** (`swsh9.5tg`, `swsh11.5tg`,
-`swsh12.5tg`, `swsh12.5gg`, `swsh4.5sv`); for those, `images:fetch` falls back to
-`images.pokemontcg.io` (PNG → webp via `sharp`, same `<serie>/<set>/<localId>.webp` path — see
-`PTCGIO_FALLBACK_SETS` in `fetch-card-images.mjs`). Anything else without a scan still lands in
-`card-images/missing-images.json`.
+### Scanless sets — the pokemontcg.io fallback
+
+Some cards have **no scan on TCGdex** (`card.image` is null). `images:fetch` can still get them
+from `images.pokemontcg.io` (PNG → webp via `sharp`, same `<serie>/<set>/<localId>.webp` path).
+Two mechanisms in `fetch-card-images.mjs`, chosen by how the two sources' numbering relates:
+
+- **`PTCGIO_FALLBACK_SETS`** (`tcgdexSetId → pokemontcgSetId`) — pokemontcg.io numbers the cards
+  the *same* as the TCGdex localId, so the URL is a formula: `<ptcgioSet>/<localId>_hires.png`.
+  Covers the five SWSH gallery subsets (`swsh9.5tg`, `swsh11.5tg`, `swsh12.5tg`, `swsh12.5gg`,
+  `swsh4.5sv`) — fully scanless — and base **Celebrations** (`cel25`), which is scanned on TCGdex
+  *except* localId 25 (Mew). The fallback fires per-card, so a mostly-scanned set with one gap
+  costs exactly one fetch.
+- **`PTCGIO_CARD_MAP`** (`tcgdexSetId → { ptcgioSet, cards: { localId → "<stem>" } }`) —
+  pokemontcg.io numbers them *differently*, so there's no formula; the URL is
+  `<ptcgioSet>/<stem>_hires.png`. Covers **Celebrations Classic Collection** (TCGdex `cel25cc` →
+  pokemontcg.io `cel25c`): localIds are clean `CC001…CC025`, but pokemontcg.io reuses each card's
+  *original* number, disambiguates duplicates with a letter suffix (four "15"s → `15_A…15_D`), and
+  spells some names differently (`Mewtwo EX`/`Mewtwo-EX`, the `δ`/`☆` glyphs) — so the stems are
+  pinned **by name**, card by card.
+
+Anything still without a scan lands in `card-images/missing-images.json`.
+
+**Adding a new scanless set (runbook).** When a card shows a broken image:
+1. Confirm TCGdex genuinely has no scan — `image` is absent on the *individual* card resource
+   (`api.tcgdex.net/v2/en/cards/<id>`), not just the brief set listing (which omits `image`).
+2. Find it on pokemontcg.io (`api.pokemontcg.io/v2/cards?q=set.id:<id>`). Numbers match the
+   TCGdex localIds 1:1 → add a `PTCGIO_FALLBACK_SETS` entry. Numbers diverge → add a
+   `PTCGIO_CARD_MAP` entry, matching cards **by name** (normalize — names differ in punctuation/
+   glyphs), and **verify every mapped URL returns 200** before trusting the map (a wrong match =
+   a wrong card image on a possibly-valuable single).
+3. `node scripts/fetch-card-images.mjs --sets=<tcgdexSetId>` → files land under
+   `card-images/<serie>/<set>/`.
+4. Push to prod — **from PowerShell** (Git Bash's GNU tar chokes on the `C:\` archive path;
+   Windows `tar` handles it): `node scripts/upload-images.mjs --env=prod --sets=<id>`. `--sets`
+   touches only those subtrees and skips the PHP endpoints. **Gotcha:** the uploader resolves
+   `--sets` via `card-images/_manifest.json`, which each targeted `images:fetch` *overwrites* to
+   only that run's sets — so `fetch` the exact set list you're about to `upload` in one go, or the
+   uploader silently skips sets missing from the manifest.
+5. Verify: `curl -sI https://poke-singles.com/card-images/<serie>/<set>/<localId>.webp` → 200.
+
+No DB change is needed — `prepare-for-prod.mjs` already writes the `/card-images/...` path into
+`products.image_url` at import time (even for scanless cards, via `hostedImagePathFor`); the
+fallback just fills in the file the path already points at.

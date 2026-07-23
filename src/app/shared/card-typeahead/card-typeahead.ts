@@ -19,6 +19,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { Query } from '@tcgdex/sdk';
 import type { Card, CardResume, SetResume } from '@tcgdex/sdk';
 import { TcgdexService } from '../../core/tcgdex/tcgdex.service';
+import { hostedCardImagePath } from '../../core/images/card-image-url';
 
 export interface CardNumberQuery {
   /** Normalized TCGdex localId — the numerator printed on the card (e.g. "112", "TG12"). */
@@ -123,6 +124,13 @@ export class CardTypeahead {
           return [] as CardResume[];
         }
       }),
+      // Cards from scanless sets (no TCGdex art) fall back to our self-hosted
+      // image in the option row, but that path needs the serie id, which isn't on
+      // the card payload. Resolve it once per set (memoized) before rendering.
+      switchMap(async (cards) => {
+        await this.ensureSeries(cards.filter((c) => !c.image).map((c) => this.setIdOf(c.id)));
+        return cards;
+      }),
       tap(() => this.searching.set(false)),
     ),
     { initialValue: [] as CardResume[] },
@@ -131,6 +139,9 @@ export class CardTypeahead {
   private setListPromise?: Promise<SetResume[]>;
   /** setId → set name, populated once the TCGdex set list resolves. */
   protected readonly setNames = signal<ReadonlyMap<string, string>>(new Map());
+  /** setId → serieId, resolved lazily for scanless-set cards (hosted-image path). */
+  private readonly setSerieCache = new Map<string, string>();
+  protected readonly setSerie = signal<ReadonlyMap<string, string>>(new Map());
 
   constructor() {
     // Prime the set list so option rows can label results with set names.
@@ -146,6 +157,28 @@ export class CardTypeahead {
       throw err;
     });
     return this.setListPromise;
+  }
+
+  /**
+   * Resolve + memoize the serie id for each set id (needed to build the
+   * self-hosted image path for cards TCGdex has no scan for). One set fetch per
+   * unseen set; updates the `setSerie` signal so option thumbnails re-render.
+   */
+  private async ensureSeries(setIds: Iterable<string>): Promise<void> {
+    const missing = [...new Set(setIds)].filter((id) => id && !this.setSerieCache.has(id));
+    if (missing.length === 0) return;
+    await Promise.all(
+      missing.map(async (id) => {
+        try {
+          const set = await this.tcgdex.client.fetch('sets', id);
+          const serie = set?.serie?.id;
+          if (serie) this.setSerieCache.set(id, serie);
+        } catch {
+          /* leave unresolved — thumbnail stays blank */
+        }
+      }),
+    );
+    this.setSerie.set(new Map(this.setSerieCache));
   }
 
   /**
@@ -209,7 +242,17 @@ export class CardTypeahead {
   }
 
   protected thumbUrl(card: CardResume): string | null {
-    return card.image ? `${card.image}/low.webp` : null;
+    if (card.image) return `${card.image}/low.webp`;
+    // Scanless card (Celebrations Classic Collection, the SWSH gallery subsets):
+    // TCGdex has no art, so point at our self-hosted copy. The relative path
+    // resolves same-origin (the prod root, or the dev /card-images proxy on
+    // localhost). Serie comes from the memoized cache filled by the pipeline;
+    // stays blank until it resolves.
+    const setId = this.setIdOf(card.id);
+    const serie = this.setSerie().get(setId);
+    return serie && card.localId != null
+      ? hostedCardImagePath(serie, setId, String(card.localId))
+      : null;
   }
 
   protected async onSelect(event: MatAutocompleteSelectedEvent): Promise<void> {

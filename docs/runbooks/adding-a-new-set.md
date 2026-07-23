@@ -1,8 +1,8 @@
 # Runbook — Adding a new TCG set
 
 What to do when a new Pokémon TCG set releases and you want it sellable on the site.
-Verified against source on **2026-07-20** (worked example: `me05` "Pitch Black",
-released 2026-07-17).
+Verified against source on **2026-07-22** (worked example: `me05` "Pitch Black",
+released 2026-07-17; scanless-set fallbacks re-verified against `cel25`/`cel25cc`).
 
 ## TL;DR
 
@@ -71,6 +71,12 @@ Three ways the `sets` row appears; any one is enough:
 The `code` column is immutable by convention (slugs and TCGdex lookups key on it) — don't
 rename it after products exist.
 
+The row is **runtime data written per-environment, not a migration** — so dev and prod are
+populated independently and can drift (e.g. `cel25cc` reached prod via the import but was
+never on dev). To close a gap, run the bulk sync (or add a product) on whichever environment
+is behind — don't reach for a migration. Migrations touch `sets` only for cross-env cleanups
+that must be identical everywhere (e.g. `20260502010000_remove_tcg_pocket_sets.sql`).
+
 ### 5. Add products
 
 `/admin/products/new` as usual. The card typeahead queries TCGdex live, so the new set's
@@ -85,12 +91,27 @@ soon as it has ≥1 active, in-stock, priced product (`search_set_counts` /
 
 ## Edge cases
 
-- **Set with no TCGdex scans** (so far only the SWSH-era gallery subsets: Trainer
-  Gallery / Galarian Gallery / Shiny Vault): add a `<tcgdexSetId>: '<pokemontcgIoSetId>'`
-  entry to `PTCGIO_FALLBACK_SETS` in `scripts/fetch-card-images.mjs`, then rerun steps
-  2–3. The script transcodes pokemontcg.io PNGs to webp at the same hosted path.
+- **Set with no TCGdex scans** — the SWSH-era gallery subsets (Trainer / Galarian
+  Gallery, Shiny Vault), base **Celebrations**' lone Mew (`cel25` #25), and the whole
+  **Celebrations Classic Collection** (`cel25cc`). Two fallbacks in
+  `scripts/fetch-card-images.mjs`, chosen by how pokemontcg.io numbers the cards:
+  - **numbers match the TCGdex localId 1:1** → add a `<tcgdexSetId>: '<pokemontcgIoSetId>'`
+    entry to `PTCGIO_FALLBACK_SETS`. Fires per scanless card, so a mostly-scanned set with a
+    single gap (like `cel25`, only Mew #25 missing) costs one fetch.
+  - **numbers diverge** (original card numbers, duplicate-number letter suffixes, different
+    name spellings) → add a `PTCGIO_CARD_MAP` entry mapping each localId to its pokemontcg.io
+    image stem **by name**, and **verify every mapped URL returns 200** before trusting it
+    (`cel25cc` is the worked example: `CC001…CC025` → stems like `4_A`, `15_A…15_D`).
+
+  Then rerun steps 2–3; the script transcodes pokemontcg.io PNGs to webp at the same hosted
+  path. Full mechanism + runbook: `deploy` skill → "Self-hosting card images."
 - **Gallery subsets in the typeahead**: merging a base set with its gallery subset is
   name-suffix based (`card-typeahead.ts`) and fully generic — no per-set entry needed.
+- **Scanless cards in the typeahead**: the add-product card search takes its option
+  thumbnail from TCGdex; when a card has no TCGdex scan, `card-typeahead.ts` falls back to
+  the self-hosted `/card-images/…` copy (serie resolved via a memoized `fetch('sets', …)`).
+  So the picker shows art for these sets only once step 3 has uploaded their images to the
+  environment you're testing on.
 - **Sparse set row** (nulls in series/release_date): TCGdex hydration failed transiently
   at insert time. `printed_total` self-heals on the next card pick; fix the rest in
   `/admin/sets`.
